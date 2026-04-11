@@ -17,7 +17,9 @@ export const useExamStore = defineStore('exam', {
     // 模拟面试模式
     mockMode: false,
     examStartTime: null,
-    examElapsed: 0
+    examElapsed: 0,
+    // 提交步骤提示
+    submitStep: '',  // '' | 'uploading' | 'transcribing' | 'scoring'
   }),
 
   getters: {
@@ -41,6 +43,14 @@ export const useExamStore = defineStore('exam', {
       if (!state.answers.length) return 0
       const total = state.answers.reduce((sum, a) => sum + (a.scoringResult?.totalScore || 0), 0)
       return Math.round(total / state.answers.length)
+    },
+    submitStepText(state) {
+      const map = {
+        uploading: '正在上传录音…',
+        transcribing: '正在语音转文字…',
+        scoring: 'AI 正在评分，请稍候…'
+      }
+      return map[state.submitStep] || '处理中…'
     }
   },
 
@@ -71,16 +81,19 @@ export const useExamStore = defineStore('exam', {
     async submitAnswer(blob) {
       this.status = EXAM_STATUS.SUBMITTING
       this.recordingBlob = blob
+      this.submitStep = 'uploading'
 
       try {
         // 上传录制文件
         await uploadRecording(this.examId, blob)
 
         // 语音转文字
+        this.submitStep = 'transcribing'
         const { transcript } = await transcribeAudio(blob)
         this.transcript = transcript
 
         // AI 评分
+        this.submitStep = 'scoring'
         const result = await evaluateAnswer({
           questionId: this.currentQuestion.id,
           transcript
@@ -98,8 +111,10 @@ export const useExamStore = defineStore('exam', {
         })
 
         this.status = EXAM_STATUS.COMPLETED
+        this.submitStep = ''
       } catch (err) {
         this.status = EXAM_STATUS.ANSWERING
+        this.submitStep = ''
         throw err
       }
     },
@@ -125,6 +140,7 @@ export const useExamStore = defineStore('exam', {
       this.mockMode = false
       this.examStartTime = null
       this.examElapsed = 0
+      this.submitStep = ''
     },
 
     setDeviceReady(ready) {

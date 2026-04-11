@@ -89,7 +89,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { LeftOutlined } from '@ant-design/icons-vue'
-import * as echarts from 'echarts'
+import echarts from '@/utils/echarts'
 import { useHistoryStore } from '@/stores/history'
 import { useTrainingStore } from '@/stores/training'
 import { DIMENSIONS, DIMENSION_TIPS } from '@/utils/constants'

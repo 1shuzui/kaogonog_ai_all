@@ -2,6 +2,9 @@
   <div class="empty-state">
     <InboxOutlined class="empty-state__icon" />
     <p class="empty-state__text">{{ text }}</p>
+    <div v-if="$slots.action" class="empty-state__action">
+      <slot name="action" />
+    </div>
     <slot />
   </div>
 </template>
@@ -34,5 +37,9 @@ defineProps({
 
 .empty-state__text {
   font-size: @font-size-base;
+}
+
+.empty-state__action {
+  margin-top: 12px;
 }
 </style>

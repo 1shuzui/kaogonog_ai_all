@@ -1,9 +1,17 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
+import Components from 'unplugin-vue-components/vite'
+import { AntDesignVueResolver } from 'unplugin-vue-components/resolvers'
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [
+    vue(),
+    Components({
+      resolvers: [AntDesignVueResolver({ importStyle: 'less' })],
+      dts: false
+    })
+  ],
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src')
@@ -31,5 +39,18 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, '')
       }
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'ant-design-vue': ['ant-design-vue', '@ant-design/icons-vue'],
+          'echarts': ['echarts/core', 'echarts/charts', 'echarts/components', 'echarts/renderers'],
+          xlsx: ['xlsx'],
+          vendor: ['vue', 'vue-router', 'pinia', 'axios']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000
   }
 })

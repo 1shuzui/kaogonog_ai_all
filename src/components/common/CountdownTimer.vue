@@ -1,5 +1,5 @@
 <template>
-  <div class="countdown-timer" :class="`countdown-timer--${mode}`">
+  <div class="countdown-timer" :class="[`countdown-timer--${mode}`, { 'countdown-timer--blink': props.remaining <= 10 && props.remaining > 0, 'countdown-timer--warning': props.remaining <= 30 }]">
     <svg width="80" height="80" viewBox="0 0 80 80">
       <circle cx="40" cy="40" r="34" fill="none" stroke="#E8E8E8" stroke-width="6" />
       <circle cx="40" cy="40" r="34" fill="none"
@@ -69,5 +69,20 @@ const ringColor = computed(() => {
 .countdown-timer__label {
   font-size: 10px;
   color: rgba(255, 255, 255, 0.7);
+}
+
+/* 30秒警告 - 时间文字变红 */
+.countdown-timer--warning .countdown-timer__time {
+  color: #CF1322;
+}
+
+/* 10秒闪烁 */
+.countdown-timer--blink {
+  animation: blink-warning 0.8s ease-in-out infinite;
+}
+
+@keyframes blink-warning {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 </style>

@@ -109,6 +109,12 @@ const routes = [
     name: 'Analysis',
     component: () => import('@/views/Profile/AnalysisPage.vue'),
     meta: { title: '个人分析', layout: 'simple' }
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('@/views/NotFound.vue'),
+    meta: { title: '页面未找到', layout: 'blank' }
   }
 ]
 

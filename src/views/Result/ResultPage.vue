@@ -1,7 +1,20 @@
 <template>
   <div class="result-page page-container">
-    <a-spin :spinning="loading" tip="加载评测结果...">
-      <template v-if="result">
+    <!-- 骨架屏加载态 -->
+    <div v-if="loading" class="result-skeleton">
+      <div class="card" style="padding: 24px; text-align: center;">
+        <a-skeleton-avatar :size="100" shape="circle" active />
+        <a-skeleton :paragraph="{ rows: 2 }" active style="margin-top: 16px;" />
+      </div>
+      <div class="card" style="margin-top: 12px; padding: 16px;">
+        <a-skeleton :paragraph="{ rows: 4 }" active />
+      </div>
+      <div class="card" style="margin-top: 12px; padding: 16px;">
+        <a-skeleton :paragraph="{ rows: 3 }" active />
+      </div>
+    </div>
+
+    <template v-else-if="result">
         <!-- 多题切换 -->
         <div v-if="answerList.length > 1" class="answer-tabs card" data-html2canvas-ignore>
           <a-radio-group v-model:value="currentAnswerIdx" button-style="solid" size="small">
@@ -97,8 +110,7 @@
           :maxScore="result.maxScore"
           :dimensions="result.dimensions || []"
         />
-      </template>
-    </a-spin>
+    </template>
   </div>
 </template>
 

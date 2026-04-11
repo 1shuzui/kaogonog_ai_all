@@ -45,6 +45,7 @@ import { useRouter } from 'vue-router'
 import { BulbOutlined, CheckCircleOutlined } from '@ant-design/icons-vue'
 import { getQuestions } from '@/api/questionBank'
 import { DIMENSIONS } from '@/utils/constants'
+import { useDebounce } from '@/composables/useDebounce'
 
 const props = defineProps({
   weakDimensions: { type: Array, default: () => [] }
@@ -102,6 +103,8 @@ async function fetchRecommendations() {
   }
 }
 
+const { run: debouncedFetch } = useDebounce(fetchRecommendations, 500)
+
 function startPractice(item) {
   router.push({ path: '/exam/prepare', query: { questionId: item.id } })
 }
@@ -111,7 +114,7 @@ onMounted(() => {
 })
 
 watch(() => props.weakDimensions, () => {
-  fetchRecommendations()
+  debouncedFetch()
 }, { deep: true })
 </script>
 

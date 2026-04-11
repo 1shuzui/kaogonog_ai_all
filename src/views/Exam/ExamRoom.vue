@@ -1,5 +1,10 @@
 <template>
   <div class="exam-room" v-if="examStore.currentQuestion">
+    <!-- 离线提示 -->
+    <div v-if="!isOnline" class="exam-room__offline-banner">
+      ⚠️ 网络已断开，请检查网络连接。录音数据已暂存，恢复网络后可继续提交。
+    </div>
+
     <!-- 顶部状态栏 -->
     <div class="exam-room__header">
       <span class="exam-room__progress">
@@ -15,21 +20,31 @@
       </a-popconfirm>
     </div>
 
-    <!-- 视频预览 -->
-    <div class="exam-room__video">
-      <VideoPreview
-        :stream="stream"
-        :recording="examStore.status === 'answering'"
-        :duration="recorderDuration"
-      />
-    </div>
+    <!-- 主内容区：题目 + 视频小窗 -->
+    <div class="exam-room__main">
+      <!-- 题目卡片 -->
+      <div class="exam-room__question">
+        <a-tag color="blue" style="margin-bottom: 8px">
+          {{ dimensionName }}
+        </a-tag>
+        <div class="question-stem">{{ examStore.currentQuestion.stem }}</div>
+      </div>
 
-    <!-- 题目卡片 -->
-    <div class="exam-room__question">
-      <a-tag color="blue" style="margin-bottom: 8px">
-        {{ dimensionName }}
-      </a-tag>
-      <div class="question-stem">{{ examStore.currentQuestion.stem }}</div>
+      <!-- 视频预览（准备阶段大预览，答题阶段小窗） -->
+      <div 
+        class="exam-room__video-container"
+        :class="{ 'is-pip': examStore.status === 'answering' || examStore.status === 'submitting' || examStore.status === 'completed' }"
+      >
+        <VideoPreview
+          :stream="stream"
+          :recording="examStore.status === 'answering'"
+          :duration="recorderDuration"
+        />
+        <!-- 准备阶段提示 -->
+        <div v-if="examStore.status === 'preparing'" class="video-hint">
+          准备时间，请思考作答思路
+        </div>
+      </div>
     </div>
 
     <!-- 倒计时 -->
@@ -96,6 +111,7 @@ import { CloseOutlined, CheckCircleFilled } from '@ant-design/icons-vue'
 import { useExamStore } from '@/stores/exam'
 import { useMediaRecorder } from '@/composables/useMediaRecorder'
 import { useCountdown } from '@/composables/useCountdown'
+import { useNetworkStatus } from '@/composables/useNetworkStatus'
 import { DIMENSIONS, EXAM_STATUS, getGrade } from '@/utils/constants'
 import VideoPreview from '@/components/recording/VideoPreview.vue'
 import AudioWaveform from '@/components/recording/AudioWaveform.vue'
@@ -107,6 +123,7 @@ import { message } from 'ant-design-vue'
 const router = useRouter()
 const examStore = useExamStore()
 const recorder = useMediaRecorder()
+const { isOnline } = useNetworkStatus()
 const stream = recorder.stream
 const recorderDuration = recorder.duration
 const countdown = useCountdown(0)
@@ -254,5 +271,25 @@ function exitExam() {
   font-size: 13px;
   color: rgba(255, 255, 255, 0.85);
   font-variant-numeric: tabular-nums;
+}
+
+.exam-room__offline-banner {
+  background: #fff1f0;
+  color: #cf1322;
+  text-align: center;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
 }
 </style>

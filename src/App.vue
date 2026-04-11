@@ -2,7 +2,13 @@
   <div class="app-wrapper" :class="layoutClass">
     <AppHeader v-if="showHeader" />
     <main class="app-main">
-      <router-view />
+      <ErrorBoundary>
+        <router-view v-slot="{ Component }">
+          <transition name="page-fade" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
+      </ErrorBoundary>
     </main>
     <AppTabBar v-if="showTabBar" />
   </div>
@@ -15,6 +21,7 @@ import { useUserStore } from '@/stores/user'
 import http from '@/api/index'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppTabBar from '@/components/layout/AppTabBar.vue'
+import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -59,5 +66,15 @@ onMounted(async () => {
 }
 .layout-blank .app-main {
   padding: 0;
+}
+
+/* 页面过渡动画 */
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+.page-fade-enter-from,
+.page-fade-leave-to {
+  opacity: 0;
 }
 </style>

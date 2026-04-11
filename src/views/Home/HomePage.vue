@@ -59,7 +59,11 @@
             <ScoreRing :score="record.totalScore" :maxScore="record.maxScore" size="small" />
           </div>
         </div>
-        <EmptyState v-else text="暂无练习记录，开始第一次模考吧" />
+        <EmptyState v-else text="暂无练习记录，开始第一次模考吧">
+          <template #action>
+            <a-button type="primary" @click="$router.push('/exam/prepare')">开始模考</a-button>
+          </template>
+        </EmptyState>
       </a-spin>
     </div>
 
@@ -92,7 +96,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { PlayCircleOutlined } from '@ant-design/icons-vue'
-import * as echarts from 'echarts'
+import echarts from '@/utils/echarts'
 import { useHistoryStore } from '@/stores/history'
 import { useUserStore } from '@/stores/user'
 import { formatDate } from '@/utils/formatter'

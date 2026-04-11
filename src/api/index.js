@@ -6,7 +6,7 @@ const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
 
 const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE || '/api',
-  timeout: 30000
+  timeout: 60000  // AI评分可能需要较长时间，增加到60秒
 })
 
 http.interceptors.request.use((config) => {
