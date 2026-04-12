@@ -1,0 +1,67 @@
+@import './variables.less';
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: @font-size-base;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  color: @text-regular;
+  background: @page-bg;
+  line-height: 1.6;
+}
+
+a {
+  color: @primary-color;
+  text-decoration: none;
+}
+
+// 通用卡片样式
+.card {
+  background: @card-bg;
+  border-radius: @border-radius-lg;
+  box-shadow: @shadow-card;
+  padding: 16px;
+}
+
+// 页面容器
+.page-container {
+  max-width: 768px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+// 标签颜色类
+.tag-scoring {
+  color: @score-green;
+  background: fade(@score-green, 10%);
+  border: 1px solid fade(@score-green, 30%);
+}
+.tag-deducting {
+  color: @score-red;
+  background: fade(@score-red, 10%);
+  border: 1px solid fade(@score-red, 30%);
+}
+.tag-bonus {
+  color: @score-gold;
+  background: fade(@score-gold, 10%);
+  border: 1px solid fade(@score-gold, 30%);
+}
+
+// 滚动条美化
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: #d9d9d9;
+  border-radius: 2px;
+}

@@ -1,0 +1,825 @@
+{
+  "generated_at": "20260410_195636",
+  "question_ids": [
+    "CS-20201212-01",
+    "CS-20201212-02",
+    "CS-20201212-03",
+    "CSJT-20201226-01",
+    "CSJT-20201226-02",
+    "CSJT-20201226-03",
+    "HN-20200816-01",
+    "HN-20200816-02",
+    "HN-20200816-03",
+    "HN-20200919-01",
+    "HN-20200919-02",
+    "HN-20200919-03",
+    "HN-20200919-JY-01",
+    "HN-20200919-JY-02",
+    "HN-20200919-JY-03",
+    "HN-20200920-01",
+    "HN-20200920-02",
+    "HN-20200920-JY-01",
+    "HN-20200920-JY-02",
+    "HN-20200920-JY-03",
+    "HN-20200920-XZ-01",
+    "HN-20200920-XZ-02",
+    "HN-20200920-XZ-03",
+    "HN-20200921-XZ-01",
+    "HN-20200921-XZ-02",
+    "HN-20200921-XZ-03",
+    "HN-20200922-XZ-01",
+    "HN-20200922-XZ-02",
+    "HN-20200922-XZ-03"
+  ],
+  "summary": {
+    "total": 87,
+    "pass": 39,
+    "fail": 48,
+    "error": 0
+  },
+  "rows": [
+    {
+      "question_id": "CS-20201212-01",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-01/reference_high.txt",
+      "expected_min": 32.0,
+      "expected_max": 35.0,
+      "actual_score": 32.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "CS-20201212-01",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-01/reference_mid.txt",
+      "expected_min": 22.7,
+      "expected_max": 27.7,
+      "actual_score": 28.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "CS-20201212-01",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-01/reference_low.txt",
+      "expected_min": 18.9,
+      "expected_max": 23.9,
+      "actual_score": 24.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "CS-20201212-02",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-02/reference_high.txt",
+      "expected_min": 32.0,
+      "expected_max": 35.0,
+      "actual_score": 32.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "CS-20201212-02",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-02/reference_mid.txt",
+      "expected_min": 20.5,
+      "expected_max": 25.5,
+      "actual_score": 27.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "CS-20201212-02",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-02/reference_low.txt",
+      "expected_min": 11.8,
+      "expected_max": 16.8,
+      "actual_score": 24.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "CS-20201212-03",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-03/reference_high.txt",
+      "expected_min": 22.0,
+      "expected_max": 25.0,
+      "actual_score": 22.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "CS-20201212-03",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-03/reference_mid.txt",
+      "expected_min": 14.6,
+      "expected_max": 19.6,
+      "actual_score": 20.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "CS-20201212-03",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-03/reference_low.txt",
+      "expected_min": 9.9,
+      "expected_max": 14.9,
+      "actual_score": 20.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "CSJT-20201226-01",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-01/reference_high.txt",
+      "expected_min": 27.0,
+      "expected_max": 30.0,
+      "actual_score": 27.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "CSJT-20201226-01",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-01/reference_mid.txt",
+      "expected_min": 21.5,
+      "expected_max": 26.5,
+      "actual_score": 21.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "CSJT-20201226-01",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-01/reference_low.txt",
+      "expected_min": 15.0,
+      "expected_max": 20.0,
+      "actual_score": 21.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "CSJT-20201226-02",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-02/reference_high.txt",
+      "expected_min": 30.0,
+      "expected_max": 33.0,
+      "actual_score": 30.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "CSJT-20201226-02",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-02/reference_mid.txt",
+      "expected_min": 23.9,
+      "expected_max": 28.9,
+      "actual_score": 24.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "CSJT-20201226-02",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-02/reference_low.txt",
+      "expected_min": 12.4,
+      "expected_max": 17.4,
+      "actual_score": 22.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "CSJT-20201226-03",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-03/reference_high.txt",
+      "expected_min": 29.0,
+      "expected_max": 32.0,
+      "actual_score": 32.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "CSJT-20201226-03",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-03/reference_mid.txt",
+      "expected_min": 20.9,
+      "expected_max": 25.9,
+      "actual_score": 26.5,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "CSJT-20201226-03",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-03/reference_low.txt",
+      "expected_min": 11.5,
+      "expected_max": 16.5,
+      "actual_score": 22.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200816-01",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-01/reference_high.txt",
+      "expected_min": 27.0,
+      "expected_max": 30.0,
+      "actual_score": 27.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200816-01",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-01/reference_mid.txt",
+      "expected_min": 21.5,
+      "expected_max": 26.5,
+      "actual_score": 25.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200816-01",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-01/reference_low.txt",
+      "expected_min": 8.6,
+      "expected_max": 13.6,
+      "actual_score": 21.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200816-02",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-02/reference_high.txt",
+      "expected_min": 32.0,
+      "expected_max": 35.0,
+      "actual_score": 34.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200816-02",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-02/reference_mid.txt",
+      "expected_min": 25.5,
+      "expected_max": 30.5,
+      "actual_score": 30.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200816-02",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-02/reference_low.txt",
+      "expected_min": 16.2,
+      "expected_max": 21.2,
+      "actual_score": 29.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200816-03",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-03/reference_high.txt",
+      "expected_min": 27.0,
+      "expected_max": 30.0,
+      "actual_score": 29.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200816-03",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-03/reference_mid.txt",
+      "expected_min": 23.9,
+      "expected_max": 26.5,
+      "actual_score": 29.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200816-03",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-03/reference_low.txt",
+      "expected_min": 9.4,
+      "expected_max": 14.4,
+      "actual_score": 16.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200919-01",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-01/reference_high.txt",
+      "expected_min": 27.0,
+      "expected_max": 30.0,
+      "actual_score": 27.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200919-01",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-01/reference_mid.txt",
+      "expected_min": 21.5,
+      "expected_max": 26.5,
+      "actual_score": 22.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200919-01",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-01/reference_low.txt",
+      "expected_min": 7.8,
+      "expected_max": 12.8,
+      "actual_score": 16.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200919-02",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-02/reference_high.txt",
+      "expected_min": 27.0,
+      "expected_max": 30.0,
+      "actual_score": 27.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200919-02",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-02/reference_mid.txt",
+      "expected_min": 18.3,
+      "expected_max": 23.3,
+      "actual_score": 25.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200919-02",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-02/reference_low.txt",
+      "expected_min": 10.6,
+      "expected_max": 15.6,
+      "actual_score": 21.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200919-03",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-03/reference_high.txt",
+      "expected_min": 32.0,
+      "expected_max": 35.0,
+      "actual_score": 32.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200919-03",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-03/reference_mid.txt",
+      "expected_min": 21.6,
+      "expected_max": 26.6,
+      "actual_score": 26.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200919-03",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-03/reference_low.txt",
+      "expected_min": 9.6,
+      "expected_max": 14.6,
+      "actual_score": 25.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200919-JY-01",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-01/reference_high.txt",
+      "expected_min": 27.0,
+      "expected_max": 30.0,
+      "actual_score": 27.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200919-JY-01",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-01/reference_mid.txt",
+      "expected_min": 21.2,
+      "expected_max": 26.2,
+      "actual_score": 25.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200919-JY-01",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-01/reference_low.txt",
+      "expected_min": 7.9,
+      "expected_max": 12.9,
+      "actual_score": 20.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200919-JY-02",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-02/reference_high.txt",
+      "expected_min": 32.0,
+      "expected_max": 35.0,
+      "actual_score": 35.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200919-JY-02",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-02/reference_mid.txt",
+      "expected_min": 21.8,
+      "expected_max": 26.8,
+      "actual_score": 30.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200919-JY-02",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-02/reference_low.txt",
+      "expected_min": 11.5,
+      "expected_max": 16.5,
+      "actual_score": 30.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200919-JY-03",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-03/reference_high.txt",
+      "expected_min": 32.0,
+      "expected_max": 35.0,
+      "actual_score": 32.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200919-JY-03",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-03/reference_mid.txt",
+      "expected_min": 16.0,
+      "expected_max": 21.0,
+      "actual_score": 25.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200919-JY-03",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-03/reference_low.txt",
+      "expected_min": 10.0,
+      "expected_max": 15.0,
+      "actual_score": 22.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200920-01",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-01/reference_high.txt",
+      "expected_min": 32.0,
+      "expected_max": 35.0,
+      "actual_score": 32.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200920-01",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-01/reference_mid.txt",
+      "expected_min": 19.3,
+      "expected_max": 24.3,
+      "actual_score": 27.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200920-01",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-01/reference_low.txt",
+      "expected_min": 9.8,
+      "expected_max": 14.8,
+      "actual_score": 35.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200920-02",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-02/reference_high.txt",
+      "expected_min": 67.0,
+      "expected_max": 70.0,
+      "actual_score": 67.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200920-02",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-02/reference_mid.txt",
+      "expected_min": 30.2,
+      "expected_max": 35.2,
+      "actual_score": 50.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200920-02",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-02/reference_low.txt",
+      "expected_min": 24.6,
+      "expected_max": 29.6,
+      "actual_score": 49.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200920-JY-01",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-01/reference_high.txt",
+      "expected_min": 32.0,
+      "expected_max": 35.0,
+      "actual_score": 32.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200920-JY-01",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-01/reference_mid.txt",
+      "expected_min": 20.9,
+      "expected_max": 25.9,
+      "actual_score": 29.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200920-JY-01",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-01/reference_low.txt",
+      "expected_min": 13.2,
+      "expected_max": 18.2,
+      "actual_score": 25.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200920-JY-02",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-02/reference_high.txt",
+      "expected_min": 32.0,
+      "expected_max": 35.0,
+      "actual_score": 32.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200920-JY-02",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-02/reference_mid.txt",
+      "expected_min": 20.0,
+      "expected_max": 25.0,
+      "actual_score": 10.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200920-JY-02",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-02/reference_low.txt",
+      "expected_min": 12.3,
+      "expected_max": 17.3,
+      "actual_score": 24.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200920-JY-03",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-03/reference_high.txt",
+      "expected_min": 32.0,
+      "expected_max": 35.0,
+      "actual_score": 32.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200920-JY-03",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-03/reference_mid.txt",
+      "expected_min": 14.6,
+      "expected_max": 19.6,
+      "actual_score": 25.5,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200920-JY-03",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-03/reference_low.txt",
+      "expected_min": 10.6,
+      "expected_max": 15.6,
+      "actual_score": 25.5,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200920-XZ-01",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-01/reference_high.txt",
+      "expected_min": 27.0,
+      "expected_max": 30.0,
+      "actual_score": 27.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200920-XZ-01",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-01/reference_mid.txt",
+      "expected_min": 21.5,
+      "expected_max": 26.5,
+      "actual_score": 25.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200920-XZ-01",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-01/reference_low.txt",
+      "expected_min": 9.7,
+      "expected_max": 14.7,
+      "actual_score": 20.3,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200920-XZ-02",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-02/reference_high.txt",
+      "expected_min": 32.0,
+      "expected_max": 35.0,
+      "actual_score": 32.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200920-XZ-02",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-02/reference_mid.txt",
+      "expected_min": 25.5,
+      "expected_max": 30.5,
+      "actual_score": 18.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200920-XZ-02",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-02/reference_low.txt",
+      "expected_min": 17.3,
+      "expected_max": 22.3,
+      "actual_score": 20.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200920-XZ-03",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-03/reference_high.txt",
+      "expected_min": 22.0,
+      "expected_max": 25.0,
+      "actual_score": 25.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200920-XZ-03",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-03/reference_mid.txt",
+      "expected_min": 13.2,
+      "expected_max": 18.2,
+      "actual_score": 13.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200920-XZ-03",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-03/reference_low.txt",
+      "expected_min": 6.8,
+      "expected_max": 11.8,
+      "actual_score": 18.8,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200921-XZ-01",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-01/reference_high.txt",
+      "expected_min": 32.0,
+      "expected_max": 35.0,
+      "actual_score": 35.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200921-XZ-01",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-01/reference_mid.txt",
+      "expected_min": 24.6,
+      "expected_max": 29.6,
+      "actual_score": 25.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200921-XZ-01",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-01/reference_low.txt",
+      "expected_min": 15.6,
+      "expected_max": 20.6,
+      "actual_score": 14.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200921-XZ-02",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-02/reference_high.txt",
+      "expected_min": 32.0,
+      "expected_max": 35.0,
+      "actual_score": 32.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200921-XZ-02",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-02/reference_mid.txt",
+      "expected_min": 21.4,
+      "expected_max": 26.4,
+      "actual_score": 27.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200921-XZ-02",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-02/reference_low.txt",
+      "expected_min": 12.6,
+      "expected_max": 17.6,
+      "actual_score": 24.5,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200921-XZ-03",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-03/reference_high.txt",
+      "expected_min": 22.0,
+      "expected_max": 25.0,
+      "actual_score": 22.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200921-XZ-03",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-03/reference_mid.txt",
+      "expected_min": 12.5,
+      "expected_max": 17.5,
+      "actual_score": 19.5,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200921-XZ-03",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-03/reference_low.txt",
+      "expected_min": 6.5,
+      "expected_max": 11.5,
+      "actual_score": 17.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200922-XZ-01",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-01/reference_high.txt",
+      "expected_min": 27.0,
+      "expected_max": 30.0,
+      "actual_score": 27.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200922-XZ-01",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-01/reference_mid.txt",
+      "expected_min": 19.3,
+      "expected_max": 24.3,
+      "actual_score": 21.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200922-XZ-01",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-01/reference_low.txt",
+      "expected_min": 9.8,
+      "expected_max": 14.8,
+      "actual_score": 21.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200922-XZ-02",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-02/reference_high.txt",
+      "expected_min": 32.0,
+      "expected_max": 35.0,
+      "actual_score": 32.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200922-XZ-02",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-02/reference_mid.txt",
+      "expected_min": 20.4,
+      "expected_max": 25.4,
+      "actual_score": 26.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200922-XZ-02",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-02/reference_low.txt",
+      "expected_min": 11.5,
+      "expected_max": 16.5,
+      "actual_score": 19.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200922-XZ-03",
+      "label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-03/reference_high.txt",
+      "expected_min": 27.0,
+      "expected_max": 30.0,
+      "actual_score": 27.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200922-XZ-03",
+      "label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-03/reference_mid.txt",
+      "expected_min": 19.0,
+      "expected_max": 24.0,
+      "actual_score": 14.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200922-XZ-03",
+      "label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-03/reference_low.txt",
+      "expected_min": 15.5,
+      "expected_max": 20.5,
+      "actual_score": 13.0,
+      "status": "FAIL"
+    }
+  ]
+}

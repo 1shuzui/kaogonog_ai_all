@@ -1,0 +1,287 @@
+{
+  "generated_at": "20260410_195445",
+  "question_ids": [
+    "CS-20201212-01",
+    "CS-20201212-02",
+    "CS-20201212-03",
+    "CSJT-20201226-01",
+    "CSJT-20201226-02",
+    "CSJT-20201226-03",
+    "HN-20200816-01",
+    "HN-20200816-02",
+    "HN-20200816-03",
+    "HN-20200919-01",
+    "HN-20200919-02"
+  ],
+  "summary": {
+    "total": 33,
+    "pass": 17,
+    "fail": 16
+  },
+  "rows": [
+    {
+      "question_id": "CS-20201212-01",
+      "label": "文档高分基准答案",
+      "expected_min": 32.0,
+      "expected_max": 35.0,
+      "actual_score": 32.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "CS-20201212-01",
+      "label": "程序化中档参考答案",
+      "expected_min": 22.7,
+      "expected_max": 27.7,
+      "actual_score": 28.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "CS-20201212-01",
+      "label": "程序化低档参考答案",
+      "expected_min": 18.9,
+      "expected_max": 23.9,
+      "actual_score": 24.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "CS-20201212-02",
+      "label": "文档高分基准答案",
+      "expected_min": 32.0,
+      "expected_max": 35.0,
+      "actual_score": 32.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "CS-20201212-02",
+      "label": "程序化中档参考答案",
+      "expected_min": 20.5,
+      "expected_max": 25.5,
+      "actual_score": 26.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "CS-20201212-02",
+      "label": "程序化低档参考答案",
+      "expected_min": 11.8,
+      "expected_max": 16.8,
+      "actual_score": 24.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "CS-20201212-03",
+      "label": "文档高分基准答案",
+      "expected_min": 22.0,
+      "expected_max": 25.0,
+      "actual_score": 22.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "CS-20201212-03",
+      "label": "程序化中档参考答案",
+      "expected_min": 14.6,
+      "expected_max": 19.6,
+      "actual_score": 20.4,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "CS-20201212-03",
+      "label": "程序化低档参考答案",
+      "expected_min": 9.9,
+      "expected_max": 14.9,
+      "actual_score": 20.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "CSJT-20201226-01",
+      "label": "文档高分基准答案",
+      "expected_min": 27.0,
+      "expected_max": 30.0,
+      "actual_score": 27.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "CSJT-20201226-01",
+      "label": "程序化中档参考答案",
+      "expected_min": 21.5,
+      "expected_max": 26.5,
+      "actual_score": 21.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "CSJT-20201226-01",
+      "label": "程序化低档参考答案",
+      "expected_min": 15.0,
+      "expected_max": 20.0,
+      "actual_score": 19.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "CSJT-20201226-02",
+      "label": "文档高分基准答案",
+      "expected_min": 30.0,
+      "expected_max": 33.0,
+      "actual_score": 30.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "CSJT-20201226-02",
+      "label": "程序化中档参考答案",
+      "expected_min": 23.9,
+      "expected_max": 28.9,
+      "actual_score": 24.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "CSJT-20201226-02",
+      "label": "程序化低档参考答案",
+      "expected_min": 12.4,
+      "expected_max": 17.4,
+      "actual_score": 25.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "CSJT-20201226-03",
+      "label": "文档高分基准答案",
+      "expected_min": 29.0,
+      "expected_max": 32.0,
+      "actual_score": 32.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "CSJT-20201226-03",
+      "label": "程序化中档参考答案",
+      "expected_min": 20.9,
+      "expected_max": 25.9,
+      "actual_score": 26.5,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "CSJT-20201226-03",
+      "label": "程序化低档参考答案",
+      "expected_min": 11.5,
+      "expected_max": 16.5,
+      "actual_score": 22.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200816-01",
+      "label": "文档高分基准答案",
+      "expected_min": 27.0,
+      "expected_max": 30.0,
+      "actual_score": 30.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200816-01",
+      "label": "程序化中档参考答案",
+      "expected_min": 21.5,
+      "expected_max": 26.5,
+      "actual_score": 22.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200816-01",
+      "label": "程序化低档参考答案",
+      "expected_min": 8.6,
+      "expected_max": 13.6,
+      "actual_score": 21.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200816-02",
+      "label": "文档高分基准答案",
+      "expected_min": 32.0,
+      "expected_max": 35.0,
+      "actual_score": 33.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200816-02",
+      "label": "程序化中档参考答案",
+      "expected_min": 25.5,
+      "expected_max": 30.5,
+      "actual_score": 30.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200816-02",
+      "label": "程序化低档参考答案",
+      "expected_min": 16.2,
+      "expected_max": 21.2,
+      "actual_score": 31.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200816-03",
+      "label": "文档高分基准答案",
+      "expected_min": 27.0,
+      "expected_max": 30.0,
+      "actual_score": 30.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200816-03",
+      "label": "程序化中档参考答案",
+      "expected_min": 23.9,
+      "expected_max": 26.5,
+      "actual_score": 26.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200816-03",
+      "label": "程序化低档参考答案",
+      "expected_min": 9.4,
+      "expected_max": 14.4,
+      "actual_score": 18.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200919-01",
+      "label": "文档高分基准答案",
+      "expected_min": 27.0,
+      "expected_max": 30.0,
+      "actual_score": 27.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200919-01",
+      "label": "程序化中档参考答案",
+      "expected_min": 21.5,
+      "expected_max": 26.5,
+      "actual_score": 25.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200919-01",
+      "label": "程序化低档参考答案",
+      "expected_min": 7.8,
+      "expected_max": 12.8,
+      "actual_score": 17.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200919-02",
+      "label": "文档高分基准答案",
+      "expected_min": 27.0,
+      "expected_max": 30.0,
+      "actual_score": 27.0,
+      "status": "PASS"
+    },
+    {
+      "question_id": "HN-20200919-02",
+      "label": "程序化中档参考答案",
+      "expected_min": 18.3,
+      "expected_max": 23.3,
+      "actual_score": 25.0,
+      "status": "FAIL"
+    },
+    {
+      "question_id": "HN-20200919-02",
+      "label": "程序化低档参考答案",
+      "expected_min": 10.6,
+      "expected_max": 15.6,
+      "actual_score": 21.0,
+      "status": "FAIL"
+    }
+  ]
+}

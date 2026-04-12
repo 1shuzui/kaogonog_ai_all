@@ -1,0 +1,160 @@
+{
+  "generated_at": "20260408_215227",
+  "question_ids": [
+    "HN-LX-20200606-01"
+  ],
+  "persist": false,
+  "summary": {
+    "total": 8,
+    "pass": 8,
+    "fail": 0,
+    "error": 0,
+    "skip": 0
+  },
+  "rows": [
+    {
+      "question_id": "HN-LX-20200606-01",
+      "sample_label": "偏低样本",
+      "sample_path": "/home/quyu/ai_interview/sample_sets/非高分参考/低分1.txt",
+      "expected_range": "14.0-17.5",
+      "expected_band": "低分/偏低",
+      "actual_score": 16.1,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "最终分数采用规则校准层纠偏：模型总分 20.0 -> 规则总分 16.1。",
+        "模型总分 20.0 与维度汇总 16.1 不一致，已采用维度汇总。",
+        "分析有一定覆盖，但口语化、岗位化不足。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-LX-20200606-01",
+      "sample_label": "口语化低样本",
+      "sample_path": "/home/quyu/ai_interview/sample_sets/非高分参考/18分左右.txt",
+      "expected_range": "13.0-16.0",
+      "expected_band": "低分/偏低",
+      "actual_score": 14.0,
+      "actual_band": "低分/偏低",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "规则校准将总分下限抬至 14.0，避免高内容强度答案被模型均分化压低。",
+        "口语化较重，结构和措施层次都偏弱。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-LX-20200606-01",
+      "sample_label": "中档样本",
+      "sample_path": "/home/quyu/ai_interview/sample_sets/非高分参考/21分左右.txt",
+      "expected_range": "18.0-21.0",
+      "expected_band": "基本合格",
+      "actual_score": 19.0,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "最终分数采用规则校准层纠偏：模型总分 14.0 -> 规则总分 19.0。",
+        "规则校准将总分下限抬至 19.0，避免高内容强度答案被模型均分化压低。",
+        "模型总分 14.0 与维度汇总 19.0 不一致，已采用维度汇总。",
+        "整体较完整，但本土化和岗位化不足。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-LX-20200606-01",
+      "sample_label": "中上样本",
+      "sample_path": "/home/quyu/ai_interview/sample_sets/非高分参考/中低分1.txt",
+      "expected_range": "20.0-22.5",
+      "expected_band": "通用高分",
+      "actual_score": 22.0,
+      "actual_band": "通用高分",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 而忽视了直播带货背后需要完善的产品供应链、物流体系、品牌建设等核心工作",
+        "最终分数采用规则校准层纠偏：模型总分 20.0 -> 规则总分 22.0。",
+        "规则校准将总分上限压至 22.0，避免口语化或浅层答案被模型虚高。",
+        "结构较完整，提到河南，但离省直高分仍有差距。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-LX-20200606-01",
+      "sample_label": "通用高分样本",
+      "sample_path": "/home/quyu/ai_interview/sample_sets/通用高分/26分.txt",
+      "expected_range": "20.0-22.5",
+      "expected_band": "通用高分",
+      "actual_score": 20.0,
+      "actual_band": "通用高分",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "最终分数采用规则校准层纠偏：模型总分 15.0 -> 规则总分 20.0。",
+        "规则校准将总分下限抬至 20.0，避免高内容强度答案被模型均分化压低。",
+        "模型总分 15.0 与维度汇总 20.0 不一致，已采用维度汇总。",
+        "通用分析能力强，但缺少河南省情和省直机关表达。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-LX-20200606-01",
+      "sample_label": "通用高分标杆",
+      "sample_path": "/home/quyu/ai_interview/sample_sets/通用高分/28分.txt",
+      "expected_range": "23.0-25.5",
+      "expected_band": "河南省直高分",
+      "actual_score": 24.0,
+      "actual_band": "河南省直高分",
+      "status": "PASS",
+      "validation_issue_count": 8,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 往往基于当地特色产业的成熟度、产品供应链的完善、县长个人特质与网络传播的契合度等多重因素",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 而非扎实地夯实产品品质、品牌建设和产业链基础",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 政策重点更应放在培育本土电商人才、完善物流冷链基础设施、加强区域公共品牌建设、建立产品质量追溯体系等基础上",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 对于有基础、有意愿、有特色的县",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 取代简单的直播场次和销售额排名",
+        "第一阶段证据无法在原文中命中，已忽略: 主责主业错位、表演式助农、授人以渔、数字竞赛",
+        "最终分数采用规则校准层纠偏：模型总分 20.0 -> 规则总分 24.0。",
+        "模型总分 20.0 与维度汇总 24.0 不一致，已采用维度汇总。",
+        "内容和措施更成熟，语言规范度更高。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-LX-20200606-01",
+      "sample_label": "河南省直高分样本",
+      "sample_path": "/home/quyu/ai_interview/sample_sets/河南省直高分/中高分1.txt",
+      "expected_range": "26.0-28.5",
+      "expected_band": "河南省直高分",
+      "actual_score": 27.8,
+      "actual_band": "河南省直高分",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "最终分数采用规则校准层纠偏：模型总分 23.0 -> 规则总分 27.8。",
+        "模型总分 23.0 与维度汇总 27.8 不一致，已采用维度汇总。",
+        "省情、岗位视角和统筹协调表达已较完整。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-LX-20200606-01",
+      "sample_label": "河南省直标杆样本",
+      "sample_path": "/home/quyu/ai_interview/sample_sets/河南省直高分/标准1.txt",
+      "expected_range": "27.0-30.0",
+      "expected_band": "河南省直高分",
+      "actual_score": 28.5,
+      "actual_band": "河南省直高分",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "最终分数采用规则校准层纠偏：模型总分 20.0 -> 规则总分 28.5。",
+        "模型总分 20.0 与维度汇总 28.5 不一致，已采用维度汇总。",
+        "当前题目的高分标杆答案。"
+      ],
+      "error": ""
+    }
+  ]
+}

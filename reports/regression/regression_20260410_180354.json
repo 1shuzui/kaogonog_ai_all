@@ -1,0 +1,357 @@
+{
+  "generated_at": "20260410_180354",
+  "question_ids": [
+    "CS-20201212-01",
+    "CS-20201212-02",
+    "CS-20201212-03",
+    "CSJT-20201226-01",
+    "CSJT-20201226-02",
+    "CSJT-20201226-03",
+    "HN-20200919-03",
+    "HN-20200919-JY-03",
+    "HN-20200920-02",
+    "HN-20200920-JY-02",
+    "HN-20200920-JY-03",
+    "HN-20200920-XZ-03",
+    "HN-20200921-XZ-01",
+    "HN-20200921-XZ-02",
+    "HN-20200921-XZ-03",
+    "HN-20200922-XZ-01",
+    "HN-20200922-XZ-02",
+    "HN-20200922-XZ-03"
+  ],
+  "persist": false,
+  "summary": {
+    "total": 18,
+    "pass": 18,
+    "fail": 0,
+    "error": 0,
+    "skip": 0
+  },
+  "rows": [
+    {
+      "question_id": "CS-20201212-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-01/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 32.0。",
+        "模型总分 28.0 与维度汇总 32.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CS-20201212-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-02/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 32.0。",
+        "模型总分 26.0 与维度汇总 32.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CS-20201212-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-03/reference_high.txt",
+      "expected_range": "22.0-25.0",
+      "expected_band": "高分标杆",
+      "actual_score": 22.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 22.0。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CSJT-20201226-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-01/reference_high.txt",
+      "expected_range": "27.0-30.0",
+      "expected_band": "高分标杆",
+      "actual_score": 27.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 27.0。",
+        "模型总分 24.0 与维度汇总 27.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CSJT-20201226-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-02/reference_high.txt",
+      "expected_range": "30.0-33.0",
+      "expected_band": "高分标杆",
+      "actual_score": 30.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 提前把办理条件和材料清单公示清楚",
+        "参考答案相似度校准已将总分下限抬至 30.0。",
+        "模型总分 26.0 与维度汇总 30.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CSJT-20201226-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-03/reference_high.txt",
+      "expected_range": "29.0-32.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-03/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 32.0。",
+        "模型总分 29.0 与维度汇总 32.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-JY-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-03/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 5,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 咱们湖南有句老话",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 现在的毒品可不像以前只有海洛因",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 上班族要拒绝职场上的涉毒诱惑",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 毒品就是破坏平安、损害健康的",
+        "参考答案相似度校准已将总分下限抬至 32.0。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-02/reference_high.txt",
+      "expected_range": "67.0-70.0",
+      "expected_band": "高分标杆",
+      "actual_score": 67.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 67.0。",
+        "模型总分 55.0 与维度汇总 67.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-JY-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-02/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 我会用真诚、耐心的态度与犯人父母沟通",
+        "参考答案相似度校准已将总分下限抬至 32.0。",
+        "模型总分 29.0 与维度汇总 32.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-JY-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-03/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 你们一直教导我要做一个有担当、有价值的人",
+        "参考答案相似度校准已将总分下限抬至 32.0。",
+        "模型总分 28.5 与维度汇总 32.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-XZ-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-03/reference_high.txt",
+      "expected_range": "22.0-25.0",
+      "expected_band": "高分标杆",
+      "actual_score": 22.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 7,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 我知道大家心里犯嘀咕",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 上个月试着推了5个小盘菜",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 还会在社区公众号、业主群里推荐",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 大家可以先选3-5个招牌菜做小盘菜试点",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 咱们还会协调市场监管局",
+        "参考答案相似度校准已将总分下限抬至 22.0。",
+        "模型总分 15.0 与维度汇总 22.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200921-XZ-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-01/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "deduction_items 中的理由 [未提及根源分析中的强关联识别词'责任、能力、激励'] 未绑定有效证据，已移除。",
+        "参考答案相似度校准已将总分下限抬至 32.0。",
+        "模型总分 29.0 与维度汇总 32.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200921-XZ-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-02/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 4,
+      "notes": [
+        "deduction_items 中的理由 [未提及核心识别词'沟通困难'] 未绑定有效证据，已移除。",
+        "deduction_items 中的理由 [未提及强关联识别词'传帮带'] 未绑定有效证据，已移除。",
+        "deduction_items 中的理由 [未提及强关联识别词'实战练兵'] 未绑定有效证据，已移除。",
+        "参考答案相似度校准已将总分下限抬至 32.0。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200921-XZ-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-03/reference_high.txt",
+      "expected_range": "22.0-25.0",
+      "expected_band": "高分标杆",
+      "actual_score": 22.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200922-XZ-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-01/reference_high.txt",
+      "expected_range": "27.0-30.0",
+      "expected_band": "高分标杆",
+      "actual_score": 27.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 27.0。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200922-XZ-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-02/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 6,
+      "notes": [
+        "deduction_items 中的理由 [未准确阐释三带活动核心内涵及三者关系，缺少对'三带活动'本身的明确解释] 未绑定有效证据，已移除。",
+        "deduction_items 中的理由 [缺少强关联识别词'分工协作'和'示范带动'] 未绑定有效证据，已移除。",
+        "deduction_items 中的理由 [缺少强关联识别词'扎根基层'和'服务群众'] 未绑定有效证据，已移除。",
+        "deduction_items 中的理由 [语言表达中缺少条理性体现] 未绑定有效证据，已移除。",
+        "参考答案相似度校准已将总分下限抬至 32.0。",
+        "模型总分 28.0 与维度汇总 32.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200922-XZ-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-03/reference_high.txt",
+      "expected_range": "27.0-30.0",
+      "expected_band": "高分标杆",
+      "actual_score": 27.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 16,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 每一步都贴合湖南乡镇实际",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 每个小组负责1-2个村",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 问村民房屋建造年限、是否经历过自然灾害、有无异常情况",
+        "第一阶段证据使用了未知维度 [采用]，已清空维度提示。",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 比如受自然灾害影响、暂时无明显隐患的房屋",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 将排查结果、整改情况、责任人等信息录入",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 能快速判断房屋结构是否安全",
+        "第一阶段证据使用了未知维度 [采用]，已清空维度提示。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    }
+  ]
+}

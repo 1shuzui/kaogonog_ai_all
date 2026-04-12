@@ -1,0 +1,10 @@
+fastapi
+openai
+openai-whisper
+opencv-python-headless
+pydantic
+pydantic-settings
+python-multipart
+SQLAlchemy
+torch
+uvicorn[standard]

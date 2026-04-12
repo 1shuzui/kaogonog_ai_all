@@ -1,0 +1,25 @@
+@import './variables.less';
+
+// 平板
+@media (max-width: 768px) {
+  .page-container {
+    padding: 12px;
+  }
+}
+
+// 手机
+@media (max-width: 576px) {
+  .page-container {
+    padding: 10px;
+  }
+  .hide-on-mobile {
+    display: none !important;
+  }
+}
+
+// 超小屏
+@media (max-width: 375px) {
+  html {
+    font-size: 13px;
+  }
+}

@@ -1,0 +1,1448 @@
+{
+  "generated_at": "20260410_193206",
+  "question_ids": [
+    "CS-20201212-01",
+    "CS-20201212-02",
+    "CS-20201212-03",
+    "CSJT-20201226-01",
+    "CSJT-20201226-02",
+    "CSJT-20201226-03",
+    "HN-20200816-01",
+    "HN-20200816-02",
+    "HN-20200816-03",
+    "HN-20200919-01",
+    "HN-20200919-02",
+    "HN-20200919-03",
+    "HN-20200919-JY-01",
+    "HN-20200919-JY-02",
+    "HN-20200919-JY-03",
+    "HN-20200920-01",
+    "HN-20200920-02",
+    "HN-20200920-JY-01",
+    "HN-20200920-JY-02",
+    "HN-20200920-JY-03",
+    "HN-20200920-XZ-01",
+    "HN-20200920-XZ-02",
+    "HN-20200920-XZ-03",
+    "HN-20200921-XZ-01",
+    "HN-20200921-XZ-02",
+    "HN-20200921-XZ-03",
+    "HN-20200922-XZ-01",
+    "HN-20200922-XZ-02",
+    "HN-20200922-XZ-03"
+  ],
+  "persist": false,
+  "summary": {
+    "total": 87,
+    "pass": 87,
+    "fail": 0,
+    "error": 0,
+    "skip": 0
+  },
+  "rows": [
+    {
+      "question_id": "CS-20201212-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-01/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.9,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CS-20201212-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-01/reference_mid.txt",
+      "expected_range": "22.7-27.7",
+      "expected_band": "中高档",
+      "actual_score": 25.2,
+      "actual_band": "中高档",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=hybrid，句数=10，截断=160，关键词削弱=medium。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CS-20201212-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-01/reference_low.txt",
+      "expected_range": "18.9-23.9",
+      "expected_band": "基本合格",
+      "actual_score": 21.4,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化降档生成；策略=hybrid，句数=9，截断=90，关键词削弱=medium，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CS-20201212-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-02/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.9,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CS-20201212-02",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-02/reference_mid.txt",
+      "expected_range": "20.5-25.5",
+      "expected_band": "基本合格",
+      "actual_score": 23.0,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=spread，句数=12，截断=160，关键词削弱=medium。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CS-20201212-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-02/reference_low.txt",
+      "expected_range": "11.8-16.8",
+      "expected_band": "低分/偏弱",
+      "actual_score": 14.3,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "最终结果未保留到可核验的直接引语证据。",
+        "基于高分答案程序化降档生成；策略=dialogue_focus，句数=12，截断=160，关键词削弱=heavy，口语化=否。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CS-20201212-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-03/reference_high.txt",
+      "expected_range": "22.0-25.0",
+      "expected_band": "高分标杆",
+      "actual_score": 23.5,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CS-20201212-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-03/reference_mid.txt",
+      "expected_range": "14.6-19.6",
+      "expected_band": "基本合格",
+      "actual_score": 17.1,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=hybrid，句数=17，截断=160，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CS-20201212-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-03/reference_low.txt",
+      "expected_range": "9.9-14.9",
+      "expected_band": "低分/偏弱",
+      "actual_score": 12.4,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化降档生成；策略=leading，句数=16，截断=120，关键词削弱=medium，口语化=否。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CSJT-20201226-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-01/reference_high.txt",
+      "expected_range": "27.0-30.0",
+      "expected_band": "高分标杆",
+      "actual_score": 28.2,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CSJT-20201226-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-01/reference_mid.txt",
+      "expected_range": "21.5-26.5",
+      "expected_band": "中高档",
+      "actual_score": 24.0,
+      "actual_band": "中高档",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=spread，句数=8，截断=160，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CSJT-20201226-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-01/reference_low.txt",
+      "expected_range": "15.0-20.0",
+      "expected_band": "基本合格",
+      "actual_score": 17.5,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化降档生成；策略=dialogue_focus，句数=10，截断=90，关键词削弱=medium，口语化=否。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CSJT-20201226-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-02/reference_high.txt",
+      "expected_range": "30.0-33.0",
+      "expected_band": "高分标杆",
+      "actual_score": 31.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CSJT-20201226-02",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-02/reference_mid.txt",
+      "expected_range": "23.9-28.9",
+      "expected_band": "中高档",
+      "actual_score": 26.4,
+      "actual_band": "中高档",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=markers，句数=11，截断=160，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CSJT-20201226-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-02/reference_low.txt",
+      "expected_range": "12.4-17.4",
+      "expected_band": "低分/偏弱",
+      "actual_score": 14.9,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化降档生成；策略=analysis_focus，句数=9，截断=120，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CSJT-20201226-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-03/reference_high.txt",
+      "expected_range": "29.0-32.0",
+      "expected_band": "高分标杆",
+      "actual_score": 30.1,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CSJT-20201226-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-03/reference_mid.txt",
+      "expected_range": "20.9-25.9",
+      "expected_band": "中高档",
+      "actual_score": 23.4,
+      "actual_band": "中高档",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=markers，句数=17，截断=160，关键词削弱=medium。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CSJT-20201226-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-03/reference_low.txt",
+      "expected_range": "11.5-16.5",
+      "expected_band": "低分/偏弱",
+      "actual_score": 14.0,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "最终结果未保留到可核验的直接引语证据。",
+        "基于高分答案程序化降档生成；策略=leading，句数=10，截断=160，关键词削弱=heavy，口语化=否。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200816-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-01/reference_high.txt",
+      "expected_range": "27.0-30.0",
+      "expected_band": "高分标杆",
+      "actual_score": 29.2,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200816-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-01/reference_mid.txt",
+      "expected_range": "21.5-26.5",
+      "expected_band": "中高档",
+      "actual_score": 24.0,
+      "actual_band": "中高档",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=spread，句数=13，截断=160，关键词削弱=light。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200816-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-01/reference_low.txt",
+      "expected_range": "8.6-13.6",
+      "expected_band": "低分/偏弱",
+      "actual_score": 11.1,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化降档生成；策略=dialogue_focus，句数=10，截断=90，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200816-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-02/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.9,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200816-02",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-02/reference_mid.txt",
+      "expected_range": "25.5-30.5",
+      "expected_band": "中高档",
+      "actual_score": 28.0,
+      "actual_band": "中高档",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=spread，句数=20，截断=160，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200816-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-02/reference_low.txt",
+      "expected_range": "16.2-21.2",
+      "expected_band": "低分/偏弱",
+      "actual_score": 18.7,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化降档生成；策略=hybrid，句数=11，截断=120，关键词削弱=medium，口语化=否。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200816-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-03/reference_high.txt",
+      "expected_range": "27.0-30.0",
+      "expected_band": "高分标杆",
+      "actual_score": 30.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200816-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-03/reference_mid.txt",
+      "expected_range": "23.9-26.5",
+      "expected_band": "中高档",
+      "actual_score": 26.4,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=leading，句数=12，截断=220，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200816-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-03/reference_low.txt",
+      "expected_range": "9.4-14.4",
+      "expected_band": "低分/偏弱",
+      "actual_score": 11.9,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化降档生成；策略=leading，句数=7，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-01/reference_high.txt",
+      "expected_range": "27.0-30.0",
+      "expected_band": "高分标杆",
+      "actual_score": 28.2,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-01/reference_mid.txt",
+      "expected_range": "21.5-26.5",
+      "expected_band": "中高档",
+      "actual_score": 24.0,
+      "actual_band": "中高档",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=spread，句数=17，截断=160，关键词削弱=medium。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-01/reference_low.txt",
+      "expected_range": "7.8-12.8",
+      "expected_band": "低分/偏弱",
+      "actual_score": 10.3,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化降档生成；策略=spread，句数=12，截断=220，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-02/reference_high.txt",
+      "expected_range": "27.0-30.0",
+      "expected_band": "高分标杆",
+      "actual_score": 28.2,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-02",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-02/reference_mid.txt",
+      "expected_range": "18.3-23.3",
+      "expected_band": "基本合格",
+      "actual_score": 20.8,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=markers，句数=12，截断=220，关键词削弱=medium。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-02/reference_low.txt",
+      "expected_range": "10.6-15.6",
+      "expected_band": "低分/偏弱",
+      "actual_score": 13.1,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "证据包为空，第二阶段评分将只能做极保守判断。",
+        "最终结果未保留到可核验的直接引语证据。",
+        "基于高分答案程序化降档生成；策略=spread，句数=14，截断=90，关键词削弱=heavy，口语化=否。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-03/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.9,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-03/reference_mid.txt",
+      "expected_range": "21.6-26.6",
+      "expected_band": "基本合格",
+      "actual_score": 24.1,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=hybrid，句数=7，截断=160，关键词削弱=medium。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-03/reference_low.txt",
+      "expected_range": "9.6-14.6",
+      "expected_band": "低分/偏弱",
+      "actual_score": 12.1,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化降档生成；策略=leading，句数=6，截断=120，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-JY-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-01/reference_high.txt",
+      "expected_range": "27.0-30.0",
+      "expected_band": "高分标杆",
+      "actual_score": 28.2,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-JY-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-01/reference_mid.txt",
+      "expected_range": "21.2-26.2",
+      "expected_band": "中高档",
+      "actual_score": 23.7,
+      "actual_band": "中高档",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=hybrid，句数=10，截断=160，关键词削弱=medium。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-JY-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-01/reference_low.txt",
+      "expected_range": "7.9-12.9",
+      "expected_band": "低分/偏弱",
+      "actual_score": 10.4,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化降档生成；策略=dialogue_focus，句数=8，截断=90，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-JY-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-02/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.9,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-JY-02",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-02/reference_mid.txt",
+      "expected_range": "21.8-26.8",
+      "expected_band": "基本合格",
+      "actual_score": 24.3,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=leading，句数=11，截断=220，关键词削弱=medium。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-JY-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-02/reference_low.txt",
+      "expected_range": "11.5-16.5",
+      "expected_band": "低分/偏弱",
+      "actual_score": 14.0,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化降档生成；策略=analysis_focus，句数=8，截断=120，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-JY-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-03/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.9,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-JY-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-03/reference_mid.txt",
+      "expected_range": "16.0-21.0",
+      "expected_band": "低分/偏弱",
+      "actual_score": 18.5,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=hybrid，句数=14，截断=160，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-JY-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-03/reference_low.txt",
+      "expected_range": "10.0-15.0",
+      "expected_band": "低分/偏弱",
+      "actual_score": 12.5,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化降档生成；策略=hybrid，句数=9，截断=90，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-01/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.9,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-01/reference_mid.txt",
+      "expected_range": "19.3-24.3",
+      "expected_band": "基本合格",
+      "actual_score": 21.8,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=spread，句数=24，截断=160，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-01/reference_low.txt",
+      "expected_range": "9.8-14.8",
+      "expected_band": "低分/偏弱",
+      "actual_score": 12.3,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "最终结果未保留到可核验的直接引语证据。",
+        "基于高分答案程序化降档生成；策略=spread，句数=19，截断=90，关键词削弱=heavy，口语化=否。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-02/reference_high.txt",
+      "expected_range": "67.0-70.0",
+      "expected_band": "高分标杆",
+      "actual_score": 67.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "参考答案相似度校准已将总分下限抬至 67.0。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-02",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-02/reference_mid.txt",
+      "expected_range": "30.2-35.2",
+      "expected_band": "低分/偏弱",
+      "actual_score": 32.7,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=leading，句数=15，截断=160，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-02/reference_low.txt",
+      "expected_range": "24.6-29.6",
+      "expected_band": "低分/偏弱",
+      "actual_score": 27.1,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "最终结果未保留到可核验的直接引语证据。",
+        "基于高分答案程序化降档生成；策略=leading，句数=10，截断=90，关键词削弱=heavy，口语化=否。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-JY-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-01/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.9,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-JY-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-01/reference_mid.txt",
+      "expected_range": "20.9-25.9",
+      "expected_band": "基本合格",
+      "actual_score": 23.4,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=markers，句数=11，截断=220，关键词削弱=light。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-JY-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-01/reference_low.txt",
+      "expected_range": "13.2-18.2",
+      "expected_band": "低分/偏弱",
+      "actual_score": 15.7,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化降档生成；策略=analysis_focus，句数=6，截断=90，关键词削弱=medium，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-JY-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-02/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.9,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-JY-02",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-02/reference_mid.txt",
+      "expected_range": "20.0-25.0",
+      "expected_band": "基本合格",
+      "actual_score": 22.5,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=hybrid，句数=10，截断=160，关键词削弱=medium。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-JY-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-02/reference_low.txt",
+      "expected_range": "12.3-17.3",
+      "expected_band": "低分/偏弱",
+      "actual_score": 14.8,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化降档生成；策略=analysis_focus，句数=6，截断=120，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-JY-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-03/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.9,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-JY-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-03/reference_mid.txt",
+      "expected_range": "14.6-19.6",
+      "expected_band": "低分/偏弱",
+      "actual_score": 17.1,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=leading，句数=15，截断=160，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-JY-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-03/reference_low.txt",
+      "expected_range": "10.6-15.6",
+      "expected_band": "低分/偏弱",
+      "actual_score": 13.1,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "最终结果未保留到可核验的直接引语证据。",
+        "基于高分答案程序化降档生成；策略=analysis_focus，句数=9，截断=120，关键词削弱=heavy，口语化=否。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-XZ-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-01/reference_high.txt",
+      "expected_range": "27.0-30.0",
+      "expected_band": "高分标杆",
+      "actual_score": 28.2,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-XZ-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-01/reference_mid.txt",
+      "expected_range": "21.5-26.5",
+      "expected_band": "中高档",
+      "actual_score": 24.0,
+      "actual_band": "中高档",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=hybrid，句数=54，截断=160，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-XZ-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-01/reference_low.txt",
+      "expected_range": "9.7-14.7",
+      "expected_band": "低分/偏弱",
+      "actual_score": 12.2,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "证据包为空，第二阶段评分将只能做极保守判断。",
+        "最终结果未保留到可核验的直接引语证据。",
+        "基于高分答案程序化降档生成；策略=analysis_focus，句数=33，截断=90，关键词削弱=heavy，口语化=否。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-XZ-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-02/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.9,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-XZ-02",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-02/reference_mid.txt",
+      "expected_range": "25.5-30.5",
+      "expected_band": "中高档",
+      "actual_score": 28.0,
+      "actual_band": "中高档",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=leading，句数=15，截断=160，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-XZ-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-02/reference_low.txt",
+      "expected_range": "17.3-22.3",
+      "expected_band": "基本合格",
+      "actual_score": 19.8,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化降档生成；策略=hybrid，句数=10，截断=90，关键词削弱=medium，口语化=否。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-XZ-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-03/reference_high.txt",
+      "expected_range": "22.0-25.0",
+      "expected_band": "高分标杆",
+      "actual_score": 23.5,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-XZ-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-03/reference_mid.txt",
+      "expected_range": "13.2-18.2",
+      "expected_band": "基本合格",
+      "actual_score": 15.7,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=leading，句数=12，截断=160，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-XZ-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-03/reference_low.txt",
+      "expected_range": "6.8-11.8",
+      "expected_band": "低分/偏弱",
+      "actual_score": 9.3,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化降档生成；策略=analysis_focus，句数=6，截断=160，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200921-XZ-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-01/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.9,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200921-XZ-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-01/reference_mid.txt",
+      "expected_range": "24.6-29.6",
+      "expected_band": "中高档",
+      "actual_score": 27.1,
+      "actual_band": "中高档",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=hybrid，句数=11，截断=160，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200921-XZ-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-01/reference_low.txt",
+      "expected_range": "15.6-20.6",
+      "expected_band": "低分/偏弱",
+      "actual_score": 18.1,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化降档生成；策略=analysis_focus，句数=9，截断=90，关键词削弱=medium，口语化=否。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200921-XZ-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-02/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.9,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200921-XZ-02",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-02/reference_mid.txt",
+      "expected_range": "21.4-26.4",
+      "expected_band": "基本合格",
+      "actual_score": 23.9,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=hybrid，句数=15，截断=160，关键词削弱=medium。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200921-XZ-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-02/reference_low.txt",
+      "expected_range": "12.6-17.6",
+      "expected_band": "低分/偏弱",
+      "actual_score": 15.1,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化降档生成；策略=analysis_focus，句数=12，截断=90，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200921-XZ-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-03/reference_high.txt",
+      "expected_range": "22.0-25.0",
+      "expected_band": "高分标杆",
+      "actual_score": 23.5,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200921-XZ-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-03/reference_mid.txt",
+      "expected_range": "12.5-17.5",
+      "expected_band": "基本合格",
+      "actual_score": 15.0,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=markers，句数=19，截断=160，关键词削弱=medium。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200921-XZ-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-03/reference_low.txt",
+      "expected_range": "6.5-11.5",
+      "expected_band": "低分/偏弱",
+      "actual_score": 9.0,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化降档生成；策略=leading，句数=10，截断=120，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200922-XZ-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-01/reference_high.txt",
+      "expected_range": "27.0-30.0",
+      "expected_band": "高分标杆",
+      "actual_score": 28.2,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200922-XZ-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-01/reference_mid.txt",
+      "expected_range": "19.3-24.3",
+      "expected_band": "中高档",
+      "actual_score": 21.8,
+      "actual_band": "中高档",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=leading，句数=13，截断=160，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200922-XZ-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-01/reference_low.txt",
+      "expected_range": "9.8-14.8",
+      "expected_band": "低分/偏弱",
+      "actual_score": 12.3,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "证据包为空，第二阶段评分将只能做极保守判断。",
+        "最终结果未保留到可核验的直接引语证据。",
+        "基于高分答案程序化降档生成；策略=spread，句数=10，截断=90，关键词削弱=heavy，口语化=否。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200922-XZ-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-02/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.9,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200922-XZ-02",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-02/reference_mid.txt",
+      "expected_range": "20.4-25.4",
+      "expected_band": "基本合格",
+      "actual_score": 22.9,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=leading，句数=17，截断=160，关键词削弱=medium。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200922-XZ-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-02/reference_low.txt",
+      "expected_range": "11.5-16.5",
+      "expected_band": "低分/偏弱",
+      "actual_score": 14.0,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化降档生成；策略=leading，句数=11，截断=90，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200922-XZ-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-03/reference_high.txt",
+      "expected_range": "27.0-30.0",
+      "expected_band": "高分标杆",
+      "actual_score": 28.2,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200922-XZ-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-03/reference_mid.txt",
+      "expected_range": "19.0-24.0",
+      "expected_band": "中高档",
+      "actual_score": 21.5,
+      "actual_band": "中高档",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=spread，句数=15，截断=160，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200922-XZ-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/ai_interview/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-03/reference_low.txt",
+      "expected_range": "15.5-20.5",
+      "expected_band": "基本合格",
+      "actual_score": 18.0,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "LLM 客户端未初始化，已回退到确定性证据评分。",
+        "基于高分答案程序化降档生成；策略=analysis_focus，句数=10，截断=90，关键词削弱=medium，口语化=否。"
+      ],
+      "error": ""
+    }
+  ]
+}
