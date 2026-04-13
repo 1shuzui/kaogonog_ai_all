@@ -37,9 +37,9 @@ export const EXAM_STATUS = {
   COMPLETED: 'completed'
 }
 
-// 评级定义
+// 评级定义（公考面试四档配色）
 export const GRADE_CONFIG = {
-  A: { label: '优秀', color: '#389E0D', min: 90 },
+  A: { label: '优秀', color: '#389E0D', min: 85 },
   B: { label: '良好', color: '#1B5FAA', min: 75 },
   C: { label: '中等', color: '#D48806', min: 60 },
   D: { label: '待提升', color: '#CF1322', min: 0 }
@@ -47,7 +47,7 @@ export const GRADE_CONFIG = {
 
 export function getGrade(score, maxScore = 100) {
   const percent = (score / maxScore) * 100
-  if (percent >= 90) return GRADE_CONFIG.A
+  if (percent >= 85) return GRADE_CONFIG.A
   if (percent >= 75) return GRADE_CONFIG.B
   if (percent >= 60) return GRADE_CONFIG.C
   return GRADE_CONFIG.D

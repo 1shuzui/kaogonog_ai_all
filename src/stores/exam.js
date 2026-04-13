@@ -14,6 +14,7 @@ export const useExamStore = defineStore('exam', {
     scoringResult: null,
     answers: [],
     deviceReady: false,
+    videoEnabled: true,
     // 模拟面试模式
     mockMode: false,
     examStartTime: null,
@@ -96,7 +97,8 @@ export const useExamStore = defineStore('exam', {
         this.submitStep = 'scoring'
         const result = await evaluateAnswer({
           questionId: this.currentQuestion.id,
-          transcript
+          transcript,
+          examId: this.examId
         })
         this.scoringResult = result
 
@@ -145,6 +147,10 @@ export const useExamStore = defineStore('exam', {
 
     setDeviceReady(ready) {
       this.deviceReady = ready
+    },
+
+    setVideoEnabled(enabled) {
+      this.videoEnabled = enabled
     }
   }
 })

@@ -12,7 +12,7 @@
         class="score-ring__progress" />
     </svg>
     <div class="score-ring__content">
-      <div class="score-ring__score">{{ score }}</div>
+      <div class="score-ring__score" :style="{ color: activeColor }">{{ score }}</div>
       <div class="score-ring__label" v-if="label">{{ label }}</div>
     </div>
   </div>
@@ -64,8 +64,8 @@ const ringStyle = computed(() => ({
 .score-ring__score {
   font-size: 24px;
   font-weight: 700;
-  color: #1A1A2E;
   line-height: 1;
+  transition: color 0.3s ease;
 }
 
 .score-ring__label {

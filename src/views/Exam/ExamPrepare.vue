@@ -221,6 +221,8 @@ function confirmDevice() {
 
 async function enterExam() {
   recorder.destroyStream()
+  // 保存视频模式到 store，供 ExamRoom 使用
+  examStore.setVideoEnabled(videoEnabled.value)
   let questions
   const source = route.query.source
   const recommendedId = route.query.questionId

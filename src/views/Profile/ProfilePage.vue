@@ -112,9 +112,20 @@ const userInitial = computed(() => {
 })
 
 onMounted(async () => {
-  await userStore.loadProvinces()
-  await userStore.loadUserInfo()
-  await historyStore.fetchStats()
+  try {
+    await userStore.loadProvinces()
+  } catch {}
+  try {
+    await userStore.loadUserInfo()
+  } catch (e) {
+    if (e?.response?.status === 401) {
+      router.push('/login')
+      return
+    }
+  }
+  try {
+    await historyStore.fetchStats()
+  } catch {}
   Object.assign(preferences, userStore.preferences)
 })
 

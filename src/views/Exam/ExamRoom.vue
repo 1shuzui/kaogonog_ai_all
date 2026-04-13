@@ -20,7 +20,7 @@
       </a-popconfirm>
     </div>
 
-    <!-- 主内容区：题目 + 视频小窗 -->
+    <!-- 主内容区：题目 + 视频 -->
     <div class="exam-room__main">
       <!-- 题目卡片 -->
       <div class="exam-room__question">
@@ -29,21 +29,24 @@
         </a-tag>
         <div class="question-stem">{{ examStore.currentQuestion.stem }}</div>
       </div>
+    </div>
 
-      <!-- 视频预览（准备阶段大预览，答题阶段小窗） -->
-      <div 
-        class="exam-room__video-container"
-        :class="{ 'is-pip': examStore.status === 'answering' || examStore.status === 'submitting' || examStore.status === 'completed' }"
-      >
-        <VideoPreview
-          :stream="stream"
-          :recording="examStore.status === 'answering'"
-          :duration="recorderDuration"
-        />
-        <!-- 准备阶段提示 -->
-        <div v-if="examStore.status === 'preparing'" class="video-hint">
-          准备时间，请思考作答思路
-        </div>
+    <!-- 摄像头预览（始终浮动，准备阶段大一点，答题阶段小窗） -->
+    <div 
+      class="exam-room__camera"
+      :class="{
+        'is-pip': examStore.status === 'answering' || examStore.status === 'submitting' || examStore.status === 'completed',
+        'is-prep': examStore.status === 'preparing' || examStore.status === 'idle'
+      }"
+    >
+      <VideoPreview
+        :stream="stream"
+        :recording="examStore.status === 'answering'"
+        :duration="recorderDuration"
+      />
+      <!-- 准备阶段提示 -->
+      <div v-if="examStore.status === 'preparing'" class="camera-hint">
+        准备时间，请思考作答思路
       </div>
     </div>
 
@@ -112,6 +115,7 @@ import { useExamStore } from '@/stores/exam'
 import { useMediaRecorder } from '@/composables/useMediaRecorder'
 import { useCountdown } from '@/composables/useCountdown'
 import { useNetworkStatus } from '@/composables/useNetworkStatus'
+import { completeExam } from '@/api/exam'
 import { DIMENSIONS, EXAM_STATUS, getGrade } from '@/utils/constants'
 import VideoPreview from '@/components/recording/VideoPreview.vue'
 import AudioWaveform from '@/components/recording/AudioWaveform.vue'
@@ -151,7 +155,14 @@ const gradeLabel = computed(() => {
 })
 
 onMounted(async () => {
-  await recorder.initStream()
+  // 等待上一页面释放摄像头后再初始化，避免设备占用冲突
+  await new Promise(r => setTimeout(r, 300))
+  const s = await recorder.initStream({ videoEnabled: examStore.videoEnabled })
+  if (!s) {
+    // 首次失败，等待后重试一次
+    await new Promise(r => setTimeout(r, 500))
+    await recorder.initStream({ videoEnabled: examStore.videoEnabled })
+  }
   if (examStore.mockMode && examStore.examStartTime) {
     elapsedTimer = setInterval(() => {
       elapsed.value = Math.floor((Date.now() - examStore.examStartTime) / 1000)
@@ -219,19 +230,37 @@ function onNext() {
   }
 }
 
-function onFinish() {
+async function onFinish() {
   const examId = examStore.examId
   if (!examId) {
     message.error('考试数据异常，返回首页')
     router.push('/')
     return
   }
+  // 调用完成考试接口，保存历史记录
+  try {
+    await completeExam(examId)
+  } catch (e) {
+    console.error('保存历史记录失败:', e)
+  }
+  countdown.stop()
+  recorder.destroyStream()
   router.push(`/result/${examId}`)
 }
 
-function exitExam() {
+async function exitExam() {
   countdown.stop()
   recorder.destroyStream()
+  const examId = examStore.examId
+  // 如果已经有答题记录，保存后再退出
+  if (examId && examStore.answers.length > 0) {
+    try {
+      await completeExam(examId)
+      message.success('练习记录已保存')
+    } catch (e) {
+      console.error('保存记录失败:', e)
+    }
+  }
   examStore.exitExam()
   router.push('/')
 }

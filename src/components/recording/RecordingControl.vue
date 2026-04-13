@@ -53,13 +53,13 @@
         <RightOutlined /> 下一题
       </a-button>
       <a-button
-        v-else
         type="primary"
         size="large"
         shape="round"
+        :style="isLast ? {} : { background: '#389E0D', borderColor: '#389E0D' }"
         @click="$emit('finish')"
       >
-        <CheckOutlined /> 查看结果
+        <CheckOutlined /> {{ isLast ? '查看结果' : '结束练习' }}
       </a-button>
     </div>
   </div>

@@ -184,7 +184,8 @@ function ansScoreColor(ans) {
   const score = ans.scoringResult?.totalScore || 0
   const max = ans.scoringResult?.maxScore || 100
   const ratio = score / max
-  if (ratio >= 0.8) return '#389E0D'
+  if (ratio >= 0.85) return '#389E0D'
+  if (ratio >= 0.75) return '#1B5FAA'
   if (ratio >= 0.6) return '#D48806'
   return '#CF1322'
 }
