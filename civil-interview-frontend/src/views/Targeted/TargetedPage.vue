@@ -1,6 +1,9 @@
 <template>
   <div class="targeted-page page-container">
-    <h2>定向备面</h2>
+    <div class="targeted-page__header">
+      <a-button type="text" @click="$router.back()">返回</a-button>
+      <h2>定向备面</h2>
+    </div>
     <p class="targeted-page__desc">选择省份和岗位系统，获取针对性面试重点分析和高概率真题</p>
 
     <!-- 省份选择 -->
@@ -51,9 +54,18 @@
         block
         :disabled="!canProceed"
         :loading="targetedStore.generateLoading"
-        @click="generateAndPractice"
+        @click="generateAndPractice('local')"
       >
-        <ThunderboltOutlined /> 生成题目并开始练习
+        <ThunderboltOutlined /> 匹配真题并开始练习
+      </a-button>
+      <a-button
+        size="large"
+        block
+        :disabled="!canProceed"
+        :loading="targetedStore.generateLoading"
+        @click="generateAndPractice('ai')"
+      >
+        <ThunderboltOutlined /> AI生成定向题
       </a-button>
     </div>
 
@@ -61,8 +73,18 @@
     <div v-if="targetedStore.generatedQuestions.length" class="targeted-section">
       <div class="section-header">
         <h3>已生成题目</h3>
-        <a-button type="link" size="small" @click="generateAndPractice">重新生成</a-button>
+        <div class="section-header__actions">
+          <a-button type="primary" size="small" @click="startBatchPractice">整组随机作答</a-button>
+          <a-button type="link" size="small" @click="generateAndPractice(targetedStore.generationMode || 'local')">重新生成</a-button>
+        </div>
       </div>
+      <a-alert
+        v-if="targetedStore.generationMeta"
+        class="targeted-summary"
+        type="info"
+        show-icon
+        :message="generationSummary"
+      />
       <div
         v-for="(q, idx) in targetedStore.generatedQuestions"
         :key="q.id"
@@ -72,7 +94,15 @@
         <div class="question-item__idx">{{ idx + 1 }}</div>
         <div class="question-item__content">
           <div class="question-item__stem">{{ q.stem }}</div>
-          <a-tag :color="dimensionColor(q.dimension)" size="small">{{ dimensionName(q.dimension) }}</a-tag>
+          <div class="question-item__meta">
+            <a-tag :color="dimensionColor(q.dimension)" size="small">{{ dimensionName(q.dimension) }}</a-tag>
+            <a-tag v-if="q.questionSourceLabel" color="green" size="small">{{ q.questionSourceLabel }}</a-tag>
+            <a-tag v-if="generationSourceLabel(q)" color="gold" size="small">{{ generationSourceLabel(q) }}</a-tag>
+            <a-tag v-if="q.province" color="blue" size="small">{{ provinceName(q.province) }}</a-tag>
+          </div>
+          <div v-if="q.sourceDocument" class="question-item__source">
+            {{ q.sourceDocument }}
+          </div>
         </div>
         <RightOutlined class="question-item__arrow" />
       </div>
@@ -81,22 +111,40 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { SearchOutlined, ThunderboltOutlined, RightOutlined } from '@ant-design/icons-vue'
+import { Modal } from 'ant-design-vue'
 import { useTargetedStore } from '@/stores/targeted'
+import { getPositions } from '@/api/targeted'
 import { PROVINCES, POSITION_SYSTEMS, DIMENSIONS } from '@/utils/constants'
 
 const router = useRouter()
 const targetedStore = useTargetedStore()
 
 const provinces = PROVINCES
-const positionSystems = POSITION_SYSTEMS
+const positionSystems = ref(POSITION_SYSTEMS)
 
 const selectedProvince = ref(targetedStore.selectedProvince || '')
 const selectedPosition = ref(targetedStore.selectedPosition || '')
 
 const canProceed = computed(() => !!selectedProvince.value && !!selectedPosition.value)
+const generationSummary = computed(() => {
+  const meta = targetedStore.generationMeta
+  if (!meta) return ''
+  const parts = []
+  parts.push(meta.requestedMode === 'ai' ? '当前列表来源：AI定向生成' : '当前列表来源：本地真题/题库匹配')
+  if (meta.localBankCount) {
+    parts.push(`本地真题/题库题 ${meta.localBankCount} 道`)
+  }
+  if (meta.aiCount) {
+    parts.push(`AI生成 ${meta.aiCount} 道`)
+  }
+  if (meta.fallbackCount) {
+    parts.push(`补足回退 ${meta.fallbackCount} 道`)
+  }
+  return parts.join('，') || `共 ${meta.total} 道题`
+})
 
 function dimensionName(key) {
   const dim = DIMENSIONS.find(d => d.key === key)
@@ -108,6 +156,20 @@ function dimensionColor(key) {
   return colors[key] || 'default'
 }
 
+function provinceName(code) {
+  const province = PROVINCES.find(item => item.code === code)
+  return province ? province.name : code
+}
+
+function generationSourceLabel(question) {
+  const mapping = {
+    local_bank: '本地题库',
+    llm: 'AI补充',
+    fallback_bank: '题库补足'
+  }
+  return mapping[question?.generationSource] || ''
+}
+
 function syncSelection() {
   targetedStore.setSelection(selectedProvince.value, selectedPosition.value)
 }
@@ -117,15 +179,59 @@ function goToFocusAnalysis() {
   router.push('/targeted/focus')
 }
 
-async function generateAndPractice() {
+async function generateAndPractice(sourceMode = 'local') {
   syncSelection()
-  await targetedStore.fetchGeneratedQuestions(5)
+  const questions = await targetedStore.fetchGeneratedQuestions(5, { sourceMode })
+  const meta = targetedStore.generationMeta
+  if (!questions?.length || !meta) return
+
+  if (sourceMode === 'ai' && meta.aiCount > 0) {
+    Modal.info({
+      title: '已生成 AI 定向题',
+      content: `本次共生成 ${meta.total} 道题，其中 AI 生成 ${meta.aiCount} 道。`
+    })
+    return
+  }
+
+  if (meta.fallbackCount > 0) {
+    Modal.warning({
+      title: 'AI 定向题不可用，已回退到本地题库',
+      content: meta.fallbackReason || `本次共生成 ${meta.total} 道题，当前以本地真题/题库题为主。`
+    })
+    return
+  }
+
+  if (meta.localBankCount > 0 && meta.aiCount === 0) {
+    Modal.info({
+      title: '已从本地题库生成练习题',
+      content: meta.fallbackReason || `本次共生成 ${meta.total} 道题，当前以本地真题/题库题为主。`
+    })
+  }
 }
 
 function startSinglePractice(question) {
   sessionStorage.setItem('targeted_question', JSON.stringify(question))
   router.push({ path: '/exam/prepare', query: { questionId: question.id, source: 'targeted' } })
 }
+
+function startBatchPractice() {
+  if (!targetedStore.generatedQuestions.length) {
+    return
+  }
+  sessionStorage.setItem('targeted_question_batch', JSON.stringify(targetedStore.generatedQuestions))
+  router.push({ path: '/exam/prepare', query: { source: 'targeted' } })
+}
+
+onMounted(async () => {
+  try {
+    const positions = await getPositions()
+    if (positions.length) {
+      positionSystems.value = positions
+    }
+  } catch {
+    positionSystems.value = POSITION_SYSTEMS
+  }
+})
 </script>
 
 <style lang="less" scoped>
@@ -137,6 +243,12 @@ function startSinglePractice(question) {
     color: @text-primary;
     margin-bottom: 4px;
   }
+}
+
+.targeted-page__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .targeted-page__desc {
@@ -191,6 +303,12 @@ function startSinglePractice(question) {
   margin-bottom: 16px;
 }
 
+.section-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .section-header {
   display: flex;
   justify-content: space-between;
@@ -202,6 +320,10 @@ function startSinglePractice(question) {
     color: @text-primary;
     margin: 0;
   }
+}
+
+.targeted-summary {
+  margin-bottom: 12px;
 }
 
 .question-item {
@@ -245,6 +367,18 @@ function startSinglePractice(question) {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.question-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.question-item__source {
+  margin-top: 8px;
+  font-size: @font-size-xs;
+  color: @text-secondary;
 }
 
 .question-item__arrow {

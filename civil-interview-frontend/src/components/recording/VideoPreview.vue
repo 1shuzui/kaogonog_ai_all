@@ -1,10 +1,6 @@
 <template>
   <div class="video-preview">
-    <!-- 只有这层做镜像，文字不在里面 -->
-    <div class="video-preview__mirror">
-      <video ref="videoEl" autoplay muted playsinline></video>
-    </div>
-    <!-- 文字覆盖层在镜像层之外，不受翻转影响 -->
+    <video ref="videoEl" autoplay muted playsinline class="video-mirror"></video>
     <div class="recording-indicator" v-if="recording">
       <span class="dot"></span>
       <span>REC {{ formattedDuration }}</span>
@@ -60,17 +56,12 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
-/* 只有这一层做镜像，视频画面翻转，文字不受影响 */
-.video-preview__mirror {
+.video-mirror {
   position: absolute;
   inset: 0;
-  transform: scaleX(-1);
-
-  video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .video-preview__off {

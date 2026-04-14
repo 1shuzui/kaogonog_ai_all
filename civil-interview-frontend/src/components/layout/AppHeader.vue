@@ -29,14 +29,25 @@ import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
 
-onMounted(() => {
+onMounted(async () => {
   if (!userStore.provinces.length) {
-    userStore.loadProvinces()
+    try {
+      await userStore.loadProvinces()
+    } catch {
+      // 省份加载失败不阻断页面
+    }
+  }
+  if (userStore.isAuthenticated && !userStore.userInfo.id) {
+    try {
+      await userStore.loadUserInfo()
+    } catch {
+      // 401 handled by interceptor
+    }
   }
 })
 
-function onProvinceChange({ key }) {
-  userStore.setProvince(key)
+async function onProvinceChange({ key }) {
+  await userStore.persistProvince(key)
 }
 </script>
 

@@ -1,0 +1,26 @@
+INFO:     Started server process [1298247]
+INFO:     Waiting for application startup.
+2026-04-14 13:41:00,164 [INFO] main: Database tables ready (sqlite)
+2026-04-14 13:41:00,315 [INFO] main: Curated question assets synced: +1 new, 29 updated
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8050 (Press CTRL+C to quit)
+INFO:     127.0.0.1:45379 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58335 - "POST /register HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58336 - "POST /token HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58337 - "GET /questions?province=hunan&current=1&pageSize=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58338 - "PUT /questions/q_f0b85c2d HTTP/1.1" 403 Forbidden
+INFO:     127.0.0.1:58339 - "DELETE /questions/q_f0b85c2d HTTP/1.1" 403 Forbidden
+INFO:     127.0.0.1:58340 - "POST /questions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58341 - "PUT /questions/q_38bd50f2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58342 - "DELETE /questions/q_38bd50f2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43527 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43541 - "POST /register HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43549 - "POST /token HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43551 - "GET /user/info HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43565 - "GET /questions?province=hunan&current=1&pageSize=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43567 - "POST /targeted/generate HTTP/1.1" 200 OK
+2026-04-14 13:42:15,759 [INFO] app.services.scoring_service: Stage 1: Evidence extraction
+2026-04-14 13:42:36,962 [INFO] httpx: HTTP Request: POST https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-14 13:42:36,967 [INFO] app.services.scoring_service: Stage 2: Evidence-based scoring
+2026-04-14 13:42:58,946 [INFO] httpx: HTTP Request: POST https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:43581 - "POST /scoring/evaluate HTTP/1.1" 200 OK

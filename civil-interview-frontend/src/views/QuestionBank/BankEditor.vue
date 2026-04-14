@@ -79,7 +79,7 @@
       <!-- 操作 -->
       <div class="bank-editor__actions">
         <a-button @click="$router.back()">取消</a-button>
-        <a-button type="primary" :loading="saving" :disabled="readonly" @click="onSave">保存</a-button>
+        <a-button type="primary" :loading="saving" @click="onSave">保存</a-button>
       </div>
     </a-form>
   </div>
@@ -100,7 +100,6 @@ const bankStore = useQuestionBankStore()
 
 const isEdit = !!route.params.id
 const saving = ref(false)
-const readonly = ref(false)
 
 const form = reactive({
   stem: '',
@@ -121,7 +120,6 @@ onMounted(async () => {
   if (isEdit) {
     const q = await getQuestionById(route.params.id)
     if (q) {
-      readonly.value = !!q.readonly
       Object.assign(form, {
         stem: q.stem,
         dimension: q.dimension,
@@ -149,10 +147,6 @@ function removePoint(index) {
 }
 
 async function onSave() {
-  if (readonly.value) {
-    message.warning('内置题目当前为只读，请新建自定义题目或导入题目')
-    return
-  }
   if (!form.stem.trim()) {
     message.warning('请输入题干')
     return

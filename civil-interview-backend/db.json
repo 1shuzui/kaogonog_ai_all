@@ -1,0 +1,921 @@
+{
+  "questions": [
+    {
+      "id": "q001",
+      "stem": "\u67d0\u5e02\u63a8\u884c\u201c\u8857\u957f\u5236\u201d\u7ba1\u7406\u6a21\u5f0f\uff0c\u7531\u8857\u9053\u5e72\u90e8\u62c5\u4efb\u8857\u957f\uff0c\u8d1f\u8d23\u8f96\u533a\u5185\u5e02\u5bb9\u73af\u5883\u3001\u5b89\u5168\u79e9\u5e8f\u7b49\u7efc\u5408\u6cbb\u7406\u5de5\u4f5c\u3002\u6709\u4eba\u8ba4\u4e3a\u8fd9\u662f\u57fa\u5c42\u6cbb\u7406\u521b\u65b0\uff0c\u4e5f\u6709\u4eba\u8ba4\u4e3a\u589e\u52a0\u4e86\u57fa\u5c42\u8d1f\u62c5\u3002\u8bf7\u8c08\u8c08\u4f60\u7684\u770b\u6cd5\u3002",
+      "dimension": "analysis",
+      "province": "national",
+      "prepTime": 90,
+      "answerTime": 180,
+      "scoringPoints": [
+        {
+          "content": "\u8fa9\u8bc1\u5206\u6790\u201c\u8857\u957f\u5236\u201d\u7684\u79ef\u6781\u610f\u4e49",
+          "score": 5
+        },
+        {
+          "content": "\u6307\u51fa\u53ef\u80fd\u5b58\u5728\u7684\u95ee\u9898\u4e0e\u98ce\u9669",
+          "score": 5
+        },
+        {
+          "content": "\u63d0\u51fa\u5b8c\u5584\u5efa\u8bae\u6216\u89e3\u51b3\u5bf9\u7b56",
+          "score": 5
+        },
+        {
+          "content": "\u7ed3\u5408\u57fa\u5c42\u6cbb\u7406\u5b9e\u9645\u5c55\u5f00\u8bba\u8ff0",
+          "score": 5
+        }
+      ],
+      "keywords": {
+        "scoring": [
+          "\u57fa\u5c42\u6cbb\u7406",
+          "\u7f51\u683c\u5316",
+          "\u7cbe\u7ec6\u5316\u7ba1\u7406",
+          "\u8d23\u4efb\u5230\u4eba",
+          "\u7efc\u5408\u6cbb\u7406"
+        ],
+        "deducting": [
+          "\u4e00\u5200\u5207",
+          "\u5f62\u5f0f\u4e3b\u4e49",
+          "\u589e\u52a0\u8d1f\u62c5"
+        ],
+        "bonus": [
+          "\u5171\u5efa\u5171\u6cbb\u5171\u4eab",
+          "\u793e\u4f1a\u6cbb\u7406\u73b0\u4ee3\u5316",
+          "\u65b0\u65f6\u4ee3\u67ab\u6865\u7ecf\u9a8c"
+        ]
+      }
+    },
+    {
+      "id": "q002",
+      "stem": "\u4f60\u662f\u67d0\u5c40\u65b0\u5165\u804c\u7684\u516c\u52a1\u5458\uff0c\u9886\u5bfc\u8ba9\u4f60\u8d1f\u8d23\u7ec4\u7ec7\u4e00\u6b21\u9762\u5411\u8f96\u533a\u4f01\u4e1a\u7684\u6cd5\u5f8b\u6cd5\u89c4\u5ba3\u8bb2\u6d3b\u52a8\u3002\u4f60\u5c06\u5982\u4f55\u5f00\u5c55\u8fd9\u9879\u5de5\u4f5c\uff1f",
+      "dimension": "practical",
+      "province": "national",
+      "prepTime": 90,
+      "answerTime": 180,
+      "scoringPoints": [
+        {
+          "content": "\u660e\u786e\u6d3b\u52a8\u76ee\u6807\u548c\u5bf9\u8c61",
+          "score": 4
+        },
+        {
+          "content": "\u5236\u5b9a\u8be6\u7ec6\u5de5\u4f5c\u65b9\u6848",
+          "score": 5
+        },
+        {
+          "content": "\u505a\u597d\u7ec4\u7ec7\u534f\u8c03\u548c\u8d44\u6e90\u6574\u5408",
+          "score": 4
+        },
+        {
+          "content": "\u6d3b\u52a8\u5b9e\u65bd\u7684\u5173\u952e\u73af\u8282",
+          "score": 4
+        },
+        {
+          "content": "\u603b\u7ed3\u8bc4\u4f30\u548c\u540e\u7eed\u8ddf\u8fdb",
+          "score": 3
+        }
+      ],
+      "keywords": {
+        "scoring": [
+          "\u8c03\u7814\u9700\u6c42",
+          "\u5236\u5b9a\u65b9\u6848",
+          "\u9080\u8bf7\u4e13\u5bb6",
+          "\u5ba3\u4f20\u53d1\u52a8",
+          "\u603b\u7ed3\u8bc4\u4f30"
+        ],
+        "deducting": [
+          "\u8131\u79bb\u5b9e\u9645",
+          "\u8d70\u8fc7\u573a"
+        ],
+        "bonus": [
+          "\u4ee5\u6848\u91ca\u6cd5",
+          "\u7ebf\u4e0a\u7ebf\u4e0b\u7ed3\u5408",
+          "\u957f\u6548\u673a\u5236"
+        ]
+      }
+    },
+    {
+      "id": "q003",
+      "stem": "\u5728\u4e00\u6b21\u8054\u5408\u6267\u6cd5\u884c\u52a8\u4e2d\uff0c\u4f60\u53d1\u73b0\u540c\u4e8b\u5b58\u5728\u6267\u6cd5\u4e0d\u89c4\u8303\u7684\u884c\u4e3a\uff0c\u53ef\u80fd\u5f15\u53d1\u7fa4\u4f17\u6295\u8bc9\u3002\u4f60\u4f1a\u600e\u4e48\u505a\uff1f",
+      "dimension": "emergency",
+      "province": "national",
+      "prepTime": 90,
+      "answerTime": 180,
+      "scoringPoints": [
+        {
+          "content": "\u4fdd\u6301\u51b7\u9759\uff0c\u5feb\u901f\u5224\u65ad\u60c5\u51b5\u4e25\u91cd\u6027",
+          "score": 4
+        },
+        {
+          "content": "\u5f53\u573a\u9002\u5f53\u63d0\u9192\u6216\u5236\u6b62\u4e0d\u89c4\u8303\u884c\u4e3a",
+          "score": 5
+        },
+        {
+          "content": "\u505a\u597d\u7fa4\u4f17\u5b89\u629a\u548c\u89e3\u91ca\u5de5\u4f5c",
+          "score": 4
+        },
+        {
+          "content": "\u4e8b\u540e\u5411\u9886\u5bfc\u5982\u5b9e\u6c47\u62a5",
+          "score": 4
+        },
+        {
+          "content": "\u63a8\u52a8\u5efa\u7acb\u6267\u6cd5\u89c4\u8303\u7684\u957f\u6548\u673a\u5236",
+          "score": 3
+        }
+      ],
+      "keywords": {
+        "scoring": [
+          "\u4f9d\u6cd5\u6267\u6cd5",
+          "\u89c4\u8303\u6267\u6cd5",
+          "\u53ca\u65f6\u5236\u6b62",
+          "\u5b89\u629a\u7fa4\u4f17",
+          "\u6c47\u62a5\u9886\u5bfc"
+        ],
+        "deducting": [
+          "\u8892\u62a4\u540c\u4e8b",
+          "\u9690\u7792\u4e0d\u62a5",
+          "\u5f53\u4f17\u6279\u8bc4"
+        ],
+        "bonus": [
+          "\u6267\u6cd5\u5168\u8fc7\u7a0b\u8bb0\u5f55",
+          "\u5efa\u7ae0\u7acb\u5236",
+          "\u4e3e\u4e00\u53cd\u4e09"
+        ]
+      }
+    },
+    {
+      "id": "q004",
+      "stem": "\u8fd1\u5e74\u6765\uff0c\u4e00\u4e9b\u5730\u65b9\u653f\u5e9c\u5728\u63a8\u884c\u653f\u52a1\u516c\u5f00\u8fc7\u7a0b\u4e2d\uff0c\u51fa\u73b0\u4e86\u516c\u5f00\u4e0d\u53ca\u65f6\u3001\u516c\u5f00\u4e0d\u5b8c\u6574\u3001\u516c\u5f00\u8d70\u5f62\u5f0f\u7b49\u95ee\u9898\u3002\u5bf9\u6b64\u4f60\u600e\u4e48\u770b\uff1f",
+      "dimension": "legal",
+      "province": "national",
+      "prepTime": 90,
+      "answerTime": 180,
+      "scoringPoints": [
+        {
+          "content": "\u9610\u8ff0\u653f\u52a1\u516c\u5f00\u7684\u91cd\u8981\u610f\u4e49",
+          "score": 5
+        },
+        {
+          "content": "\u5206\u6790\u95ee\u9898\u4ea7\u751f\u7684\u539f\u56e0",
+          "score": 5
+        },
+        {
+          "content": "\u63d0\u51fa\u6709\u9488\u5bf9\u6027\u7684\u89e3\u51b3\u63aa\u65bd",
+          "score": 5
+        },
+        {
+          "content": "\u4f53\u73b0\u6cd5\u6cbb\u601d\u7ef4\u548c\u4f9d\u6cd5\u884c\u653f\u7406\u5ff5",
+          "score": 5
+        }
+      ],
+      "keywords": {
+        "scoring": [
+          "\u77e5\u60c5\u6743",
+          "\u76d1\u7763\u6743",
+          "\u653f\u5e9c\u4fe1\u606f\u516c\u5f00\u6761\u4f8b",
+          "\u5236\u5ea6\u5efa\u8bbe",
+          "\u95ee\u8d23\u673a\u5236"
+        ],
+        "deducting": [
+          "\u7a7a\u8c08",
+          "\u8131\u79bb\u6cd5\u5f8b\u4f9d\u636e"
+        ],
+        "bonus": [
+          "\u6570\u5b57\u653f\u5e9c",
+          "\u4e3b\u52a8\u516c\u5f00",
+          "\u56de\u5e94\u5173\u5207",
+          "\u653f\u5e9c\u516c\u4fe1\u529b"
+        ]
+      }
+    },
+    {
+      "id": "q005",
+      "stem": "\u4f60\u6240\u5728\u5355\u4f4d\u8981\u63a8\u8fdb\u201c\u6700\u591a\u8dd1\u4e00\u6b21\u201d\u6539\u9769\uff0c\u4f46\u90e8\u5206\u8001\u540c\u5fd7\u8ba4\u4e3a\u4f20\u7edf\u6d41\u7a0b\u66f4\u7a33\u59a5\uff0c\u5bf9\u6539\u9769\u6709\u62b5\u89e6\u60c5\u7eea\u3002\u4f5c\u4e3a\u6539\u9769\u63a8\u8fdb\u5c0f\u7ec4\u6210\u5458\uff0c\u4f60\u600e\u4e48\u529e\uff1f",
+      "dimension": "practical",
+      "province": "national",
+      "prepTime": 90,
+      "answerTime": 180,
+      "scoringPoints": [
+        {
+          "content": "\u7406\u89e3\u8001\u540c\u5fd7\u7684\u987e\u8651\uff0c\u6362\u4f4d\u601d\u8003",
+          "score": 4
+        },
+        {
+          "content": "\u505a\u597d\u6c9f\u901a\u548c\u601d\u60f3\u5f15\u5bfc\u5de5\u4f5c",
+          "score": 5
+        },
+        {
+          "content": "\u5236\u5b9a\u79d1\u5b66\u7684\u6539\u9769\u63a8\u8fdb\u65b9\u6848",
+          "score": 4
+        },
+        {
+          "content": "\u63d0\u4f9b\u57f9\u8bad\u548c\u652f\u6301\u5e2e\u52a9\u9002\u5e94",
+          "score": 4
+        },
+        {
+          "content": "\u5efa\u7acb\u6fc0\u52b1\u548c\u53cd\u9988\u673a\u5236",
+          "score": 3
+        }
+      ],
+      "keywords": {
+        "scoring": [
+          "\u6362\u4f4d\u601d\u8003",
+          "\u8010\u5fc3\u6c9f\u901a",
+          "\u5faa\u5e8f\u6e10\u8fdb",
+          "\u57f9\u8bad\u5e2e\u6276",
+          "\u793a\u8303\u5f15\u9886"
+        ],
+        "deducting": [
+          "\u5f3a\u5236\u63a8\u884c",
+          "\u5ffd\u89c6\u8001\u540c\u5fd7\u611f\u53d7",
+          "\u6025\u4e8e\u6c42\u6210"
+        ],
+        "bonus": [
+          "\u6570\u5b57\u5316\u8f6c\u578b",
+          "\u7fa4\u4f17\u6ee1\u610f\u5ea6",
+          "\u8425\u5546\u73af\u5883\u4f18\u5316"
+        ]
+      }
+    },
+    {
+      "id": "q006",
+      "stem": "\u8bf7\u4f60\u5c31\u201c\u57fa\u5c42\u5e72\u90e8\u65e2\u8981\u8eab\u5165\u57fa\u5c42\uff0c\u66f4\u8981\u5fc3\u5165\u57fa\u5c42\u201d\u8fd9\u53e5\u8bdd\uff0c\u8c08\u8c08\u4f60\u7684\u7406\u89e3\u3002",
+      "dimension": "analysis",
+      "province": "national",
+      "prepTime": 90,
+      "answerTime": 180,
+      "scoringPoints": [
+        {
+          "content": "\u51c6\u786e\u7406\u89e3\u8eab\u5165\u548c\u5fc3\u5165\u7684\u542b\u4e49",
+          "score": 5
+        },
+        {
+          "content": "\u5206\u6790\u5f53\u524d\u57fa\u5c42\u5de5\u4f5c\u4e2d\u5b58\u5728\u7684\u95ee\u9898",
+          "score": 5
+        },
+        {
+          "content": "\u9610\u8ff0\u5982\u4f55\u505a\u5230\u5fc3\u5165\u57fa\u5c42",
+          "score": 5
+        },
+        {
+          "content": "\u7ed3\u5408\u81ea\u8eab\u8c08\u8ba4\u8bc6\u6216\u505a\u6cd5",
+          "score": 5
+        }
+      ],
+      "keywords": {
+        "scoring": [
+          "\u7fa4\u4f17\u8def\u7ebf",
+          "\u4e3a\u6c11\u670d\u52a1",
+          "\u8c03\u67e5\u7814\u7a76",
+          "\u771f\u6293\u5b9e\u5e72",
+          "\u6c11\u751f"
+        ],
+        "deducting": [
+          "\u5047\u5927\u7a7a",
+          "\u8131\u79bb\u5b9e\u9645"
+        ],
+        "bonus": [
+          "\u521d\u5fc3\u4f7f\u547d",
+          "\u4eba\u6c11\u81f3\u4e0a",
+          "\u811a\u4e0b\u6709\u6ce5\u5fc3\u4e2d\u6709\u5149"
+        ]
+      }
+    },
+    {
+      "id": "q007",
+      "stem": "\u67d0\u5730\u5728\u6276\u8d2b\u5de5\u4f5c\u4e2d\u5f15\u5165\u201c\u79ef\u5206\u5236\u201d\u7ba1\u7406\uff0c\u8d2b\u56f0\u6237\u901a\u8fc7\u53c2\u52a0\u6280\u80fd\u57f9\u8bad\u3001\u4e3b\u52a8\u5c31\u4e1a\u3001\u73af\u5883\u6574\u6cbb\u7b49\u83b7\u5f97\u79ef\u5206\uff0c\u5151\u6362\u751f\u6d3b\u7269\u8d44\u3002\u4f60\u8ba4\u4e3a\u8fd9\u79cd\u505a\u6cd5\u662f\u5426\u5408\u7406\uff1f",
+      "dimension": "legal",
+      "province": "national",
+      "prepTime": 90,
+      "answerTime": 180,
+      "scoringPoints": [
+        {
+          "content": "\u80af\u5b9a\u79ef\u5206\u5236\u7684\u79ef\u6781\u4f5c\u7528",
+          "score": 5
+        },
+        {
+          "content": "\u5206\u6790\u53ef\u80fd\u5b58\u5728\u7684\u4e89\u8bae\u548c\u95ee\u9898",
+          "score": 5
+        },
+        {
+          "content": "\u63d0\u51fa\u5b8c\u5584\u5efa\u8bae",
+          "score": 5
+        },
+        {
+          "content": "\u4f53\u73b0\u516c\u5e73\u516c\u6b63\u7684\u6cd5\u6cbb\u7406\u5ff5",
+          "score": 5
+        }
+      ],
+      "keywords": {
+        "scoring": [
+          "\u6276\u8d2b\u6276\u5fd7",
+          "\u5185\u751f\u52a8\u529b",
+          "\u516c\u5e73\u516c\u6b63",
+          "\u5236\u5ea6\u8bbe\u8ba1",
+          "\u7fa4\u4f17\u53c2\u4e0e"
+        ],
+        "deducting": [
+          "\u6b67\u89c6\u8d2b\u56f0\u6237",
+          "\u4e00\u5200\u5207"
+        ],
+        "bonus": [
+          "\u4e61\u6751\u632f\u5174",
+          "\u793e\u4f1a\u6cbb\u7406\u521b\u65b0",
+          "\u5fd7\u667a\u53cc\u6276"
+        ]
+      }
+    },
+    {
+      "id": "q008",
+      "stem": "\u4f60\u8d1f\u8d23\u4e00\u4e2a\u91cd\u70b9\u9879\u76ee\u7684\u63a8\u8fdb\u5de5\u4f5c\uff0c\u4f46\u5728\u6267\u884c\u8fc7\u7a0b\u4e2d\uff0c\u4f60\u53d1\u73b0\u4e0a\u7ea7\u5236\u5b9a\u7684\u67d0\u9879\u653f\u7b56\u5728\u672c\u5730\u6267\u884c\u5b58\u5728\u660e\u663e\u7684\u6c34\u571f\u4e0d\u670d\u3002\u4f60\u4f1a\u600e\u4e48\u5904\u7406\uff1f",
+      "dimension": "emergency",
+      "province": "national",
+      "prepTime": 90,
+      "answerTime": 180,
+      "scoringPoints": [
+        {
+          "content": "\u6df1\u5165\u8c03\u7814\u5206\u6790\u653f\u7b56\u6267\u884c\u7684\u5177\u4f53\u56f0\u96be",
+          "score": 5
+        },
+        {
+          "content": "\u5728\u575a\u51b3\u6267\u884c\u7684\u524d\u63d0\u4e0b\u7075\u6d3b\u5e94\u5bf9",
+          "score": 4
+        },
+        {
+          "content": "\u53ca\u65f6\u5411\u4e0a\u7ea7\u53cd\u6620\u60c5\u51b5\u5e76\u63d0\u51fa\u5efa\u8bae",
+          "score": 5
+        },
+        {
+          "content": "\u505a\u597d\u4e0e\u76f8\u5173\u90e8\u95e8\u548c\u7fa4\u4f17\u7684\u6c9f\u901a\u534f\u8c03",
+          "score": 3
+        },
+        {
+          "content": "\u4f53\u73b0\u653f\u6cbb\u610f\u8bc6\u548c\u5927\u5c40\u89c2",
+          "score": 3
+        }
+      ],
+      "keywords": {
+        "scoring": [
+          "\u8c03\u67e5\u7814\u7a76",
+          "\u5b9e\u4e8b\u6c42\u662f",
+          "\u8bf7\u793a\u6c47\u62a5",
+          "\u7075\u6d3b\u6267\u884c",
+          "\u653f\u6cbb\u610f\u8bc6"
+        ],
+        "deducting": [
+          "\u64c5\u81ea\u53d8\u901a",
+          "\u6d88\u6781\u6267\u884c",
+          "\u9633\u5949\u9634\u8fdd"
+        ],
+        "bonus": [
+          "\u521b\u9020\u6027\u843d\u5b9e",
+          "\u8bd5\u70b9\u5148\u884c",
+          "\u603b\u7ed3\u63a8\u5e7f"
+        ]
+      }
+    }
+  ],
+  "exams": {
+    "exam_b602be0f": {
+      "id": "exam_b602be0f",
+      "questionIds": [
+        "q001",
+        "q002"
+      ],
+      "startTime": "2026-04-05T09:14:47.140434+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_9f601ce6": {
+      "id": "exam_9f601ce6",
+      "questionIds": [
+        "q006",
+        "q001",
+        "q002",
+        "q004",
+        "q003"
+      ],
+      "startTime": "2026-04-05T09:16:28.866559+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_b9c2c039": {
+      "id": "exam_b9c2c039",
+      "questionIds": [
+        "q001",
+        "q005"
+      ],
+      "startTime": "2026-04-05T09:51:55.761437+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_a4c8015c": {
+      "id": "exam_a4c8015c",
+      "questionIds": [
+        "q004",
+        "q003",
+        "q007",
+        "q001",
+        "q002"
+      ],
+      "startTime": "2026-04-05T09:52:58.439318+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_38724ac5": {
+      "id": "exam_38724ac5",
+      "questionIds": [
+        "q001",
+        "q007",
+        "q004",
+        "q008",
+        "q006"
+      ],
+      "startTime": "2026-04-05T09:53:53.562525+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_f920ca19": {
+      "id": "exam_f920ca19",
+      "questionIds": [
+        "q005",
+        "q006"
+      ],
+      "startTime": "2026-04-05T09:58:23.179039+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_13d3a906": {
+      "id": "exam_13d3a906",
+      "questionIds": [
+        "q005",
+        "q004",
+        "q008",
+        "q006",
+        "q002"
+      ],
+      "startTime": "2026-04-05T10:00:39.042170+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_1e32df7e": {
+      "id": "exam_1e32df7e",
+      "questionIds": [
+        "train_04a968aa"
+      ],
+      "startTime": "2026-04-05T10:08:38.086791+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_b1b7d3f0": {
+      "id": "exam_b1b7d3f0",
+      "questionIds": [
+        "q008",
+        "q003",
+        "q007",
+        "q004",
+        "q005"
+      ],
+      "startTime": "2026-04-05T10:09:15.761950+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_8b79b36c": {
+      "id": "exam_8b79b36c",
+      "questionIds": [
+        "q005",
+        "q002",
+        "q006",
+        "q008",
+        "q004"
+      ],
+      "startTime": "2026-04-07T12:06:16.465234+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_6dbe8b2b": {
+      "id": "exam_6dbe8b2b",
+      "questionIds": [
+        "q005",
+        "q001",
+        "q003",
+        "q007",
+        "q006"
+      ],
+      "startTime": "2026-04-11T07:03:23.691238+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_763755f9": {
+      "id": "exam_763755f9",
+      "questionIds": [
+        "q003",
+        "q001",
+        "q004",
+        "q002",
+        "q006"
+      ],
+      "startTime": "2026-04-11T07:09:20.059559+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_5c9ba862": {
+      "id": "exam_5c9ba862",
+      "questionIds": [
+        "q005",
+        "q001",
+        "q008",
+        "q007",
+        "q006"
+      ],
+      "startTime": "2026-04-11T07:27:08.609275+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_6afc55d0": {
+      "id": "exam_6afc55d0",
+      "questionIds": [
+        "q005",
+        "q008",
+        "q003",
+        "q002",
+        "q001"
+      ],
+      "startTime": "2026-04-11T07:29:28.774477+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_698fc469": {
+      "id": "exam_698fc469",
+      "questionIds": [
+        "q003",
+        "q002",
+        "q007",
+        "q001",
+        "q008"
+      ],
+      "startTime": "2026-04-11T07:31:25.879111+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_9d2bb196": {
+      "id": "exam_9d2bb196",
+      "questionIds": [
+        "q003",
+        "q002",
+        "q008",
+        "q007",
+        "q006"
+      ],
+      "startTime": "2026-04-11T07:36:34.647445+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_0900393b": {
+      "id": "exam_0900393b",
+      "questionIds": [
+        "q005",
+        "q001",
+        "q008",
+        "q002",
+        "q006"
+      ],
+      "startTime": "2026-04-11T07:36:57.870618+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_50c4fc58": {
+      "id": "exam_50c4fc58",
+      "questionIds": [
+        "q008",
+        "q001",
+        "q003",
+        "q007",
+        "q005"
+      ],
+      "startTime": "2026-04-11T07:43:06.483290+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_ee4006ff": {
+      "id": "exam_ee4006ff",
+      "questionIds": [
+        "q001",
+        "q005",
+        "q003",
+        "q004",
+        "q006"
+      ],
+      "startTime": "2026-04-11T07:43:20.750172+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_5712159f": {
+      "id": "exam_5712159f",
+      "questionIds": [
+        "q002",
+        "q008",
+        "q006",
+        "q003",
+        "q005"
+      ],
+      "startTime": "2026-04-11T07:47:16.117639+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_d320a66d": {
+      "id": "exam_d320a66d",
+      "questionIds": [
+        "q003",
+        "q002",
+        "q001",
+        "q007",
+        "q008"
+      ],
+      "startTime": "2026-04-11T07:49:52.094579+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_62b820ca": {
+      "id": "exam_62b820ca",
+      "questionIds": [
+        "q004",
+        "q001",
+        "q002",
+        "q007",
+        "q008"
+      ],
+      "startTime": "2026-04-11T08:16:06.292807+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_a2e59183": {
+      "id": "exam_a2e59183",
+      "questionIds": [
+        "q008",
+        "q006",
+        "q001",
+        "q003",
+        "q005"
+      ],
+      "startTime": "2026-04-11T08:18:28.856161+00:00",
+      "status": "completed",
+      "answers": {},
+      "endTime": "2026-04-11T08:19:25.353386+00:00"
+    },
+    "exam_7a660ebc": {
+      "id": "exam_7a660ebc",
+      "questionIds": [
+        "q008",
+        "q001",
+        "q003",
+        "q002",
+        "q004"
+      ],
+      "startTime": "2026-04-12T07:21:48.095814+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_c48e19e2": {
+      "id": "exam_c48e19e2",
+      "questionIds": [
+        "q005",
+        "q004",
+        "q001",
+        "q003",
+        "q006"
+      ],
+      "startTime": "2026-04-12T07:30:14.331918+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_712463f0": {
+      "id": "exam_712463f0",
+      "questionIds": [
+        "q001",
+        "q007",
+        "q003",
+        "q002",
+        "q005"
+      ],
+      "startTime": "2026-04-12T07:34:45.348427+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_5e5ccad4": {
+      "id": "exam_5e5ccad4",
+      "questionIds": [
+        "q006",
+        "q002",
+        "q001",
+        "q005",
+        "q004"
+      ],
+      "startTime": "2026-04-12T07:37:24.586867+00:00",
+      "status": "completed",
+      "answers": {},
+      "endTime": "2026-04-12T07:39:24.033443+00:00"
+    },
+    "exam_9f2446a6": {
+      "id": "exam_9f2446a6",
+      "questionIds": [
+        "q001",
+        "q005",
+        "q008",
+        "q007",
+        "q003"
+      ],
+      "startTime": "2026-04-12T07:59:53.474639+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_5f03f9f0": {
+      "id": "exam_5f03f9f0",
+      "questionIds": [
+        "q007",
+        "q008",
+        "q003",
+        "q001",
+        "q006"
+      ],
+      "startTime": "2026-04-12T08:02:42.845110+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_c52f3c04": {
+      "id": "exam_c52f3c04",
+      "questionIds": [
+        "q007",
+        "q005",
+        "q004",
+        "q006",
+        "q001"
+      ],
+      "startTime": "2026-04-12T08:08:07.410009+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_cbd52af1": {
+      "id": "exam_cbd52af1",
+      "questionIds": [
+        "q001",
+        "q008",
+        "q006",
+        "q007",
+        "q002"
+      ],
+      "startTime": "2026-04-12T08:12:38.348811+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_9a0a92ce": {
+      "id": "exam_9a0a92ce",
+      "questionIds": [
+        "q002",
+        "q008",
+        "q005",
+        "q003",
+        "q001"
+      ],
+      "startTime": "2026-04-12T08:14:08.121344+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_1d5bfa37": {
+      "id": "exam_1d5bfa37",
+      "questionIds": [
+        "q004",
+        "q003",
+        "q008",
+        "q007",
+        "q006"
+      ],
+      "startTime": "2026-04-12T08:14:37.503033+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_6105d294": {
+      "id": "exam_6105d294",
+      "questionIds": [
+        "q005",
+        "q003",
+        "q004",
+        "q007",
+        "q006"
+      ],
+      "startTime": "2026-04-12T08:16:41.734159+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_504aad1f": {
+      "id": "exam_504aad1f",
+      "questionIds": [
+        "q002",
+        "q007",
+        "q004",
+        "q005",
+        "q006"
+      ],
+      "startTime": "2026-04-12T08:19:39.267772+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_98ff7804": {
+      "id": "exam_98ff7804",
+      "questionIds": [
+        "q006",
+        "q005",
+        "q003",
+        "q007",
+        "q004"
+      ],
+      "startTime": "2026-04-12T08:25:30.108503+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_bc128c75": {
+      "id": "exam_bc128c75",
+      "questionIds": [
+        "q006",
+        "q008",
+        "q002",
+        "q003",
+        "q005"
+      ],
+      "startTime": "2026-04-12T08:25:54.561927+00:00",
+      "status": "in_progress",
+      "answers": {}
+    },
+    "exam_30e5d85e": {
+      "id": "exam_30e5d85e",
+      "questionIds": [
+        "q002",
+        "q006",
+        "q007",
+        "q003",
+        "q001"
+      ],
+      "startTime": "2026-04-12T08:39:51.887955+00:00",
+      "status": "in_progress",
+      "answers": {}
+    }
+  },
+  "history": [
+    {
+      "examId": "exam_a2e59183",
+      "date": "2026-04-11T08:19:25.353386+00:00",
+      "questionCount": 0,
+      "totalScore": 0,
+      "maxScore": 100,
+      "grade": "B",
+      "province": "national",
+      "dimensions": [],
+      "questionSummary": "Completed Exam: exam_a2e59183"
+    },
+    {
+      "examId": "exam_5e5ccad4",
+      "userId": null,
+      "username": "testuser",
+      "date": "2026-04-12T07:39:24.033443+00:00",
+      "completedAt": "2026-04-12T07:39:24.033443+00:00",
+      "questionCount": 0,
+      "totalScore": 0,
+      "maxScore": 100,
+      "grade": "B",
+      "province": "national",
+      "dimensions": [
+        {
+          "name": "\u7efc\u5408\u5206\u6790",
+          "score": 0,
+          "maxScore": 20
+        },
+        {
+          "name": "\u5b9e\u52a1\u843d\u5730",
+          "score": 0,
+          "maxScore": 20
+        },
+        {
+          "name": "\u6cd5\u6cbb\u601d\u7ef4",
+          "score": 0,
+          "maxScore": 15
+        },
+        {
+          "name": "\u5e94\u6025\u5e94\u53d8",
+          "score": 0,
+          "maxScore": 15
+        },
+        {
+          "name": "\u903b\u8f91\u7ed3\u6784",
+          "score": 0,
+          "maxScore": 15
+        },
+        {
+          "name": "\u8bed\u8a00\u8868\u8fbe",
+          "score": 0,
+          "maxScore": 15
+        }
+      ],
+      "questionSummary": "Completed Exam: exam_5e5ccad4"
+    }
+  ],
+  "users": {}
+}

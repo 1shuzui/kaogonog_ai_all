@@ -27,6 +27,7 @@
             <div class="history-item__summary">{{ record.questionSummary }}</div>
             <div class="history-item__meta">
               <span>{{ formatDate(record.date) }}</span>
+              <a-tag v-if="record.status !== 'completed'" color="orange" size="small">未完成</a-tag>
               <a-tag :color="gradeColor(record.grade)" size="small">{{ record.grade }}</a-tag>
               <span>{{ record.questionCount }} 题</span>
             </div>
@@ -90,23 +91,30 @@ function barColor(dim) {
 }
 
 onMounted(() => {
-  historyStore.fetchRecords()
+  historyStore.fetchRecords({ page: 1 })
 })
+
+function buildFilters(page = 1) {
+  const [start, end] = dateRange.value || []
+  return {
+    province: provinceFilter.value,
+    page,
+    startDate: start?.format?.('YYYY-MM-DD') || '',
+    endDate: end?.format?.('YYYY-MM-DD') || ''
+  }
+}
 
 function onProvinceChange(value) {
   provinceFilter.value = value === 'all' ? '' : value
-  historyStore.fetchRecords({ province: provinceFilter.value, page: 1 })
+  historyStore.fetchRecords(buildFilters(1))
 }
 
 function onFilterChange() {
-  historyStore.fetchRecords({
-    province: provinceFilter.value,
-    page: 1
-  })
+  historyStore.fetchRecords(buildFilters(1))
 }
 
 function onPageChange(page) {
-  historyStore.fetchRecords({ page })
+  historyStore.fetchRecords(buildFilters(page))
 }
 </script>
 

@@ -25,7 +25,7 @@
             <p style="color: #CF1322; margin-bottom: 8px">{{ permissionError }}</p>
             <a-space>
               <a-button size="small" type="primary" @click="retryPermission">重新检测</a-button>
-              <a-button size="small" v-if="!micReady" @click="tryMicOnly">仅使用麦克风</a-button>
+              <a-button size="small" v-if="micReady && !cameraReady" @click="tryMicOnly">仅使用麦克风</a-button>
             </a-space>
             <div class="permission-tips">
               <p>常见原因:</p>
@@ -95,6 +95,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { message } from 'ant-design-vue'
 import { usePermission } from '@/composables/usePermission'
 import { useMediaRecorder } from '@/composables/useMediaRecorder'
 import { useExamStore } from '@/stores/exam'
@@ -165,6 +166,14 @@ async function retryPermission() {
 async function tryMicOnly() {
   permissionError.value = ''
   currentStep.value = 0
+  allReady.value = false
+  testRecording.value = false
+  testBlob.value = null
+  if (testBlobUrl.value) {
+    URL.revokeObjectURL(testBlobUrl.value)
+    testBlobUrl.value = ''
+  }
+  recorder.destroyStream()
   const ok = await checkMicOnly()
   if (ok) {
     videoEnabled.value = false
@@ -220,30 +229,88 @@ function confirmDevice() {
 }
 
 async function enterExam() {
-  recorder.destroyStream()
-  let questions
-  const source = route.query.source
-  const recommendedId = route.query.questionId
-
-  if (source === 'targeted' && targetedStore.generatedQuestions.length) {
-    // 来自定向备面（批量），使用已生成的题目
-    questions = targetedStore.generatedQuestions
-  } else if (source === 'targeted' && recommendedId) {
-    // 来自定向备面（单题），从 sessionStorage 获取
+  if (userStore.isAuthenticated && !userStore.userInfo.id) {
     try {
-      const cached = sessionStorage.getItem('targeted_question')
-      questions = cached ? [JSON.parse(cached)] : [await getQuestionById(recommendedId)]
+      await userStore.loadUserInfo()
     } catch {
-      questions = await getRandomQuestions({ province: userStore.selectedProvince, count: 5 })
+      // interceptor handles auth failures
+    }
+  }
+  recorder.destroyStream()
+  // 保存视频模式到 store，供 ExamRoom 使用
+  examStore.setVideoEnabled(videoEnabled.value)
+  let questions
+  const source = String(route.query.source || '')
+  const recommendedId = String(route.query.questionId || '').trim()
+  const loadCachedPayload = (cacheKey) => {
+    try {
+      const cached = sessionStorage.getItem(cacheKey)
+      return cached ? JSON.parse(cached) : null
+    } catch {
+      return null
+    }
+  }
+  const loadCachedQuestion = (cacheKey) => {
+    const cached = loadCachedPayload(cacheKey)
+    return cached && !Array.isArray(cached) ? cached : null
+  }
+  const loadCachedQuestionBatch = (cacheKey) => {
+    const cached = loadCachedPayload(cacheKey)
+    return Array.isArray(cached) ? cached.filter(item => item?.id) : []
+  }
+  const shuffleQuestions = (items = []) => {
+    const shuffled = [...items]
+    for (let index = shuffled.length - 1; index > 0; index--) {
+      const swapIndex = Math.floor(Math.random() * (index + 1))
+      ;[shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]]
+    }
+    return shuffled
+  }
+  const loadGeneratedQuestion = async (questionId, cacheKey) => {
+    if (questionId) {
+      try {
+        return await getQuestionById(questionId)
+      } catch {
+        const cached = loadCachedQuestion(cacheKey)
+        if (cached && cached.id === questionId) {
+          return cached
+        }
+        throw new Error('question_not_found')
+      }
+    }
+    const cached = loadCachedQuestion(cacheKey)
+    if (cached) return cached
+    throw new Error('question_not_found')
+  }
+  const groupedQuestions = (() => {
+    if (source === 'targeted') {
+      if (targetedStore.generatedQuestions.length) {
+        return targetedStore.generatedQuestions
+      }
+      return loadCachedQuestionBatch('targeted_question_batch')
+    }
+    if (source === 'training') {
+      return loadCachedQuestionBatch('training_question_batch')
+    }
+    return []
+  })()
+
+  if (source === 'targeted' && recommendedId) {
+    try {
+      questions = [await loadGeneratedQuestion(recommendedId, 'targeted_question')]
+    } catch {
+      message.error('指定定向题目不存在或已失效，请重新选择')
+      return
     }
   } else if (source === 'training' && recommendedId) {
-    // 来自专项训练，从 sessionStorage 获取
     try {
-      const cached = sessionStorage.getItem('training_question')
-      questions = cached ? [JSON.parse(cached)] : [await getQuestionById(recommendedId)]
+      questions = [await loadGeneratedQuestion(recommendedId, 'training_question')]
     } catch {
-      questions = await getRandomQuestions({ province: userStore.selectedProvince, count: 5 })
+      message.error('指定专项训练题不存在或已失效，请重新选择')
+      return
     }
+  } else if ((source === 'targeted' || source === 'training') && groupedQuestions.length) {
+    questions = shuffleQuestions(groupedQuestions)
   } else if (recommendedId) {
     // 从智能推荐跳转，使用指定题目
     try {
@@ -274,7 +341,7 @@ async function enterExam() {
       }
     }, 1000)
   } else {
-    await examStore.initExam(questions, false)
+    await examStore.initExam(questions, false, userStore.preferences)
     router.push('/exam/room')
   }
 }
@@ -286,7 +353,7 @@ async function skipWaiting() {
 
 async function startMockExam(questions) {
   waitingRoom.value = false
-  await examStore.initExam(questions, true)
+  await examStore.initExam(questions, true, userStore.preferences)
   router.push('/exam/room')
 }
 </script>

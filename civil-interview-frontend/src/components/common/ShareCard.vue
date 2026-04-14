@@ -79,9 +79,9 @@ const gradeColor = computed(() => gradeInfo.value.color)
 
 function dimColor(dim) {
   const ratio = dim.score / dim.maxScore
-  if (ratio >= 0.8) return '#389E0D'
-  if (ratio >= 0.6) return '#1B5FAA'
-  if (ratio >= 0.4) return '#D48806'
+  if (ratio >= 0.85) return '#389E0D'
+  if (ratio >= 0.75) return '#1B5FAA'
+  if (ratio >= 0.6) return '#D48806'
   return '#CF1322'
 }
 

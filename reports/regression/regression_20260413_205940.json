@@ -1,0 +1,1662 @@
+{
+  "generated_at": "20260413_205940",
+  "question_ids": [
+    "CS-20201212-01",
+    "CS-20201212-02",
+    "CS-20201212-03",
+    "CSJT-20201226-01",
+    "CSJT-20201226-02",
+    "CSJT-20201226-03",
+    "HN-20200816-01",
+    "HN-20200816-02",
+    "HN-20200816-03",
+    "HN-20200919-01",
+    "HN-20200919-02",
+    "HN-20200919-03",
+    "HN-20200919-JY-01",
+    "HN-20200919-JY-02",
+    "HN-20200919-JY-03",
+    "HN-20200920-01",
+    "HN-20200920-02",
+    "HN-20200920-JY-01",
+    "HN-20200920-JY-02",
+    "HN-20200920-JY-03",
+    "HN-20200920-XZ-01",
+    "HN-20200920-XZ-02",
+    "HN-20200920-XZ-03",
+    "HN-20200921-XZ-01",
+    "HN-20200921-XZ-02",
+    "HN-20200921-XZ-03",
+    "HN-20200922-XZ-01",
+    "HN-20200922-XZ-02",
+    "HN-20200922-XZ-03",
+    "HN-LX-20200606-01"
+  ],
+  "persist": false,
+  "summary": {
+    "total": 95,
+    "pass": 51,
+    "fail": 44,
+    "error": 0,
+    "skip": 0
+  },
+  "rows": [
+    {
+      "question_id": "CS-20201212-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-01/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 32.0。",
+        "模型总分 28.0 与维度汇总 32.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CS-20201212-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-01/reference_mid.txt",
+      "expected_range": "12.0-17.0",
+      "expected_band": "低分/偏弱",
+      "actual_score": 17.0,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 如果推进过程中只重形式、不顾差异",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 同时把过程跟踪、结果反馈和动态调整一起做起来",
+        "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=12，截断=none，关键词削弱=light。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CS-20201212-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-01/reference_low.txt",
+      "expected_range": "7.7-12.7",
+      "expected_band": "低分/偏弱",
+      "actual_score": 17.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_analysis_low_3，句数=10，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CS-20201212-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-02/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 32.0。",
+        "模型总分 21.0 与维度汇总 32.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CS-20201212-02",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-02/reference_mid.txt",
+      "expected_range": "17.9-22.9",
+      "expected_band": "基本合格",
+      "actual_score": 26.0,
+      "actual_band": "中高档",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化压缩生成；策略=spread，句数=9，截断=160，关键词削弱=medium。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CS-20201212-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-02/reference_low.txt",
+      "expected_range": "7.6-12.6",
+      "expected_band": "低分/偏弱",
+      "actual_score": 13.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 1,
+      "notes": [
+        "deduction_items 中的理由 [政治站位不足，未体现战略的政治内涵，未提及核心识别词三高四新、长沙干部、政治根基、高质量发展等] 未绑定有效证据，已移除。",
+        "基于高分答案程序化降档生成；策略=spread，句数=3，截断=90，关键词削弱=heavy，口语化=否。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CS-20201212-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-03/reference_high.txt",
+      "expected_range": "22.0-25.0",
+      "expected_band": "高分标杆",
+      "actual_score": 22.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 22.0。",
+        "模型总分 19.5 与维度汇总 22.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CS-20201212-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-03/reference_mid.txt",
+      "expected_range": "7.3-11.3",
+      "expected_band": "低分/偏弱",
+      "actual_score": 19.0,
+      "actual_band": "中高档",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化压缩生成；策略=template_organization_mid_1，句数=11，截断=none，关键词削弱=light。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CS-20201212-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/CS-20201212-03/reference_low.txt",
+      "expected_range": "4.3-8.3",
+      "expected_band": "低分/偏弱",
+      "actual_score": 9.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_organization_low_2，句数=11，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CSJT-20201226-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-01/reference_high.txt",
+      "expected_range": "27.0-30.0",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 9,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 爱好不仅是个人生活的调味剂",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 因沉迷不良爱好（如赌博、奢靡享乐）而荒废事业、突破底线的案例屡见不鲜",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 可能缺乏生活热情、坚韧意志或专注能力",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 如体能训练（提升实战格斗能力）、射击练习（强化专业技能）、法律阅读（夯实法治素养）、团队球类运动（锤炼协作意识）",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 这些爱好会涣散纪律、消耗精力",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 任何爱好都不能影响紧急任务执行",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 这在追捕嫌犯、应急处突中至关重要",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 绝不因爱好而影响工作、偏离初心",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CSJT-20201226-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-01/reference_mid.txt",
+      "expected_range": "11.1-16.1",
+      "expected_band": "低分/偏弱",
+      "actual_score": 17.0,
+      "actual_band": "基本合格",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=12，截断=none，关键词削弱=light。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CSJT-20201226-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-01/reference_low.txt",
+      "expected_range": "6.2-11.2",
+      "expected_band": "低分/偏弱",
+      "actual_score": 0.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_analysis_low_3，句数=10，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CSJT-20201226-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-02/reference_high.txt",
+      "expected_range": "30.0-33.0",
+      "expected_band": "高分标杆",
+      "actual_score": 30.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 30.0。",
+        "模型总分 27.0 与维度汇总 30.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CSJT-20201226-02",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-02/reference_mid.txt",
+      "expected_range": "16.6-21.6",
+      "expected_band": "基本合格",
+      "actual_score": 25.0,
+      "actual_band": "中高档",
+      "status": "FAIL",
+      "validation_issue_count": 4,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 需要提供营业执照和场地安防评估报告",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 避免政策解读生硬抽象",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 若群众情况特殊（如紧急经营需求）",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 向单位建议在特警窗口、微信公众号公示业务办理条件、材料清单、咨询电话",
+        "基于高分答案程序化压缩生成；策略=markers，句数=8，截断=160，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CSJT-20201226-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-02/reference_low.txt",
+      "expected_range": "7.2-12.2",
+      "expected_band": "低分/偏弱",
+      "actual_score": 11.0,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=leading，句数=3，截断=90，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CSJT-20201226-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-03/reference_high.txt",
+      "expected_range": "29.0-32.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 每一步都贴合公安调查流程与特警单位实际",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CSJT-20201226-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-03/reference_mid.txt",
+      "expected_range": "16.1-21.1",
+      "expected_band": "基本合格",
+      "actual_score": 24.0,
+      "actual_band": "中高档",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化压缩生成；策略=markers，句数=6，截断=160，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "CSJT-20201226-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/CSJT-20201226-03/reference_low.txt",
+      "expected_range": "6.3-11.3",
+      "expected_band": "低分/偏弱",
+      "actual_score": 2.2,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=leading，句数=3，截断=90，关键词削弱=medium，口语化=否。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200816-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-01/reference_high.txt",
+      "expected_range": "27.0-30.0",
+      "expected_band": "高分标杆",
+      "actual_score": 27.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 27.0。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200816-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-01/reference_mid.txt",
+      "expected_range": "10.1-15.1",
+      "expected_band": "低分/偏弱",
+      "actual_score": 12.0,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=12，截断=none，关键词削弱=light。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200816-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-01/reference_low.txt",
+      "expected_range": "5.8-10.8",
+      "expected_band": "低分/偏弱",
+      "actual_score": 6.0,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=12，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200816-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-02/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 34.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 后续服务保障（15分钟）",
+        "第一阶段证据无法在原文中命中，已忽略: 第二个活动方案是",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200816-02",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-02/reference_mid.txt",
+      "expected_range": "11.2-16.2",
+      "expected_band": "低分/偏弱",
+      "actual_score": 24.0,
+      "actual_band": "基本合格",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化压缩生成；策略=template_organization_mid_1，句数=11，截断=none，关键词削弱=light。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200816-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-02/reference_low.txt",
+      "expected_range": "7.0-12.0",
+      "expected_band": "低分/偏弱",
+      "actual_score": 12.0,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_organization_low_1，句数=13，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200816-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-03/reference_high.txt",
+      "expected_range": "27.0-30.0",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200816-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-03/reference_mid.txt",
+      "expected_range": "14.6-19.6",
+      "expected_band": "基本合格",
+      "actual_score": 19.0,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 4,
+      "notes": [
+        "deduction_items 中的理由 [未体现湖南税务系统职场履职要求，缺乏本土化表达] 未绑定有效证据，已移除。",
+        "deduction_items 中的理由 [处理思路不够完整，缺乏具体的操作步骤] 未绑定有效证据，已移除。",
+        "deduction_items 中的理由 [沟通对象针对性不足，未体现差异化沟通策略] 未绑定有效证据，已移除。",
+        "deduction_items 中的理由 [工作统筹方法缺乏具体性和可行性描述] 未绑定有效证据，已移除。",
+        "基于高分答案程序化压缩生成；策略=markers，句数=6，截断=160，关键词削弱=medium。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200816-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200816-03/reference_low.txt",
+      "expected_range": "5.5-10.5",
+      "expected_band": "低分/偏弱",
+      "actual_score": 0.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=analysis_focus，句数=3，截断=90，关键词削弱=medium，口语化=否。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-01/reference_high.txt",
+      "expected_range": "27.0-30.0",
+      "expected_band": "高分标杆",
+      "actual_score": 27.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 10,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 总书记的论述从个人、民族、国家三个维度",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 让工程机械、电力机车等产品领跑全球",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 国家公务人员直接面对群众、服务群众",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 如基层治理中的矛盾纠纷、政策落实中的堵点难点等",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 精神的践行需要过硬的能力支撑",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 用真诚态度、务实举措回应群众期待——比如在推进老旧小区改造、农村供水保障等民生工作中",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 这些实践让我深刻认识到",
+        "第一阶段证据无法在原文中命中，已忽略: 以'闯'的勇气、'创'的智慧、'干'的作风",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-01/reference_mid.txt",
+      "expected_range": "10.9-15.9",
+      "expected_band": "低分/偏弱",
+      "actual_score": 17.0,
+      "actual_band": "基本合格",
+      "status": "FAIL",
+      "validation_issue_count": 2,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 如果推进过程中只重形式、不顾差异",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 同时把过程跟踪、结果反馈和动态调整一起做起来",
+        "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=12，截断=none，关键词削弱=light。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-01/reference_low.txt",
+      "expected_range": "5.8-10.8",
+      "expected_band": "低分/偏弱",
+      "actual_score": 11.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_analysis_low_2，句数=11，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-02/reference_high.txt",
+      "expected_range": "27.0-30.0",
+      "expected_band": "高分标杆",
+      "actual_score": 30.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 9,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 非常抱歉让您在办理业务时遇到了不满意的情况",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 具体对工作人员的哪些行为不满意（是服务态度、办理效率",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 让群众感受到被尊重、被重视",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 我会按湖南政务服务相关规定",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 上级部门会依法依规进一步核查处理",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 但群众的满意度是我们工作的核心",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 开展政策解读、沟通技巧、应急处理等方面的培训",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 以实事求是、灵活务实的态度化解矛盾",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-02",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-02/reference_mid.txt",
+      "expected_range": "14.7-19.7",
+      "expected_band": "基本合格",
+      "actual_score": 25.0,
+      "actual_band": "中高档",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化压缩生成；策略=leading，句数=6，截断=160，关键词削弱=medium。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-02/reference_low.txt",
+      "expected_range": "5.9-10.9",
+      "expected_band": "低分/偏弱",
+      "actual_score": 16.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=spread，句数=5，截断=90，关键词削弱=medium，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-03/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 32.0。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-03/reference_mid.txt",
+      "expected_range": "10.4-15.4",
+      "expected_band": "低分/偏弱",
+      "actual_score": 10.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化压缩生成；策略=template_organization_mid_1，句数=11，截断=none，关键词削弱=light。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-03/reference_low.txt",
+      "expected_range": "6.9-11.9",
+      "expected_band": "低分/偏弱",
+      "actual_score": 0.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_organization_low_2，句数=9，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-JY-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-01/reference_high.txt",
+      "expected_range": "27.0-30.0",
+      "expected_band": "高分标杆",
+      "actual_score": 27.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 深刻领会公平正义的核心内涵",
+        "deduction_items 中的理由 [未充分体现监狱改造人的核心宗旨] 未绑定有效证据，已移除。",
+        "参考答案相似度校准已将总分下限抬至 27.0。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-JY-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-01/reference_mid.txt",
+      "expected_range": "11.2-16.2",
+      "expected_band": "低分/偏弱",
+      "actual_score": 17.0,
+      "actual_band": "基本合格",
+      "status": "FAIL",
+      "validation_issue_count": 3,
+      "notes": [
+        "deduction_items 中的理由 [未充分体现湖南省直监狱岗位履职要求，缺乏对监狱刑罚执行、罪犯改造等核心职责的具体阐述] 未绑定有效证据，已移除。",
+        "deduction_items 中的理由 [分析公平正义内涵不够深入，未充分结合强关联词相关内容] 未绑定有效证据，已移除。",
+        "deduction_items 中的理由 [语言表达较为抽象，缺乏监狱系统工作人员庄重严谨的表达习惯] 未绑定有效证据，已移除。",
+        "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=12，截断=none，关键词削弱=light。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-JY-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-01/reference_low.txt",
+      "expected_range": "5.7-10.7",
+      "expected_band": "低分/偏弱",
+      "actual_score": 10.0,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_analysis_low_3，句数=10，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-JY-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-02/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-JY-02",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-02/reference_mid.txt",
+      "expected_range": "17.3-22.3",
+      "expected_band": "基本合格",
+      "actual_score": 26.0,
+      "actual_band": "中高档",
+      "status": "FAIL",
+      "validation_issue_count": 4,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 最近看你在劳动改造中不太积极",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 如果在思想教育课上认真学习、遵守监规纪律",
+        "deduction_items 中的理由 [未结合湖南省监狱管理局具体政策规定进行解读] 未绑定有效证据，已移除。",
+        "deduction_items 中的理由 [未体现具体的计分考核、减刑假释等湖南本土政策] 未绑定有效证据，已移除。",
+        "基于高分答案程序化压缩生成；策略=hybrid，句数=8，截断=220，关键词削弱=medium。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-JY-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-02/reference_low.txt",
+      "expected_range": "7.4-12.4",
+      "expected_band": "低分/偏弱",
+      "actual_score": 5.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=dialogue_focus，句数=3，截断=90，关键词削弱=medium，口语化=否。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-JY-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-03/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 5,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 咱们湖南有句老话",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 现在的毒品可不像以前只有海洛因",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 上班族要拒绝职场上的涉毒诱惑",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 咱们发现涉毒线索（比如有人贩卖毒品、聚众吸毒）",
+        "参考答案相似度校准已将总分下限抬至 32.0。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-JY-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-03/reference_mid.txt",
+      "expected_range": "11.0-16.0",
+      "expected_band": "低分/偏弱",
+      "actual_score": 12.0,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 4,
+      "notes": [
+        "第一阶段证据使用了未知维度 [计划组织]，已清空维度提示。",
+        "第一阶段证据使用了未知维度 [计划组织]，已清空维度提示。",
+        "第一阶段证据使用了未知维度 [计划组织]，已清空维度提示。",
+        "第一阶段证据使用了未知维度 [计划组织]，已清空维度提示。",
+        "基于高分答案程序化压缩生成；策略=template_organization_mid_1，句数=11，截断=none，关键词削弱=light。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200919-JY-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200919-JY-03/reference_low.txt",
+      "expected_range": "7.2-12.2",
+      "expected_band": "低分/偏弱",
+      "actual_score": 0.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 1,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 还是得放到实际工作里去考虑",
+        "基于高分答案程序化降档生成；策略=template_organization_low_3，句数=9，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-01/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 32.0。",
+        "模型总分 28.0 与维度汇总 32.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-01/reference_mid.txt",
+      "expected_range": "17.8-22.8",
+      "expected_band": "基本合格",
+      "actual_score": 27.0,
+      "actual_band": "中高档",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化压缩生成；策略=hybrid，句数=24，截断=160，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-01/reference_low.txt",
+      "expected_range": "6.5-11.5",
+      "expected_band": "低分/偏弱",
+      "actual_score": 9.0,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=dialogue_focus，句数=3，截断=120，关键词削弱=medium，口语化=否。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-02/reference_high.txt",
+      "expected_range": "67.0-70.0",
+      "expected_band": "高分标杆",
+      "actual_score": 67.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 67.0。",
+        "模型总分 57.5 与维度汇总 67.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-02",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-02/reference_mid.txt",
+      "expected_range": "33.9-38.9",
+      "expected_band": "低分/偏弱",
+      "actual_score": 43.0,
+      "actual_band": "基本合格",
+      "status": "FAIL",
+      "validation_issue_count": 1,
+      "notes": [
+        "deduction_items 中的理由 [缺乏明确的题目拟定] 未绑定有效证据，已移除。",
+        "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=12，截断=none，关键词削弱=light。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-02/reference_low.txt",
+      "expected_range": "17.8-22.8",
+      "expected_band": "低分/偏弱",
+      "actual_score": 34.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_analysis_low_3，句数=10，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-JY-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-01/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "deduction_items 中的理由 [未充分体现湖南本土化表达，缺乏长沙城市定位、湖南文化强省等具体背景阐述] 未绑定有效证据，已移除。",
+        "参考答案相似度校准已将总分下限抬至 32.0。",
+        "模型总分 29.5 与维度汇总 32.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-JY-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-01/reference_mid.txt",
+      "expected_range": "14.0-19.0",
+      "expected_band": "低分/偏弱",
+      "actual_score": 22.0,
+      "actual_band": "基本合格",
+      "status": "FAIL",
+      "validation_issue_count": 4,
+      "notes": [
+        "第一阶段证据无法在原文中命中，已忽略: 从积极一面看...但换个角度看...",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 同时把过程跟踪、结果反馈和动态调整一起做起来",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 另外还要把原则判断和具体做法区分开",
+        "deduction_items 中的理由 [未深入关联监狱岗履职理念，脱离] 未绑定有效证据，已移除。",
+        "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=12，截断=none，关键词削弱=light。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-JY-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-01/reference_low.txt",
+      "expected_range": "7.4-12.4",
+      "expected_band": "低分/偏弱",
+      "actual_score": 9.0,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_analysis_low_3，句数=10，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-JY-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-02/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 4,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 我会用真诚、耐心的态度与犯人父母沟通",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 一是深入学习湖南监狱系统的廉洁从政规定和典型案例",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 让他们更深入地了解监狱工作",
+        "参考答案相似度校准已将总分下限抬至 32.0。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-JY-02",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-02/reference_mid.txt",
+      "expected_range": "18.3-23.3",
+      "expected_band": "基本合格",
+      "actual_score": 24.5,
+      "actual_band": "基本合格",
+      "status": "FAIL",
+      "validation_issue_count": 2,
+      "notes": [
+        "deduction_items 中的理由 [未充分结合湖南监狱系统具体规定和要求] 未绑定有效证据，已移除。",
+        "deduction_items 中的理由 [处理步骤不够完整，缺少明确的核实环节描述] 未绑定有效证据，已移除。",
+        "基于高分答案程序化压缩生成；策略=markers，句数=6，截断=160，关键词削弱=medium。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-JY-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-02/reference_low.txt",
+      "expected_range": "7.6-12.6",
+      "expected_band": "低分/偏弱",
+      "actual_score": 3.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=spread，句数=3，截断=90，关键词削弱=medium，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-JY-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-03/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 32.0。",
+        "模型总分 28.2 与维度汇总 32.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-JY-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-03/reference_mid.txt",
+      "expected_range": "16.4-21.4",
+      "expected_band": "低分/偏弱",
+      "actual_score": 25.5,
+      "actual_band": "中高档",
+      "status": "FAIL",
+      "validation_issue_count": 3,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 近年来全省监狱系统的安全事故发生率几乎为零",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 也会经常给你们打电话、回家看望你们",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 这难道不是一件很有价值的事吗",
+        "基于高分答案程序化压缩生成；策略=leading，句数=27，截断=160，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-JY-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-JY-03/reference_low.txt",
+      "expected_range": "8.1-13.1",
+      "expected_band": "低分/偏弱",
+      "actual_score": 18.7,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 1,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 我专门查过有关部门系统的情况",
+        "基于高分答案程序化降档生成；策略=leading，句数=5，截断=90，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-XZ-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-01/reference_high.txt",
+      "expected_range": "27.0-30.0",
+      "expected_band": "高分标杆",
+      "actual_score": 30.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "第一阶段证据无法在原文中命中，已忽略: 新时代乡镇工作需要",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-XZ-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-01/reference_mid.txt",
+      "expected_range": "14.4-19.4",
+      "expected_band": "基本合格",
+      "actual_score": 30.0,
+      "actual_band": "高分标杆",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化压缩生成；策略=spread，句数=9，截断=160，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-XZ-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-01/reference_low.txt",
+      "expected_range": "5.1-10.1",
+      "expected_band": "低分/偏弱",
+      "actual_score": 17.5,
+      "actual_band": "基本合格",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=spread，句数=6，截断=90，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-XZ-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-02/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 12,
+      "notes": [
+        "第一阶段证据无法在原文中命中，已忽略: 第一，\"扶贫号\"农耕机是\"领头雁\"，干部带头干，群众才敢跟。",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 而是主动参与——这正是湖南扶贫的关键",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 才能稳得住、能长久",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 让勤劳致富的理念扎根乡村",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 湖南农村有句老话",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 却道出了湖南扶贫的核心经验",
+        "模型返回了未定义维度 ['观点提炼']，已自动忽略。",
+        "模型缺失维度 ['：准确把握“干部带头、群']，已按 0 分补齐。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-XZ-02",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-02/reference_mid.txt",
+      "expected_range": "13.9-18.9",
+      "expected_band": "低分/偏弱",
+      "actual_score": 17.0,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 10,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 如果推进过程中只重形式、不顾差异",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 扶贫和干部带头说明相关工作是在回应现实需要",
+        "模型返回了未定义维度 ['观点提炼']，已自动忽略。",
+        "模型缺失维度 ['：准确把握“干部带头、群']，已按 0 分补齐。",
+        "deduction_items 中的理由 [缺乏对漫画中'勤'字核心要素的深入解读] 未绑定有效证据，已移除。",
+        "deduction_items 使用了未知维度 [观点提炼]，已清空维度。",
+        "deduction_items 中的理由 [未充分结合湖南具体扶贫实践案例] 未绑定有效证据，已移除。",
+        "deduction_items 中的理由 [缺少具体的基层工作方法和措施] 未绑定有效证据，已移除。",
+        "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=12，截断=none，关键词削弱=light。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-XZ-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-02/reference_low.txt",
+      "expected_range": "7.9-12.9",
+      "expected_band": "低分/偏弱",
+      "actual_score": 7.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 3,
+      "notes": [
+        "模型返回了未定义维度 ['观点提炼']，已自动忽略。",
+        "模型缺失维度 ['：准确把握“干部带头、群']，已按 0 分补齐。",
+        "deduction_items 使用了未知维度 [观点提炼]，已清空维度。",
+        "基于高分答案程序化降档生成；策略=template_analysis_low_3，句数=10，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-XZ-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-03/reference_high.txt",
+      "expected_range": "22.0-25.0",
+      "expected_band": "高分标杆",
+      "actual_score": 22.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 5,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 我知道大家心里犯嘀咕",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 上个月试着推了5个小盘菜",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 还会在社区公众号、业主群里推荐",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 大家可以先选3-5个招牌菜做小盘菜试点",
+        "参考答案相似度校准已将总分下限抬至 22.0。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-XZ-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-03/reference_mid.txt",
+      "expected_range": "12.1-17.1",
+      "expected_band": "基本合格",
+      "actual_score": 18.3,
+      "actual_band": "中高档",
+      "status": "FAIL",
+      "validation_issue_count": 11,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 我知道大家心里犯嘀咕",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 是来跟大家掏心窝子、算算账",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 上个月试着推了5个小盘菜",
+        "第一阶段证据无法在原文中命中，已忽略: 其次，我给大家算笔'明白账'：推行小盘菜和'N-1点餐'，不仅不会亏，还可能多赚钱！",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 顾客觉得咱们餐馆实在、不浪费",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 是来跟大家掏心窝子、算算账",
+        "deduction_items 中的理由 [沟通生硬/摆官架：语气强硬、官话套话多，无法拉近距离] 未绑定有效证据，已移除。",
+        "deduction_items 中的理由 [利益分析空洞/无说服力：未结合餐饮经营实际，仅谈响应号召，未解顾虑] 未绑定有效证据，已移除。",
+        "基于高分答案程序化压缩生成；策略=leading，句数=9，截断=160，关键词削弱=medium。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200920-XZ-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200920-XZ-03/reference_low.txt",
+      "expected_range": "5.2-10.2",
+      "expected_band": "低分/偏弱",
+      "actual_score": 15.0,
+      "actual_band": "基本合格",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=markers，句数=5，截断=90，关键词削弱=heavy，口语化=否。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200921-XZ-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-01/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 35.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200921-XZ-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-01/reference_mid.txt",
+      "expected_range": "12.4-17.4",
+      "expected_band": "低分/偏弱",
+      "actual_score": 15.0,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 6,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 如果推进过程中只重形式、不顾差异",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 另外还要把原则判断和具体做法区分开",
+        "deduction_items 中的理由 [缺乏对陀螺式干部核心特征的准确概括，未提及被动应付、虚转空耗、回避矛盾等核心识别词] 未绑定有效证据，已移除。",
+        "deduction_items 中的理由 [根源分析不充分，未分析责任不清、能力不足、激励不够等根源，未提及强关联识别词] 未绑定有效证据，已移除。",
+        "deduction_items 中的理由 [措施不够务实可操作，未涵盖压责任、强能力、明激励、强监督4个方面，未结合湖南清单制、传帮带、实绩考核等实际] 未绑定有效证据，已移除。",
+        "deduction_items 中的理由 [未提及清单制、传帮带、实绩考核、群众监督等强关联识别词] 未绑定有效证据，已移除。",
+        "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=12，截断=none，关键词削弱=light。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200921-XZ-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-01/reference_low.txt",
+      "expected_range": "7.2-12.2",
+      "expected_band": "低分/偏弱",
+      "actual_score": 15.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_analysis_low_2，句数=10，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200921-XZ-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-02/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "deduction_items 中的理由 [缺少传帮带强关联识别词] 未绑定有效证据，已移除。",
+        "deduction_items 中的理由 [缺少实战练兵强关联识别词] 未绑定有效证据，已移除。",
+        "参考答案相似度校准已将总分下限抬至 32.0。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200921-XZ-02",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-02/reference_mid.txt",
+      "expected_range": "17.8-22.8",
+      "expected_band": "基本合格",
+      "actual_score": 27.0,
+      "actual_band": "中高档",
+      "status": "FAIL",
+      "validation_issue_count": 2,
+      "notes": [
+        "deduction_items 中的理由 [缺少对压力大这一核心困难的认知] 未绑定有效证据，已移除。",
+        "deduction_items 中的理由 [缺少传帮带这一强关联识别词] 未绑定有效证据，已移除。",
+        "基于高分答案程序化压缩生成；策略=hybrid，句数=7，截断=160，关键词削弱=medium。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200921-XZ-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-02/reference_low.txt",
+      "expected_range": "7.7-12.7",
+      "expected_band": "低分/偏弱",
+      "actual_score": 24.0,
+      "actual_band": "基本合格",
+      "status": "FAIL",
+      "validation_issue_count": 5,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 平时多跟村干部、村民拉家常",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 记录村里的户数、产业、困难群众等情况",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 跟着他们学相关内容的",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 就一定能克服困难",
+        "第一阶段证据无法在原文中命中，已忽略: \"呷饭\"\"搞么子\"",
+        "基于高分答案程序化降档生成；策略=markers，句数=4，截断=90，关键词削弱=heavy，口语化=否。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200921-XZ-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-03/reference_high.txt",
+      "expected_range": "22.0-25.0",
+      "expected_band": "高分标杆",
+      "actual_score": 22.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 22.0。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200921-XZ-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-03/reference_mid.txt",
+      "expected_range": "11.9-16.9",
+      "expected_band": "基本合格",
+      "actual_score": 19.5,
+      "actual_band": "中高档",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化压缩生成；策略=spread，句数=16，截断=160，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200921-XZ-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200921-XZ-03/reference_low.txt",
+      "expected_range": "5.0-10.0",
+      "expected_band": "低分/偏弱",
+      "actual_score": 11.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 1,
+      "notes": [
+        "deduction_items 中的理由 [未提及强关联识别词'村规民约、志愿服务、文明家庭'] 未绑定有效证据，已移除。",
+        "基于高分答案程序化降档生成；策略=spread，句数=3，截断=90，关键词削弱=medium，口语化=否。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200922-XZ-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-01/reference_high.txt",
+      "expected_range": "27.0-30.0",
+      "expected_band": "高分标杆",
+      "actual_score": 27.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 10,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 的做法，我坚决不认同，这是",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 这类现象反映出三个突出问题",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 这种现象的危害不容忽视",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 对项目区域内的古树、历史建筑进行全面排查",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 明确如果擅自砍伐古树、破坏历史建筑",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 可以在村部公示项目规划和保护方案",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 向干部和村民宣传古树、历史建筑的文化价值",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 总之，城市扩张和文化保护不是",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200922-XZ-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-01/reference_mid.txt",
+      "expected_range": "10.5-15.5",
+      "expected_band": "低分/偏弱",
+      "actual_score": 17.0,
+      "actual_band": "基本合格",
+      "status": "FAIL",
+      "validation_issue_count": 3,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 如果推进过程中只重形式、不顾差异",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 同时把过程跟踪、结果反馈和动态调整一起做起来",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 所以作答时既要看到积极意义",
+        "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=12，截断=none，关键词削弱=light。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200922-XZ-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-01/reference_low.txt",
+      "expected_range": "5.8-10.8",
+      "expected_band": "低分/偏弱",
+      "actual_score": 14.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=10，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200922-XZ-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-02/reference_high.txt",
+      "expected_range": "32.0-35.0",
+      "expected_band": "高分标杆",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 32.0。",
+        "模型总分 27.0 与维度汇总 32.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200922-XZ-02",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-02/reference_mid.txt",
+      "expected_range": "11.7-16.7",
+      "expected_band": "低分/偏弱",
+      "actual_score": 14.0,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 如果推进过程中只重形式、不顾差异",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 同时把过程跟踪、结果反馈和动态调整一起做起来",
+        "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=12，截断=none，关键词削弱=light。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200922-XZ-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-02/reference_low.txt",
+      "expected_range": "7.3-12.3",
+      "expected_band": "低分/偏弱",
+      "actual_score": 14.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_analysis_low_3，句数=10，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200922-XZ-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-03/reference_high.txt",
+      "expected_range": "27.0-30.0",
+      "expected_band": "高分标杆",
+      "actual_score": 27.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 10,
+      "notes": [
+        "第一阶段证据抽取结果无效，已回退到规则型证据整理。",
+        "模型返回了未定义维度 ['采用']，已自动忽略。",
+        "模型缺失维度 ['：采用“土办法+专业手段']，已按 0 分补齐。",
+        "deduction_items 使用了未知维度 [采用]，已清空维度。",
+        "deduction_items 中的理由 [缺少专业检测相关表述] 未绑定有效证据，已移除。",
+        "deduction_items 中的理由 [缺少分类处置相关表述] 未绑定有效证据，已移除。",
+        "deduction_items 中的理由 [缺少长效监管相关表述] 未绑定有效证据，已移除。",
+        "bonus_items 使用了未知维度 [采用]，已清空维度。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200922-XZ-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-03/reference_mid.txt",
+      "expected_range": "8.7-13.7",
+      "expected_band": "低分/偏弱",
+      "actual_score": 9.0,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "模型返回了未定义维度 ['科学决策与措施']，已自动忽略。",
+        "模型缺失维度 ['：采用“土办法+专业手段']，已按 0 分补齐。",
+        "deduction_items 使用了未知维度 [科学决策与措施]，已清空维度。",
+        "基于高分答案程序化压缩生成；策略=template_organization_mid_1，句数=11，截断=none，关键词削弱=light。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-20200922-XZ-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_hunan/HN-20200922-XZ-03/reference_low.txt",
+      "expected_range": "5.7-10.7",
+      "expected_band": "低分/偏弱",
+      "actual_score": 3.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 4,
+      "notes": [
+        "模型返回了未定义维度 ['科学决策与措施']，已自动忽略。",
+        "模型缺失维度 ['：采用“土办法+专业手段']，已按 0 分补齐。",
+        "deduction_items 使用了未知维度 [科学决策与措施]，已清空维度。",
+        "deduction_items 使用了未知维度 [语言逻辑与岗位适配]，已清空维度。",
+        "基于高分答案程序化降档生成；策略=template_organization_low_2，句数=9，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-LX-20200606-01",
+      "sample_label": "偏低样本",
+      "sample_path": "/home/quyu/kaogong_ai/sample_sets/非高分参考/低分1.txt",
+      "expected_range": "14.0-17.5",
+      "expected_band": "低分/偏低",
+      "actual_score": 16.1,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "最终分数采用规则校准层纠偏：模型总分 20.0 -> 规则总分 16.1。",
+        "模型总分 20.0 与维度汇总 16.1 不一致，已采用维度汇总。",
+        "分析有一定覆盖，但口语化、岗位化不足。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-LX-20200606-01",
+      "sample_label": "口语化低样本",
+      "sample_path": "/home/quyu/kaogong_ai/sample_sets/非高分参考/18分左右.txt",
+      "expected_range": "13.0-16.0",
+      "expected_band": "低分/偏低",
+      "actual_score": 14.0,
+      "actual_band": "低分/偏低",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "规则校准将总分下限抬至 14.0，避免高内容强度答案被模型均分化压低。",
+        "口语化较重，结构和措施层次都偏弱。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-LX-20200606-01",
+      "sample_label": "中档样本",
+      "sample_path": "/home/quyu/kaogong_ai/sample_sets/非高分参考/21分左右.txt",
+      "expected_range": "18.0-21.0",
+      "expected_band": "基本合格",
+      "actual_score": 19.0,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "最终分数采用规则校准层纠偏：模型总分 17.0 -> 规则总分 19.0。",
+        "规则校准将总分下限抬至 19.0，避免高内容强度答案被模型均分化压低。",
+        "整体较完整，但本土化和岗位化不足。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-LX-20200606-01",
+      "sample_label": "中上样本",
+      "sample_path": "/home/quyu/kaogong_ai/sample_sets/非高分参考/中低分1.txt",
+      "expected_range": "20.0-22.5",
+      "expected_band": "通用高分",
+      "actual_score": 22.0,
+      "actual_band": "通用高分",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 而忽视了直播带货背后需要完善的产品供应链、物流体系、品牌建设等核心工作",
+        "最终分数采用规则校准层纠偏：模型总分 20.0 -> 规则总分 22.0。",
+        "规则校准将总分上限压至 22.0，避免口语化或浅层答案被模型虚高。",
+        "结构较完整，提到河南，但离省直高分仍有差距。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-LX-20200606-01",
+      "sample_label": "通用高分样本",
+      "sample_path": "/home/quyu/kaogong_ai/sample_sets/通用高分/26分.txt",
+      "expected_range": "20.0-22.5",
+      "expected_band": "通用高分",
+      "actual_score": 20.0,
+      "actual_band": "通用高分",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "最终分数采用规则校准层纠偏：模型总分 16.0 -> 规则总分 20.0。",
+        "规则校准将总分下限抬至 20.0，避免高内容强度答案被模型均分化压低。",
+        "模型总分 16.0 与维度汇总 20.0 不一致，已采用维度汇总。",
+        "通用分析能力强，但缺少河南省情和省直机关表达。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-LX-20200606-01",
+      "sample_label": "通用高分标杆",
+      "sample_path": "/home/quyu/kaogong_ai/sample_sets/通用高分/28分.txt",
+      "expected_range": "23.0-25.5",
+      "expected_band": "河南省直高分",
+      "actual_score": 24.0,
+      "actual_band": "河南省直高分",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "最终分数采用规则校准层纠偏：模型总分 20.0 -> 规则总分 24.0。",
+        "模型总分 20.0 与维度汇总 24.0 不一致，已采用维度汇总。",
+        "内容和措施更成熟，语言规范度更高。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-LX-20200606-01",
+      "sample_label": "河南省直高分样本",
+      "sample_path": "/home/quyu/kaogong_ai/sample_sets/河南省直高分/中高分1.txt",
+      "expected_range": "26.0-28.5",
+      "expected_band": "河南省直高分",
+      "actual_score": 27.8,
+      "actual_band": "河南省直高分",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "最终分数采用规则校准层纠偏：模型总分 22.0 -> 规则总分 27.8。",
+        "模型总分 22.0 与维度汇总 27.8 不一致，已采用维度汇总。",
+        "省情、岗位视角和统筹协调表达已较完整。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "HN-LX-20200606-01",
+      "sample_label": "河南省直标杆样本",
+      "sample_path": "/home/quyu/kaogong_ai/sample_sets/河南省直高分/标准1.txt",
+      "expected_range": "27.0-30.0",
+      "expected_band": "河南省直高分",
+      "actual_score": 28.5,
+      "actual_band": "河南省直高分",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "最终分数采用规则校准层纠偏：模型总分 20.0 -> 规则总分 28.5。",
+        "模型总分 20.0 与维度汇总 28.5 不一致，已采用维度汇总。",
+        "当前题目的高分标杆答案。"
+      ],
+      "error": ""
+    }
+  ]
+}

@@ -7,3 +7,7 @@ openpyxl
 pydantic
 passlib[bcrypt]
 python-jose[cryptography]
+sqlalchemy
+pymysql
+cryptography
+python-dotenv

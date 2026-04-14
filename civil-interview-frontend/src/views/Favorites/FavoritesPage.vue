@@ -106,7 +106,8 @@ function dimensionColor(key) {
 
 function scoreColor(score, maxScore) {
   const ratio = score / maxScore
-  if (ratio >= 0.8) return '#389E0D'
+  if (ratio >= 0.85) return '#389E0D'
+  if (ratio >= 0.75) return '#1B5FAA'
   if (ratio >= 0.6) return '#D48806'
   return '#CF1322'
 }

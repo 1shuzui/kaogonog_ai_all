@@ -28,10 +28,18 @@ export async function deleteQuestion(id) {
   return http.delete(`/questions/${id}`)
 }
 
-export async function importQuestions(file) {
-  if (USE_MOCK) return { imported: 10, failed: 0 }
+export async function importQuestions(payload) {
+  if (USE_MOCK) {
+    const total = Array.isArray(payload) ? payload.length : 10
+    return { imported: total, failed: 0 }
+  }
   const formData = new FormData()
-  formData.append('file', file)
+  if (Array.isArray(payload)) {
+    const jsonBlob = new Blob([JSON.stringify(payload)], { type: 'application/json' })
+    formData.append('file', jsonBlob, `questions_${Date.now()}.json`)
+  } else {
+    formData.append('file', payload)
+  }
   return http.post('/questions/import', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   })

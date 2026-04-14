@@ -165,7 +165,7 @@ onMounted(async () => {
       grid: { top: 10, right: 16, bottom: 24, left: 40 },
       xAxis: {
         type: 'category',
-        data: trendData.value.map(d => d.date.slice(5)),
+        data: trendData.value.map(d => d.label),
         axisLabel: { fontSize: 11, color: '#8C8C8C' },
         axisLine: { lineStyle: { color: '#E8E8E8' } }
       },

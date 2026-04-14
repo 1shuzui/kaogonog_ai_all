@@ -1,0 +1,40 @@
+{
+  "items": [
+    {
+      "username": "admin",
+      "password": "123456",
+      "email": "",
+      "full_name": "admin",
+      "province": "national",
+      "preferences": {
+        "defaultPrepTime": 300,
+        "defaultAnswerTime": 600,
+        "enableVideo": true
+      }
+    },
+    {
+      "username": "demo_reviewer",
+      "password": "123456",
+      "email": "",
+      "full_name": "demo_reviewer",
+      "province": "national",
+      "preferences": {
+        "defaultPrepTime": 90,
+        "defaultAnswerTime": 180,
+        "enableVideo": true
+      }
+    },
+    {
+      "username": "pwd_case",
+      "password": "654321",
+      "email": "",
+      "full_name": "pwd_case",
+      "province": "national",
+      "preferences": {
+        "defaultPrepTime": 90,
+        "defaultAnswerTime": 180,
+        "enableVideo": true
+      }
+    }
+  ]
+}

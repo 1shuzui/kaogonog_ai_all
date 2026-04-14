@@ -7,4 +7,11 @@ venv/
 *.egg-info/
 dist/
 build/
-storage/
+*.db
+request.log
+last_prompt.txt
+last_result.json
+pyvenv.cfg
+Lib/
+Scripts/
+Include/

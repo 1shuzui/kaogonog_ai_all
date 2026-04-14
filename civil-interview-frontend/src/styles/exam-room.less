@@ -18,7 +18,7 @@
   flex-shrink: 0;
 }
 
-// 主内容区：题目占大部分，视频小窗悬浮
+// 主内容区：题目占满
 .exam-room__main {
   flex: 1;
   position: relative;
@@ -26,6 +26,7 @@
   flex-direction: column;
   padding: 16px;
   overflow: hidden;
+  min-height: 0;
 }
 
 // 题目卡片 - 占据主要空间
@@ -36,7 +37,6 @@
   border-radius: @border-radius;
   border-left: 3px solid @secondary-blue;
   overflow-y: auto;
-  margin-bottom: 16px;
   min-height: 0;
 
   .question-stem {
@@ -44,61 +44,44 @@
     line-height: 1.8;
     color: rgba(255, 255, 255, 0.95);
   }
-
-  // 答题阶段给小窗留空间
-  &:has(~ .exam-room__video-container.is-pip) {
-    padding-right: 160px;
-  }
 }
 
-// 视频容器 - 准备阶段大预览，答题阶段小窗
-.exam-room__video-container {
-  position: relative;
-  width: 100%;
-  max-width: 280px;
-  height: 210px;
-  margin: 0 auto;
+// 摄像头预览 - 始终浮动定位，不占用布局空间
+.exam-room__camera {
+  position: fixed;
+  right: 16px;
   background: #000;
-  border-radius: @border-radius;
+  border-radius: 10px;
   overflow: hidden;
-  transition: all 0.3s ease;
+  transition: top 0.4s ease, width 0.4s ease, height 0.4s ease, opacity 0.4s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  z-index: 100;
 
-  // 准备阶段提示文字
-  .video-hint {
-    position: absolute;
-    bottom: 12px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 6px 16px;
-    background: rgba(0, 0, 0, 0.6);
-    border-radius: 16px;
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.8);
-    pointer-events: none;
-    white-space: nowrap;
-    z-index: 5;
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
-  // 小窗模式 (Picture-in-Picture)
-  &.is-pip {
-    position: absolute;
-    bottom: 16px;
-    right: 16px;
-    width: 140px;
-    height: 105px;
-    max-width: none;
-    margin: 0;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    border: 2px solid rgba(255, 255, 255, 0.15);
-    z-index: 10;
+  // 准备阶段 - 右上角中等大小
+  &.is-prep {
+    top: 70px;
+    width: 180px;
+    height: 135px;
+  }
 
-    // 小窗模式下隐藏提示
-    .video-hint {
+  // 答题阶段 - 右下角小窗
+  &.is-pip {
+    top: calc(100vh - 205px);
+    width: 130px;
+    height: 98px;
+
+    .camera-hint {
       display: none;
     }
 
-    // 调整录制指示器大小
-    ::v-deep(.recording-indicator) {
+    :deep(.recording-indicator) {
       top: 4px;
       right: 4px;
       padding: 2px 6px;
@@ -110,12 +93,20 @@
       }
     }
   }
+}
 
-  video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
+.camera-hint {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 12px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 12px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  pointer-events: none;
+  white-space: nowrap;
 }
 
 .exam-room__timer {
@@ -127,8 +118,8 @@
 }
 
 .exam-room__waveform {
-  flex: 1;
-  min-height: 60px;
+  flex-shrink: 0;
+  height: 60px;
   margin: 0 16px;
   display: flex;
   align-items: center;

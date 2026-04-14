@@ -1,27 +1,19 @@
 import { http, USE_MOCK } from './index'
 import { getMockTranscript, getMockScoringResult } from './mock/exam'
 
-export async function transcribeAudio(audioBlob) {
+export async function transcribeAudio(audioBlob, options = {}) {
   if (USE_MOCK) return getMockTranscript()
-  const blobType = audioBlob?.type || ''
-  const extension = blobType.includes('wav')
-    ? 'wav'
-    : blobType.includes('mpeg') || blobType.includes('mp3')
-      ? 'mp3'
-      : blobType.includes('mp4') || blobType.includes('m4a')
-        ? 'm4a'
-        : 'webm'
   const formData = new FormData()
-  formData.append('audio', audioBlob, `recording_${Date.now()}.${extension}`)
+  formData.append('audio', audioBlob, options.filename || `answer_${Date.now()}.webm`)
   return http.post('/scoring/transcribe', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 60000
+    timeout: 180000
   })
 }
 
 export async function evaluateAnswer(data) {
   if (USE_MOCK) return getMockScoringResult(data.questionId)
-  return http.post('/scoring/evaluate', data)
+  return http.post('/scoring/evaluate', data, { timeout: 180000 })
 }
 
 export async function getScoringResult(examId, questionId) {

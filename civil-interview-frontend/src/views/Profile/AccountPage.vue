@@ -54,10 +54,12 @@
 import { ref, onMounted } from 'vue'
 import { LeftOutlined } from '@ant-design/icons-vue'
 import { useUserStore } from '@/stores/user'
+import { useExamStore } from '@/stores/exam'
 import { message } from 'ant-design-vue'
 import http from '@/api/index'
 
 const userStore = useUserStore()
+const examStore = useExamStore()
 
 const nickname = ref('')
 const email = ref('')
@@ -124,6 +126,9 @@ async function changePassword() {
 function clearLocalData() {
   const keys = ['civil_favorites', 'civil_training_progress']
   keys.forEach(key => localStorage.removeItem(key))
+  sessionStorage.removeItem('targeted_question')
+  sessionStorage.removeItem('training_question')
+  examStore.clearPersistedSession()
   message.success('本地数据已清除')
 }
 </script>

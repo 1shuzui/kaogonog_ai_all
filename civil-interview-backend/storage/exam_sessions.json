@@ -1,0 +1,228 @@
+{
+  "items": [
+    {
+      "examId": "exam_20260413174518_40d09f",
+      "questionIds": [
+        "HN-20200919-JY-01",
+        "HN-20200920-01",
+        "HN-20200919-01",
+        "HN-20200920-JY-01",
+        "HN-20200920-XZ-01"
+      ],
+      "recordIds": [],
+      "createdAt": "2026-04-13T17:45:18",
+      "updatedAt": "2026-04-13T17:45:18",
+      "completedAt": null,
+      "uploads": []
+    },
+    {
+      "examId": "exam_20260413174602_4570a3",
+      "questionIds": [
+        "CS-20201212-01",
+        "HN-20200816-03",
+        "HN-20200919-JY-02",
+        "HN-20200919-01",
+        "HN-20200922-XZ-02"
+      ],
+      "recordIds": [],
+      "createdAt": "2026-04-13T17:46:02",
+      "updatedAt": "2026-04-13T17:46:02",
+      "completedAt": null,
+      "uploads": []
+    },
+    {
+      "examId": "exam_20260413174708_b2ae51",
+      "questionIds": [
+        "HN-20200816-01"
+      ],
+      "recordIds": [],
+      "createdAt": "2026-04-13T17:47:08",
+      "updatedAt": "2026-04-13T17:47:08",
+      "completedAt": null,
+      "uploads": []
+    },
+    {
+      "examId": "exam_20260413203254_197a40",
+      "questionIds": [
+        "CS-20201212-01"
+      ],
+      "recordIds": [
+        33
+      ],
+      "createdAt": "2026-04-13T20:32:54",
+      "updatedAt": "2026-04-13T20:32:54",
+      "completedAt": null,
+      "uploads": []
+    },
+    {
+      "examId": "exam_20260413203729_2df19d",
+      "questionIds": [
+        "CS-20201212-01",
+        "CS-20201212-02"
+      ],
+      "recordIds": [
+        34,
+        35
+      ],
+      "createdAt": "2026-04-13T20:37:29",
+      "updatedAt": "2026-04-13T20:37:29",
+      "completedAt": null,
+      "uploads": []
+    },
+    {
+      "examId": "exam_20260413224406_4c5086",
+      "questionIds": [
+        "HN-20200919-JY-03",
+        "HN-20200919-JY-01",
+        "HN-20200919-02",
+        "HN-20200920-JY-02",
+        "CS-20201212-02"
+      ],
+      "recordIds": [
+        36,
+        37
+      ],
+      "createdAt": "2026-04-13T22:44:06",
+      "updatedAt": "2026-04-13T22:46:15",
+      "completedAt": "2026-04-13T22:46:15",
+      "uploads": [
+        {
+          "filename": "exam_20260413224406_4c5086_224414.webm",
+          "uploadedAt": "2026-04-13T22:44:14"
+        },
+        {
+          "filename": "exam_20260413224406_4c5086_224437.webm",
+          "uploadedAt": "2026-04-13T22:44:37"
+        }
+      ]
+    },
+    {
+      "examId": "exam_20260413224704_fc50ea",
+      "questionIds": [
+        "CS-20201212-01",
+        "HN-20200816-01",
+        "CSJT-20201226-03",
+        "HN-20200920-01",
+        "HN-20200919-03"
+      ],
+      "recordIds": [
+        38,
+        39,
+        40,
+        41,
+        42
+      ],
+      "createdAt": "2026-04-13T22:47:04",
+      "updatedAt": "2026-04-13T22:50:26",
+      "completedAt": "2026-04-13T22:50:26",
+      "uploads": [
+        {
+          "filename": "exam_20260413224704_fc50ea_224711.webm",
+          "uploadedAt": "2026-04-13T22:47:11"
+        },
+        {
+          "filename": "exam_20260413224704_fc50ea_224743.webm",
+          "uploadedAt": "2026-04-13T22:47:43"
+        },
+        {
+          "filename": "exam_20260413224704_fc50ea_224756.webm",
+          "uploadedAt": "2026-04-13T22:47:56"
+        },
+        {
+          "filename": "exam_20260413224704_fc50ea_224953.webm",
+          "uploadedAt": "2026-04-13T22:49:53"
+        },
+        {
+          "filename": "exam_20260413224704_fc50ea_225011.webm",
+          "uploadedAt": "2026-04-13T22:50:11"
+        }
+      ]
+    },
+    {
+      "examId": "exam_20260413225503_bc6017",
+      "questionIds": [
+        "HN-LX-20200606-01",
+        "HN-20200921-XZ-02",
+        "HN-20200922-XZ-02",
+        "HN-20200919-01",
+        "CSJT-20201226-02"
+      ],
+      "recordIds": [
+        43
+      ],
+      "createdAt": "2026-04-13T22:55:03",
+      "updatedAt": "2026-04-13T22:55:55",
+      "completedAt": "2026-04-13T22:55:55",
+      "uploads": [
+        {
+          "filename": "exam_20260413225503_bc6017_225507.webm",
+          "uploadedAt": "2026-04-13T22:55:07"
+        }
+      ]
+    },
+    {
+      "examId": "exam_20260413234903_547f55",
+      "questionIds": [
+        "CS-20201212-02",
+        "HN-20200920-JY-01",
+        "HN-LX-20200606-01",
+        "HN-20200921-XZ-03",
+        "HN-20200921-XZ-01"
+      ],
+      "recordIds": [
+        44,
+        45,
+        46,
+        47,
+        48
+      ],
+      "createdAt": "2026-04-13T23:49:03",
+      "updatedAt": "2026-04-13T23:50:24",
+      "completedAt": "2026-04-13T23:50:24",
+      "uploads": [
+        {
+          "filename": "exam_20260413234903_547f55_234908.webm",
+          "uploadedAt": "2026-04-13T23:49:08"
+        },
+        {
+          "filename": "exam_20260413234903_547f55_234918.webm",
+          "uploadedAt": "2026-04-13T23:49:18"
+        },
+        {
+          "filename": "exam_20260413234903_547f55_234938.webm",
+          "uploadedAt": "2026-04-13T23:49:38"
+        },
+        {
+          "filename": "exam_20260413234903_547f55_235002.webm",
+          "uploadedAt": "2026-04-13T23:50:02"
+        },
+        {
+          "filename": "exam_20260413234903_547f55_235013.webm",
+          "uploadedAt": "2026-04-13T23:50:13"
+        }
+      ]
+    },
+    {
+      "examId": "exam_20260413235112_e4ea54",
+      "questionIds": [
+        "HN-20200921-XZ-03",
+        "HN-20200919-JY-01",
+        "HN-20200919-03",
+        "HN-20200919-02",
+        "HN-20200920-XZ-02"
+      ],
+      "recordIds": [
+        49
+      ],
+      "createdAt": "2026-04-13T23:51:12",
+      "updatedAt": "2026-04-13T23:51:25",
+      "completedAt": "2026-04-13T23:51:25",
+      "uploads": [
+        {
+          "filename": "exam_20260413235112_e4ea54_235117.webm",
+          "uploadedAt": "2026-04-13T23:51:17"
+        }
+      ]
+    }
+  ]
+}

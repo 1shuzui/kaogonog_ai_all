@@ -25,6 +25,7 @@ export const PROVINCES = [
   { code: 'fujian', name: '福建' },
   { code: 'anhui', name: '安徽' },
   { code: 'liaoning', name: '辽宁' },
+  { code: 'shanxi', name: '陕西' },
   { code: 'shaanxi', name: '陕西' }
 ]
 
@@ -37,9 +38,9 @@ export const EXAM_STATUS = {
   COMPLETED: 'completed'
 }
 
-// 评级定义
+// 评级定义（公考面试四档配色）
 export const GRADE_CONFIG = {
-  A: { label: '优秀', color: '#389E0D', min: 90 },
+  A: { label: '优秀', color: '#389E0D', min: 85 },
   B: { label: '良好', color: '#1B5FAA', min: 75 },
   C: { label: '中等', color: '#D48806', min: 60 },
   D: { label: '待提升', color: '#CF1322', min: 0 }
@@ -47,7 +48,7 @@ export const GRADE_CONFIG = {
 
 export function getGrade(score, maxScore = 100) {
   const percent = (score / maxScore) * 100
-  if (percent >= 90) return GRADE_CONFIG.A
+  if (percent >= 85) return GRADE_CONFIG.A
   if (percent >= 75) return GRADE_CONFIG.B
   if (percent >= 60) return GRADE_CONFIG.C
   return GRADE_CONFIG.D
@@ -82,5 +83,6 @@ export const POSITION_SYSTEMS = [
   { code: 'general', name: '综合管理' },
   { code: 'township', name: '乡镇基层' },
   { code: 'finance', name: '银保监会' },
-  { code: 'diplomacy', name: '外交系统' }
+  { code: 'diplomacy', name: '外交系统' },
+  { code: 'prison', name: '监狱系统' }
 ]

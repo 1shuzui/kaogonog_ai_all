@@ -35,6 +35,20 @@
       </div>
     </div>
 
+    <div v-if="resumeRecord" class="home-resume card">
+      <div class="home-resume__content">
+        <h3>{{ resumeRecord.title }}</h3>
+        <p>{{ resumeRecord.summary }}</p>
+        <span v-if="resumeRecord.updatedAt" class="home-resume__meta">
+          最近保存：{{ formatDate(resumeRecord.updatedAt) }}
+        </span>
+      </div>
+      <div class="home-resume__actions">
+        <a-button type="primary" @click="resumeLastExam">{{ resumeRecord.actionText }}</a-button>
+        <a-button @click="discardLastExam">忽略</a-button>
+      </div>
+    </div>
+
     <!-- 近期练习记录 -->
     <div class="home-section">
       <div class="home-section__header">
@@ -53,6 +67,7 @@
               <div class="home-record-item__summary">{{ record.questionSummary }}</div>
               <div class="home-record-item__meta">
                 <span>{{ formatDate(record.date) }}</span>
+                <a-tag v-if="record.status !== 'completed'" color="orange" size="small">未完成</a-tag>
                 <a-tag :color="gradeColor(record.grade)" size="small">{{ record.grade }}</a-tag>
               </div>
             </div>
@@ -95,20 +110,24 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { PlayCircleOutlined } from '@ant-design/icons-vue'
 import echarts from '@/utils/echarts'
 import { useHistoryStore } from '@/stores/history'
 import { useUserStore } from '@/stores/user'
+import { useExamStore } from '@/stores/exam'
 import { formatDate } from '@/utils/formatter'
-import { GRADE_CONFIG, DIMENSIONS, WEAK_THRESHOLD } from '@/utils/constants'
+import { GRADE_CONFIG, DIMENSIONS, EXAM_STATUS, WEAK_THRESHOLD } from '@/utils/constants'
 import ScoreRing from '@/components/common/ScoreRing.vue'
 import RadarChart from '@/components/common/RadarChart.vue'
 import WeaknessAnalysis from '@/components/common/WeaknessAnalysis.vue'
 import SmartRecommendation from '@/components/common/SmartRecommendation.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 
+const router = useRouter()
 const historyStore = useHistoryStore()
 const userStore = useUserStore()
+const examStore = useExamStore()
 const loading = ref(true)
 const recentRecords = ref([])
 const trendChartRef = ref(null)
@@ -137,8 +156,36 @@ const weakDimensionKeys = computed(() => {
     })
 })
 
+const resumeRecord = computed(() => {
+  if (!examStore.hasRecoverableSession) return null
+
+  const answeredCount = examStore.answers.length
+  const totalQuestions = examStore.totalQuestions
+  const latestAnswer = examStore.answers[examStore.answers.length - 1]
+  const hasFinalResult = examStore.status === EXAM_STATUS.COMPLETED && examStore.isLastQuestion
+
+  return {
+    title: hasFinalResult ? '检测到上次练习结果' : '检测到未完成练习',
+    summary: hasFinalResult
+      ? `最近一场练习已完成，共 ${totalQuestions} 题，可直接查看结果。`
+      : `已答 ${answeredCount}/${totalQuestions} 题，可从第 ${examStore.currentQuestionNumber} 题继续。`,
+    actionText: hasFinalResult ? '查看结果' : '继续练习',
+    route: hasFinalResult ? `/result/${examStore.examId}` : '/exam/room',
+    updatedAt: latestAnswer?.submittedAt || ''
+  }
+})
+
 function gradeColor(grade) {
   return GRADE_CONFIG[grade]?.color || '#8C8C8C'
+}
+
+function resumeLastExam() {
+  if (!resumeRecord.value) return
+  router.push(resumeRecord.value.route)
+}
+
+function discardLastExam() {
+  examStore.clearPersistedSession()
 }
 
 onMounted(async () => {
@@ -149,7 +196,7 @@ onMounted(async () => {
   }
   try {
     await Promise.all([
-      historyStore.fetchRecords({ pageSize: 3 }),
+      historyStore.fetchRecords({ page: 1, pageSize: 3 }),
       historyStore.fetchStats(),
       historyStore.fetchTrend()
     ])
@@ -166,7 +213,7 @@ onMounted(async () => {
       grid: { top: 10, right: 16, bottom: 24, left: 40 },
       xAxis: {
         type: 'category',
-        data: historyStore.trendData.map(d => d.date.slice(5)),
+        data: historyStore.trendData.map(d => d.label),
         axisLabel: { fontSize: 11, color: '#8C8C8C' },
         axisLine: { lineStyle: { color: '#E8E8E8' } }
       },
@@ -250,6 +297,42 @@ onUnmounted(() => {
 
 .home-section {
   margin-top: 16px;
+}
+
+.home-resume {
+  margin-top: 12px;
+  padding: 16px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid rgba(27, 95, 170, 0.12);
+  background: linear-gradient(135deg, rgba(27, 95, 170, 0.08) 0%, rgba(255, 255, 255, 0.95) 100%);
+}
+
+.home-resume__content {
+  flex: 1;
+
+  h3 {
+    font-size: @font-size-lg;
+    color: @text-primary;
+    margin-bottom: 4px;
+  }
+
+  p {
+    color: @text-regular;
+    margin-bottom: 4px;
+  }
+}
+
+.home-resume__meta {
+  font-size: @font-size-xs;
+  color: @text-secondary;
+}
+
+.home-resume__actions {
+  display: flex;
+  gap: 8px;
 }
 
 .home-section__header {

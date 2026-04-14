@@ -1,0 +1,9 @@
+
+> civil-interview-ai@1.0.0 dev
+> vite --host 127.0.0.1 --port 3001
+
+
+  VITE v5.4.21  ready in 238 ms
+
+  ➜  Local:   http://127.0.0.1:3001/
+  ➜  press h + enter to show help

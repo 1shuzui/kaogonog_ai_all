@@ -12,12 +12,12 @@
       <span class="focus-tag">{{ positionName }}</span>
     </div>
 
-    <a-spin :spinning="targetedStore.focusLoading" tip="AI正在分析面试重点...">
-      <template v-if="focusData">
+    <a-spin :spinning="targetedStore.focusLoading || localBankLoading" tip="AI正在分析面试重点...">
+      <template v-if="normalizedFocusData">
         <!-- 核心考察能力 -->
         <div class="card focus-section">
           <h3><AimOutlined /> 核心考察能力</h3>
-          <div v-for="item in focusData.coreFocus" :key="item.name" class="focus-ability">
+          <div v-for="item in normalizedFocusData.coreFocus" :key="item.name" class="focus-ability">
             <div class="focus-ability__header">
               <span class="focus-ability__name">{{ item.name }}</span>
               <span class="focus-ability__weight">{{ item.weight }}%</span>
@@ -30,7 +30,7 @@
         <!-- 高频题型 -->
         <div class="card focus-section">
           <h3><BarChartOutlined /> 高频题型</h3>
-          <div v-for="item in focusData.highFreqTypes" :key="item.type" class="freq-type">
+          <div v-for="item in normalizedFocusData.highFreqTypes" :key="item.type" class="freq-type">
             <div class="freq-type__header">
               <span class="freq-type__name">{{ item.type }}</span>
               <a-tag :color="freqColor(item.frequency)">{{ item.frequency }}频</a-tag>
@@ -43,16 +43,46 @@
         <div class="card focus-section">
           <h3><FireOutlined /> 热门话题</h3>
           <div class="hot-topics">
-            <a-tag v-for="topic in focusData.hotTopics" :key="topic" color="orange">{{ topic }}</a-tag>
+            <a-tag v-for="topic in normalizedFocusData.hotTopics" :key="topic" color="orange">{{ topic }}</a-tag>
           </div>
         </div>
 
         <!-- 备考策略 -->
         <div class="card focus-section">
           <h3><BulbOutlined /> 备考策略</h3>
-          <div v-for="(s, idx) in focusData.strategy" :key="idx" class="strategy-item">
+          <div v-for="(s, idx) in normalizedFocusData.strategy" :key="idx" class="strategy-item">
             <div class="strategy-item__num">{{ idx + 1 }}</div>
             <span>{{ s }}</span>
+          </div>
+        </div>
+
+        <div class="card focus-section" v-if="localBankQuestions.length">
+          <div class="focus-local-header">
+            <h3><DatabaseOutlined /> 本地题库匹配题</h3>
+            <a-button type="primary" size="small" @click="startLocalBatchPractice">整组随机作答</a-button>
+          </div>
+          <a-alert
+            class="focus-local-alert"
+            type="info"
+            show-icon
+            :message="`已从本地题库匹配到 ${localBankQuestions.length} 道 ${provinceName}/${positionName} 相关题目。`"
+          />
+          <div
+            v-for="(question, idx) in localBankQuestions"
+            :key="question.id"
+            class="local-question-item"
+            @click="startLocalSinglePractice(question)"
+          >
+            <div class="local-question-item__idx">{{ idx + 1 }}</div>
+            <div class="local-question-item__content">
+              <div class="local-question-item__stem">{{ question.stem }}</div>
+              <div class="local-question-item__meta">
+                <a-tag color="blue">{{ dimensionName(question.dimension) }}</a-tag>
+                <a-tag v-if="question.questionSourceLabel" color="green">{{ question.questionSourceLabel }}</a-tag>
+                <a-tag v-if="question.sourceDocument" color="gold">{{ question.sourceDocument }}</a-tag>
+              </div>
+            </div>
+            <RightOutlined class="local-question-item__arrow" />
           </div>
         </div>
 
@@ -65,7 +95,7 @@
             :loading="targetedStore.generateLoading"
             @click="startTargetedPractice"
           >
-            <ThunderboltOutlined /> 生成针对性题目并开始练习
+            <ThunderboltOutlined /> AI生成针对性题目并开始练习
           </a-button>
         </div>
       </template>
@@ -76,18 +106,52 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { LeftOutlined, AimOutlined, BarChartOutlined, FireOutlined, BulbOutlined, ThunderboltOutlined } from '@ant-design/icons-vue'
+import { LeftOutlined, AimOutlined, BarChartOutlined, FireOutlined, BulbOutlined, ThunderboltOutlined, DatabaseOutlined, RightOutlined } from '@ant-design/icons-vue'
+import { message } from 'ant-design-vue'
 import { useTargetedStore } from '@/stores/targeted'
-import { PROVINCES, POSITION_SYSTEMS } from '@/utils/constants'
+import { getPositions, generateQuestions } from '@/api/targeted'
+import { PROVINCES, POSITION_SYSTEMS, DIMENSIONS } from '@/utils/constants'
 import EmptyState from '@/components/common/EmptyState.vue'
 
 const router = useRouter()
 const targetedStore = useTargetedStore()
 const primaryColor = '#1B5FAA'
+const positionSystems = ref(POSITION_SYSTEMS)
+const localBankQuestions = ref([])
+const localBankLoading = ref(false)
 
 const focusData = computed(() => targetedStore.focusData)
+const normalizedFocusData = computed(() => {
+  const raw = focusData.value
+  if (!raw) return null
+  if (Array.isArray(raw.coreFocus)) {
+    return raw
+  }
+
+  const focusAreas = Array.isArray(raw.focusAreas) ? raw.focusAreas : []
+  const priorityWeight = { high: 88, medium: 72, low: 58 }
+  const priorityLabel = { high: '高', medium: '中', low: '低' }
+  return {
+    coreFocus: focusAreas.map((item) => ({
+      name: item.label || dimensionName(item.type),
+      weight: priorityWeight[item.priority] || 65,
+      desc: item.description || ''
+    })),
+    highFreqTypes: focusAreas.map((item) => ({
+      type: dimensionName(item.type),
+      frequency: priorityLabel[item.priority] || '中',
+      example: item.description || `${positionName.value}岗位会重点考察 ${dimensionName(item.type)}。`
+    })),
+    hotTopics: focusAreas.map((item) => item.label).filter(Boolean),
+    strategy: [
+      `先用本地题库中与 ${provinceName.value}/${positionName.value} 相关的题目热身，熟悉题感和表述风格。`,
+      `答题时优先体现岗位职责、政策依据、群众沟通和流程执行，避免空泛套话。`,
+      `完成本地题库练习后，再进入 AI 定向题做强化，检查自己是否能迁移到新场景。`
+    ]
+  }
+})
 
 const provinceName = computed(() => {
   const p = PROVINCES.find(p => p.code === targetedStore.selectedProvince)
@@ -95,7 +159,7 @@ const provinceName = computed(() => {
 })
 
 const positionName = computed(() => {
-  const p = POSITION_SYSTEMS.find(p => p.code === targetedStore.selectedPosition)
+  const p = positionSystems.value.find(p => p.code === targetedStore.selectedPosition)
   return p ? p.name : targetedStore.selectedPosition
 })
 
@@ -105,20 +169,68 @@ function freqColor(freq) {
   return 'default'
 }
 
-onMounted(() => {
-  if (targetedStore.hasSelection && !targetedStore.focusData) {
-    targetedStore.fetchFocusAnalysis()
+function dimensionName(key) {
+  const dim = DIMENSIONS.find(item => item.key === key)
+  return dim ? dim.name : (key || '综合分析')
+}
+
+async function loadLocalQuestionBank() {
+  if (!targetedStore.hasSelection) return
+  localBankLoading.value = true
+  try {
+    const result = await generateQuestions({
+      province: targetedStore.selectedProvince,
+      position: targetedStore.selectedPosition,
+      count: 5
+    }, 'local')
+    localBankQuestions.value = result?.questions || []
+  } finally {
+    localBankLoading.value = false
   }
+}
+
+onMounted(() => {
   if (!targetedStore.hasSelection) {
     router.replace('/targeted')
+    return
   }
+  if (!targetedStore.focusData) {
+    void targetedStore.fetchFocusAnalysis()
+  }
+  void loadLocalQuestionBank()
+  void (async () => {
+    try {
+      const positions = await getPositions()
+      if (positions.length) {
+        positionSystems.value = positions
+      }
+    } catch {
+      positionSystems.value = POSITION_SYSTEMS
+    }
+  })()
 })
 
 async function startTargetedPractice() {
-  await targetedStore.fetchGeneratedQuestions(5)
+  const questions = await targetedStore.fetchGeneratedQuestions(5, { sourceMode: 'ai' })
+  if (questions?.[0]?.generationSource === 'fallback_bank') {
+    message.warning(questions[0].generationFallbackReason || 'AI 出题不可用，已回退为题库随机题')
+  } else if (questions?.length) {
+    message.success(`已生成 ${questions.length} 道针对性题目，开始练习`)
+  }
   if (targetedStore.generatedQuestions.length) {
     router.push({ path: '/exam/prepare', query: { source: 'targeted' } })
   }
+}
+
+function startLocalSinglePractice(question) {
+  sessionStorage.setItem('targeted_question', JSON.stringify(question))
+  router.push({ path: '/exam/prepare', query: { questionId: question.id, source: 'targeted' } })
+}
+
+function startLocalBatchPractice() {
+  if (!localBankQuestions.value.length) return
+  sessionStorage.setItem('targeted_question_batch', JSON.stringify(localBankQuestions.value))
+  router.push({ path: '/exam/prepare', query: { source: 'targeted' } })
 }
 </script>
 
@@ -270,5 +382,69 @@ async function startTargetedPractice() {
 .focus-actions {
   margin-top: 8px;
   margin-bottom: 16px;
+}
+
+.focus-local-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.focus-local-alert {
+  margin-bottom: 12px;
+}
+
+.local-question-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid @divider-color;
+  border-radius: @border-radius-base;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: box-shadow 0.2s, border-color 0.2s;
+
+  &:hover {
+    box-shadow: @shadow-popup;
+    border-color: fade(@primary-color, 35%);
+  }
+}
+
+.local-question-item__idx {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: @bg-light-blue;
+  color: @primary-color;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.local-question-item__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.local-question-item__stem {
+  font-size: @font-size-base;
+  color: @text-regular;
+  line-height: 1.6;
+}
+
+.local-question-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.local-question-item__arrow {
+  color: @text-secondary;
 }
 </style>
