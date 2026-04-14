@@ -2,11 +2,18 @@
 
 Vue 3 + Vite + Ant Design Vue 移动端面试练习应用
 
+## 环境要求
+
+- **Node.js** 18+
+- **npm** 9+
+
 ## 快速启动
 
-### 1. 安装依赖
+### 1. 克隆并安装依赖
 
 ```bash
+git clone https://github.com/hyzcjlu/civil-interview-frontend.git
+cd civil-interview-frontend
 npm install
 ```
 
