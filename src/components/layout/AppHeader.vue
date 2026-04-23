@@ -5,7 +5,11 @@
       <span class="app-header__title">公考面试AI测评</span>
     </div>
     <div class="app-header__actions">
-      <a-dropdown v-if="userStore.provinces.length">
+      <a-button type="text" class="plan-trigger" @click="router.push('/pricing')">
+        <WalletOutlined />
+        <span class="hide-on-mobile">{{ billingStore.planLabel }}</span>
+      </a-button>
+      <a-dropdown v-if="userStore.isAuthenticated && userStore.provinces.length">
         <a class="province-trigger" @click.prevent>
           <EnvironmentOutlined />
           <span class="hide-on-mobile">{{ userStore.provinceName }}</span>
@@ -24,19 +28,23 @@
 
 <script setup>
 import { onMounted } from 'vue'
-import { SafetyCertificateOutlined, EnvironmentOutlined } from '@ant-design/icons-vue'
+import { useRouter } from 'vue-router'
+import { SafetyCertificateOutlined, EnvironmentOutlined, WalletOutlined } from '@ant-design/icons-vue'
 import { useUserStore } from '@/stores/user'
+import { useBillingStore } from '@/stores/billing'
 
+const router = useRouter()
 const userStore = useUserStore()
+const billingStore = useBillingStore()
 
 onMounted(() => {
-  if (!userStore.provinces.length) {
+  if (userStore.isAuthenticated && !userStore.provinces.length) {
     userStore.loadProvinces()
   }
 })
 
-function onProvinceChange({ key }) {
-  userStore.setProvince(key)
+async function onProvinceChange({ key }) {
+  await userStore.persistProvince(key)
 }
 </script>
 
@@ -79,6 +87,22 @@ function onProvinceChange({ key }) {
 .app-header__actions {
   display: flex;
   align-items: center;
+  gap: 8px;
+}
+
+.plan-trigger {
+  color: rgba(255, 255, 255, 0.9);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.15);
+
+  &:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.25);
+  }
 }
 
 .province-trigger {

@@ -27,6 +27,9 @@ export const useExamStore = defineStore('exam', {
     currentQuestion(state) {
       return state.questionList[state.currentIndex] || null
     },
+    currentAnswer(state) {
+      return state.answers.find((item) => item.questionIndex === state.currentIndex) || null
+    },
     currentQuestionNumber(state) {
       return state.currentIndex + 1
     },
@@ -61,9 +64,13 @@ export const useExamStore = defineStore('exam', {
       this.currentIndex = 0
       this.answers = []
       this.status = EXAM_STATUS.IDLE
+      this.recordingBlob = null
+      this.transcript = ''
+      this.scoringResult = null
       this.mockMode = mockMode
       this.examStartTime = mockMode ? Date.now() : null
       this.examElapsed = 0
+      this.submitStep = ''
       const result = await startExam(questions.map(q => q.id))
       this.examId = result.examId
     },
@@ -121,13 +128,52 @@ export const useExamStore = defineStore('exam', {
       }
     },
 
+    syncQuestionViewState() {
+      const answer = this.answers.find((item) => item.questionIndex === this.currentIndex)
+
+      if (answer) {
+        this.status = EXAM_STATUS.COMPLETED
+        this.recordingBlob = answer.recordingBlob || null
+        this.transcript = answer.transcript || ''
+        this.scoringResult = answer.scoringResult || null
+        this.submitStep = ''
+        return
+      }
+
+      this.status = EXAM_STATUS.IDLE
+      this.recordingBlob = null
+      this.transcript = ''
+      this.scoringResult = null
+      this.submitStep = ''
+    },
+
+    goToQuestion(index) {
+      if (!this.questionList.length) return
+      const nextIndex = Math.min(Math.max(Number(index) || 0, 0), this.questionList.length - 1)
+      this.currentIndex = nextIndex
+      this.syncQuestionViewState()
+    },
+
+    previousQuestion() {
+      if (this.currentIndex <= 0) return
+      this.goToQuestion(this.currentIndex - 1)
+    },
+
     nextQuestion() {
       if (!this.isLastQuestion) {
-        this.currentIndex++
+        this.goToQuestion(this.currentIndex + 1)
+      } else {
+        this.syncQuestionViewState()
+      }
+    },
+
+    resetCurrentQuestionState() {
+      if (!this.currentAnswer) {
         this.status = EXAM_STATUS.IDLE
         this.recordingBlob = null
         this.transcript = ''
         this.scoringResult = null
+        this.submitStep = ''
       }
     },
 
@@ -136,6 +182,7 @@ export const useExamStore = defineStore('exam', {
       this.examId = null
       this.questionList = []
       this.currentIndex = 0
+      this.answers = []
       this.recordingBlob = null
       this.transcript = ''
       this.scoringResult = null

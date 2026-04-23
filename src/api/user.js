@@ -11,6 +11,11 @@ export async function updatePreferences(data) {
   return http.put('/user/preferences', data)
 }
 
+export async function updateUserProfile(data) {
+  if (USE_MOCK) return { success: true }
+  return http.put('/user/profile', data)
+}
+
 export async function getProvinces() {
   if (USE_MOCK) return getMockProvinces()
   return http.get('/user/provinces')

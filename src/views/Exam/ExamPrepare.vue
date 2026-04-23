@@ -98,6 +98,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { usePermission } from '@/composables/usePermission'
 import { useMediaRecorder } from '@/composables/useMediaRecorder'
 import { useExamStore } from '@/stores/exam'
+import { useBillingStore } from '@/stores/billing'
 import { getRandomQuestions, getQuestionById } from '@/api/questionBank'
 import { useUserStore } from '@/stores/user'
 import { useTargetedStore } from '@/stores/targeted'
@@ -105,6 +106,7 @@ import { useTargetedStore } from '@/stores/targeted'
 const router = useRouter()
 const route = useRoute()
 const examStore = useExamStore()
+const billingStore = useBillingStore()
 const userStore = useUserStore()
 const targetedStore = useTargetedStore()
 
@@ -224,10 +226,18 @@ async function enterExam() {
   // 保存视频模式到 store，供 ExamRoom 使用
   examStore.setVideoEnabled(videoEnabled.value)
   let questions
+  const isTrialEntry = String(route.query.trial || '') === '1'
   const source = route.query.source
   const recommendedId = route.query.questionId
 
-  if (source === 'targeted' && targetedStore.generatedQuestions.length) {
+  if (isTrialEntry) {
+    try {
+      const trialQuestion = await getQuestionById(billingStore.trialQuestion.id)
+      questions = [trialQuestion]
+    } catch {
+      questions = await getRandomQuestions({ province: userStore.selectedProvince, count: 1 })
+    }
+  } else if (source === 'targeted' && targetedStore.generatedQuestions.length) {
     // 来自定向备面（批量），使用已生成的题目
     questions = targetedStore.generatedQuestions
   } else if (source === 'targeted' && recommendedId) {
@@ -265,16 +275,8 @@ async function enterExam() {
   }
 
   if (examMode.value === 'mock') {
-    pendingQuestions = questions
-    waitingRoom.value = true
-    waitSeconds.value = 10
-    waitTimer = setInterval(() => {
-      waitSeconds.value--
-      if (waitSeconds.value <= 0) {
-        clearInterval(waitTimer)
-        startMockExam(pendingQuestions)
-      }
-    }, 1000)
+    await examStore.initExam(questions, true)
+    router.push('/exam/room')
   } else {
     await examStore.initExam(questions, false)
     router.push('/exam/room')

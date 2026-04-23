@@ -139,8 +139,7 @@ async function savePreferences() {
 }
 
 function handleLogout() {
-  localStorage.removeItem('token')
-  userStore.$reset()
+  userStore.logout()
   router.push('/login')
 }
 </script>
