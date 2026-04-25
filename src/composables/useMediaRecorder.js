@@ -110,7 +110,7 @@ export function useMediaRecorder() {
         clearInterval(durationTimer)
         isRecording.value = false
         isPaused.value = false
-        const mimeType = getSupportedMimeType(hasVideo.value) || 'video/webm'
+        const mimeType = getSupportedMimeType(hasVideo.value) || (hasVideo.value ? 'video/webm' : 'audio/webm')
         const blob = new Blob(chunks, { type: mimeType })
         chunks = []
         resolve(blob)

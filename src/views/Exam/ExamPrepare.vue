@@ -25,7 +25,7 @@
             <p style="color: #CF1322; margin-bottom: 8px">{{ permissionError }}</p>
             <a-space>
               <a-button size="small" type="primary" @click="retryPermission">重新检测</a-button>
-              <a-button size="small" v-if="!micReady" @click="tryMicOnly">仅使用麦克风</a-button>
+              <a-button size="small" v-if="micReady && !cameraReady" @click="tryMicOnly">仅使用麦克风</a-button>
             </a-space>
             <div class="permission-tips">
               <p>常见原因:</p>
@@ -154,6 +154,13 @@ async function doPermissionCheck() {
   const ok = await checkBoth()
   if (ok) {
     videoEnabled.value = true
+    currentStep.value = 1
+    await initRecorder()
+    return
+  }
+
+  if (micReady.value && !cameraReady.value) {
+    videoEnabled.value = false
     currentStep.value = 1
     await initRecorder()
   }

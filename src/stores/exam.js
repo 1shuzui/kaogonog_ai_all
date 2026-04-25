@@ -3,6 +3,8 @@ import { EXAM_STATUS } from '@/utils/constants'
 import { startExam, uploadRecording } from '@/api/exam'
 import { transcribeAudio, evaluateAnswer } from '@/api/scoring'
 
+const answerProcessingTasks = new Map()
+
 export const useExamStore = defineStore('exam', {
   state: () => ({
     status: EXAM_STATUS.IDLE,
@@ -15,12 +17,10 @@ export const useExamStore = defineStore('exam', {
     answers: [],
     deviceReady: false,
     videoEnabled: true,
-    // 模拟面试模式
     mockMode: false,
     examStartTime: null,
     examElapsed: 0,
-    // 提交步骤提示
-    submitStep: '',  // '' | 'uploading' | 'transcribing' | 'scoring'
+    submitStep: ''
   }),
 
   getters: {
@@ -44,22 +44,25 @@ export const useExamStore = defineStore('exam', {
       return Math.round((state.answers.length / state.questionList.length) * 100)
     },
     overallScore(state) {
-      if (!state.answers.length) return 0
-      const total = state.answers.reduce((sum, a) => sum + (a.scoringResult?.totalScore || 0), 0)
-      return Math.round(total / state.answers.length)
+      const scoredAnswers = state.answers.filter((item) => item.scoringResult)
+      if (!scoredAnswers.length) return 0
+      const total = scoredAnswers.reduce((sum, item) => sum + (item.scoringResult?.totalScore || 0), 0)
+      return Math.round(total / scoredAnswers.length)
     },
     submitStepText(state) {
       const map = {
-        uploading: '正在上传录音…',
-        transcribing: '正在语音转文字…',
-        scoring: 'AI 正在评分，请稍候…'
+        uploading: '正在上传本题录音...',
+        transcribing: '正在转写本题作答...',
+        scoring: '正在评分本题...',
+        batchScoring: '正在对已完成题目统一评分...'
       }
-      return map[state.submitStep] || '处理中…'
+      return map[state.submitStep] || '处理中...'
     }
   },
 
   actions: {
     async initExam(questions, mockMode = false) {
+      answerProcessingTasks.clear()
       this.questionList = questions
       this.currentIndex = 0
       this.answers = []
@@ -71,7 +74,7 @@ export const useExamStore = defineStore('exam', {
       this.examStartTime = mockMode ? Date.now() : null
       this.examElapsed = 0
       this.submitStep = ''
-      const result = await startExam(questions.map(q => q.id))
+      const result = await startExam(questions.map((q) => q.id))
       this.examId = result.examId
     },
 
@@ -87,32 +90,61 @@ export const useExamStore = defineStore('exam', {
     },
 
     async submitAnswer(blob) {
+      const question = this.currentQuestion
+      if (!question) {
+        throw new Error('当前题目不存在')
+      }
+
+      const questionId = question.id
+      const questionIndex = this.currentIndex
+
       this.status = EXAM_STATUS.SUBMITTING
       this.recordingBlob = blob
       this.submitStep = 'uploading'
 
       try {
-        // 上传录制文件
+        if (this.mockMode) {
+          const answer = {
+            examId: this.examId,
+            questionId,
+            questionIndex,
+            recordingBlob: blob,
+            transcript: '',
+            scoringResult: null,
+            submittedAt: new Date().toISOString(),
+            processingStatus: 'queued',
+            processingError: ''
+          }
+
+          this.answers.push(answer)
+          this.transcript = ''
+          this.scoringResult = null
+          this.status = EXAM_STATUS.COMPLETED
+          this.submitStep = ''
+          this.queueMockAnswerProcessing(answer)
+          return answer
+        }
+
         await uploadRecording(this.examId, blob)
 
-        // 语音转文字
         this.submitStep = 'transcribing'
         const { transcript } = await transcribeAudio(blob)
         this.transcript = transcript
 
-        // AI 评分
-        this.submitStep = 'scoring'
-        const result = await evaluateAnswer({
-          questionId: this.currentQuestion.id,
-          transcript,
-          examId: this.examId
-        })
-        this.scoringResult = result
+        let result = null
+        if (!this.mockMode) {
+          this.submitStep = 'scoring'
+          result = await evaluateAnswer({
+            questionId,
+            transcript,
+            examId: this.examId
+          })
+        }
 
-        // 保存答案
+        this.scoringResult = result
         this.answers.push({
-          questionId: this.currentQuestion.id,
-          questionIndex: this.currentIndex,
+          questionId,
+          questionIndex,
           recordingBlob: blob,
           transcript,
           scoringResult: result,
@@ -123,6 +155,112 @@ export const useExamStore = defineStore('exam', {
         this.submitStep = ''
       } catch (err) {
         this.status = EXAM_STATUS.ANSWERING
+        this.submitStep = ''
+        throw err
+      }
+    },
+
+    queueMockAnswerProcessing(answer) {
+      const task = this.processMockAnswer(answer)
+        .catch((error) => {
+          answer.processingStatus = 'failed'
+          answer.processingError = error?.message || '未知错误'
+          throw error
+        })
+        .finally(() => {
+          answerProcessingTasks.delete(answer.questionIndex)
+        })
+
+      answerProcessingTasks.set(answer.questionIndex, task)
+      return task
+    },
+
+    async processMockAnswer(answer) {
+      const answerExamId = answer.examId || this.examId
+      answer.processingError = ''
+      answer.processingStatus = 'uploading'
+      await uploadRecording(answerExamId, answer.recordingBlob)
+
+      answer.processingStatus = 'transcribing'
+      const { transcript } = await transcribeAudio(answer.recordingBlob)
+      answer.transcript = transcript
+
+      if (this.examId === answerExamId && this.currentIndex === answer.questionIndex) {
+        this.transcript = transcript
+      }
+
+      answer.processingStatus = 'scoring'
+      const result = await evaluateAnswer({
+        questionId: answer.questionId,
+        transcript,
+        examId: answerExamId
+      })
+      answer.scoringResult = result
+      answer.processingStatus = 'completed'
+
+      if (this.examId === answerExamId && this.currentIndex === answer.questionIndex) {
+        this.scoringResult = result
+      }
+
+      return answer
+    },
+
+    async waitForPendingProcessing() {
+      if (!answerProcessingTasks.size) return
+      await Promise.allSettled(Array.from(answerProcessingTasks.values()))
+    },
+
+    async evaluatePendingAnswers() {
+      await this.waitForPendingProcessing()
+
+      const incompleteAnswers = this.answers.filter((item) => !item.transcript && item.recordingBlob)
+
+      if (this.mockMode && incompleteAnswers.length) {
+        const previousStatus = this.status
+        this.status = EXAM_STATUS.SUBMITTING
+        this.submitStep = 'batchScoring'
+
+        try {
+          for (const answer of incompleteAnswers) {
+            await this.processMockAnswer(answer)
+          }
+        } catch (err) {
+          this.status = previousStatus
+          this.submitStep = ''
+          throw err
+        }
+      }
+
+      const finalPendingAnswers = this.answers.filter((item) => item.transcript && !item.scoringResult)
+      if (!finalPendingAnswers.length) {
+        const current = this.answers.find((item) => item.questionIndex === this.currentIndex)
+        this.scoringResult = current?.scoringResult || null
+        this.submitStep = ''
+        return this.answers
+      }
+
+      const previousStatus = this.status
+      this.status = EXAM_STATUS.SUBMITTING
+      this.submitStep = 'batchScoring'
+
+      try {
+        for (const answer of finalPendingAnswers) {
+          const result = await evaluateAnswer({
+            questionId: answer.questionId,
+            transcript: answer.transcript,
+            examId: answer.examId || this.examId
+          })
+          answer.scoringResult = result
+          answer.processingStatus = 'completed'
+        }
+
+        const current = this.answers.find((item) => item.questionIndex === this.currentIndex)
+        this.scoringResult = current?.scoringResult || this.answers[this.answers.length - 1]?.scoringResult || null
+        this.status = EXAM_STATUS.COMPLETED
+        this.submitStep = ''
+        return this.answers
+      } catch (err) {
+        this.status = previousStatus
         this.submitStep = ''
         throw err
       }
@@ -178,6 +316,7 @@ export const useExamStore = defineStore('exam', {
     },
 
     exitExam() {
+      answerProcessingTasks.clear()
       this.status = EXAM_STATUS.IDLE
       this.examId = null
       this.questionList = []
