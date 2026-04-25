@@ -36,3 +36,8 @@ temp/
 .DS_Store
 EOF
 uploads/
+.gitnexus/
+civil-interview-backend/uploads/
+*.db-shm
+*.db-wal
+civil_interview.db
