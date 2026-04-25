@@ -7,7 +7,6 @@
       <a-upload-dragger
         :before-upload="handleFile"
         :show-upload-list="false"
-        multiple
         accept=".xlsx,.xls,.json"
       >
         <p class="ant-upload-drag-icon">
@@ -18,8 +17,8 @@
       </a-upload-dragger>
 
       <a-alert
-        v-if="fileSummary"
-        :message="`已选择: ${fileSummary}`"
+        v-if="fileName"
+        :message="`已选择: ${fileName}`"
         type="info"
         show-icon
         closable
@@ -38,7 +37,7 @@
         :pagination="{ pageSize: 5 }"
         size="small"
         :scroll="{ x: 600 }"
-        rowKey="previewId"
+        rowKey="id"
       />
 
       <div style="margin-top: 16px; text-align: right">
@@ -68,7 +67,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { InboxOutlined } from '@ant-design/icons-vue'
 import { parseExcelFile, parseJsonFile } from '@/utils/excelParser'
@@ -79,14 +78,9 @@ import { message } from 'ant-design-vue'
 const router = useRouter()
 const bankStore = useQuestionBankStore()
 
-const fileNames = ref([])
+const fileName = ref('')
 const previewData = ref([])
 const importing = ref(false)
-const fileSummary = computed(() => {
-  if (!fileNames.value.length) return ''
-  if (fileNames.value.length <= 2) return fileNames.value.join('、')
-  return `${fileNames.value[0]} 等 ${fileNames.value.length} 个文件`
-})
 
 const columns = [
   { title: '题干', dataIndex: 'stem', ellipsis: true, width: 300 },
@@ -99,8 +93,7 @@ const columns = [
   { title: '采分点数', dataIndex: 'scoringPoints', width: 80,
     customRender: ({ text }) => (text?.length || 0) + ' 个'
   },
-  { title: '省份', dataIndex: 'province', width: 80 },
-  { title: '来源文档', dataIndex: 'sourceDocument', ellipsis: true, width: 180 }
+  { title: '省份', dataIndex: 'province', width: 80 }
 ]
 
 const fieldDocs = [
@@ -110,9 +103,6 @@ const fieldDocs = [
   { name: '准备时间 / prepTime', desc: '准备时间(秒)，默认90', required: '否' },
   { name: '作答时间 / answerTime', desc: '作答时间(秒)，默认180', required: '否' },
   { name: '采分点 / scoringPoints', desc: 'JSON数组: [{"content":"要点","score":5}]', required: '否' },
-  { name: '来源文档 / sourceDocument', desc: '如真题所属文档名称，可用于前端区分来源', required: '否' },
-  { name: '参考答案 / referenceAnswer', desc: '用于无模型时的保守规则评分', required: '否' },
-  { name: '标签 / tags', desc: 'JSON数组或逗号分隔，保留岗位/地区等标签', required: '否' },
   { name: '同义表述库 / synonyms', desc: 'JSON数组或逗号分隔的词语', required: '否' },
   { name: '得分关键词 / scoringKeywords', desc: 'JSON数组或逗号分隔', required: '否' },
   { name: '扣分关键词 / deductingKeywords', desc: 'JSON数组或逗号分隔', required: '否' },
@@ -120,6 +110,7 @@ const fieldDocs = [
 ]
 
 async function handleFile(file) {
+  fileName.value = file.name
   try {
     let data
     if (file.name.endsWith('.json')) {
@@ -127,44 +118,32 @@ async function handleFile(file) {
     } else {
       data = await parseExcelFile(file)
     }
-    const normalized = (data || []).map((item, index) => ({
-      ...item,
-      previewId: item.previewId || `preview_${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${index}`
-    }))
-    previewData.value = [...previewData.value, ...normalized]
-    if (!fileNames.value.includes(file.name)) {
-      fileNames.value = [...fileNames.value, file.name]
-    }
+    previewData.value = data
     if (data.length === 0) {
-      message.warning(`${file.name} 未解析到有效题目`)
+      message.warning('未解析到有效题目')
     } else {
-      message.success(`${file.name} 解析成功: ${data.length} 道题目`)
+      message.success(`解析成功: ${data.length} 道题目`)
     }
   } catch (e) {
-    message.error(e.message || `${file.name} 文件解析失败`)
+    message.error(e.message || '文件解析失败')
   }
   return false // 阻止自动上传
 }
 
 function clearPreview() {
   previewData.value = []
-  fileNames.value = []
+  fileName.value = ''
 }
 
 async function confirmImport() {
-  if (!previewData.value.length) {
-    message.warning('请先选择要导入的题目文件')
-    return
-  }
   importing.value = true
   try {
-    const payload = previewData.value.map(({ previewId, ...item }) => item)
-    const result = await bankStore.importFromFile(payload)
-    message.success(`导入完成：成功 ${result?.imported || 0} 道，失败 ${result?.failed || 0} 道`)
-    clearPreview()
+    // Mock 模式直接成功；真实环境需要将数据发送到后端
+    await bankStore.importFromFile(null)
+    message.success('导入成功')
     router.push('/bank')
   } catch (e) {
-    message.error(e?.message || '导入失败')
+    message.error('导入失败')
   } finally {
     importing.value = false
   }

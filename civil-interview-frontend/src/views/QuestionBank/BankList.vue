@@ -48,30 +48,18 @@
           <div class="bank-list__item-header">
             <a-tag color="blue">{{ getDimensionName(q.dimension) }}</a-tag>
             <a-tag>{{ getProvinceName(q.province) }}</a-tag>
-            <a-tag v-if="q.questionSourceLabel" color="green">{{ q.questionSourceLabel }}</a-tag>
-            <a-tag v-if="q.questionSource === 'local_asset' || q.questionSource === 'seed'" color="purple">
-              标准题库只读
-            </a-tag>
-            <a-tag v-if="q.hasReferenceAnswer" color="gold">有参考答案</a-tag>
             <span class="bank-list__item-points">
               {{ q.scoringPoints?.length || 0 }} 个采分点
             </span>
           </div>
           <div class="bank-list__item-stem">{{ q.stem }}</div>
-          <div v-if="q.sourceDocument || q.sourceQuestionId" class="bank-list__item-source">
-            <span v-if="q.sourceDocument">来源文档：{{ q.sourceDocument }}</span>
-            <span v-if="q.sourceQuestionId">原题编号：{{ q.sourceQuestionId }}</span>
-          </div>
           <div class="bank-list__item-actions">
-            <template v-if="q.questionSource !== 'local_asset' && q.questionSource !== 'seed'">
-              <a-button type="link" size="small" @click="$router.push(`/bank/edit/${q.id}`)">
-                编辑
-              </a-button>
-              <a-popconfirm title="确认删除？" @confirm="onDelete(q.id)">
-                <a-button type="link" danger size="small">删除</a-button>
-              </a-popconfirm>
-            </template>
-            <span v-else class="bank-list__item-readonly">标准题库不可编辑/删除</span>
+            <a-button type="link" size="small" @click="$router.push(`/bank/edit/${q.id}`)">
+              编辑
+            </a-button>
+            <a-popconfirm title="确认删除？" @confirm="onDelete(q.id)">
+              <a-button type="link" danger size="small">删除</a-button>
+            </a-popconfirm>
           </div>
         </div>
       </div>
@@ -108,7 +96,6 @@ const dimensionFilter = ref(undefined)
 const keyword = ref('')
 
 onMounted(() => {
-  bankStore.setFilters({ province: userStore.selectedProvince || '' })
   bankStore.fetchQuestions()
 })
 
@@ -195,25 +182,11 @@ async function onDelete(id) {
   overflow: hidden;
 }
 
-.bank-list__item-source {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 8px;
-  font-size: @font-size-xs;
-  color: @text-secondary;
-}
-
 .bank-list__item-actions {
   margin-top: 8px;
   display: flex;
   gap: 8px;
   justify-content: flex-end;
-}
-
-.bank-list__item-readonly {
-  font-size: @font-size-xs;
-  color: @text-secondary;
 }
 
 .bank-list__pagination {

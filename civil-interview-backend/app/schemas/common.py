@@ -15,6 +15,10 @@ class AuthUser(BaseModel):
     email: Optional[str] = None
     full_name: Optional[str] = None
     disabled: Optional[bool] = None
+    role: str = "user"
+    isAdmin: bool = False
+    permissions: Dict[str, bool] = Field(default_factory=dict)
+    billing: Dict[str, Any] = Field(default_factory=dict)
 
 class RegisterRequest(BaseModel):
     username: str

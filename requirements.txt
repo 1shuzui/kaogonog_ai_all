@@ -1,0 +1,39 @@
+# Aggregated runtime requirements for deploying the Python services under
+# kaogong_ai on a fresh server.
+#
+# Recommended Python version: 3.10.x
+# System package note: ffmpeg is required but must be installed with apt/yum,
+# not pip.
+#
+# Use CPU wheels for torch on common Linux servers.
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# Web / API
+fastapi==0.136.0
+uvicorn[standard]==0.44.0
+python-multipart==0.0.26
+pydantic==2.13.2
+pydantic-settings>=2.2,<3
+python-dotenv==1.2.2
+
+# LLM / ASR / media
+openai==2.32.0
+openai-whisper==20231117
+torch>=2.2,<2.6
+opencv-python-headless>=4.10,<5
+
+# Database / auth
+sqlalchemy==2.0.49
+PyMySQL==1.1.2
+passlib[bcrypt]==1.7.4
+bcrypt==5.0.0
+python-jose[cryptography]==3.5.0
+cryptography==46.0.7
+
+# Data / file processing
+numpy==2.2.6
+pandas==2.3.3
+openpyxl==3.1.5
+
+# Optional but useful for smoke tests and quick API checks
+requests>=2.31,<3

@@ -25,7 +25,6 @@ export const PROVINCES = [
   { code: 'fujian', name: '福建' },
   { code: 'anhui', name: '安徽' },
   { code: 'liaoning', name: '辽宁' },
-  { code: 'shanxi', name: '陕西' },
   { code: 'shaanxi', name: '陕西' }
 ]
 
@@ -83,6 +82,5 @@ export const POSITION_SYSTEMS = [
   { code: 'general', name: '综合管理' },
   { code: 'township', name: '乡镇基层' },
   { code: 'finance', name: '银保监会' },
-  { code: 'diplomacy', name: '外交系统' },
-  { code: 'prison', name: '监狱系统' }
+  { code: 'diplomacy', name: '外交系统' }
 ]

@@ -25,35 +25,22 @@
 
     <!-- 生成训练题 -->
     <div class="dim-actions">
-      <a-space direction="vertical" style="width: 100%">
-        <a-button
-          type="primary"
-          size="large"
-          block
-          :loading="generating"
-          @click="generateQuestions('local')"
-        >
-          <ThunderboltOutlined /> 匹配本地{{ dimensionName }}题
-        </a-button>
-        <a-button
-          size="large"
-          block
-          :loading="generating"
-          @click="generateQuestions('ai')"
-        >
-          <ThunderboltOutlined /> AI生成{{ dimensionName }}训练题
-        </a-button>
-      </a-space>
+      <a-button
+        type="primary"
+        size="large"
+        block
+        :loading="generating"
+        @click="generateQuestions"
+      >
+        <ThunderboltOutlined /> AI生成{{ dimensionName }}训练题
+      </a-button>
     </div>
 
     <!-- 题目列表 -->
     <div v-if="questions.length" class="dim-questions">
       <div class="section-header">
         <h3>训练题目</h3>
-        <div class="section-header__actions">
-          <a-button type="primary" size="small" @click="startBatchPractice">整组随机作答</a-button>
-          <a-button type="link" size="small" @click="generateQuestions(generationMode)">重新生成</a-button>
-        </div>
+        <a-button type="link" size="small" @click="generateQuestions">重新生成</a-button>
       </div>
       <div
         v-for="(q, idx) in questions"
@@ -81,7 +68,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { LeftOutlined, ThunderboltOutlined, RightOutlined, BulbOutlined } from '@ant-design/icons-vue'
-import { message } from 'ant-design-vue'
 import { DIMENSIONS, DIMENSION_TIPS } from '@/utils/constants'
 import { useTrainingStore } from '@/stores/training'
 import { generateTrainingQuestions } from '@/api/training'
@@ -118,40 +104,23 @@ const avgScore = computed(() => {
 
 const generating = ref(false)
 const questions = ref([])
-const generationMode = ref('local')
 
-async function generateQuestions(sourceMode = 'local') {
+async function generateQuestions() {
   generating.value = true
-  generationMode.value = sourceMode
   try {
     questions.value = await generateTrainingQuestions({
       dimension: dimensionKey.value,
       count: 3
-    }, sourceMode)
-    if (questions.value?.[0]?.generationSource === 'fallback_bank') {
-      message.warning(questions.value[0].generationFallbackReason || 'AI 训练题不可用，已回退为本地题库题')
-    } else if (sourceMode === 'ai') {
-      message.success('已生成 AI 训练题')
-    } else {
-      message.success('已匹配本地题库题')
-    }
+    })
   } finally {
     generating.value = false
   }
 }
 
 function startPractice(question) {
-  // 仅作为页面刷新时的本地缓存，题目本体以后端持久化数据为准
+  // 暂存题目到 sessionStorage，因为动态生成的题目不在后端题库中
   sessionStorage.setItem('training_question', JSON.stringify(question))
   router.push({ path: '/exam/prepare', query: { questionId: question.id, source: 'training' } })
-}
-
-function startBatchPractice() {
-  if (!questions.value.length) {
-    return
-  }
-  sessionStorage.setItem('training_question_batch', JSON.stringify(questions.value))
-  router.push({ path: '/exam/prepare', query: { source: 'training' } })
 }
 
 onMounted(() => {
@@ -248,12 +217,6 @@ onMounted(() => {
     color: @text-primary;
     margin: 0;
   }
-}
-
-.section-header__actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .question-item {

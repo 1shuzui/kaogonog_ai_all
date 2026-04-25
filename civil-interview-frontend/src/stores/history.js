@@ -26,11 +26,10 @@ export const useHistoryStore = defineStore('history', {
     async fetchRecords(params = {}) {
       this.loading = true
       try {
-        const current = params.page || params.current || this.pagination.current || 1
-        const res = await getHistoryList({ ...this.pagination, ...params, current })
+        const res = await getHistoryList({ ...this.pagination, ...params })
         this.records = res.list || res.data || []
         this.pagination.total = res.total || 0
-        this.pagination.current = res.current || current
+        if (params.page) this.pagination.current = params.page
       } finally {
         this.loading = false
       }

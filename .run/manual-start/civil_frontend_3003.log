@@ -1,0 +1,22 @@
+
+  VITE v5.4.21  ready in 225 ms
+
+  ➜  Local:   http://127.0.0.1:3003/
+11:05:09 [vite] hmr update /src/views/Exam/ExamPrepare.vue, /src/views/Exam/ExamRoom.vue, /src/components/exam/StandardExamRoom.vue, /src/components/exam/MockInterviewRoom.vue
+11:05:09 [vite] hmr update /src/views/Exam/ExamPrepare.vue, /src/views/Exam/ExamRoom.vue, /src/components/exam/StandardExamRoom.vue, /src/components/exam/MockInterviewRoom.vue
+11:05:09 [vite] hmr update /src/components/exam/StandardExamRoom.vue
+11:05:09 [vite] hmr update /src/components/exam/MockInterviewRoom.vue
+11:32:23 [vite] page reload src/stores/user.js
+11:32:23 [vite] page reload src/stores/billing.js
+11:32:23 [vite] page reload src/router/index.js
+11:32:23 [vite] page reload src/api/mock/user.js
+11:32:23 [vite] hmr update /src/components/layout/AppTabBar.vue
+11:32:23 [vite] hmr update /src/components/layout/AppHeader.vue
+11:32:23 [vite] hmr update /src/views/Billing/PricingPage.vue
+11:32:23 [vite] hmr update /src/App.vue
+11:33:35 [vite] page reload src/stores/billing.js
+11:33:35 [vite] hmr update /src/views/Billing/PricingPage.vue
+11:33:44 [vite] page reload src/stores/billing.js
+11:35:00 [vite] hmr update /src/components/layout/AppHeader.vue
+11:35:00 [vite] hmr update /src/views/Billing/PricingPage.vue
+11:37:11 [vite] hmr update /src/views/Targeted/TargetedPage.vue, /src/views/Exam/ExamPrepare.vue

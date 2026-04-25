@@ -5,7 +5,11 @@
       <span class="app-header__title">公考面试AI测评</span>
     </div>
     <div class="app-header__actions">
-      <a-dropdown v-if="userStore.provinces.length">
+      <a-button type="text" class="plan-trigger" @click="router.push('/pricing')">
+        <WalletOutlined />
+        <span class="hide-on-mobile">{{ planLabel }}</span>
+      </a-button>
+      <a-dropdown v-if="userStore.isAuthenticated && userStore.provinces.length">
         <a class="province-trigger" @click.prevent>
           <EnvironmentOutlined />
           <span class="hide-on-mobile">{{ userStore.provinceName }}</span>
@@ -23,26 +27,20 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
-import { SafetyCertificateOutlined, EnvironmentOutlined } from '@ant-design/icons-vue'
+import { computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { SafetyCertificateOutlined, EnvironmentOutlined, WalletOutlined } from '@ant-design/icons-vue'
 import { useUserStore } from '@/stores/user'
+import { useBillingStore } from '@/stores/billing'
 
+const router = useRouter()
 const userStore = useUserStore()
+const billingStore = useBillingStore()
+const planLabel = computed(() => (userStore.isAdmin ? '管理员' : billingStore.planLabel))
 
-onMounted(async () => {
-  if (!userStore.provinces.length) {
-    try {
-      await userStore.loadProvinces()
-    } catch {
-      // 省份加载失败不阻断页面
-    }
-  }
-  if (userStore.isAuthenticated && !userStore.userInfo.id) {
-    try {
-      await userStore.loadUserInfo()
-    } catch {
-      // 401 handled by interceptor
-    }
+onMounted(() => {
+  if (userStore.isAuthenticated && !userStore.provinces.length) {
+    userStore.loadProvinces().catch(() => {})
   }
 })
 
@@ -90,6 +88,22 @@ async function onProvinceChange({ key }) {
 .app-header__actions {
   display: flex;
   align-items: center;
+  gap: 8px;
+}
+
+.plan-trigger {
+  color: rgba(255, 255, 255, 0.9);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.15);
+
+  &:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.25);
+  }
 }
 
 .province-trigger {

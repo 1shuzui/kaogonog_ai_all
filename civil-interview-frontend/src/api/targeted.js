@@ -12,15 +12,10 @@ export async function getPositions() {
       { code: 'general', name: '综合管理' },
       { code: 'township', name: '乡镇基层' },
       { code: 'finance', name: '银保监会' },
-      { code: 'diplomacy', name: '外交系统' },
-      { code: 'prison', name: '监狱系统' }
+      { code: 'diplomacy', name: '外交系统' }
     ]
   }
-  const result = await http.get('/positions')
-  return (Array.isArray(result) ? result : []).map((item) => ({
-    code: item.code || item.id || '',
-    name: item.name || ''
-  })).filter((item) => item.code && item.name)
+  return http.get('/positions')
 }
 
 export async function getFocusAnalysis(data) {
@@ -42,16 +37,28 @@ export async function getFocusAnalysis(data) {
   return http.post('/targeted/focus', data)
 }
 
-export async function generateQuestions(data, sourceMode = 'local') {
-  const payload = {
-    ...data,
-    sourceMode
+export async function generateQuestions(data) {
+  if (USE_MOCK) {
+    return [
+      {
+        id: `gen_${Date.now()}_1`,
+        stem: '某地税务局推行"非接触式"办税服务，但部分老年纳税人反映操作困难，你作为窗口工作人员，如何解决这一问题？',
+        dimension: 'practical',
+        province: data.province,
+        prepTime: 90,
+        answerTime: 180,
+        scoringPoints: [
+          { content: '准确识别老年群体数字鸿沟问题', score: 6 },
+          { content: '提出兼顾效率与公平的具体措施', score: 8 },
+          { content: '体现为民服务意识', score: 6 }
+        ],
+        keywords: {
+          scoring: ['适老化改造', '专人辅导', '保留传统渠道', '服务温度'],
+          deducting: ['一刀切', '忽视老年人需求'],
+          bonus: ['志愿者服务', '预约上门', '大字版界面']
+        }
+      }
+    ]
   }
-  const result = await http.post('/targeted/generate', payload)
-  return {
-    questions: Array.isArray(result) ? result : (result?.questions || []),
-    province: result?.province || data?.province || '',
-    position: result?.position || data?.position || '',
-    sourceMode: result?.sourceMode || sourceMode
-  }
+  return http.post('/targeted/generate', data)
 }

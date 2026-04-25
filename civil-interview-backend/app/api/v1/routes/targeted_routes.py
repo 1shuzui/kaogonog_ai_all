@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from app.core.access import ensure_paid_access
 from app.core.security import get_current_user
 from app.db.session import get_db
 from app.schemas.common import AuthUser, FocusAnalysisRequest, GenerateQuestionsRequest, TrainingGenerateRequest
@@ -49,6 +50,7 @@ def get_positions():
 
 @router.post("/targeted/focus")
 async def get_focus(data: FocusAnalysisRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    ensure_paid_access(current_user, detail="定向备考需付费开通后使用")
     focus_list = FOCUS_AREAS.get(data.position, FOCUS_AREAS["general"])
     province_name = PROVINCE_NAMES.get(data.province, data.province)
     position_name = POSITION_NAMES.get(data.position, data.position)
@@ -61,6 +63,7 @@ async def get_focus(data: FocusAnalysisRequest, current_user: AuthUser = Depends
 
 @router.post("/targeted/generate")
 async def targeted_generate(data: GenerateQuestionsRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    ensure_paid_access(current_user, detail="定向备考需付费开通后使用")
     questions = await generate_questions_by_position(
         db,
         data.province,
@@ -78,6 +81,7 @@ async def targeted_generate(data: GenerateQuestionsRequest, current_user: AuthUs
 
 @router.post("/training/generate")
 async def training_generate(data: TrainingGenerateRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    ensure_paid_access(current_user, detail="专项训练需付费开通后使用")
     questions = await generate_training_questions(
         db,
         data.dimension,

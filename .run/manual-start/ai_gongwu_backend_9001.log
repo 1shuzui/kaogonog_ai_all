@@ -1,0 +1,11 @@
+INFO:     Started server process [27040]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:9001 (Press CTRL+C to quit)
+2026-04-23 20:22:25,535 - app.services.question_bank - INFO - 题库加载完成: /home/quyu/kaogong_ai/ai_gongwu_backend/assets/questions, 共 30 题
+INFO:     127.0.0.1:43459 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43463 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46723 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53486 - "GET / HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:53486 - "GET /docs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53486 - "GET /openapi.json HTTP/1.1" 200 OK

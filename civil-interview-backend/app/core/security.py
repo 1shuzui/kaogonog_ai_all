@@ -10,6 +10,7 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.access import build_access_context
 from app.db.session import get_db
 from app.models.entities import User
 from app.schemas.common import AuthUser, TokenData
@@ -64,4 +65,14 @@ async def get_current_user(
     user = db.query(User).filter(User.username == username).first()
     if not user:
         raise exc
-    return AuthUser(username=user.username, email=user.email, full_name=user.full_name, disabled=user.disabled)
+    access_context = build_access_context(user)
+    return AuthUser(
+        username=user.username,
+        email=user.email,
+        full_name=user.full_name,
+        disabled=user.disabled,
+        role=access_context["role"],
+        isAdmin=access_context["isAdmin"],
+        permissions=access_context["permissions"],
+        billing=access_context["billing"],
+    )

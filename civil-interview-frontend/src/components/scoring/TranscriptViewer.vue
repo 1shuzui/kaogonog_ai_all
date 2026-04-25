@@ -1,6 +1,6 @@
 <template>
   <div class="transcript-viewer">
-    <h4 class="transcript-viewer__title">{{ title }}</h4>
+    <h4 class="transcript-viewer__title">答题文字稿</h4>
     <div class="transcript-viewer__content" v-html="highlightedContent"></div>
   </div>
 </template>
@@ -9,7 +9,6 @@
 import { computed } from 'vue'
 
 const props = defineProps({
-  title: { type: String, default: '答题文字稿' },
   transcript: { type: String, default: '' },
   keywords: {
     type: Object,

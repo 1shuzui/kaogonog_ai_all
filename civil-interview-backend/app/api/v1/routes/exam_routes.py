@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlalchemy.orm import Session
 
+from app.core.access import ensure_exam_start_access
 from app.core.security import get_current_user
 from app.db.session import get_db
 from app.schemas.common import AuthUser, ExamStartRequest
@@ -11,6 +12,7 @@ router = APIRouter(prefix="/exam", tags=["exam"])
 
 @router.post("/start")
 def exam_start(data: ExamStartRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    ensure_exam_start_access(current_user, data.questionIds)
     return start_exam(db, data, current_user.username)
 
 

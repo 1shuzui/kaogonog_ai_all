@@ -14,6 +14,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   HomeOutlined,
@@ -22,16 +23,20 @@ import {
   ThunderboltOutlined,
   UserOutlined
 } from '@ant-design/icons-vue'
+import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
+const userStore = useUserStore()
 
-const tabs = [
+const baseTabs = [
   { path: '/', label: '首页', icon: HomeOutlined },
   { path: '/targeted', label: '定向备面', icon: AimOutlined },
-  { path: '/bank', label: '题库', icon: DatabaseOutlined },
+  { path: '/bank', label: '题库', icon: DatabaseOutlined, requiresAdmin: true },
   { path: '/training', label: '专项训练', icon: ThunderboltOutlined },
   { path: '/profile', label: '我的', icon: UserOutlined }
 ]
+
+const tabs = computed(() => baseTabs.filter((tab) => !tab.requiresAdmin || userStore.isAdmin))
 
 function isActive(path) {
   if (path === '/') return route.path === '/'

@@ -2,6 +2,7 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from app.core.access import build_access_context, normalize_billing_state
 from app.core.security import verify_password, get_password_hash
 from app.models.entities import User
 from app.schemas.common import AuthUser, UserProfileUpdate, UserPasswordUpdate
@@ -36,21 +37,34 @@ def _get_user_or_404(db: Session, username: str) -> User:
 
 
 def _normalize_preferences(prefs: dict | None) -> dict:
+    raw_preferences = prefs if isinstance(prefs, dict) else {}
     merged = DEFAULT_PREFERENCES.copy()
-    if isinstance(prefs, dict):
-        merged.update({key: value for key, value in prefs.items() if value is not None})
+    merged.update(
+        {
+            key: value
+            for key, value in raw_preferences.items()
+            if key in DEFAULT_PREFERENCES and value is not None
+        }
+    )
+    merged["billing"] = normalize_billing_state(raw_preferences.get("billing"))
     return merged
 
 
 def get_user_info(db: Session, current_user: AuthUser) -> dict:
     user = _get_user_or_404(db, current_user.username)
+    normalized_preferences = _normalize_preferences(user.preferences)
+    access_context = build_access_context(user)
     return {
         "id": user.username,
         "name": user.full_name or user.username,
         "avatar": user.avatar or "",
         "province": user.province or "national",
         "email": user.email or "",
-        "preferences": _normalize_preferences(user.preferences),
+        "preferences": {
+            key: normalized_preferences[key]
+            for key in DEFAULT_PREFERENCES
+        },
+        **access_context,
     }
 
 
@@ -81,8 +95,7 @@ def update_preferences(db: Session, current_user: AuthUser, prefs: dict) -> dict
     user = _get_user_or_404(db, current_user.username)
     current = dict(user.preferences) if isinstance(user.preferences, dict) else {}
     incoming = dict(prefs) if isinstance(prefs, dict) else {}
-    current.update(incoming)
-    user.preferences = _normalize_preferences(current)
+    user.preferences = _normalize_preferences({**current, **incoming})
     db.commit()
     return {"success": True, "message": "偏好设置已更新"}
 
