@@ -6,10 +6,7 @@ from dotenv import load_dotenv
 
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
 BACKEND_ENV_FILE = BACKEND_ROOT / ".env"
-SHARED_ENV_FILE = BACKEND_ROOT.parent / "ai_gongwu_backend" / ".env"
 
-# Load the shared engine config first, then let backend-local overrides win.
-load_dotenv(SHARED_ENV_FILE, override=False)
 load_dotenv(BACKEND_ENV_FILE, override=True)
 
 
@@ -29,12 +26,9 @@ def _env_int(*keys: str, default: int) -> int:
         return default
 
 
-def _env_float(*keys: str, default: float) -> float:
-    raw = _env(*keys, default=str(default))
-    try:
-        return float(raw)
-    except (TypeError, ValueError):
-        return default
+def _env_bool(*keys: str, default: bool) -> bool:
+    raw = _env(*keys, default="true" if default else "false").strip().lower()
+    return raw in {"1", "true", "yes", "on"}
 
 
 class Settings:
@@ -42,20 +36,20 @@ class Settings:
     algorithm: str = "HS256"
     access_token_expire_minutes: int = _env_int("ACCESS_TOKEN_EXPIRE_MINUTES", default=10080)
     allowed_origins: str = _env("ALLOWED_ORIGINS", default="*")
-
-    # LLM
-    qwen_api_key: str = _env("QWEN_API_KEY", "LLM_API_KEY", default="")
-    qwen_base_url: str = _env(
-        "QWEN_BASE_URL",
-        "LLM_BASE_URL",
-        default="https://dashscope.aliyuncs.com/compatible-mode/v1",
-    )
-    qwen_model: str = _env("QWEN_MODEL", "LLM_MODEL_NAME", default="qwen-plus")
-    qwen_asr_model: str = _env("QWEN_ASR_MODEL", "ASR_MODEL", default="")
-    llm_timeout_seconds: float = _env_float("LLM_TIMEOUT_SECONDS", default=60.0)
-
-    # Database (MySQL or SQLite fallback)
     database_url: str = _env("DATABASE_URL", default="sqlite:///./civil_interview.db")
+
+    wechat_pay_enabled: bool = _env_bool("WECHAT_PAY_ENABLED", default=False)
+    wechat_pay_mock_mode: bool = _env_bool("WECHAT_PAY_MOCK_MODE", default=True)
+    wechat_pay_scene: str = _env("WECHAT_PAY_SCENE", default="mini_program")
+    wechat_pay_appid: str = _env("WECHAT_PAY_APPID", default="wx_mock_miniprogram_appid")
+    wechat_pay_mchid: str = _env("WECHAT_PAY_MCHID", default="1900000001")
+    wechat_pay_notify_url: str = _env("WECHAT_PAY_NOTIFY_URL", default="https://mock.example.com/payment/callback/wechat")
+    wechat_pay_api_v3_key: str = _env("WECHAT_PAY_API_V3_KEY", default="MOCK_API_V3_KEY_REPLACE_ME")
+    wechat_pay_serial_no: str = _env("WECHAT_PAY_SERIAL_NO", default="MOCK_SERIAL_NO_REPLACE_ME")
+    wechat_pay_private_key_path: str = _env("WECHAT_PAY_PRIVATE_KEY_PATH", default="certs/mock_apiclient_key.pem")
+    wechat_pay_platform_cert_path: str = _env("WECHAT_PAY_PLATFORM_CERT_PATH", default="certs/mock_wechatpay_platform.pem")
+    wechat_pay_api_base: str = _env("WECHAT_PAY_API_BASE", default="https://api.mch.weixin.qq.com")
+    wechat_pay_request_timeout: int = _env_int("WECHAT_PAY_REQUEST_TIMEOUT", default=10)
 
 
 settings = Settings()

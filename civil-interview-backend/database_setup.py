@@ -1,17 +1,9 @@
-"""
-一键部署脚本 — 初始化/重置 MySQL 数据库、建表、写入种子数据
-用法:
-    python database_setup.py              # 初始化（保留已有数据）
-    python database_setup.py --reset      # 删库重建（危险！清除所有数据）
-    python database_setup.py --seed-only  # 只写入种子数据（不建表）
-    python database_setup.py --check      # 仅检查连接和表状态
-"""
+﻿""" 一键部署脚本 — 初始化/重置 MySQL 数据库、建表、写入种子数据 """
 import argparse
 import json
 import os
 import sys
 from pathlib import Path
-
 import pymysql
 from dotenv import load_dotenv
 
@@ -19,16 +11,10 @@ BASE_DIR = Path(__file__).resolve().parent
 SEED_QUESTIONS_PATH = BASE_DIR / "seed_questions.json"
 DB_JSON_PATH = BASE_DIR / "db.json"
 
-# ── .env 解析 ─────────────────────────────────────────────────────────────────
-# 支持两种格式:
-#   1. DATABASE_URL=mysql+pymysql://user:pass@host:port/dbname?charset=utf8mb4
-#   2. MYSQL_HOST / MYSQL_PORT / MYSQL_USER / MYSQL_PASSWORD / MYSQL_DATABASE
 
 def parse_database_url(url: str) -> dict:
-    """从 DATABASE_URL 解析 MySQL 连接信息"""
-    # mysql+pymysql://root:123456@localhost:3306/civil_interview?charset=utf8mb4
     url = url.replace("mysql+pymysql://", "").replace("mysql://", "")
-    url = url.split("?")[0]  # 去掉查询参数
+    url = url.split("?")[0]
     user_pass, host_db = url.split("@", 1)
     user, password = user_pass.split(":", 1)
     host_port, database = host_db.split("/", 1)
@@ -37,29 +23,19 @@ def parse_database_url(url: str) -> dict:
         port = int(port)
     else:
         host, port = host_port, 3306
-    return {
-        "host": host,
-        "port": port,
-        "user": user,
-        "password": password,
-        "database": database,
-    }
+    return {"host": host, "port": port, "user": user, "password": password, "database": database}
 
 
 def get_mysql_config() -> dict:
-    """从 .env 读取 MySQL 配置"""
     load_dotenv(BASE_DIR / ".env")
-
     database_url = os.getenv("DATABASE_URL", "")
     if database_url and "mysql" in database_url:
         config = parse_database_url(database_url)
     else:
-        # 兼容 kaogong_backend 的 MYSQL_* 变量格式
         required = ["MYSQL_HOST", "MYSQL_USER", "MYSQL_PASSWORD", "MYSQL_DATABASE"]
         missing = [k for k in required if not os.getenv(k)]
         if missing:
-            raise RuntimeError(f"缺少环境变量: {', '.join(missing)}\n"
-                             f"请在 .env 中设置 DATABASE_URL 或 MYSQL_* 变量")
+            raise RuntimeError(f"缺少环境变量: {', '.join(missing)}\n请在 .env 中设置 DATABASE_URL 或 MYSQL_* 变量")
         config = {
             "host": os.getenv("MYSQL_HOST"),
             "port": int(os.getenv("MYSQL_PORT", "3306")),
@@ -67,16 +43,10 @@ def get_mysql_config() -> dict:
             "password": os.getenv("MYSQL_PASSWORD"),
             "database": os.getenv("MYSQL_DATABASE"),
         }
-
-    config.update({
-        "charset": "utf8mb4",
-        "cursorclass": pymysql.cursors.DictCursor,
-        "autocommit": False,
-    })
+    config.update({"charset": "utf8mb4", "cursorclass": pymysql.cursors.DictCursor, "autocommit": False})
     return config
 
 
-# ── MySQL 建表 SQL ────────────────────────────────────────────────────────────
 TABLE_STATEMENTS = [
     """
     CREATE TABLE IF NOT EXISTS users (
@@ -126,7 +96,7 @@ TABLE_STATEMENTS = [
         exam_id VARCHAR(100) NOT NULL,
         question_id VARCHAR(100) NOT NULL,
         transcript LONGTEXT NULL,
-        score_result JSON NULL,
+        media_record JSON NULL,
         answered_at DATETIME NULL,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -141,11 +111,7 @@ TABLE_STATEMENTS = [
         exam_id VARCHAR(100) NOT NULL UNIQUE,
         username VARCHAR(100) NOT NULL,
         question_count INT NOT NULL DEFAULT 0,
-        total_score DECIMAL(10,2) NOT NULL DEFAULT 0,
-        max_score DECIMAL(10,2) NOT NULL DEFAULT 100,
-        grade VARCHAR(10) NULL DEFAULT 'B',
         province VARCHAR(50) NOT NULL DEFAULT 'national',
-        dimensions JSON NULL,
         completed_at DATETIME NULL,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -154,75 +120,148 @@ TABLE_STATEMENTS = [
         INDEX idx_hr_username (username)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     """,
+    """
+    CREATE TABLE IF NOT EXISTS subscription_packages (
+        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+        package_code VARCHAR(100) NOT NULL UNIQUE,
+        package_name VARCHAR(100) NOT NULL,
+        package_type VARCHAR(30) NOT NULL,
+        price DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+        total_minutes INT NOT NULL DEFAULT 0,
+        daily_limit_minutes INT NOT NULL DEFAULT 0,
+        duration_days INT NOT NULL DEFAULT 0,
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        description VARCHAR(255) NULL DEFAULT '',
+        extra_config JSON NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_sp_type_active (package_type, is_active)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS payment_orders (
+        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+        order_no VARCHAR(100) NOT NULL UNIQUE,
+        username VARCHAR(100) NOT NULL,
+        package_code VARCHAR(100) NOT NULL,
+        package_type VARCHAR(30) NOT NULL,
+        amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+        pay_channel VARCHAR(30) NOT NULL DEFAULT 'wechat',
+        status VARCHAR(30) NOT NULL DEFAULT 'pending',
+        third_party_order_no VARCHAR(100) NULL DEFAULT '',
+        paid_at DATETIME NULL,
+        callback_payload JSON NULL,
+        extra_payload JSON NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT fk_po_user FOREIGN KEY (username) REFERENCES users(username)
+            ON DELETE CASCADE ON UPDATE CASCADE,
+        INDEX idx_po_username_created (username, created_at),
+        INDEX idx_po_status_created (status, created_at),
+        INDEX idx_po_package_code (package_code)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS user_subscriptions (
+        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+        username VARCHAR(100) NOT NULL,
+        package_code VARCHAR(100) NOT NULL,
+        plan_type VARCHAR(30) NOT NULL,
+        plan_name VARCHAR(100) NOT NULL,
+        status VARCHAR(30) NOT NULL DEFAULT 'active',
+        is_trial BOOLEAN NOT NULL DEFAULT FALSE,
+        trial_completed BOOLEAN NOT NULL DEFAULT FALSE,
+        total_minutes INT NOT NULL DEFAULT 0,
+        used_minutes INT NOT NULL DEFAULT 0,
+        daily_limit_minutes INT NOT NULL DEFAULT 0,
+        daily_used_minutes INT NOT NULL DEFAULT 0,
+        last_reset_date DATE NULL,
+        start_at DATETIME NULL,
+        end_at DATETIME NULL,
+        source_order_no VARCHAR(100) NULL DEFAULT '',
+        extra_payload JSON NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT fk_us_user FOREIGN KEY (username) REFERENCES users(username)
+            ON DELETE CASCADE ON UPDATE CASCADE,
+        UNIQUE KEY uq_us_username_package_start (username, package_code, start_at),
+        INDEX idx_us_username_status (username, status),
+        INDEX idx_us_end_at (end_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS usage_records (
+        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+        username VARCHAR(100) NOT NULL,
+        exam_id VARCHAR(100) NOT NULL,
+        question_id VARCHAR(100) NULL,
+        usage_type VARCHAR(30) NOT NULL DEFAULT 'practice',
+        usage_seconds INT NOT NULL DEFAULT 0,
+        billed_minutes INT NOT NULL DEFAULT 0,
+        reported_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        extra_payload JSON NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT fk_ur_user FOREIGN KEY (username) REFERENCES users(username)
+            ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT fk_ur_exam FOREIGN KEY (exam_id) REFERENCES exams(id)
+            ON DELETE CASCADE ON UPDATE CASCADE,
+        INDEX idx_ur_username_reported (username, reported_at),
+        INDEX idx_ur_exam_reported (exam_id, reported_at),
+        INDEX idx_ur_usage_type (usage_type)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    """,
 ]
 
 
-# ── 核心操作函数 ──────────────────────────────────────────────────────────────
-
 def check_connection(config: dict) -> bool:
-    """检查 MySQL 连接"""
     try:
-        conn = pymysql.connect(
-            host=config["host"], port=config["port"],
-            user=config["user"], password=config["password"],
-            charset=config["charset"], cursorclass=config["cursorclass"],
-            autocommit=True,
-        )
+        conn = pymysql.connect(host=config["host"], port=config["port"], user=config["user"],
+                               password=config["password"], charset=config["charset"],
+                               cursorclass=config["cursorclass"], autocommit=True)
         with conn.cursor() as cur:
             cur.execute("SELECT VERSION()")
             ver = cur.fetchone()
-            print(f"  [OK] MySQL 版本: {ver['VERSION()']}")
+            print(f" [OK] MySQL 版本: {ver['VERSION()']}")
         conn.close()
         return True
     except Exception as e:
-        print(f"  [FAIL] 无法连接 MySQL: {e}")
+        print(f" [FAIL] 无法连接 MySQL: {e}")
         return False
 
 
 def create_database(config: dict):
-    """创建数据库（如果不存在）"""
-    conn = pymysql.connect(
-        host=config["host"], port=config["port"],
-        user=config["user"], password=config["password"],
-        charset=config["charset"], cursorclass=config["cursorclass"],
-        autocommit=True,
-    )
+    conn = pymysql.connect(host=config["host"], port=config["port"], user=config["user"],
+                            password=config["password"], charset=config["charset"],
+                            cursorclass=config["cursorclass"], autocommit=True)
     try:
         with conn.cursor() as cur:
-            cur.execute(
-                f"CREATE DATABASE IF NOT EXISTS `{config['database']}` "
-                f"DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
-            )
-            print(f"  [OK] 数据库 `{config['database']}` 已就绪")
+            cur.execute(f"CREATE DATABASE IF NOT EXISTS `{config['database']}` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
+            print(f" [OK] 数据库`{config['database']}` 已就绪")
     finally:
         conn.close()
 
 
 def drop_database(config: dict):
-    """删除数据库（危险操作！）"""
-    conn = pymysql.connect(
-        host=config["host"], port=config["port"],
-        user=config["user"], password=config["password"],
-        charset=config["charset"], cursorclass=config["cursorclass"],
-        autocommit=True,
-    )
+    conn = pymysql.connect(host=config["host"], port=config["port"], user=config["user"],
+                            password=config["password"], charset=config["charset"],
+                            cursorclass=config["cursorclass"], autocommit=True)
     try:
         with conn.cursor() as cur:
             cur.execute(f"DROP DATABASE IF EXISTS `{config['database']}`")
-            print(f"  [WARN] 数据库 `{config['database']}` 已删除")
+            print(f" [WARN] 数据库`{config['database']}` 已删除")
     finally:
         conn.close()
 
 
 def create_tables(config: dict):
-    """创建所有表"""
     conn = pymysql.connect(**config)
     try:
         with conn.cursor() as cur:
             for sql in TABLE_STATEMENTS:
                 cur.execute(sql)
         conn.commit()
-        print(f"  [OK] {len(TABLE_STATEMENTS)} 张表已创建")
+        print(f" [OK] {len(TABLE_STATEMENTS)} 张表已创建")
     except Exception:
         conn.rollback()
         raise
@@ -231,55 +270,66 @@ def create_tables(config: dict):
 
 
 def check_tables(config: dict):
-    """检查现有表状态"""
     conn = pymysql.connect(**config)
     try:
         with conn.cursor() as cur:
             cur.execute("SHOW TABLES")
             tables = [list(row.values())[0] for row in cur.fetchall()]
-            print(f"  [INFO] 现有表: {', '.join(tables) if tables else '(空)'}")
-            for t in tables:
-                cur.execute(f"SELECT COUNT(*) AS cnt FROM `{t}`")
-                cnt = cur.fetchone()["cnt"]
-                print(f"    - {t}: {cnt} 条记录")
+            print(f" [INFO] 现有表 {', '.join(tables) if tables else '(空)'}")
+            for table in tables:
+                cur.execute(f"SELECT COUNT(*) AS cnt FROM `{table}`")
+                count = cur.fetchone()["cnt"]
+                print(f" - {table}: {count} 条记录")
     finally:
         conn.close()
 
 
-# ── 种子数据 ──────────────────────────────────────────────────────────────────
-
 def seed_default_user(conn):
-    """创建默认管理员用户"""
     from passlib.context import CryptContext
-    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
+    pwd_context = CryptContext(schemes=["pbkdf2_sha256", "bcrypt"], deprecated="auto")
     sql = """
     INSERT INTO users (username, hashed_password, full_name, email, province)
     VALUES (%s, %s, %s, %s, %s)
-    ON DUPLICATE KEY UPDATE
-        full_name = VALUES(full_name),
-        email = VALUES(email)
+    ON DUPLICATE KEY UPDATE full_name = VALUES(full_name), email = VALUES(email)
     """
     with conn.cursor() as cur:
-        cur.execute(sql, (
-            "admin",
-            pwd_context.hash("admin123"),
-            "管理员",
-            "admin@example.com",
-            "national",
-        ))
-    print("  [OK] 默认用户: admin / admin123")
+        cur.execute(sql, ("admin", pwd_context.hash("admin123"), "管理员", "admin@example.com", "national"))
+        print(" [OK] 默认用户: admin / admin123")
+
+
+def seed_subscription_packages(conn):
+    packages = [
+        ("trial_3h", "试用包 3小时", "trial", 99.00, 180, 180, 0, "99元 3小时体验套餐"),
+        ("monthly_1h_day", "包月包 1小时/天", "monthly", 299.00, 1800, 60, 30, "包月每日1小时"),
+        ("monthly_2h_day", "包月包 2小时/天", "monthly", 499.00, 3600, 120, 30, "包月每日2小时"),
+        ("premium_1000", "高阶包月 1000元档", "premium", 1000.00, 9000, 300, 30, "长期用户高阶套餐"),
+        ("premium_2000", "高阶包月 2000元档", "premium", 2000.00, 24000, 800, 30, "长期用户旗舰套餐"),
+    ]
+    sql = """
+    INSERT INTO subscription_packages (package_code, package_name, package_type, price, total_minutes, daily_limit_minutes, duration_days, description)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+    ON DUPLICATE KEY UPDATE
+        package_name = VALUES(package_name),
+        package_type = VALUES(package_type),
+        price = VALUES(price),
+        total_minutes = VALUES(total_minutes),
+        daily_limit_minutes = VALUES(daily_limit_minutes),
+        duration_days = VALUES(duration_days),
+        description = VALUES(description),
+        is_active = TRUE
+    """
+    with conn.cursor() as cur:
+        for package in packages:
+            cur.execute(sql, package)
+        print(f" [OK] 套餐配置: {len(packages)} 个")
 
 
 def seed_questions(conn):
-    """从 seed_questions.json 导入题目"""
     if not SEED_QUESTIONS_PATH.exists():
-        print(f"  [SKIP] 题目文件不存在: {SEED_QUESTIONS_PATH}")
+        print(f" [SKIP] 题目文件不存在 {SEED_QUESTIONS_PATH}")
         return 0
-
     with SEED_QUESTIONS_PATH.open("r", encoding="utf-8") as f:
         questions = json.load(f)
-
     if not isinstance(questions, list):
         questions = [questions]
 
@@ -295,7 +345,6 @@ def seed_questions(conn):
         scoring_points = VALUES(scoring_points),
         keywords = VALUES(keywords)
     """
-
     count = 0
     with conn.cursor() as cur:
         for q in questions:
@@ -307,31 +356,25 @@ def seed_questions(conn):
                 q.get("prepTime", 90),
                 q.get("answerTime", 180),
                 json.dumps(q.get("scoringPoints", []), ensure_ascii=False),
-                json.dumps(q.get("keywords", {"scoring": [], "deducting": [], "bonus": []}), ensure_ascii=False),
+                json.dumps(q.get("keywords", {"scoring": [], "deducting": [], "bonus": []}), ensure_ascii=False)
             ))
             count += 1
-    print(f"  [OK] 导入 {count} 道题目")
+    print(f" [OK] 导入 {count} 道题目")
     return count
 
 
 def seed_from_db_json(conn):
-    """从旧的 db.json 迁移用户和考试数据（如存在）"""
     if not DB_JSON_PATH.exists():
         return
-
-    print("  [INFO] 检测到 db.json，尝试迁移旧数据...")
+    print(" [INFO] 检测到 db.json，尝试迁移旧数据...")
     with DB_JSON_PATH.open("r", encoding="utf-8") as f:
         db_data = json.load(f)
-
-    # 迁移用户
     users = db_data.get("users", {})
     if users:
         user_sql = """
         INSERT INTO users (username, hashed_password, full_name, email, province)
         VALUES (%s, %s, %s, %s, %s)
-        ON DUPLICATE KEY UPDATE
-            full_name = VALUES(full_name),
-            email = VALUES(email)
+        ON DUPLICATE KEY UPDATE full_name = VALUES(full_name), email = VALUES(email)
         """
         with conn.cursor() as cur:
             for user in users.values():
@@ -340,11 +383,10 @@ def seed_from_db_json(conn):
                     user.get("hashed_password", ""),
                     user.get("full_name", ""),
                     user.get("email", ""),
-                    user.get("province", "national"),
+                    user.get("province", "national")
                 ))
-        print(f"  [OK] 迁移 {len(users)} 个用户")
+        print(f" [OK] 迁移 {len(users)} 个用户")
 
-    # 迁移考试记录
     exams = db_data.get("exams", {})
     if exams:
         exam_sql = """
@@ -352,23 +394,22 @@ def seed_from_db_json(conn):
         VALUES (%s, %s, %s, %s, %s, %s)
         """
         with conn.cursor() as cur:
-            for eid, exam in exams.items():
+            for exam_id, exam in exams.items():
                 cur.execute(exam_sql, (
-                    eid,
+                    exam_id,
                     exam.get("username", ""),
                     json.dumps(exam.get("questionIds", []), ensure_ascii=False),
                     exam.get("status", "completed"),
                     exam.get("startTime"),
-                    exam.get("endTime"),
+                    exam.get("endTime")
                 ))
-        print(f"  [OK] 迁移 {len(exams)} 条考试记录")
+        print(f" [OK] 迁移 {len(exams)} 条考试记录")
 
-    # 迁移历史记录
     history = db_data.get("history", [])
     if history:
         hist_sql = """
-        INSERT IGNORE INTO history_records (exam_id, username, question_count, total_score, max_score, grade, province, completed_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT IGNORE INTO history_records (exam_id, username, question_count, province, completed_at)
+        VALUES (%s, %s, %s, %s, %s)
         """
         with conn.cursor() as cur:
             for item in history:
@@ -379,20 +420,17 @@ def seed_from_db_json(conn):
                     exam_id,
                     item.get("username", ""),
                     item.get("questionCount", 0),
-                    item.get("totalScore", 0),
-                    item.get("maxScore", 100),
-                    item.get("grade", "B"),
                     item.get("province", "national"),
-                    item.get("completedAt"),
+                    item.get("completedAt")
                 ))
-        print(f"  [OK] 迁移 {len(history)} 条历史记录")
+        print(f" [OK] 迁移 {len(history)} 条历史记录")
 
 
 def run_seed(config: dict):
-    """执行完整种子数据写入"""
     conn = pymysql.connect(**config)
     try:
         seed_default_user(conn)
+        seed_subscription_packages(conn)
         seed_questions(conn)
         seed_from_db_json(conn)
         conn.commit()
@@ -403,29 +441,25 @@ def run_seed(config: dict):
         conn.close()
 
 
-# ── 主流程 ────────────────────────────────────────────────────────────────────
-
 def main():
-    parser = argparse.ArgumentParser(description="公务员面试系统 — MySQL 一键部署")
-    parser.add_argument("--reset", action="store_true", help="删库重建（清除所有数据！）")
+    parser = argparse.ArgumentParser(description="公务员面试系统 - MySQL 一键部署")
+    parser.add_argument("--reset", action="store_true", help="删库重置（清除所有数据）")
     parser.add_argument("--seed-only", action="store_true", help="仅写入种子数据（不建表）")
     parser.add_argument("--check", action="store_true", help="仅检查连接和表状态")
     args = parser.parse_args()
 
     print("=" * 60)
-    print("  公务员面试练习平台 — MySQL 一键部署脚本")
+    print(" 公务员面试练习平台 - MySQL 一键部署脚本")
     print("=" * 60)
 
-    # 1. 读取配置
     print("\n[1/5] 读取数据库配置...")
     try:
         config = get_mysql_config()
-        print(f"  [OK] {config['user']}@{config['host']}:{config['port']}/{config['database']}")
+        print(f" [OK] {config['user']}@{config['host']}:{config['port']}/{config['database']}")
     except Exception as e:
-        print(f"  [FAIL] {e}")
+        print(f" [FAIL] {e}")
         sys.exit(1)
 
-    # 2. 检查连接
     print("\n[2/5] 检查 MySQL 连接...")
     if not check_connection(config):
         sys.exit(1)
@@ -435,41 +469,27 @@ def main():
         try:
             check_tables(config)
         except Exception as e:
-            print(f"  [INFO] {e}")
-        print("\n✅ 检查完毕")
+            print(f" [INFO] {e}")
+        print("\n检查完毕")
         return
 
-    # 3. 创建/重置数据库
-    print("\n[3/5] 准备数据库...")
     if args.reset:
-        confirm = input(f"  ⚠️  确认删除数据库 `{config['database']}` 中的所有数据？(yes/no): ")
-        if confirm.strip().lower() != "yes":
-            print("  [取消] 操作已取消")
-            sys.exit(0)
+        print("\n[3/5] 删除并重建数据库...")
         drop_database(config)
-
-    create_database(config)
-
-    if args.seed_only:
-        print("\n[4/5] 跳过建表（--seed-only 模式）")
     else:
-        # 4. 创建表
-        print("\n[4/5] 创建数据表...")
-        create_tables(config)
+        print("\n[3/5] 创建数据库（如不存在）...")
+        create_database(config)
 
-    # 5. 写入种子数据
+    if not args.seed_only:
+        print("\n[4/5] 创建表结构...")
+        create_tables(config)
+    else:
+        print("\n[4/5] 跳过建表（仅种子模式）")
+
     print("\n[5/5] 写入种子数据...")
     run_seed(config)
 
-    # 完成
-    print("\n" + "=" * 60)
-    check_tables(config)
-    print("=" * 60)
-    print("✅ 部署完成！")
-    print(f"   数据库: {config['host']}:{config['port']}/{config['database']}")
-    print(f"   默认账号: admin / admin123")
-    print(f"   启动后端: python -m uvicorn main:app --host 127.0.0.1 --port 8050")
-    print("=" * 60)
+    print("\n部署完成！")
 
 
 if __name__ == "__main__":
