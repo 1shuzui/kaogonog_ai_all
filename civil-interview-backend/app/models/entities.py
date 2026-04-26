@@ -2,7 +2,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, Numeric, String, Text, JSON
+from sqlalchemy import Boolean, Column, Date, DateTime, Float, ForeignKey, Integer, Numeric, String, Text, JSON
 from sqlalchemy.orm import relationship
 
 from app.db.session import Base
@@ -61,7 +61,7 @@ class ExamAnswer(Base):
     exam_id = Column(String(32), ForeignKey("exams.id"), nullable=False, index=True)
     question_id = Column(String(32), nullable=False)
     transcript = Column(Text, default="")
-    media_record = Column(JSON, default=dict)
+    score_result = Column(JSON, default=dict)
     answered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     exam = relationship("Exam", back_populates="answers")
 
@@ -72,7 +72,11 @@ class HistoryRecord(Base):
     exam_id = Column(String(32), unique=True, nullable=False, index=True)
     username = Column(String(64), nullable=False, index=True)
     question_count = Column(Integer, default=0)
+    total_score = Column(Float, default=0)
+    max_score = Column(Float, default=100)
+    grade = Column(String(4), default="B")
     province = Column(String(32), default="national")
+    dimensions = Column(JSON, default=list)
     completed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 

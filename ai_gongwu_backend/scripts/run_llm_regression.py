@@ -51,6 +51,14 @@ class RegressionRow:
     error: str = ""
 
 
+@dataclass(frozen=True)
+class WritebackDecision:
+    question_id: str
+    allowed: bool
+    updated: bool = False
+    reason: str = ""
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="运行真实大模型回归并可选标定 llmExpected 区间。")
     parser.add_argument(
@@ -210,9 +218,16 @@ def render_markdown(rows: list[RegressionRow], generated_at: str) -> str:
     return "\n".join(lines)
 
 
+def emit(message: str) -> None:
+    """统一输出进度，并强制刷新，避免长任务时看起来像卡死。"""
+
+    print(message, flush=True)
+
+
 def normalize_range(lower: float, upper: float, *, lower_bound: float, upper_bound: float) -> tuple[float, float]:
-    lower = round(max(lower_bound, lower), 1)
-    upper = round(min(upper_bound, upper), 1)
+    upper_bound = max(upper_bound, lower_bound)
+    lower = round(min(max(lower_bound, lower), upper_bound), 1)
+    upper = round(min(max(lower_bound, upper), upper_bound), 1)
     if upper < lower:
         center = round(min(max((lower + upper) / 2, lower_bound), upper_bound), 1)
         lower = round(max(lower_bound, center - 1.0), 1)
@@ -283,10 +298,65 @@ def build_calibrated_ranges(rows: list[RegressionRow], question) -> dict[str, tu
     return calibrated
 
 
-def writeback_llm_ranges(question_id: str, rows: list[RegressionRow], question) -> bool:
+def assess_writeback_stability(rows: list[RegressionRow], question) -> tuple[bool, str]:
+    core_levels = {"high", "mid", "low"}
+    core_rows = [row for row in rows if row.level in core_levels]
+    if not core_rows:
+        return False, "未找到可用于标定的 high/mid/low 样本。"
+
+    missing_levels = sorted(core_levels - {row.level for row in core_rows})
+    if missing_levels:
+        return False, f"缺少核心档位样本: {', '.join(missing_levels)}"
+
+    non_pass_rows = [row for row in core_rows if row.status != "PASS"]
+    if non_pass_rows:
+        detail = ", ".join(f"{row.level}:{row.status}" for row in non_pass_rows)
+        return False, f"存在未通过样本，跳过回写: {detail}"
+
+    fallback_rows = [row for row in core_rows if row.fallback_used]
+    if fallback_rows:
+        detail = ", ".join(row.level for row in fallback_rows)
+        return False, f"存在回退到确定性评分的样本，跳过回写: {detail}"
+
+    by_level = {row.level: row for row in core_rows}
+    high_score = by_level["high"].actual_score
+    mid_score = by_level["mid"].actual_score
+    low_score = by_level["low"].actual_score
+    if high_score is None or mid_score is None or low_score is None:
+        return False, "存在空分数样本，跳过回写。"
+    if not (high_score > mid_score > low_score):
+        return False, (
+            "样本排序未满足 high > mid > low，"
+            f"当前为 {high_score:.1f} > {mid_score:.1f} > {low_score:.1f}"
+        )
+
+    allowed_attempt_range = max(3.0, question.fullScore * 0.08)
+    unstable_rows: list[str] = []
+    for row in core_rows:
+        if not row.attempt_scores:
+            continue
+        attempt_range = max(row.attempt_scores) - min(row.attempt_scores)
+        if attempt_range > allowed_attempt_range:
+            unstable_rows.append(f"{row.level}:波动{attempt_range:.1f}")
+    if unstable_rows:
+        return False, "多次采样波动过大，跳过回写: " + ", ".join(unstable_rows)
+
+    return True, ""
+
+
+def writeback_llm_ranges(question_id: str, rows: list[RegressionRow], question) -> WritebackDecision:
+    allowed, reason = assess_writeback_stability(rows, question)
+    if not allowed:
+        return WritebackDecision(question_id=question_id, allowed=False, updated=False, reason=reason)
+
     calibrated = build_calibrated_ranges(rows, question)
     if not calibrated:
-        return False
+        return WritebackDecision(
+            question_id=question_id,
+            allowed=False,
+            updated=False,
+            reason="未生成可回写的标定区间。",
+        )
 
     json_path = resolve_question_json_path(question_id)
     payload = json.loads(json_path.read_text(encoding="utf-8"))
@@ -304,7 +374,19 @@ def writeback_llm_ranges(question_id: str, rows: list[RegressionRow], question) 
 
     if updated:
         json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    return updated
+    if not updated:
+        return WritebackDecision(
+            question_id=question_id,
+            allowed=True,
+            updated=False,
+            reason="区间与现有题库一致，无需回写。",
+        )
+    return WritebackDecision(
+        question_id=question_id,
+        allowed=True,
+        updated=True,
+        reason="已按稳定样本结果回写区间。",
+    )
 
 
 def main() -> int:
@@ -351,7 +433,7 @@ def main() -> int:
             continue
 
         question_rows: list[RegressionRow] = []
-        print(f"[{question.id}]")
+        emit(f"[{question.id}]")
         for case in question.regressionCases:
             level = infer_case_level(case)
             if args.sample_level != "all" and level != args.sample_level:
@@ -413,9 +495,9 @@ def main() -> int:
                 rows.append(row)
                 if args.repeat > 1:
                     attempt_summary = ", ".join(f"{score:.1f}" for score in attempt_scores)
-                    print(f"  - {case.label}: {actual_score:.1f} ({status}) [{attempt_summary}]")
+                    emit(f"  - {case.label}: {actual_score:.1f} ({status}) [{attempt_summary}]")
                 else:
-                    print(f"  - {case.label}: {actual_score:.1f} ({status})")
+                    emit(f"  - {case.label}: {actual_score:.1f} ({status})")
             except Exception as exc:  # noqa: BLE001 - 需要把错误收集进报表
                 row = RegressionRow(
                     question_id=question.id,
@@ -434,16 +516,22 @@ def main() -> int:
                 )
                 question_rows.append(row)
                 rows.append(row)
-                print(f"  - {case.label}: ERROR {exc}")
+                emit(f"  - {case.label}: ERROR {exc}")
 
         rows_by_question[question.id] = question_rows
 
     if args.writeback:
         writeback_count = 0
+        skipped_count = 0
         for question in questions:
-            if writeback_llm_ranges(question.id, rows_by_question.get(question.id, []), question):
+            decision = writeback_llm_ranges(question.id, rows_by_question.get(question.id, []), question)
+            if decision.updated:
                 writeback_count += 1
-        print(f"已回写 llmExpected 区间的题目数: {writeback_count}")
+            elif not decision.allowed:
+                skipped_count += 1
+                emit(f"[SKIP WRITEBACK] {question.id}: {decision.reason}")
+        emit(f"已回写 llmExpected 区间的题目数: {writeback_count}")
+        emit(f"因不稳定而跳过回写的题目数: {skipped_count}")
 
     generated_at = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_dir = Path(args.output_dir).resolve()
@@ -470,13 +558,13 @@ def main() -> int:
     json_path.write_text(json.dumps(json_payload, ensure_ascii=False, indent=2), encoding="utf-8")
     md_path.write_text(render_markdown(rows, generated_at), encoding="utf-8")
 
-    print(f"LLM 回归样本总数: {json_payload['summary']['total']}")
-    print(f"PASS: {json_payload['summary']['pass']}")
-    print(f"FAIL: {json_payload['summary']['fail']}")
-    print(f"ERROR: {json_payload['summary']['error']}")
-    print(f"SKIP: {json_payload['summary']['skip']}")
-    print(f"JSON 报表: {json_path}")
-    print(f"Markdown 报表: {md_path}")
+    emit(f"LLM 回归样本总数: {json_payload['summary']['total']}")
+    emit(f"PASS: {json_payload['summary']['pass']}")
+    emit(f"FAIL: {json_payload['summary']['fail']}")
+    emit(f"ERROR: {json_payload['summary']['error']}")
+    emit(f"SKIP: {json_payload['summary']['skip']}")
+    emit(f"JSON 报表: {json_path}")
+    emit(f"Markdown 报表: {md_path}")
 
     return 0 if json_payload["summary"]["fail"] == 0 and json_payload["summary"]["error"] == 0 else 1
 

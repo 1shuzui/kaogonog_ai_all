@@ -107,27 +107,27 @@
       "sample_path": "assets/regression_samples/generated_hunan/CS-20201212-01/reference_high.txt",
       "expected_min": 32.0,
       "expected_max": 35.0,
-      "llmExpectedMin": 30.5,
-      "llmExpectedMax": 33.5,
+      "llmExpectedMin": 32.0,
+      "llmExpectedMax": 35.0,
       "notes": "来自原始题库文档的核心采分基准答案。"
     },
     {
       "label": "程序化中档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/CS-20201212-01/reference_mid.txt",
-      "expected_min": 12.0,
-      "expected_max": 17.0,
-      "llmExpectedMin": 17.5,
-      "llmExpectedMax": 21.5,
-      "notes": "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=12，截断=none，关键词削弱=light。"
+      "expected_min": 9.7,
+      "expected_max": 14.7,
+      "llmExpectedMin": 10.4,
+      "llmExpectedMax": 15.7,
+      "notes": "基于高分答案程序化压缩生成；策略=template_scene_mid_2，句数=3，截断=none，关键词削弱=medium。"
     },
     {
       "label": "程序化低档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/CS-20201212-01/reference_low.txt",
-      "expected_min": 7.7,
-      "expected_max": 12.7,
-      "llmExpectedMin": 14.5,
-      "llmExpectedMax": 17.0,
-      "notes": "基于高分答案程序化降档生成；策略=template_analysis_low_3，句数=10，截断=none，关键词削弱=heavy，口语化=是。"
+      "expected_min": 4.9,
+      "expected_max": 9.9,
+      "llmExpectedMin": 4.1,
+      "llmExpectedMax": 9.9,
+      "notes": "基于高分答案程序化降档生成；策略=template_scene_low_3，句数=4，截断=none，关键词削弱=heavy，口语化=是。"
     }
   ]
 }

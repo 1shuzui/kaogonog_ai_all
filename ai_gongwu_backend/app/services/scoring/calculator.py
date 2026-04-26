@@ -713,6 +713,14 @@ def _compute_generic_dimension_scores(
         overall_ratio = min(overall_ratio, 0.58)
     elif oral_count >= 2 and structure_count <= 1:
         overall_ratio = min(overall_ratio, 0.7)
+    elif oral_count >= 1 and reference_similarity < 0.82 and effective_length < max(420, length_anchor):
+        overall_ratio = min(overall_ratio, 0.62)
+
+    if structure_count >= 2 and reference_similarity < 0.8 and effective_length < max(420, int(length_anchor * 0.85)):
+        overall_ratio = min(overall_ratio, 0.64)
+
+    if core_ratio <= 0.15 and strong_ratio <= 0.15 and bonus_ratio == 0 and reference_similarity < 0.8:
+        overall_ratio = min(overall_ratio, 0.58)
 
     raw_scores: Dict[str, float] = {}
     for index, dimension in enumerate(question.dimensions):
@@ -757,6 +765,79 @@ def _compute_generic_dimension_scores(
     target_total = round(question.fullScore * overall_ratio, 1)
     scaled_scores = _scale_scores_to_target(raw_scores, question, target_total)
     return scaled_scores, generic_notes
+
+
+def _apply_generic_llm_calibration(
+    transcript: str,
+    question: QuestionDefinition,
+    dimension_scores: Dict[str, float],
+    matched_keywords: Dict[str, list[str]],
+) -> tuple[Dict[str, float], list[str]]:
+    """对非规则维度题做一层保守校准，避免浅层答案被模型抬得过高。"""
+
+    if not dimension_scores:
+        return dimension_scores, []
+
+    generic_scores, _ = _compute_generic_dimension_scores(
+        transcript=transcript,
+        question=question,
+        matched_keywords=matched_keywords,
+    )
+    if not generic_scores:
+        return dimension_scores, []
+
+    llm_total = round(sum(dimension_scores.values()), 1)
+    generic_total = round(sum(generic_scores.values()), 1)
+    if llm_total <= generic_total + 1.0:
+        return dimension_scores, []
+
+    effective_length = _effective_text_length(transcript)
+    reference_length = _effective_text_length(question.referenceAnswer)
+    oral_count = len(_unique_matches(transcript, [*ORAL_EXPRESSION_PHRASES, "我觉着"]))
+    structure_count = len(_unique_matches(transcript, STRUCTURE_MARKERS + ("一是", "二是", "三是", "四是")))
+    reference_similarity = _normalized_similarity(transcript, question.referenceAnswer)
+    core_hit_count = len(matched_keywords.get("core", []))
+    strong_hit_count = len(matched_keywords.get("strong", []))
+
+    cap_candidates: list[float] = []
+    if reference_similarity < 0.9 and llm_total > generic_total + 2.0:
+        cap_candidates.append(round(generic_total + min(1.5, max(question.fullScore * 0.03, 0.5)), 1))
+
+    if (
+        reference_similarity < 0.82
+        and oral_count >= 1
+        and llm_total > generic_total + 1.0
+    ):
+        cap_candidates.append(round(generic_total + 0.5, 1))
+
+    if (
+        reference_similarity < 0.78
+        and structure_count >= 2
+        and effective_length < max(420, int(reference_length * 0.55) if reference_length else 420)
+        and llm_total > question.fullScore * 0.58
+    ):
+        cap_candidates.append(round(max(generic_total, question.fullScore * 0.56), 1))
+
+    if (
+        core_hit_count == 0
+        and strong_hit_count <= 1
+        and oral_count >= 1
+        and llm_total > question.fullScore * 0.55
+    ):
+        cap_candidates.append(round(question.fullScore * 0.52, 1))
+
+    if not cap_candidates:
+        return dimension_scores, []
+
+    target_cap = min(cap_candidates)
+    if target_cap >= llm_total:
+        return dimension_scores, []
+
+    calibrated = _scale_scores_to_target(dimension_scores, question, target_cap)
+    notes = [
+        f"通用校准将总分上限压至 {target_cap:.1f}，避免中低质量答案被模型虚高。"
+    ]
+    return calibrated, notes
 
 
 def _pick_dimension_name(question: QuestionDefinition, markers: Sequence[str]) -> str:
@@ -1200,6 +1281,14 @@ def apply_post_processing(
             )
         validation_notes.extend(rule_notes)
         dimension_scores = rule_based_scores
+    else:
+        dimension_scores, generic_cap_notes = _apply_generic_llm_calibration(
+            transcript=transcript,
+            question=question,
+            dimension_scores=dimension_scores,
+            matched_keywords=matched_keywords,
+        )
+        validation_notes.extend(generic_cap_notes)
 
     dimension_scores = _apply_reference_answer_floor(
         transcript=transcript,

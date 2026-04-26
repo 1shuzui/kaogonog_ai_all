@@ -9,6 +9,15 @@ mkdir -p "$RUN_DIR"
 BACKEND_SESSION="civil-demo-backend"
 FRONTEND_SESSION="civil-demo-frontend"
 
+can_import_backend() {
+  local candidate="$1"
+  "$candidate" - <<PY >/dev/null 2>&1
+import sys
+sys.path.insert(0, r"$ROOT_DIR/civil-interview-backend")
+import main
+PY
+}
+
 resolve_python_bin() {
   local candidate
   for candidate in \
@@ -19,14 +28,14 @@ resolve_python_bin() {
   do
     if [[ "$candidate" == */* ]]; then
       [[ -x "$candidate" ]] || continue
-      if "$candidate" -c "import uvicorn" >/dev/null 2>&1; then
+      if can_import_backend "$candidate"; then
         printf '%s\n' "$candidate"
         return 0
       fi
       continue
     fi
 
-    if command -v "$candidate" >/dev/null 2>&1 && "$candidate" -c "import uvicorn" >/dev/null 2>&1; then
+    if command -v "$candidate" >/dev/null 2>&1 && can_import_backend "$candidate"; then
       printf '%s\n' "$candidate"
       return 0
     fi
@@ -57,7 +66,7 @@ wait_for_url() {
 
 PYTHON_BIN="$(resolve_python_bin || true)"
 if [[ -z "$PYTHON_BIN" ]]; then
-  echo "backend python with uvicorn not found" >"$BACKEND_LOG"
+  echo "backend python with complete dependencies not found; install the project requirements into /home/quyu/kaogong_ai/.venv" >"$BACKEND_LOG"
   echo "backend: failed to start  log=$BACKEND_LOG"
   exit 1
 fi

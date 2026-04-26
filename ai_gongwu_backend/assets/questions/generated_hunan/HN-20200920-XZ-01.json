@@ -123,19 +123,19 @@
     {
       "label": "程序化中档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200920-XZ-01/reference_mid.txt",
-      "expected_min": 14.4,
-      "expected_max": 19.4,
-      "llmExpectedMin": 15.0,
-      "llmExpectedMax": 20.6,
-      "notes": "基于高分答案程序化压缩生成；策略=spread，句数=9，截断=160，关键词削弱=none。"
+      "expected_min": 11.9,
+      "expected_max": 16.9,
+      "llmExpectedMin": 12.0,
+      "llmExpectedMax": 18.0,
+      "notes": "基于高分答案程序化压缩生成；策略=hybrid，句数=10，截断=160，关键词削弱=none。"
     },
     {
       "label": "程序化低档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200920-XZ-01/reference_low.txt",
       "expected_min": 5.1,
       "expected_max": 10.1,
-      "llmExpectedMin": 6.2,
-      "llmExpectedMax": 12.6,
+      "llmExpectedMin": 4.9,
+      "llmExpectedMax": 11.5,
       "notes": "基于高分答案程序化降档生成；策略=spread，句数=6，截断=90，关键词削弱=heavy，口语化=是。"
     }
   ]

@@ -330,6 +330,41 @@ class ScoringCalculatorTestCase(unittest.TestCase):
             any("参考答案相似度校准" in note for note in result.validation_notes)
         )
 
+    def test_generic_calibration_can_cap_shallow_imported_answer(self):
+        transcript = (
+            "我觉得这个事情总体方向是对的。"
+            "如果让我来处理，我会先加强宣传，再做好沟通解释，最后抓好落实。"
+            "这样大家基本就能理解，也能把工作继续往前推。"
+        )
+        evidence_packet, evidence_notes = prepare_evidence_packet(
+            raw_llm_result={},
+            transcript=transcript,
+            question=self.imported_question,
+        )
+        inflated_payload = {
+            "dimension_scores": {
+                item.name: max(round(item.score * 0.78, 1), 0.0)
+                for item in self.imported_question.dimensions
+            },
+            "deduction_items": [],
+            "bonus_items": [],
+            "rationale": "模型给了偏高分。",
+            "total_score": round(self.imported_question.fullScore * 0.78, 1),
+        }
+
+        result = apply_post_processing(
+            raw_llm_result=inflated_payload,
+            transcript=transcript,
+            question=self.imported_question,
+            evidence_packet=evidence_packet,
+            extra_validation_notes=evidence_notes,
+        )
+
+        self.assertLess(result.total_score, round(self.imported_question.fullScore * 0.7, 1))
+        self.assertTrue(
+            any("通用校准将总分上限压至" in note for note in result.validation_notes)
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

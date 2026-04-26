@@ -931,6 +931,24 @@ def detect_template_family(question_data: dict[str, Any]) -> str | None:
     """识别适合走独立模板生成的题型。"""
 
     haystack = build_question_haystack(question_data)
+    question_text = question_data.get("question", "")
+
+    # 先抓“明确要求现场表达”的题，避免和普通沟通/劝说题混淆。
+    if any(
+        marker in haystack
+        for marker in ("现场模拟", "现场处置", "模拟沟通", "宣讲", "串词表达")
+    ):
+        return "scene"
+    if any(
+        marker in haystack
+        for marker in ("人际沟通", "同事关系", "群众矛盾", "心理疏导", "亲情沟通", "矛盾化解", "沟通劝说")
+    ):
+        return "interpersonal"
+    if any(
+        marker in question_text
+        for marker in ("怎么劝说", "如何劝说", "怎么劝导", "如何劝导", "怎么沟通", "如何沟通", "怎么说服", "如何说服", "怎么安抚", "如何安抚")
+    ):
+        return "interpersonal"
     if any(marker in haystack for marker in ("计划组织", "活动设计", "活动方案", "宣传活动", "组织开展")):
         return "organization"
     if any(marker in haystack for marker in ("综合分析", "价值判断", "政策理解", "社会现象", "漫画解读")):
@@ -979,8 +997,21 @@ def infer_role_focus(question_data: dict[str, Any]) -> str:
 def infer_target_group(question_data: dict[str, Any], *, generic: bool = False) -> str:
     """提炼组织策划题的服务对象。"""
 
+    question_first_haystack = " ".join(
+        [
+            question_data.get("question", ""),
+            " ".join(question_data.get("coreKeywords", [])),
+            " ".join(question_data.get("strongKeywords", [])),
+        ]
+    )
     haystack = build_question_haystack(question_data)
     mappings = (
+        ("餐饮经营者", "餐饮经营者"),
+        ("经营者", "经营者"),
+        ("老板", "商户和老板"),
+        ("服刑人员", "服刑人员"),
+        ("罪犯", "服刑人员"),
+        ("犯人", "服刑人员"),
         ("老年", "老年人"),
         ("老人", "老年人"),
         ("群众", "群众"),
@@ -989,12 +1020,12 @@ def infer_target_group(question_data: dict[str, Any], *, generic: bool = False) 
         ("游客", "游客"),
         ("企业", "企业和商户"),
         ("商户", "企业和商户"),
-        ("罪犯", "相关对象"),
         ("干部", "基层干部"),
     )
-    for marker, label in mappings:
-        if marker in haystack:
-            return genericize_keyword(label) if generic else label
+    for text in (question_first_haystack, haystack):
+        for marker, label in mappings:
+            if marker in text:
+                return genericize_keyword(label) if generic else label
     return "参与对象" if not generic else "相关群体"
 
 
@@ -1045,8 +1076,6 @@ def infer_topic_phrase(question_data: dict[str, Any], *, generic: bool = False) 
 def build_analysis_template_texts(question_data: dict[str, Any], mode: str) -> list[tuple[str, str, bool]]:
     """为综合分析/价值判断题生成中低档模板文本。"""
 
-    province = question_data.get("province", "当地") or "当地"
-    role_focus = infer_role_focus(question_data)
     topic = infer_topic_phrase(question_data, generic=False)
     topic2 = ordered_keywords(question_data, generic=False)[1:2]
     topic2_text = topic2[0] if topic2 else "现实需求"
@@ -1055,35 +1084,32 @@ def build_analysis_template_texts(question_data: dict[str, Any], mode: str) -> l
         return [
             (
                 (
-                    f"我认为这道题不能只看表面，关键还是要把方向判断、现实问题和后续落实放在一起看。 "
-                    f"从积极一面看，{topic}和{topic2_text}说明相关工作是在回应现实需要，也体现出一定的主动作为。 "
-                    f"但换个角度看，如果推进过程中只重形式、不顾差异，或者前期论证不充分，{aux_topic}就容易在执行中走样，最后影响实际效果。 "
-                    f"所以回答这类题，不能只讲态度，还要把主要矛盾说出来，比如问题到底出在理解不到位、统筹不够，还是落实链条没有压实。 "
-                    f"后续更稳妥的做法，是先把基本情况摸清，再围绕重点问题分类推进，同时把过程跟踪、结果反馈和动态调整一起做起来。 "
-                    f"结合{province}实际和{role_focus}来看，既要把主判断说明白，也要把改进方向交代清楚，这样回答才算比较完整。"
-                ),
-                "light",
-                False,
-            ),
-            (
-                (
-                    f"我觉得这个问题既有值得肯定的一面，也有需要注意的地方。 "
-                    f"{topic}本身并不是不能做，而是要看后面怎么做、做到什么程度。 "
-                    f"如果前期判断过满、后续落实过快，{aux_topic}就可能出现形式化、简单化的问题，最后变成方向是对的、效果却一般。 "
-                    f"所以后续还是要把调查摸底、重点分层、责任传导和跟踪问效几个环节理顺。 "
-                    f"尤其放到{role_focus}里看，更要注意把原则要求转成可执行的办法，而不是停留在大而化之的表述里。"
+                    f"我认为这类题不能只讲一个态度，还是要把基本判断和现实问题一起说。 "
+                    f"从正面看，{topic}和{topic2_text}说明相关工作确实有一定现实背景。 "
+                    f"但如果推进时考虑不够细，{aux_topic}也可能出现表面化、简单化的问题，最后影响效果。 "
+                    "所以回答时至少要把方向、问题和大致改进思路说明白，不能只停留在空泛表态上。 "
+                    "后面更重要的是先把情况摸清，再针对主要问题做一些调整，避免一上来铺得太开。"
                 ),
                 "medium",
                 False,
             ),
             (
                 (
-                    f"这类题我更倾向于分两步看。 "
-                    f"第一步先肯定{topic}回应了现实需求，第二步再分析它在落实过程中可能遇到的偏差和阻力。 "
-                    f"如果只讲积极意义，不讲具体问题，回答就容易发空；如果只讲问题，不讲基本方向，又会显得判断失衡。 "
-                    f"所以我会认为后续还是要结合{province}实际，把主要矛盾找准，再从统筹推进、分类落实和结果导向三个方面把工作往前推。"
+                    f"我觉得这个问题既不能全盘否定，也不能简单肯定。 "
+                    f"{topic}本身未必有问题，关键还是要看后面怎么落。 "
+                    f"如果前期判断太满、后面推进太快，{aux_topic}就容易流于形式，最后看起来做了不少，实际效果一般。 "
+                    "所以后面还是要把问题摸准，再把重点环节理顺，至少别让工作停在口号层面。"
                 ),
                 "medium",
+                False,
+            ),
+            (
+                (
+                    f"这类题我会先看它为什么做，再看它容易出什么问题。 "
+                    f"如果只讲{topic}的积极意义，回答会偏空；如果只讲问题，不讲基本方向，也不够完整。 "
+                    f"所以更稳妥的说法，是先承认{topic}有现实考虑，再指出{aux_topic}在落实中可能会有偏差，最后补一句原则性的改进思路。"
+                ),
+                "heavy",
                 False,
             ),
         ]
@@ -1094,8 +1120,8 @@ def build_analysis_template_texts(question_data: dict[str, Any], mode: str) -> l
                 "我觉得这个问题不能只看一面，还是要结合实际分开来看。 "
                 f"方向上未必有问题，但真正难的是后面能不能把{aux_topic}落到实处。 "
                 f"如果前面考虑得不够细，执行中就可能出现偏差，最后让工作效果打折。 "
-                "所以后续可以先把基本情况摸一摸，再按实际情况往前推，同时把反馈和调整跟上。 "
-                "总的看，我会先把主要问题和大方向说清楚，不会一开始就把话说得太满。"
+                "所以后续可以先把基本情况摸一摸，再看怎么往前推。 "
+                "总的看，我会先把主要问题和大方向说清楚。"
             ),
             "heavy",
             True,
@@ -1104,8 +1130,8 @@ def build_analysis_template_texts(question_data: dict[str, Any], mode: str) -> l
             (
                 "我觉得这件事还是要看实际效果。 "
                 f"有些工作从出发点看是好的，但如果推进得太急，{aux_topic}就容易变成表面动作。 "
-                f"所以更重要的还是结合具体情况一步一步来，把重点问题先拎出来，再决定怎么往下做。 "
-                f"放到{role_focus}里看，回答时把判断、问题和基本做法说清楚就行。"
+                "所以更重要的还是结合具体情况一步一步来，把重点问题先拎出来。 "
+                "回答时把判断、问题和基本做法说清楚就行。"
             ),
             "heavy",
             True,
@@ -1114,7 +1140,7 @@ def build_analysis_template_texts(question_data: dict[str, Any], mode: str) -> l
             (
                 "在我看，这类问题最怕的不是方向有偏差，而是说得很多、落得不够。 "
                 f"如果只讲态度、不讲条件，{aux_topic}最后就可能没有真正起作用。 "
-                "后面还是要把情况摸清，再把基本做法分开推进，边做边看效果。 "
+                "后面还是要把情况摸清，再看怎么处理。 "
                 "我觉得这样回答会更稳一些。"
             ),
             "heavy",
@@ -1132,34 +1158,32 @@ def build_organization_template_texts(question_data: dict[str, Any], mode: str) 
         return [
             (
                 (
-                    "如果让我来组织这项工作，我会按“前期准备、现场开展、后续跟进”三个部分来推进。 "
-                    f"前期先做简单摸排，看看{target_group}最关心什么，再把活动目标、参与范围、通知方式和人员分工提前理顺，避免现场临时忙乱。 "
-                    f"正式开展时，我会把{topic}放在核心位置，先用通俗表达把基本内容讲明白，再安排示范、互动和答疑，让参与对象知道为什么做、怎么做、遇到问题找谁。 "
-                    "活动结束后再做回访和反馈整理，把现场发现的共性问题收集起来，方便后续继续补充服务。 "
-                    "另外还要把现场秩序、基本保障和应急预案一起考虑进去，保证活动既能办起来，也能落得稳。"
-                ),
-                "light",
-                False,
-            ),
-            (
-                (
-                    f"这类活动我会先把对象需求摸清，再按流程往前推。 "
-                    f"准备阶段主要把{target_group}、场地安排和工作人员分工先定下来，确保活动开始前大家都知道自己要做什么。 "
-                    f"现场环节不追求铺得很大，但要把{topic}讲明白、演示清楚，并留出互动答疑时间，让参与对象能够真正跟上。 "
-                    "活动后面再做简单跟进，看看大家哪些地方还没掌握，再把后续服务接上。 "
-                    "整体上以流程清楚、内容实用、对象听懂、现场平稳为主。"
+                    "如果让我来做这项工作，我会先把基本安排理顺，再把现场环节抓起来，最后补一个简单跟进。 "
+                    f"前面先看看{target_group}比较关心什么，把通知、时间和人员分工先定下来。 "
+                    f"中间围绕{topic}把重点内容讲清楚，再留一点互动和答疑，确保大家能听懂。 "
+                    "结束后把反馈收一收，看看还有哪些问题需要后面继续补。 "
+                    "整体上不追求铺得很大，但流程不能乱。"
                 ),
                 "medium",
                 False,
             ),
             (
                 (
-                    "我会把这个方案设计得尽量简单一些，但基本环节不能少。 "
-                    f"前面先做通知和需求收集，中间围绕{topic}开展讲解、互动和现场指导，后面再做反馈整理和后续服务。 "
-                    f"这样既能照顾到{target_group}的接受程度，也能避免活动流程过重、现场执行过散。 "
-                    "只要把前、中、后三个环节衔接好，这项工作基本就能比较稳地落下来。"
+                    f"这类活动我会先把对象、场地和时间这些基础项定下来。 "
+                    f"现场主要围绕{topic}做说明和互动，不会一开始安排太多环节。 "
+                    f"只要让{target_group}知道活动在讲什么、后面遇到问题怎么继续问，基本目的就算达到了。 "
+                    "活动结束后再把现场反馈做个整理，作为后面调整的依据。"
                 ),
                 "medium",
+                False,
+            ),
+            (
+                (
+                    "我会把这个方案想得简单一点。 "
+                    f"前面先做通知和基本准备，中间把{topic}讲清楚，后面留一个反馈和继续跟进的口子。 "
+                    f"这样既能照顾到{target_group}的接受程度，也能避免活动设计得太满。"
+                ),
+                "heavy",
                 False,
             ),
         ]
@@ -1167,11 +1191,11 @@ def build_organization_template_texts(question_data: dict[str, Any], mode: str) 
     return [
         (
             (
-                "我觉得这个活动可以先从需求摸排、现场讲解和后续答疑几个方面简单考虑。 "
-                f"前面先把{target_group}和大致安排确定好，别一开始就铺得太大。 "
-                f"现场主要把{topic}的基本内容讲明白，再留一点时间让大家问一问、试一试。 "
-                "活动结束后做个简单反馈，看看哪些地方还没听懂，后面再继续跟进。 "
-                "整体上只要流程清楚、对象能接受、现场别出问题，这个活动就算比较稳妥。"
+                "我觉得这个活动可以先按一个基础框架来做。 "
+                f"前面先把{target_group}和大致安排确定好。 "
+                f"现场主要把{topic}的基本内容讲一讲，让大家先有个了解。 "
+                "活动结束后再看反馈，后面有需要再补。 "
+                "整体上先把活动办起来就行。"
             ),
             "heavy",
             True,
@@ -1179,9 +1203,9 @@ def build_organization_template_texts(question_data: dict[str, Any], mode: str) 
         (
             (
                 "我觉得这项工作不用一开始就设计得特别复杂。 "
-                f"可以先做通知和简单准备，再围绕{topic}做现场说明，最后留一个后续答疑和回访的口子。 "
-                f"这样既能让{target_group}知道活动在干什么，也方便后面根据反馈继续调整。 "
-                "对我来说，先把基本框架搭起来比一上来堆很多细节更重要。"
+                f"可以先做通知和简单准备，再围绕{topic}做现场说明，最后留一个后续联系的口子。 "
+                f"这样既能让{target_group}知道活动在干什么，也方便后面再慢慢调整。 "
+                "对我来说，先把基本框架搭起来更重要。"
             ),
             "heavy",
             True,
@@ -1189,13 +1213,155 @@ def build_organization_template_texts(question_data: dict[str, Any], mode: str) 
         (
             (
                 "这个活动我会先按一个基础骨架来想。 "
-                "前面把对象、时间和基本安排先理顺，中间把核心内容说明白，后面再做简单反馈和持续跟进。 "
-                f"只要{target_group}能跟上节奏，现场不乱，后续还有人接着答疑，整个活动就能先运转起来。 "
+                "前面把对象、时间和基本安排先理顺，中间把核心内容说明白，后面再做简单反馈。 "
+                f"只要{target_group}能跟上节奏，现场不乱，这个活动就能先运转起来。 "
                 "后续如果效果一般，再边做边调也来得及。"
             ),
             "heavy",
             True,
         ),
+    ]
+
+
+def build_interpersonal_template_texts(question_data: dict[str, Any], mode: str) -> list[tuple[str, str, bool]]:
+    """为人际沟通题生成中低档模板文本。"""
+
+    target_group = infer_target_group(question_data, generic=False)
+    topic = infer_topic_phrase(question_data, generic=False)
+    if mode == "mid":
+        return [
+            (
+                (
+                    f"如果是我来沟通，我会先把态度放缓一点，先听听{target_group}真正担心什么。 "
+                    f"然后再把和{topic}有关的情况解释清楚，至少让对方知道这件事为什么要做、现在卡在哪里。 "
+                    "沟通的时候我不会一上来就强调要求，而是先把情绪稳住，再把能协调的地方说清楚。 "
+                    "最后我会留一个继续联系的口子，避免一次谈完就结束。"
+                ),
+                "medium",
+                False,
+            ),
+            (
+                (
+                    "我觉得这类题关键还是先把关系稳住。 "
+                    f"面对{target_group}，我会先表示理解，再把事情的来龙去脉和基本想法讲清楚。 "
+                    f"如果对方对{topic}还有顾虑，我会先回应最核心的问题，不急着一次把所有内容都讲满。 "
+                    "后面再看对方反应，边沟通边调整。"
+                ),
+                "medium",
+                False,
+            ),
+            (
+                (
+                    "这类沟通题我会先重态度、再重解释。 "
+                    f"先让{target_group}感受到我是在解决问题，不是在和他争。 "
+                    f"然后再围绕{topic}把基本情况说明白，能当场解决的先处理，不能马上解决的后面继续跟。"
+                ),
+                "heavy",
+                False,
+            ),
+        ]
+
+    return [
+        (
+            (
+                f"我觉得先和{target_group}单独谈一谈，把情绪缓一缓比较重要。 "
+                f"先听听对方对{topic}最担心什么，再把事情不是一点转机都没有这个意思慢慢解释清楚。 "
+                "只要先让对方愿意继续听、继续谈，后面就还有沟通空间。"
+            ),
+            "heavy",
+            True,
+        ),
+        (
+            (
+                "这类情况我会先把态度放平，不急着反驳。 "
+                "先表示理解，再把这件事能怎么改、后面还能争取什么简单解释一下。 "
+                "如果对方还是不太接受，我会继续跟进，不让谈话停在情绪上。"
+            ),
+            "heavy",
+            True,
+        ),
+        (
+            (
+                "在我看，人际沟通题先把关系稳住最重要。 "
+                "先让对方愿意听，再围绕这件事做一点解释，也让他看到后面不是没人管。 "
+                "能继续谈下去，事情就还有办法。"
+            ),
+            "heavy",
+            True,
+        ),
+    ]
+
+
+def build_scene_template_texts(question_data: dict[str, Any], mode: str) -> list[tuple[str, str, bool]]:
+    """为现场模拟/宣讲表达类题生成中低档模板文本。"""
+
+    target_group = infer_target_group(question_data, generic=False)
+    topic = infer_topic_phrase(question_data, generic=False)
+    if mode == "mid":
+        return [
+            (
+                (
+                    f"各位{target_group}，大家好。今天我主要想就{topic}和大家做一个简单说明。 "
+                    "我知道大家最关心的，往往不是口号，而是这件事会不会增加负担、影响原来的安排，所以我先把核心意思讲清楚，再把顾虑和基本做法说明白。 "
+                    "能先试着推进的，我们就从容易操作的环节先做，不要求一下子铺得太满。 "
+                    "如果现场还有没听明白的地方，我们后面也可以继续沟通。"
+                ),
+                "medium",
+                False,
+            ),
+            (
+                (
+                    f"各位{target_group}，关于{topic}这件事，我先和大家交流几点。 "
+                    "第一是为什么要做，第二是大家先怎么配合更合适，第三是后面遇到问题怎么边做边调。 "
+                    "先把核心内容听明白，比一开始记很多细节更重要，也比一上来担心成本和麻烦更重要。 "
+                    "我会尽量用直白一点的话说，让大家先听懂主要内容。"
+                ),
+                "medium",
+                False,
+            ),
+            (
+                (
+                    f"大家好，今天借这个机会，我想围绕{topic}和大家做个沟通。 "
+                    "重点不是把话说得多满，而是先把为什么做、怎么试、出了问题怎么办讲清楚。 "
+                    "大家先把基本意思对上，先从能接受、能配合的地方开始，后面需要补的再继续补。 "
+                    "后面如果大家还有顾虑，我们再继续解释和完善。"
+                ),
+                "heavy",
+                False,
+            ),
+        ]
+
+    return [
+        (
+                (
+                    f"大家好，今天我想简单说一下{topic}这件事。 "
+                    "我知道大家可能会担心麻烦、成本或者效果，所以这次先把大致方向和基本配合方式说清楚。 "
+                    "大家先有个大概印象，能先试着配合的先配合。 "
+                    "后面有疑问我们再继续沟通。"
+                ),
+                "heavy",
+                True,
+            ),
+        (
+                (
+                    "大家好，关于这个事情，我先和大家做个简单交流。 "
+                    "主要就是把为什么做、先从哪里做大概说一下。 "
+                    "有些细节今天先不展开，也不要求一步到位。 "
+                    "如果后面还有问题，我们再继续沟通。"
+                ),
+                "heavy",
+                True,
+            ),
+        (
+                (
+                    "今天我就这个安排和大家说明一下。 "
+                    "内容我尽量说得简单一点，先让大家有个基本了解。 "
+                    "大家先知道大概怎么回事、后面大概要怎么配合就可以。 "
+                    "后面需要补充的地方，我们再接着说。"
+                ),
+                "heavy",
+                True,
+            ),
     ]
 
 
@@ -1211,12 +1377,20 @@ def build_template_candidates(
         specs = build_analysis_template_texts(question_data, mode)
     elif family == "organization":
         specs = build_organization_template_texts(question_data, mode)
+    elif family == "interpersonal":
+        specs = build_interpersonal_template_texts(question_data, mode)
+    elif family == "scene":
+        specs = build_scene_template_texts(question_data, mode)
     else:
         return []
 
     minimum_length, _ = desired_length_bounds(effective_length(question_data["referenceAnswer"]), mode)
-    if family == "organization" and mode == "low":
-        minimum_length = max(260, minimum_length - 80)
+    if family in {"interpersonal", "scene"} and mode == "low":
+        minimum_length = 0
+    elif family in {"interpersonal", "scene"} and mode == "mid":
+        minimum_length = 0
+    elif family == "organization" and mode == "low":
+        minimum_length = max(220, minimum_length - 120)
     elif mode == "low":
         minimum_length = max(260, minimum_length - 40)
 
@@ -1230,7 +1404,8 @@ def build_template_candidates(
             text = soften_low_sample_tone(text)
             text = rewrite_low_opening(text, question_data)
         text = strip_role_conclusion(text, mode)
-        text = extend_variant_length(text, question_data, mode, minimum_length)
+        if minimum_length > 0:
+            text = extend_variant_length(text, question_data, mode, minimum_length)
         if oral and not text.startswith(("我觉得", "我想", "在我看")):
             text = "我觉得" + text
         text = clean_generated_sample_text(text)
@@ -1477,15 +1652,18 @@ def choose_low_sample(
     high_score: float,
     full_score: float,
     reference_length: int,
+    *,
+    family: str | None = None,
 ) -> GeneratedSample:
     """优先挑一个稳定落在中低位的样本。"""
 
-    target = round(full_score * 0.24, 1)
+    target_ratio = 0.18 if family in {"organization", "interpersonal", "scene"} else 0.2
+    target = round(full_score * target_ratio, 1)
     minimum_length, target_length = desired_length_bounds(reference_length, "low")
     eligible = [
         candidate
         for candidate in candidates
-        if candidate.score <= min(high_score - max(8.0, full_score * 0.18), full_score * 0.65)
+        if candidate.score <= min(high_score - max(9.0, full_score * 0.22), full_score * 0.55)
     ] or list(candidates)
 
     return min(
@@ -1494,7 +1672,7 @@ def choose_low_sample(
             abs(candidate.score - target),
             0 if candidate.oral else 1,
             0 if candidate.sanitization == "heavy" else 1,
-            sample_detail_score(candidate.text),
+            sample_detail_score(candidate.text) * (1.3 if family in {"organization", "interpersonal", "scene"} else 1.0),
             max(0, minimum_length - effective_length(candidate.text)) / 45,
             abs(effective_length(candidate.text) - target_length) / 140,
             candidate.score,
@@ -1510,11 +1688,13 @@ def choose_mid_sample(
     high_score: float,
     full_score: float,
     reference_length: int,
+    family: str | None = None,
 ) -> GeneratedSample:
     """挑选介于高分与低分之间、且和低档拉开差距的样本。"""
 
-    target = round(full_score * 0.58, 1)
-    desired_gap = max(3.0, round(full_score * 0.08, 1))
+    target_ratio = 0.48 if family in {"organization", "interpersonal", "scene"} else 0.52
+    target = round(full_score * target_ratio, 1)
+    desired_gap = max(4.0, round(full_score * 0.1, 1))
     minimum_length, target_length = desired_length_bounds(reference_length, "mid")
 
     separated = [
@@ -1528,8 +1708,8 @@ def choose_mid_sample(
             key=lambda candidate: (
                 abs(candidate.score - target),
                 max(0, minimum_length - effective_length(candidate.text)) / 70,
-                sample_detail_score(candidate.text),
-                0 if candidate.sanitization == "medium" else (1 if candidate.sanitization == "light" else 2),
+                sample_detail_score(candidate.text) * (1.25 if family in {"organization", "interpersonal", "scene"} else 1.0),
+                0 if candidate.sanitization == "heavy" else (1 if candidate.sanitization == "medium" else 2),
                 abs(effective_length(candidate.text) - target_length) / 180,
                 -candidate.score,
                 effective_length(candidate.text) * -0.01,
@@ -1547,8 +1727,8 @@ def choose_mid_sample(
             key=lambda candidate: (
                 abs(candidate.score - target),
                 max(0, minimum_length - effective_length(candidate.text)) / 70,
-                sample_detail_score(candidate.text),
-                0 if candidate.sanitization == "medium" else (1 if candidate.sanitization == "light" else 2),
+                sample_detail_score(candidate.text) * (1.25 if family in {"organization", "interpersonal", "scene"} else 1.0),
+                0 if candidate.sanitization == "heavy" else (1 if candidate.sanitization == "medium" else 2),
                 abs(effective_length(candidate.text) - target_length) / 180,
                 -candidate.score,
             ),
@@ -1633,6 +1813,9 @@ def build_reference_samples(question_data: dict[str, Any]) -> tuple[dict[str, Ge
     if template_family in {"analysis", "organization"}:
         low_candidates = build_template_candidates(question_data, question, "low")
         mid_candidates = build_template_candidates(question_data, question, "mid")
+    elif template_family in {"interpersonal", "scene"}:
+        low_candidates = build_template_candidates(question_data, question, "low")
+        mid_candidates = build_template_candidates(question_data, question, "mid")
     else:
         low_candidates = []
         mid_candidates = []
@@ -1654,6 +1837,7 @@ def build_reference_samples(question_data: dict[str, Any]) -> tuple[dict[str, Ge
         high_sample.score,
         question.fullScore,
         reference_length,
+        family=template_family,
     )
     mid_sample = choose_mid_sample(
         mid_candidates,
@@ -1661,6 +1845,7 @@ def build_reference_samples(question_data: dict[str, Any]) -> tuple[dict[str, Ge
         high_score=high_sample.score,
         full_score=question.fullScore,
         reference_length=reference_length,
+        family=template_family,
     )
     mid_sample, low_sample = ensure_mid_low_gap(
         mid_sample,
@@ -1780,14 +1965,25 @@ def build_initial_llm_expected_range(
     full_score: float,
     lower_bound: float,
     upper_bound: float,
+    family: str | None = None,
 ) -> tuple[float, float]:
     """给 LLM 回归先写一组初始区间，后续可被正式标定脚本回写。"""
 
     if level == "high":
         return round(deterministic_min, 1), round(min(full_score, deterministic_max), 1)
 
-    uplift = max(0.8, full_score * 0.03) if level == "mid" else max(1.5, full_score * 0.06)
-    margin = 2.8 if level == "mid" else 3.2
+    if level == "mid":
+        uplift = max(0.5, full_score * 0.02)
+        margin = 3.0
+        if family in {"interpersonal", "scene"}:
+            uplift = max(0.2, uplift - 0.4)
+            margin = 3.2
+    else:
+        uplift = max(0.8, full_score * 0.03)
+        margin = 3.6
+        if family in {"interpersonal", "scene"}:
+            uplift = max(0.2, full_score * 0.015)
+            margin = 3.8
     center = (deterministic_min + deterministic_max) / 2 + uplift
     llm_min, llm_max = bounded_expected_range(
         center,
@@ -1802,6 +1998,8 @@ def build_regression_cases(
     question_id: str,
     full_score: float,
     samples: dict[str, GeneratedSample],
+    *,
+    family: str | None = None,
 ) -> list[dict]:
     """为每道题挂载高 / 中 / 低三档回归样本。"""
 
@@ -1829,6 +2027,7 @@ def build_regression_cases(
         full_score=full_score,
         lower_bound=high_expected_min,
         upper_bound=full_score,
+        family=family,
     )
     mid_llm_min, mid_llm_max = build_initial_llm_expected_range(
         "mid",
@@ -1837,6 +2036,7 @@ def build_regression_cases(
         full_score=full_score,
         lower_bound=round(low_max + 0.5, 1),
         upper_bound=round(high_llm_min - 0.5, 1),
+        family=family,
     )
     low_llm_min, low_llm_max = build_initial_llm_expected_range(
         "low",
@@ -1845,6 +2045,7 @@ def build_regression_cases(
         full_score=full_score,
         lower_bound=0.0,
         upper_bound=round(mid_llm_min - 0.5, 1),
+        family=family,
     )
 
     base_path = f"assets/regression_samples/generated_hunan/{question_id}"
@@ -1995,6 +2196,7 @@ def write_question_files(parsed_questions: dict[str, ParsedQuestion]) -> dict[st
             question_id=question_id,
             full_score=float(json_payload["fullScore"]),
             samples=samples,
+            family=detect_template_family(json_payload),
         )
         json_payload.pop("_meta", None)
         (QUESTION_OUTPUT_DIR / f"{question_id}.json").write_text(

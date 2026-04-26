@@ -116,20 +116,20 @@
     {
       "label": "程序化中档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200921-XZ-01/reference_mid.txt",
-      "expected_min": 12.4,
-      "expected_max": 17.4,
-      "llmExpectedMin": 13.1,
-      "llmExpectedMax": 18.8,
-      "notes": "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=12，截断=none，关键词削弱=light。"
+      "expected_min": 11.6,
+      "expected_max": 16.6,
+      "llmExpectedMin": 12.8,
+      "llmExpectedMax": 17.8,
+      "notes": "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=11，截断=none，关键词削弱=medium。"
     },
     {
       "label": "程序化低档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200921-XZ-01/reference_low.txt",
-      "expected_min": 7.2,
-      "expected_max": 12.2,
-      "llmExpectedMin": 8.6,
-      "llmExpectedMax": 12.6,
-      "notes": "基于高分答案程序化降档生成；策略=template_analysis_low_2，句数=10，截断=none，关键词削弱=heavy，口语化=是。"
+      "expected_min": 7.3,
+      "expected_max": 12.3,
+      "llmExpectedMin": 7.3,
+      "llmExpectedMax": 12.3,
+      "notes": "基于高分答案程序化降档生成；策略=template_analysis_low_2，句数=11，截断=none，关键词削弱=heavy，口语化=是。"
     }
   ]
 }
