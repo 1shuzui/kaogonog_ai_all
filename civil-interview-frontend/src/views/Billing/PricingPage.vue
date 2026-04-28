@@ -5,23 +5,23 @@
         <span class="pricing-hero__eyebrow">套餐方案</span>
         <h1>解锁更完整的面试训练</h1>
         <p>
-          普通用户未开通时只能体验 1 道试用题。开通后可解锁完整模拟面试、
-          定向备考和专项训练，题库管理仅管理员可用。
+          试用用户可以先体验 1 道引导题。当前为前端演示版，
+          开通后可解锁完整模拟面试、定向备考和专项训练。
         </p>
         <div class="pricing-hero__chips">
           <span>单题试用</span>
-          <span>服务端鉴权</span>
-          <span>账号级套餐</span>
+          <span>路由级拦截</span>
+          <span>本地演示开通</span>
         </div>
       </div>
 
       <div class="pricing-hero__status">
         <div class="pricing-status-card">
           <span class="pricing-status-card__label">当前套餐</span>
-          <strong>{{ currentPlanLabel }}</strong>
-          <p>{{ currentPlanStatus }}</p>
+          <strong>{{ billingStore.planLabel }}</strong>
+          <p>{{ billingStore.planStatusText }}</p>
           <a-button
-            v-if="canContinue"
+            v-if="billingStore.isPaid"
             class="pricing-status-card__cta"
             type="primary"
             @click="goNextStep"
@@ -93,7 +93,7 @@
     <div class="pricing-support card">
       <div class="pricing-support__header">
         <h3>已解锁模块</h3>
-        <span>账号级权限已联动</span>
+        <span>当前为纯前端演示</span>
       </div>
       <div class="pricing-support__grid">
         <div v-for="moduleName in PREMIUM_MODULES" :key="moduleName" class="pricing-support__item">
@@ -101,8 +101,8 @@
         </div>
       </div>
       <p class="pricing-support__note">
-        当前页面仍是演示开通流程，但套餐状态已经写回当前账号，
-        并由后端接口统一执行权限校验。
+        当前页面仅提供本地演示开通。真实支付、订单校验以及后端权限联动，
+        后续再接入。
       </p>
     </div>
 
@@ -134,25 +134,16 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { useBillingStore } from '@/stores/billing'
-import { useUserStore } from '@/stores/user'
 import { BILLING_PLANS, BILLING_PLAN_KEYS, PREMIUM_MODULES } from '@/utils/billing'
 
 const route = useRoute()
 const router = useRouter()
 const billingStore = useBillingStore()
-const userStore = useUserStore()
 
 const plans = BILLING_PLANS
 const paywallSource = computed(() => String(route.query.source || billingStore.lastPaywallSource || ''))
 const redirectTarget = computed(() => String(route.query.redirect || billingStore.lastIntendedPath || '/'))
 const trialQuestion = computed(() => billingStore.trialQuestion)
-const currentPlanLabel = computed(() => (userStore.isAdmin ? '管理员' : billingStore.planLabel))
-const currentPlanStatus = computed(() => (
-  userStore.isAdmin
-    ? '管理员账号默认开放全部功能，题库管理仅管理员可用'
-    : billingStore.planStatusText
-))
-const canContinue = computed(() => userStore.isAdmin || billingStore.isPaid)
 const successVisible = ref(false)
 const latestOrder = ref(null)
 
@@ -182,12 +173,8 @@ function goOrders() {
   router.push('/profile/orders')
 }
 
-async function activatePlan(planKey) {
-  if (!userStore.isAuthenticated) {
-    router.push({ path: '/login', query: { redirect: route.fullPath } })
-    return
-  }
-  latestOrder.value = await billingStore.activatePlan(planKey)
+function activatePlan(planKey) {
+  latestOrder.value = billingStore.activatePlan(planKey)
   message.success(`已开通：${latestOrder.value?.title || '套餐'}`)
   successVisible.value = true
 }

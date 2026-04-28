@@ -150,7 +150,7 @@ async function handleLogin() {
     const redirect = route.query.redirect || '/'
     router.push(redirect)
   } catch (e) {
-    const msg = e.userMessage || e.normalizedMessage || e.response?.data?.detail || '登录失败'
+    const msg = e.response?.data?.detail || '登录失败'
     message.error(msg)
   } finally {
     loading.value = false
@@ -169,7 +169,7 @@ async function handleRegister() {
     loginForm.username = registerForm.username
     loginForm.password = ''
   } catch (e) {
-    const msg = e.normalizedMessage || e.response?.data?.detail || '注册失败'
+    const msg = e.response?.data?.detail || '注册失败'
     message.error(msg)
   } finally {
     loading.value = false

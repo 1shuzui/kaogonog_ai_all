@@ -2,7 +2,6 @@ import { defineStore } from 'pinia'
 import { EXAM_STATUS } from '@/utils/constants'
 import { startExam, uploadRecording } from '@/api/exam'
 import { transcribeAudio, evaluateAnswer } from '@/api/scoring'
-import { hasRecordingContent } from '@/utils/examSubmission'
 
 export const useExamStore = defineStore('exam', {
   state: () => ({
@@ -68,7 +67,6 @@ export const useExamStore = defineStore('exam', {
       this.recordingBlob = null
       this.transcript = ''
       this.scoringResult = null
-      this.deviceReady = false
       this.mockMode = mockMode
       this.examStartTime = mockMode ? Date.now() : null
       this.examElapsed = 0
@@ -88,29 +86,26 @@ export const useExamStore = defineStore('exam', {
       this.status = EXAM_STATUS.ANSWERING
     },
 
-    async submitAnswer(blob = null) {
+    async submitAnswer(blob) {
       const questionId = this.currentQuestion?.id
       if (!questionId) {
         throw new Error('当前题目不存在，无法提交答案')
       }
 
-      const shouldUploadRecording = hasRecordingContent(blob)
-      let transcript = ''
-
       this.status = EXAM_STATUS.SUBMITTING
-      this.recordingBlob = shouldUploadRecording ? blob : null
-      this.submitStep = shouldUploadRecording ? 'uploading' : 'scoring'
+      this.recordingBlob = blob
+      this.submitStep = 'uploading'
 
       try {
-        if (shouldUploadRecording) {
-          await uploadRecording(this.examId, questionId, blob)
+        // 上传录制文件
+        await uploadRecording(this.examId, questionId, blob)
 
-          this.submitStep = 'transcribing'
-          const transcribeResult = await transcribeAudio(blob)
-          transcript = String(transcribeResult?.transcript || '')
-        }
+        // 语音转文字
+        this.submitStep = 'transcribing'
+        const { transcript } = await transcribeAudio(blob)
         this.transcript = transcript
 
+        // AI 评分
         this.submitStep = 'scoring'
         const result = await evaluateAnswer({
           questionId,
@@ -123,7 +118,7 @@ export const useExamStore = defineStore('exam', {
         this.answers.push({
           questionId,
           questionIndex: this.currentIndex,
-          recordingBlob: shouldUploadRecording ? blob : null,
+          recordingBlob: blob,
           transcript,
           scoringResult: result,
           submittedAt: new Date().toISOString()
@@ -196,8 +191,6 @@ export const useExamStore = defineStore('exam', {
       this.recordingBlob = null
       this.transcript = ''
       this.scoringResult = null
-      this.deviceReady = false
-      this.videoEnabled = true
       this.mockMode = false
       this.examStartTime = null
       this.examElapsed = 0

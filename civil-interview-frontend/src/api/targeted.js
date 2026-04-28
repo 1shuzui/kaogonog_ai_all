@@ -60,5 +60,5 @@ export async function generateQuestions(data) {
       }
     ]
   }
-  return http.post('/targeted/generate', data)
+  return http.post('/questions/generate', data)
 }

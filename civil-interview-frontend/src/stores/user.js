@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { getUserInfo, updatePreferences, updateUserProfile, getProvinces } from '@/api/user'
 import { login as loginApi, register as registerApi } from '@/api/auth'
-import { useBillingStore } from '@/stores/billing'
 
 const PREFERENCES_STORAGE_KEY = 'civil_user_preferences'
 const PROVINCE_STORAGE_KEY = 'civil_selected_province'
@@ -91,11 +90,6 @@ export const useUserStore = defineStore('user', {
     token: localStorage.getItem(TOKEN_STORAGE_KEY) || '',
     username: localStorage.getItem(USERNAME_STORAGE_KEY) || '',
     email: '',
-    role: 'user',
-    permissions: {
-      canManageQuestionBank: false,
-      canAccessPremiumModules: false
-    },
     userInfo: { id: '', name: '', avatar: '', province: 'national' },
     selectedProvince: loadProvinceForUser(),
     provinces: [],
@@ -107,10 +101,10 @@ export const useUserStore = defineStore('user', {
       return !!state.token
     },
     isAdmin(state) {
-      return state.role === 'admin' || state.username === 'admin' || state.userInfo?.id === 'admin'
+      return state.username === 'admin' || state.userInfo?.id === 'admin'
     },
     roleLabel() {
-      return this.isAdmin ? '管理员' : '普通用户'
+      return this.isAdmin ? 'Admin' : 'User'
     },
     provinceName(state) {
       const province = state.provinces.find((item) => item.code === state.selectedProvince)
@@ -129,16 +123,10 @@ export const useUserStore = defineStore('user', {
       this.preferences = loadPreferencesForUser(username)
 
       try {
-        await this.loadUserInfo({ requestConfig: { skipErrorHandler: true } })
+        await this.loadUserInfo()
       } catch (error) {
-        this.logout()
-        if (error && typeof error === 'object') {
-          error.userMessage = error.userMessage
-            || error.normalizedMessage
-            || error?.response?.data?.detail
-            || (error?.response?.status === 401
-              ? '登录状态校验失败，请重试'
-              : '登录成功，但加载用户信息失败，请稍后重试')
+        if (error?.response?.status === 401) {
+          this.logout()
         }
         throw error
       }
@@ -147,30 +135,22 @@ export const useUserStore = defineStore('user', {
     },
 
     logout() {
-      const billingStore = useBillingStore()
       this.token = ''
       this.username = ''
       this.email = ''
-      this.role = 'user'
-      this.permissions = {
-        canManageQuestionBank: false,
-        canAccessPremiumModules: false
-      }
       this.userInfo = { id: '', name: '', avatar: '', province: 'national' }
       localStorage.removeItem(TOKEN_STORAGE_KEY)
       localStorage.removeItem(USERNAME_STORAGE_KEY)
       this.selectedProvince = loadProvinceForUser()
       this.preferences = loadPreferencesForUser()
-      billingStore.resetLocalState()
     },
 
     async register(form) {
       return registerApi(form)
     },
 
-    async loadUserInfo(options = {}) {
-      const billingStore = useBillingStore()
-      const info = await getUserInfo(options.requestConfig || {})
+    async loadUserInfo() {
+      const info = await getUserInfo()
       const activeUsername = info?.id || this.username
 
       if (activeUsername && activeUsername !== this.username) {
@@ -185,18 +165,12 @@ export const useUserStore = defineStore('user', {
         province: info?.province || 'national'
       }
       this.email = info?.email || ''
-      this.role = info?.role || (activeUsername === 'admin' ? 'admin' : 'user')
-      this.permissions = {
-        canManageQuestionBank: !!info?.permissions?.canManageQuestionBank,
-        canAccessPremiumModules: !!info?.permissions?.canAccessPremiumModules
-      }
       this.selectedProvince = this.userInfo.province || loadProvinceForUser(activeUsername)
       this.preferences = normalizePreferences({
         ...loadPreferencesForUser(activeUsername),
         ...(info?.preferences || {})
       })
 
-      billingStore.applyServerBilling(info?.billing || {}, activeUsername)
       saveProvinceToStorage(this.selectedProvince, activeUsername)
       savePreferencesToStorage(this.preferences, activeUsername)
 

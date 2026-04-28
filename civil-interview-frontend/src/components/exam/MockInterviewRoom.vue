@@ -573,12 +573,8 @@ async function startCurrentAnswer() {
 
   stopSpeech()
   examStore.resetCurrentQuestionState()
-  const started = recorder.startRecording()
-  if (!started) {
-    message.error(recorder.error.value || '录制启动失败，请检查设备权限后重试')
-    return
-  }
   examStore.startAnswering()
+  recorder.startRecording()
 }
 
 async function submitCurrentAnswer(options = {}) {
@@ -588,15 +584,15 @@ async function submitCurrentAnswer(options = {}) {
 
   try {
     const blob = await recorder.stopRecording()
+    if (!blob) return
+
     await examStore.submitAnswer(blob)
 
     if (finishAfterSubmit || totalRemainingSeconds.value <= 0) {
       await finishExam()
     }
   } catch (error) {
-    if (!error?.normalizedMessage) {
-      message.error(`提交失败：${error?.message || '未知错误'}`)
-    }
+    message.error(`提交失败：${error?.message || '未知错误'}`)
   }
 }
 

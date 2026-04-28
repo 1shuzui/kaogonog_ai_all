@@ -20,6 +20,7 @@ import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useBillingStore } from '@/stores/billing'
+import http from '@/api/index'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppTabBar from '@/components/layout/AppTabBar.vue'
 import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
@@ -38,7 +39,7 @@ const showPaywall = computed(() => billingStore.paywallVisible && !userStore.isA
 onMounted(async () => {
   if (userStore.isAuthenticated) {
     try {
-      await userStore.loadUserInfo()
+      await http.get('/user/me')
     } catch {
       // handled by the axios interceptor
     }

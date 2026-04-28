@@ -49,19 +49,19 @@ const routes = [
     path: '/bank',
     name: 'BankList',
     component: () => import('@/views/QuestionBank/BankList.vue'),
-    meta: { title: 'Question Bank', layout: 'default', requiresAdmin: true }
+    meta: { title: 'Question Bank', layout: 'default' }
   },
   {
     path: '/bank/import',
     name: 'BankImport',
     component: () => import('@/views/QuestionBank/BankImport.vue'),
-    meta: { title: 'Import Questions', layout: 'default', requiresAdmin: true }
+    meta: { title: 'Import Questions', layout: 'default' }
   },
   {
     path: '/bank/edit/:id?',
     name: 'BankEditor',
     component: () => import('@/views/QuestionBank/BankEditor.vue'),
-    meta: { title: 'Question Editor', layout: 'default', requiresAdmin: true }
+    meta: { title: 'Question Editor', layout: 'default' }
   },
   {
     path: '/history',

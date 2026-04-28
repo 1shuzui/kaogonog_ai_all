@@ -6,16 +6,5 @@ export default mergeConfig(baseConfig, {
     host: '127.0.0.1',
     port: 3003,
     strictPort: true,
-    proxy: {
-      '/api': {
-        target: 'http://127.0.0.1:8050',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-      '/uploads': {
-        target: 'http://127.0.0.1:8050',
-        changeOrigin: true,
-      },
-    },
   },
 })

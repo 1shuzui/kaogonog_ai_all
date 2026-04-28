@@ -7,7 +7,7 @@
     <div class="app-header__actions">
       <a-button type="text" class="plan-trigger" @click="router.push('/pricing')">
         <WalletOutlined />
-        <span class="hide-on-mobile">{{ planLabel }}</span>
+        <span class="hide-on-mobile">{{ billingStore.planLabel }}</span>
       </a-button>
       <a-dropdown v-if="userStore.isAuthenticated && userStore.provinces.length">
         <a class="province-trigger" @click.prevent>
@@ -27,7 +27,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { SafetyCertificateOutlined, EnvironmentOutlined, WalletOutlined } from '@ant-design/icons-vue'
 import { useUserStore } from '@/stores/user'
@@ -36,11 +36,10 @@ import { useBillingStore } from '@/stores/billing'
 const router = useRouter()
 const userStore = useUserStore()
 const billingStore = useBillingStore()
-const planLabel = computed(() => (userStore.isAdmin ? '管理员' : billingStore.planLabel))
 
 onMounted(() => {
   if (userStore.isAuthenticated && !userStore.provinces.length) {
-    userStore.loadProvinces().catch(() => {})
+    userStore.loadProvinces()
   }
 })
 

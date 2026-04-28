@@ -1,13 +1,13 @@
 {
   "repoPath": "/home/quyu/kaogong_ai",
-  "lastCommit": "604fe8250daaee7a139e8e898d13ec8bb1a66ada",
-  "indexedAt": "2026-04-27T10:32:28.574Z",
+  "lastCommit": "f7c1cc3f8317ac4e922de37fc538c53cf74c8525",
+  "indexedAt": "2026-04-28T07:54:28.539Z",
   "stats": {
-    "files": 395,
-    "nodes": 2354,
-    "edges": 5825,
-    "communities": 132,
-    "processes": 178,
+    "files": 1004,
+    "nodes": 3300,
+    "edges": 7404,
+    "communities": 148,
+    "processes": 209,
     "embeddings": 0
   }
 }

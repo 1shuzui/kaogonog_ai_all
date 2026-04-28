@@ -63,9 +63,6 @@
               <a-button size="small" type="primary" @click="confirmDevice">确认正常</a-button>
             </div>
           </div>
-          <div v-else-if="currentStep === 2 && allReady" style="color: #389E0D">
-            设备检测已确认，可直接进入考场。
-          </div>
         </template>
       </a-step>
     </a-steps>
@@ -98,7 +95,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { message } from 'ant-design-vue'
 import { usePermission } from '@/composables/usePermission'
 import { useMediaRecorder } from '@/composables/useMediaRecorder'
 import { useExamStore } from '@/stores/exam'
@@ -123,7 +119,6 @@ const testBlob = ref(null)
 const testBlobUrl = ref('')
 const testCountdown = ref(3)
 const allReady = ref(false)
-const recorderReady = ref(false)
 const videoEnabled = ref(true)
 const examMode = ref('free')
 
@@ -141,10 +136,6 @@ let waitTimer = null
 let pendingQuestions = null
 
 onMounted(() => {
-  if (examStore.deviceReady) {
-    restorePreparationState()
-    return
-  }
   doPermissionCheck()
 })
 
@@ -158,18 +149,13 @@ onUnmounted(() => {
 })
 
 async function doPermissionCheck() {
-  resetPreparationState({ clearStoreReady: true })
   currentStep.value = 0
   permissionError.value = ''
   const ok = await checkBoth()
   if (ok) {
     videoEnabled.value = true
-    const ready = await initRecorder()
-    if (ready) {
-      currentStep.value = 1
-      return
-    }
-    permissionError.value = recorder.error.value || '录制设备初始化失败，请重试'
+    currentStep.value = 1
+    await initRecorder()
   }
 }
 
@@ -179,26 +165,18 @@ async function retryPermission() {
 }
 
 async function tryMicOnly() {
-  resetPreparationState({ clearStoreReady: true })
   permissionError.value = ''
   currentStep.value = 0
   const ok = await checkMicOnly()
   if (ok) {
     videoEnabled.value = false
-    const ready = await initRecorder()
-    if (ready) {
-      currentStep.value = 1
-      return
-    }
-    permissionError.value = recorder.error.value || '录制设备初始化失败，请重试'
+    currentStep.value = 1
+    await initRecorder()
   }
 }
 
 async function initRecorder() {
-  recorderReady.value = false
-  const stream = await recorder.initStream({ videoEnabled: videoEnabled.value })
-  recorderReady.value = !!stream
-  return recorderReady.value
+  await recorder.initStream({ videoEnabled: videoEnabled.value })
 }
 
 function stepStatus(step) {
@@ -208,36 +186,14 @@ function stepStatus(step) {
 }
 
 async function startTestRecord() {
-  if (testRecording.value) return
-
-  if (!recorderReady.value) {
-    const ready = await initRecorder()
-    if (!ready) {
-      message.error(recorder.error.value || '录制设备初始化失败，请重新检测')
-      return
-    }
-  }
-
-  const started = recorder.startRecording()
-  if (!started) {
-    message.error(recorder.error.value || '开始试录失败，请重试')
-    return
-  }
-
-  clearInterval(countdownTimer)
   testRecording.value = true
-  testBlob.value = null
-  if (testBlobUrl.value) {
-    URL.revokeObjectURL(testBlobUrl.value)
-    testBlobUrl.value = ''
-  }
   testCountdown.value = 3
+  recorder.startRecording()
 
   countdownTimer = setInterval(() => {
     testCountdown.value--
     if (testCountdown.value <= 0) {
       clearInterval(countdownTimer)
-      countdownTimer = null
       finishTestRecord()
     }
   }, 1000)
@@ -247,58 +203,22 @@ async function finishTestRecord() {
   const blob = await recorder.stopRecording()
   testRecording.value = false
   testBlob.value = blob
-  if (!blob) {
-    currentStep.value = 1
-    message.warning('本次试录未生成有效录音，请重新试录')
-    return
+  if (blob) {
+    testBlobUrl.value = URL.createObjectURL(blob)
+    currentStep.value = 2
   }
-
-  testBlobUrl.value = URL.createObjectURL(blob)
-  currentStep.value = 2
 }
 
 function retryTest() {
-  clearInterval(countdownTimer)
-  countdownTimer = null
   testBlob.value = null
   if (testBlobUrl.value) URL.revokeObjectURL(testBlobUrl.value)
   testBlobUrl.value = ''
-  testRecording.value = false
-  testCountdown.value = 3
   currentStep.value = 1
 }
 
 function confirmDevice() {
   allReady.value = true
-  examStore.setVideoEnabled(videoEnabled.value)
   examStore.setDeviceReady(true)
-}
-
-function resetPreparationState({ clearStoreReady = false } = {}) {
-  clearInterval(countdownTimer)
-  countdownTimer = null
-  allReady.value = false
-  recorderReady.value = false
-  testRecording.value = false
-  testBlob.value = null
-  testCountdown.value = 3
-  if (testBlobUrl.value) {
-    URL.revokeObjectURL(testBlobUrl.value)
-    testBlobUrl.value = ''
-  }
-  if (clearStoreReady) {
-    examStore.setDeviceReady(false)
-  }
-}
-
-function restorePreparationState() {
-  resetPreparationState()
-  allReady.value = true
-  currentStep.value = 2
-  permissionError.value = ''
-  videoEnabled.value = examStore.videoEnabled
-  micReady.value = true
-  cameraReady.value = examStore.videoEnabled
 }
 
 async function enterExam() {

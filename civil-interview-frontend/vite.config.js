@@ -4,6 +4,9 @@ import { resolve } from 'path'
 import Components from 'unplugin-vue-components/vite'
 import { AntDesignVueResolver } from 'unplugin-vue-components/resolvers'
 
+const devApiTarget = process.env.VITE_DEV_API_TARGET || process.env.DEV_API_TARGET || 'http://127.0.0.1:8003'
+const devServerPort = Number(process.env.VITE_DEV_SERVER_PORT || process.env.DEV_SERVER_PORT || 3002)
+
 export default defineConfig({
   plugins: [
     vue(),
@@ -31,15 +34,15 @@ export default defineConfig({
     }
   },
   server: {
-    port: 3001,
+    port: devServerPort,
     proxy: {
       '/api': {
-        target: 'http://localhost:8050',
+        target: devApiTarget,
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
       },
       '/uploads': {
-        target: 'http://localhost:8050',
+        target: devApiTarget,
         changeOrigin: true
       }
     }
