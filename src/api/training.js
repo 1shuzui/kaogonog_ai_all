@@ -23,5 +23,6 @@ export async function generateTrainingQuestions(data) {
       }
     ]
   }
-  return http.post('/training/generate', data)
+  const response = await http.post('/training/generate', data)
+  return Array.isArray(response?.questions) ? response.questions : []
 }

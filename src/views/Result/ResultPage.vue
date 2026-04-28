@@ -31,24 +31,51 @@
         <div ref="pdfContentRef">
         <!-- 总分区域 -->
         <div class="result-page__score card">
-          <ScoreRing :score="result.totalScore" :maxScore="result.maxScore" size="large" />
-          <div class="result-page__grade">
-            <a-tag :color="gradeInfo.color" style="font-size: 16px; padding: 4px 16px;">
-              {{ gradeInfo.label }}
-            </a-tag>
+          <div class="result-page__score-hero">
+            <div class="result-page__score-copy">
+              <div class="result-page__score-kicker">{{ currentQuestionLabel }}评分结果</div>
+              <div class="result-page__score-value">
+                <span class="result-page__score-number">{{ result.totalScore }}</span>
+                <span class="result-page__score-unit">/ {{ result.maxScore }} 分</span>
+              </div>
+              <div class="result-page__score-meta">
+                <span>得分率 {{ scorePercent }}%</span>
+                <span class="result-page__score-meta-dot"></span>
+                <span>{{ gradeInfo.label }}</span>
+              </div>
+              <p v-if="currentQuestionStem" class="result-page__question-stem">{{ currentQuestionStem }}</p>
+            </div>
+            <div class="result-page__score-side">
+              <ScoreRing
+                :score="result.totalScore"
+                :maxScore="result.maxScore"
+                size="medium"
+                label="本题得分"
+              />
+              <div class="result-page__grade">
+                <a-tag :color="gradeInfo.color" style="font-size: 14px; padding: 2px 12px;">
+                  {{ gradeInfo.label }}
+                </a-tag>
+              </div>
+            </div>
           </div>
           <p class="result-page__comment">{{ result.aiComment }}</p>
         </div>
 
         <!-- 雷达图 -->
-        <div class="card" style="margin-top: 12px">
-          <h4 class="section-title">能力维度分析</h4>
-          <RadarChart :dimensions="result.dimensions" size="medium" />
+        <div class="card result-page__secondary-card" style="margin-top: 12px">
+          <div class="result-page__secondary-head">
+            <div>
+              <h4 class="result-page__secondary-title">维度表现</h4>
+              <p class="result-page__secondary-hint">辅助参考，主分数以上方本题得分为准</p>
+            </div>
+          </div>
+          <RadarChart :dimensions="result.dimensions" size="small" />
         </div>
 
         <!-- 失分诊断 -->
         <div style="margin-top: 12px">
-          <LossAnalysis :dimensions="result.dimensions" />
+          <LossAnalysis :dimensions="result.dimensions" compact />
         </div>
 
         <!-- 评分关键词 -->
@@ -120,6 +147,7 @@ import { useRoute } from 'vue-router'
 import { FilePdfOutlined, StarOutlined, StarFilled, ShareAltOutlined } from '@ant-design/icons-vue'
 import { useExamStore } from '@/stores/exam'
 import { useFavoritesStore } from '@/stores/favorites'
+import { useTrainingStore } from '@/stores/training'
 import { getGrade } from '@/utils/constants'
 import { getScoringResult } from '@/api/scoring'
 import { usePdfExport } from '@/composables/usePdfExport'
@@ -135,6 +163,7 @@ import TranscriptViewer from '@/components/scoring/TranscriptViewer.vue'
 const route = useRoute()
 const examStore = useExamStore()
 const favoritesStore = useFavoritesStore()
+const trainingStore = useTrainingStore()
 const loading = ref(true)
 const result = ref(null)
 const transcript = ref('')
@@ -161,6 +190,27 @@ function openShareCard() {
 const gradeInfo = computed(() => {
   if (!result.value) return { label: '', color: '' }
   return getGrade(result.value.totalScore, result.value.maxScore)
+})
+
+const currentAnswer = computed(() => answerList.value[currentAnswerIdx.value] || null)
+
+const currentQuestion = computed(() => {
+  const answer = currentAnswer.value
+  if (!answer?.questionId) return null
+  return examStore.questionList?.find((item) => item.id === answer.questionId) || null
+})
+
+const currentQuestionLabel = computed(() => (
+  answerList.value.length > 1 ? `第 ${currentAnswerIdx.value + 1} 题` : '本题'
+))
+
+const currentQuestionStem = computed(() => currentQuestion.value?.stem || '')
+
+const scorePercent = computed(() => {
+  const total = Number(result.value?.totalScore || 0)
+  const max = Number(result.value?.maxScore || 0)
+  if (!max) return 0
+  return Math.round((total / max) * 100)
 })
 
 const currentRecordingUrl = computed(() => {
@@ -254,6 +304,28 @@ function autoAddWeakAll() {
   }
 }
 
+function recordTrainingProgress() {
+  const recordKey = `training-progress-recorded:${examStore.examId || route.params.examId || 'local'}`
+  if (sessionStorage.getItem(recordKey)) return
+
+  let hasRecorded = false
+
+  for (const ans of answerList.value) {
+    if (!ans?.scoringResult || !ans.questionId) continue
+
+    const question = examStore.questionList?.find((item) => item.id === ans.questionId)
+    const trainingCategoryKey = question?.trainingCategoryKey
+    if (!trainingCategoryKey) continue
+
+    trainingStore.recordTrainingResult(trainingCategoryKey, Number(ans.scoringResult.totalScore) || 0)
+    hasRecorded = true
+  }
+
+  if (hasRecorded) {
+    sessionStorage.setItem(recordKey, '1')
+  }
+}
+
 onMounted(async () => {
   // 从 store 获取所有答题记录
   if (examStore.answers.length > 0) {
@@ -269,6 +341,7 @@ onMounted(async () => {
     transcript.value = first.transcript || ''
     loading.value = false
     autoAddWeakAll()
+    recordTrainingProgress()
     return
   }
 
@@ -287,6 +360,7 @@ onMounted(async () => {
     }
     loading.value = false
     autoAddWeakAll()
+    recordTrainingProgress()
     return
   }
 
@@ -314,20 +388,116 @@ onUnmounted(() => {
 @import '@/styles/variables.less';
 
 .result-page__score {
-  text-align: center;
-  padding: 24px 16px;
+  padding: 22px 18px 18px;
+}
+
+.result-page__score-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.result-page__score-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.result-page__score-kicker {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1B5FAA;
+  letter-spacing: 0.4px;
+}
+
+.result-page__score-value {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+  line-height: 1;
+}
+
+.result-page__score-number {
+  font-size: 64px;
+  font-weight: 800;
+  color: @text-primary;
+}
+
+.result-page__score-unit {
+  font-size: @font-size-lg;
+  font-weight: 600;
+  color: @text-secondary;
+  padding-bottom: 8px;
+}
+
+.result-page__score-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  font-size: @font-size-sm;
+  color: @text-secondary;
+}
+
+.result-page__score-meta-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.result-page__question-stem {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(27, 95, 170, 0.05);
+  color: @text-regular;
+  font-size: @font-size-sm;
+  line-height: 1.75;
+}
+
+.result-page__score-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
 
 .result-page__grade {
-  margin: 12px 0;
+  margin: 0;
 }
 
 .result-page__comment {
   color: @text-secondary;
   font-size: @font-size-sm;
   line-height: 1.7;
-  margin-top: 8px;
+  margin-top: 18px;
   text-align: left;
+}
+
+.result-page__secondary-card {
+  padding: 14px 16px 10px;
+}
+
+.result-page__secondary-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.result-page__secondary-title {
+  margin: 0;
+  font-size: @font-size-base;
+  color: @text-primary;
+}
+
+.result-page__secondary-hint {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: @text-secondary;
 }
 
 .section-title {
@@ -354,5 +524,31 @@ onUnmounted(() => {
 
 .playback-controls {
   padding: 8px 0;
+}
+
+@media (max-width: 768px) {
+  .result-page__score-hero {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .result-page__score-number {
+    font-size: 54px;
+  }
+
+  .result-page__score-unit {
+    font-size: @font-size-base;
+    padding-bottom: 6px;
+  }
+
+  .result-page__score-meta {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .result-page__score-side {
+    flex-direction: row;
+    justify-content: space-between;
+  }
 }
 </style>

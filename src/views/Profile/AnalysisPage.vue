@@ -92,7 +92,7 @@ import { LeftOutlined } from '@ant-design/icons-vue'
 import echarts from '@/utils/echarts'
 import { useHistoryStore } from '@/stores/history'
 import { useTrainingStore } from '@/stores/training'
-import { DIMENSIONS, DIMENSION_TIPS } from '@/utils/constants'
+import { DIMENSION_TIPS, TRAINING_CATEGORIES, mergeTrainingProgress } from '@/utils/constants'
 import RadarChart from '@/components/common/RadarChart.vue'
 import ScoreRing from '@/components/common/ScoreRing.vue'
 import WeaknessAnalysis from '@/components/common/WeaknessAnalysis.vue'
@@ -118,25 +118,29 @@ const radarDimensions = computed(() => {
 })
 
 const hasTrainingProgress = computed(() => {
-  return DIMENSIONS.some(d => {
-    const p = trainingStore.getDimensionProgress(d.key)
-    return p.attempts > 0
+  return TRAINING_CATEGORIES.some((category) => {
+    const progress = mergeTrainingProgress(
+      category.progressKeys.map((progressKey) => trainingStore.getDimensionProgress(progressKey))
+    )
+    return progress.attempts > 0
   })
 })
 
 const trainedDimensions = computed(() => {
-  return DIMENSIONS
-    .map(d => {
-      const p = trainingStore.getDimensionProgress(d.key)
+  return TRAINING_CATEGORIES
+    .map((category) => {
+      const p = mergeTrainingProgress(
+        category.progressKeys.map((progressKey) => trainingStore.getDimensionProgress(progressKey))
+      )
       return {
-        key: d.key,
-        name: d.name,
+        key: category.key,
+        name: category.name,
         attempts: p.attempts,
         bestScore: p.bestScore,
         avgScore: p.attempts > 0 ? Math.round(p.totalScore / p.attempts) : 0
       }
     })
-    .filter(d => d.attempts > 0)
+    .filter((category) => category.attempts > 0)
 })
 
 function getProgressColor(score, maxScore) {

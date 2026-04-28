@@ -5,3 +5,11 @@ dist
 backend/
 new_backend/
 nul
+.qoder/
+.mysql-data/
+.mysql-data-*/
+.mysql*.log
+frontend*.log
+backend*.log
+mysql-recovery-*.sql
+judge-room-*.jpg

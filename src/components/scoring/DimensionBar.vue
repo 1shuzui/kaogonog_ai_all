@@ -1,5 +1,5 @@
 <template>
-  <div class="dimension-bar">
+  <div class="dimension-bar" :class="{ 'dimension-bar--compact': compact }">
     <div class="dimension-bar__header">
       <span class="dimension-bar__name">{{ name }}</span>
       <span class="dimension-bar__score" :style="{ color: scoreColor }">
@@ -21,7 +21,8 @@ import { computed } from 'vue'
 const props = defineProps({
   name: { type: String, required: true },
   score: { type: Number, default: 0 },
-  maxScore: { type: Number, default: 20 }
+  maxScore: { type: Number, default: 20 },
+  compact: { type: Boolean, default: false }
 })
 
 const percent = computed(() => (props.score / props.maxScore) * 100)
@@ -65,5 +66,25 @@ const scoreColor = computed(() => {
   height: 100%;
   border-radius: 4px;
   transition: width 0.8s ease;
+}
+
+.dimension-bar--compact {
+  .dimension-bar__header {
+    margin-bottom: 3px;
+  }
+
+  .dimension-bar__name,
+  .dimension-bar__score {
+    font-size: @font-size-xs;
+  }
+
+  .dimension-bar__track {
+    height: 6px;
+    border-radius: 999px;
+  }
+
+  .dimension-bar__fill {
+    border-radius: 999px;
+  }
 }
 </style>

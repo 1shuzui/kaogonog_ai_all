@@ -4,7 +4,7 @@
       <a-button type="text" @click="$router.back()">
         <LeftOutlined /> 返回
       </a-button>
-      <h2>{{ dimensionName }}专项训练</h2>
+      <h2>{{ dimensionName }}训练</h2>
     </div>
 
     <!-- 维度进度 -->
@@ -32,7 +32,7 @@
         :loading="generating"
         @click="generateQuestions"
       >
-        <ThunderboltOutlined /> AI生成{{ dimensionName }}训练题
+        <ThunderboltOutlined /> AI生成{{ dimensionName }}题
       </a-button>
     </div>
 
@@ -68,7 +68,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { LeftOutlined, ThunderboltOutlined, RightOutlined, BulbOutlined } from '@ant-design/icons-vue'
-import { DIMENSIONS, DIMENSION_TIPS } from '@/utils/constants'
+import { TRAINING_CATEGORY_TIPS, getTrainingCategory, mergeTrainingProgress } from '@/utils/constants'
 import { useTrainingStore } from '@/stores/training'
 import { generateTrainingQuestions } from '@/api/training'
 
@@ -76,25 +76,22 @@ const route = useRoute()
 const router = useRouter()
 const trainingStore = useTrainingStore()
 
-const dimensionKey = computed(() => route.params.dimension)
-const dimensionInfo = computed(() => DIMENSIONS.find(d => d.key === dimensionKey.value))
-const dimensionName = computed(() => dimensionInfo.value?.name || dimensionKey.value)
-const tip = computed(() => DIMENSION_TIPS[dimensionName.value] || '')
+const categoryKey = computed(() => String(route.params.dimension || ''))
+const categoryInfo = computed(() => getTrainingCategory(categoryKey.value))
+const dimensionName = computed(() => categoryInfo.value?.name || categoryKey.value)
+const tip = computed(() => TRAINING_CATEGORY_TIPS[dimensionName.value] || '')
+const dimIcon = computed(() => categoryInfo.value?.icon || '📝')
+const dimBgColor = computed(() => categoryInfo.value?.bgColor || '#F0F0F0')
 
-const dimIcon = computed(() => {
-  const icons = { legal: '⚖️', practical: '🛠️', logic: '🧠', expression: '🎤', analysis: '🔍', emergency: '🚨' }
-  return icons[dimensionKey.value] || '📝'
-})
-
-const dimBgColor = computed(() => {
-  const colors = {
-    legal: '#F0E6FF', practical: '#E6F7E6', logic: '#E6F0FF',
-    expression: '#FFF0E6', analysis: '#E6FAFF', emergency: '#FFE6E6'
+const progress = computed(() => {
+  if (!categoryInfo.value) {
+    return mergeTrainingProgress([])
   }
-  return colors[dimensionKey.value] || '#F0F0F0'
-})
 
-const progress = computed(() => trainingStore.getDimensionProgress(dimensionKey.value))
+  return mergeTrainingProgress(
+    categoryInfo.value.progressKeys.map((progressKey) => trainingStore.getDimensionProgress(progressKey))
+  )
+})
 
 const avgScore = computed(() => {
   const p = progress.value
@@ -106,12 +103,18 @@ const generating = ref(false)
 const questions = ref([])
 
 async function generateQuestions() {
+  if (!categoryInfo.value) return
   generating.value = true
   try {
-    questions.value = await generateTrainingQuestions({
-      dimension: dimensionKey.value,
+    const generatedQuestions = await generateTrainingQuestions({
+      dimension: categoryInfo.value.requestDimension,
       count: 3
     })
+    questions.value = generatedQuestions.map((question) => ({
+      ...question,
+      trainingCategoryKey: categoryInfo.value.key,
+      trainingCategoryName: categoryInfo.value.name
+    }))
   } finally {
     generating.value = false
   }
@@ -124,7 +127,7 @@ function startPractice(question) {
 }
 
 onMounted(() => {
-  if (!dimensionInfo.value) {
+  if (!categoryInfo.value) {
     router.replace('/training')
   }
 })

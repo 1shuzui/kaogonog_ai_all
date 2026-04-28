@@ -73,40 +73,14 @@
 
       <div class="judge-stage">
         <div class="judge-stage__scene">
-          <img
-            class="judge-stage__image"
-            :src="judgeRoomReference"
-            alt="模拟面试考场参考图"
-          />
-          <div class="judge-stage__hero-banner">
-            <span class="judge-stage__hero-year">{{ currentYearLabel }}</span>
-            <strong>省考公务员面试现场</strong>
-          </div>
-          <div class="judge-stage__caption">
-            <span>主考官居中就座，两侧考官分列评议</span>
-          </div>
-          <div class="judge-stage__plates">
-            <div
-              v-for="judge in judgeSceneOrder"
-              :key="judge.role"
-              class="judge-stage__plate"
-              :class="{ 'judge-stage__plate--lead': judge.lead }"
-            >
-              <strong>{{ judge.role }}</strong>
-              <span>{{ judge.label }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="judgeAuxSeats.length" class="judge-aux">
-          <div
-            v-for="judge in judgeAuxSeats"
-            :key="judge.role"
-            class="judge-aux__card"
-          >
-            <strong>{{ judge.role }}</strong>
-            <span>{{ judge.label }}</span>
-          </div>
+          <canvas
+            ref="judgeStageCanvasRef"
+            class="judge-stage__image judge-stage__canvas"
+            :width="judgeStageSceneSize.width"
+            :height="judgeStageSceneSize.height"
+            role="img"
+            :aria-label="`${currentYearLabel}公务员面试现场`"
+          ></canvas>
         </div>
       </div>
     </section>
@@ -303,7 +277,8 @@ import { DIMENSIONS, EXAM_STATUS } from '@/utils/constants'
 import AudioWaveform from '@/components/recording/AudioWaveform.vue'
 import VideoPreview from '@/components/recording/VideoPreview.vue'
 import mockRoomBg from '@/assets/exam/mock-interview-ai-clean.jpg'
-import judgeRoomReference from '@/assets/exam/mock-interview-room-direct.jpg'
+import judgeRoomReferenceOriginal from '@/assets/exam/mock-interview-room-live.jpg'
+import judgeRoomReferenceStage2026 from '@/assets/exam/mock-interview-room-stage-2026.jpg'
 
 const router = useRouter()
 const route = useRoute()
@@ -314,38 +289,179 @@ const { isOnline } = useNetworkStatus()
 const stream = recorder.stream
 const recorderDuration = recorder.duration
 const questionStripRef = ref(null)
+const judgeStageCanvasRef = ref(null)
+const judgeStageSceneSize = { width: 720, height: 404 }
 
 const mockStarted = ref(false)
 const speechInProgress = ref(false)
 const totalRemainingSeconds = ref(0)
 const finishRequested = ref(false)
-const currentYearLabel = `${new Date().getFullYear()} 年度`
-
+const currentYearLabel = `${new Date().getFullYear()}年度`
+const bakedJudgeRoomYearLabel = '2026年度'
+const useBakedJudgeStage = computed(() => currentYearLabel === bakedJudgeRoomYearLabel)
+const judgeRoomReference = computed(() => (
+  useBakedJudgeStage.value ? judgeRoomReferenceStage2026 : judgeRoomReferenceOriginal
+))
 let totalTimer = null
 let speechUtterance = null
+const judgeStageSourceImageCache = new Map()
+const judgeStageSourceImagePromiseCache = new Map()
+const judgeStageViewport = {
+  sourceX: 175,
+  sourceWidth: 545
+}
 
-const judges = [
-  { role: '主考官', label: '综合统筹', short: '主', lead: true },
-  { role: 'AI考官一', label: '政策理解', short: '策' },
-  { role: 'AI考官二', label: '逻辑结构', short: '逻' },
-  { role: 'AI考官三', label: '表达感染力', short: '达' },
-  { role: 'AI考官四', label: '应变能力', short: '变' },
-  { role: 'AI考官五', label: '岗位匹配', short: '岗' },
-  { role: '计时席', label: '全场计时', short: '时' }
-]
+const judgeTimerPanelConfig = {
+  x: 686,
+  y: 284,
+  width: 56,
+  height: 36,
+  rotate: 0
+}
 
-const judgeSceneOrder = computed(() => [
-  judges[1],
-  judges[2],
-  judges[0],
-  judges[3],
-  judges[4]
-].filter(Boolean))
+function loadJudgeStageSourceImage() {
+  const src = judgeRoomReference.value
+  const cached = judgeStageSourceImageCache.get(src)
+  if (cached) return Promise.resolve(cached)
 
-const judgeAuxSeats = computed(() => [
-  judges[5],
-  judges[6]
-].filter(Boolean))
+  const pending = judgeStageSourceImagePromiseCache.get(src)
+  if (pending) return pending
+
+  const promise = new Promise((resolve, reject) => {
+    const image = new Image()
+    image.onload = () => {
+      judgeStageSourceImageCache.set(src, image)
+      judgeStageSourceImagePromiseCache.delete(src)
+      resolve(image)
+    }
+    image.onerror = (error) => {
+      judgeStageSourceImagePromiseCache.delete(src)
+      reject(error)
+    }
+    image.src = src
+  })
+
+  judgeStageSourceImagePromiseCache.set(src, promise)
+  return promise
+}
+
+function drawRoundedRect(ctx, x, y, width, height, radius) {
+  const safeRadius = Math.min(radius, width / 2, height / 2)
+  ctx.beginPath()
+  ctx.moveTo(x + safeRadius, y)
+  ctx.lineTo(x + width - safeRadius, y)
+  ctx.quadraticCurveTo(x + width, y, x + width, y + safeRadius)
+  ctx.lineTo(x + width, y + height - safeRadius)
+  ctx.quadraticCurveTo(x + width, y + height, x + width - safeRadius, y + height)
+  ctx.lineTo(x + safeRadius, y + height)
+  ctx.quadraticCurveTo(x, y + height, x, y + height - safeRadius)
+  ctx.lineTo(x, y + safeRadius)
+  ctx.quadraticCurveTo(x, y, x + safeRadius, y)
+  ctx.closePath()
+}
+
+function drawYearPatch(ctx, image) {
+  const patchX = 0
+  const patchY = 58
+  const patchWidth = 236
+  const patchHeight = 55
+  const sampleX = 18
+  const sampleY = 59
+  const sampleWidth = 40
+
+  ctx.save()
+  ctx.drawImage(
+    image,
+    sampleX,
+    sampleY,
+    sampleWidth,
+    patchHeight,
+    patchX,
+    patchY,
+    patchWidth,
+    patchHeight
+  )
+
+  const tint = ctx.createLinearGradient(patchX, patchY, patchX + patchWidth, patchY)
+  tint.addColorStop(0, 'rgba(148, 12, 9, 0.22)')
+  tint.addColorStop(0.5, 'rgba(198, 39, 20, 0.12)')
+  tint.addColorStop(1, 'rgba(150, 12, 9, 0.2)')
+  ctx.fillStyle = tint
+  ctx.fillRect(patchX, patchY, patchWidth, patchHeight)
+
+  ctx.fillStyle = '#7f1710'
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'middle'
+  ctx.font = '700 30px "Microsoft YaHei", "PingFang SC", sans-serif'
+  ctx.fillText(currentYearLabel, patchX + 22, patchY + patchHeight / 2 + 2)
+
+  ctx.fillStyle = '#fff5e7'
+  ctx.shadowColor = 'rgba(96, 17, 9, 0.22)'
+  ctx.shadowBlur = 2
+  ctx.fillText(currentYearLabel, patchX + 19, patchY + patchHeight / 2)
+  ctx.restore()
+}
+
+function drawTimerPanel(ctx) {
+  const { x, y, width, height, rotate } = judgeTimerPanelConfig
+
+  ctx.save()
+  ctx.translate(x, y)
+  ctx.rotate(rotate * Math.PI / 180)
+
+  ctx.fillStyle = 'rgba(32, 18, 9, 0.16)'
+  drawRoundedRect(ctx, -width / 2 + 1.5, -height / 2 + 3, width - 2, height - 2, 4)
+  ctx.fill()
+
+  const panelGradient = ctx.createLinearGradient(0, -height / 2, 0, height / 2)
+  panelGradient.addColorStop(0, 'rgba(180, 158, 118, 0.96)')
+  panelGradient.addColorStop(1, 'rgba(129, 104, 68, 0.96)')
+  ctx.fillStyle = panelGradient
+  ctx.strokeStyle = 'rgba(87, 63, 35, 0.34)'
+  ctx.lineWidth = 0.8
+  drawRoundedRect(ctx, -width / 2, -height / 2, width, height, 4)
+  ctx.fill()
+  ctx.stroke()
+
+  ctx.fillStyle = 'rgba(78, 54, 28, 0.94)'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.font = '600 7px "SimSun", "Songti SC", serif'
+  ctx.fillText('计时员', 0, -height / 2 + 6)
+
+  drawRoundedRect(ctx, -width / 2 + 6, -5, width - 12, 20, 3)
+  ctx.fillStyle = 'rgba(26, 31, 27, 0.98)'
+  ctx.fill()
+  ctx.strokeStyle = 'rgba(220, 235, 210, 0.12)'
+  ctx.lineWidth = 0.6
+  ctx.stroke()
+
+  ctx.fillStyle = '#d9ffd4'
+  ctx.font = '700 11px "Consolas", "Courier New", monospace'
+  ctx.fillText(formattedTotalRemaining.value, 0, 4)
+  ctx.restore()
+}
+
+async function renderJudgeStage() {
+  const canvas = judgeStageCanvasRef.value
+  if (!canvas) return
+
+  const image = await loadJudgeStageSourceImage().catch(() => null)
+  if (!image) return
+
+  const context = canvas.getContext('2d')
+  if (!context) return
+
+  context.clearRect(0, 0, judgeStageSceneSize.width, judgeStageSceneSize.height)
+  if (useBakedJudgeStage.value) {
+    context.drawImage(image, 0, 0, judgeStageSceneSize.width, judgeStageSceneSize.height)
+  } else {
+    const { sourceX, sourceWidth } = judgeStageViewport
+    context.drawImage(image, sourceX, 0, sourceWidth, image.height, 0, 0, judgeStageSceneSize.width, judgeStageSceneSize.height)
+    drawYearPatch(context, image)
+  }
+  drawTimerPanel(context)
+}
 
 const candidateLabel = computed(() => {
   const raw = String(route.query.candidateNo || '01').trim()
@@ -451,6 +567,7 @@ onMounted(async () => {
   totalRemainingSeconds.value = totalDurationSeconds.value
 
   await nextTick()
+  renderJudgeStage()
   scrollCurrentQuestionIntoView()
   playOpeningSpeech()
 })
@@ -464,6 +581,10 @@ onUnmounted(() => {
 watch(() => examStore.currentIndex, async () => {
   await nextTick()
   scrollCurrentQuestionIntoView()
+})
+
+watch(formattedTotalRemaining, () => {
+  renderJudgeStage()
 })
 
 function formatClock(totalSeconds = 0) {
@@ -1139,12 +1260,13 @@ async function exitExam() {
 .judge-stage__scene {
   position: relative;
   min-height: 0;
-  border-radius: 30px 30px 20px 20px;
+  border-radius: 30px 30px 24px 24px;
   overflow: hidden;
   background: rgba(255, 249, 238, 0.96);
   box-shadow:
     inset 0 1px 0 rgba(255, 246, 228, 0.44),
     0 26px 36px rgba(42, 21, 11, 0.24);
+  isolation: isolate;
 }
 
 .judge-stage__scene::before {
@@ -1161,75 +1283,191 @@ async function exitExam() {
   height: auto;
 }
 
-.judge-stage__hero-banner {
+.judge-stage__year-fix {
   position: absolute;
-  top: 7.6%;
-  left: 50%;
-  z-index: 2;
+  top: 13.5%;
+  left: 23%;
+  z-index: 3;
+  width: 21.4%;
+  height: 9.4%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.judge-stage__year-mask {
+  position: absolute;
+  inset: 0;
+  border-radius: 1px;
+  background: linear-gradient(90deg, rgba(150, 11, 6, 0.95) 0%, rgba(194, 32, 18, 0.93) 52%, rgba(141, 9, 6, 0.95) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 196, 162, 0.12),
+    inset 0 -1px 0 rgba(103, 2, 1, 0.24);
+}
+
+.judge-stage__year-text {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: clamp(10px, 1vw, 18px);
-  width: 83%;
-  min-height: 18%;
-  padding: 0 clamp(12px, 2vw, 28px);
-  transform: translateX(-50%);
-  border-radius: 4px;
-  background: linear-gradient(90deg, rgba(150, 10, 6, 0.97) 0%, rgba(201, 37, 24, 0.95) 48%, rgba(144, 9, 7, 0.97) 100%);
+  width: 100%;
+  height: 100%;
+  color: #fff6e6;
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  text-shadow: 0 1px 2px rgba(74, 8, 4, 0.24);
+  white-space: nowrap;
+  font-size: clamp(18px, 2.38vw, 31px);
+  letter-spacing: 0;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.judge-stage__nameplate {
+  position: absolute;
+  z-index: 3;
+  width: var(--plate-width, 32px);
+  height: var(--plate-height, 12px);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.judge-stage__nameplate-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  transform: rotate(var(--plate-rotate, 0deg)) skewX(var(--plate-skew, 0deg)) scale(var(--plate-scale, 1));
+  transform-origin: center center;
+  clip-path: polygon(8% 0, 92% 0, 100% 100%, 0 100%);
+  background: linear-gradient(180deg, rgba(254, 250, 241, 0.96) 0%, rgba(236, 223, 194, 0.94) 100%);
+  border: 1px solid rgba(126, 100, 61, 0.42);
   box-shadow:
-    inset 0 1px 0 rgba(255, 186, 157, 0.2),
-    0 16px 28px rgba(57, 14, 8, 0.24);
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    0 1px 2px rgba(56, 31, 15, 0.16);
+}
+
+.judge-stage__nameplate-card::before {
+  content: '';
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  top: 52%;
+  border-top: 1px solid rgba(146, 116, 71, 0.1);
+}
+
+.judge-stage__nameplate-card::after {
+  content: '';
+  position: absolute;
+  left: 12%;
+  right: 10%;
+  bottom: -2px;
+  height: 3px;
+  background: rgba(48, 27, 13, 0.16);
+  filter: blur(2px);
+  z-index: -1;
+  transform: translateX(1px);
+}
+
+.judge-stage__nameplate strong {
+  position: relative;
+  z-index: 1;
+  display: block;
+  color: rgba(78, 55, 28, 0.92);
+  font-family: 'SimSun', 'Songti SC', serif;
+  font-size: clamp(7px, 0.62vw, 9px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: nowrap;
+  transform: skewX(calc(var(--plate-skew, 0deg) * -1));
+}
+
+.judge-stage__nameplate--lead {
+  width: var(--plate-width, 40px);
+  height: var(--plate-height, 13px);
+}
+
+.judge-stage__nameplate--lead .judge-stage__nameplate-card {
+  background: linear-gradient(180deg, rgba(255, 251, 243, 0.98) 0%, rgba(242, 225, 188, 0.96) 100%);
+  border-color: rgba(142, 98, 48, 0.48);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 1px 2px rgba(56, 31, 16, 0.18);
+}
+
+.judge-stage__nameplate--lead strong {
+  color: #7a2d19;
+  font-size: clamp(7.5px, 0.7vw, 10px);
+  font-weight: 800;
+}
+
+.judge-stage__timer-panel {
+  position: absolute;
+  left: 91.4%;
+  top: 70.6%;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 56px;
+  padding: 4px 4px 5px;
+  transform: translate(-50%, -50%) rotate(-8deg) skewX(-6deg);
+  border-radius: 4px;
+  background: linear-gradient(180deg, rgba(170, 145, 98, 0.96) 0%, rgba(129, 105, 62, 0.96) 100%);
+  border: 1px solid rgba(95, 70, 37, 0.44);
+  box-shadow: 0 3px 6px rgba(38, 21, 11, 0.18);
   text-align: center;
   pointer-events: none;
 }
 
-.judge-stage__hero-banner::before {
+.judge-stage__timer-panel::after {
   content: '';
   position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at 12% 50%, rgba(255, 255, 255, 0.12), transparent 12%),
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.1), transparent 18%),
-    radial-gradient(circle at 88% 50%, rgba(255, 255, 255, 0.12), transparent 12%),
-    linear-gradient(90deg, rgba(112, 9, 7, 0.16) 0%, transparent 16%, transparent 84%, rgba(112, 9, 7, 0.16) 100%);
-  opacity: 0.7;
-  pointer-events: none;
+  left: 14%;
+  right: 12%;
+  bottom: -3px;
+  height: 3px;
+  background: rgba(41, 22, 11, 0.16);
+  filter: blur(2px);
+  z-index: -1;
 }
 
-.judge-stage__hero-year,
-.judge-stage__hero-banner strong {
-  position: relative;
-  z-index: 1;
-  color: #fff3df;
-  text-shadow: 0 3px 10px rgba(92, 18, 10, 0.24);
-  white-space: nowrap;
-  font-size: clamp(28px, 2.45vw, 50px);
-  letter-spacing: 1px;
+.judge-stage__timer-tag {
+  color: #4f3617;
+  font-family: 'SimSun', 'Songti SC', serif;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0;
+  transform: skewX(6deg);
 }
 
-.judge-stage__hero-year {
-  font-weight: 800;
+.judge-stage__timer-readout {
+  display: block;
+  width: 100%;
+  padding: 3px 4px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(24, 30, 24, 0.98) 0%, rgba(46, 56, 45, 0.98) 100%);
+  border: 1px solid rgba(223, 236, 211, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  color: #d8ffd4;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: clamp(10px, 0.94vw, 14px);
+  line-height: 1;
+  letter-spacing: 0.6px;
+  font-variant-numeric: tabular-nums;
+  transform: skewX(6deg);
 }
 
-.judge-stage__hero-banner strong {
-  font-weight: 800;
-}
-
-.judge-stage__spotlight,
-.judge-stage__caption {
-  display: none;
-}
-
-.judge-stage__plates {
-  display: none;
-}
-
-.judge-stage__plate {
-  display: none;
-}
-
-.judge-aux {
-  display: none;
+.judge-stage__timer-panel small {
+  color: rgba(73, 49, 20, 0.84);
+  font-size: 7px;
+  letter-spacing: 0;
+  line-height: 1;
+  transform: skewX(6deg);
 }
 
 .question-progress {
@@ -1506,9 +1744,14 @@ async function exitExam() {
     min-height: 0;
   }
 
-  .judge-stage__hero-banner {
-    width: 86%;
-    min-height: 17%;
+  .judge-stage__year-fix {
+    width: 22.4%;
+    height: 9.8%;
+  }
+
+  .judge-stage__timer-panel {
+    left: 91.2%;
+    top: 70.2%;
   }
 
   .question-strip {
@@ -1538,16 +1781,40 @@ async function exitExam() {
     min-height: 0;
   }
 
-  .judge-stage__hero-banner {
-    top: 7.2%;
-    width: 88%;
-    min-height: 16%;
-    gap: 10px;
+  .judge-stage__year-fix {
+    top: 13.4%;
+    left: 23.2%;
+    width: 23.6%;
+    height: 9.6%;
   }
 
-  .judge-stage__hero-year,
-  .judge-stage__hero-banner strong {
-    font-size: clamp(18px, 3vw, 28px);
+  .judge-stage__year-text {
+    font-size: clamp(15px, 2.45vw, 24px);
+  }
+
+  .judge-stage__nameplate {
+    width: calc(var(--plate-width, 32px) * 0.88);
+    height: calc(var(--plate-height, 12px) * 0.88);
+
+    strong {
+      font-size: clamp(6px, 0.9vw, 8px);
+    }
+  }
+
+  .judge-stage__nameplate--lead {
+    width: calc(var(--plate-width, 40px) * 0.9);
+    height: calc(var(--plate-height, 13px) * 0.9);
+  }
+
+  .judge-stage__timer-panel {
+    left: 91%;
+    top: 70%;
+    width: 48px;
+    padding: 3px 3px 4px;
+
+    .judge-stage__timer-readout {
+      font-size: clamp(9px, 1.7vw, 12px);
+    }
   }
 
   .mock-room__banner {
@@ -1609,18 +1876,48 @@ async function exitExam() {
     border-radius: 24px 24px 18px 18px;
   }
 
-  .judge-stage__hero-banner {
-    top: 6.8%;
-    width: 90%;
-    min-height: 15%;
-    gap: 6px;
-    padding: 0 10px;
+  .judge-stage__year-fix {
+    top: 13.2%;
+    left: 23.1%;
+    width: 25.4%;
+    height: 9.2%;
   }
 
-  .judge-stage__hero-year,
-  .judge-stage__hero-banner strong {
-    font-size: clamp(12px, 3.2vw, 18px);
+  .judge-stage__year-text {
+    font-size: clamp(10px, 2.8vw, 16px);
     letter-spacing: 0.2px;
+  }
+
+  .judge-stage__nameplate {
+    width: calc(var(--plate-width, 32px) * 0.72);
+    height: calc(var(--plate-height, 12px) * 0.72);
+
+    strong {
+      font-size: 6px;
+      letter-spacing: 0;
+    }
+  }
+
+  .judge-stage__nameplate--lead {
+    width: calc(var(--plate-width, 40px) * 0.76);
+    height: calc(var(--plate-height, 13px) * 0.76);
+  }
+
+  .judge-stage__timer-panel {
+    left: 90.8%;
+    top: 69.6%;
+    width: 40px;
+    padding: 2px 2px 3px;
+
+    .judge-stage__timer-readout {
+      font-size: 8px;
+      letter-spacing: 0.3px;
+    }
+
+    small,
+    .judge-stage__timer-tag {
+      font-size: 6px;
+    }
   }
 
   .question-strip {
