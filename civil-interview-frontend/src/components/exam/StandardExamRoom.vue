@@ -181,8 +181,12 @@ function onStartPrep() {
 
 function onStartAnswer() {
   countdown.stop()
+  const started = recorder.startRecording()
+  if (!started) {
+    message.error(recorder.error.value || '录制启动失败，请检查设备权限后重试')
+    return
+  }
   examStore.startAnswering()
-  recorder.startRecording()
   const q = examStore.currentQuestion
   countdown.reset(q.answerTime || 180)
   countdown.onFinish(() => {
@@ -197,7 +201,9 @@ async function onSubmit() {
     const blob = await recorder.stopRecording()
     await examStore.submitAnswer(blob)
   } catch (error) {
-    message.error(`提交失败: ${error.message || '未知错误'}`)
+    if (!error?.normalizedMessage) {
+      message.error(`提交失败: ${error.message || '未知错误'}`)
+    }
   }
 }
 

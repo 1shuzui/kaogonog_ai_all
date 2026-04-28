@@ -6,11 +6,11 @@
   "question": "七夕是中国民间的传统节日，长沙市在七夕期间将红绿信号灯设置成爱心的形状，引起人们热议。对于交警部门这样的做法，请谈谈你的感受和理解？（35分）",
   "dimensions": [
     {
-      "name": "创新思维",
+      "name": "创新思维（方向1）",
       "score": 9.7
     },
     {
-      "name": "创新思维2",
+      "name": "创新思维（方向2）",
       "score": 7.8
     },
     {
@@ -22,7 +22,7 @@
       "score": 4.9
     },
     {
-      "name": "创新思维3",
+      "name": "创新思维（方向3）",
       "score": 2.9
     }
   ],
@@ -117,20 +117,20 @@
     {
       "label": "程序化中档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200920-JY-01/reference_mid.txt",
-      "expected_min": 13.0,
-      "expected_max": 18.0,
-      "llmExpectedMin": 13.2,
-      "llmExpectedMax": 19.2,
-      "notes": "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=11，截断=none，关键词削弱=medium。"
+      "expected_min": 11.2,
+      "expected_max": 15.8,
+      "llmExpectedMin": 13.3,
+      "llmExpectedMax": 17.2,
+      "notes": "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=6，截断=none，关键词削弱=medium。"
     },
     {
       "label": "程序化低档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200920-JY-01/reference_low.txt",
-      "expected_min": 7.4,
-      "expected_max": 12.4,
-      "llmExpectedMin": 7.4,
-      "llmExpectedMax": 12.7,
-      "notes": "基于高分答案程序化降档生成；策略=template_analysis_low_2，句数=10，截断=none，关键词削弱=heavy，口语化=是。"
+      "expected_min": 8.2,
+      "expected_max": 12.8,
+      "llmExpectedMin": 8.0,
+      "llmExpectedMax": 12.8,
+      "notes": "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
     }
   ]
 }

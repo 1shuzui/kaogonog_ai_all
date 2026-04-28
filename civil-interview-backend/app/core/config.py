@@ -37,6 +37,11 @@ class Settings:
     access_token_expire_minutes: int = _env_int("ACCESS_TOKEN_EXPIRE_MINUTES", default=10080)
     allowed_origins: str = _env("ALLOWED_ORIGINS", default="*")
     database_url: str = _env("DATABASE_URL", default="sqlite:///./civil_interview.db")
+    qwen_api_key: str = _env("QWEN_API_KEY", "DASHSCOPE_API_KEY", default="")
+    qwen_base_url: str = _env("QWEN_BASE_URL", default="https://dashscope.aliyuncs.com/compatible-mode/v1")
+    qwen_model: str = _env("QWEN_MODEL", default="qwen-plus")
+    qwen_asr_model: str = _env("QWEN_ASR_MODEL", default="")
+    llm_timeout_seconds: int = _env_int("LLM_TIMEOUT_SECONDS", default=25)
 
     wechat_pay_enabled: bool = _env_bool("WECHAT_PAY_ENABLED", default=False)
     wechat_pay_mock_mode: bool = _env_bool("WECHAT_PAY_MOCK_MODE", default=True)

@@ -1,25 +1,29 @@
 {
   "id": "HN-20200921-XZ-01",
-  "type": "综合分析题（干部作风+基层治理+实务落地类，核心适配湖南省考乡镇岗）",
+  "type": "综合分析·干部作风+基层治理+实务落地类",
   "province": "湖南",
   "fullScore": 35.0,
   "question": "对于陀螺式干部,你怎么看?如何减少陀螺式干部?（35分）",
   "dimensions": [
     {
-      "name": "分析理解",
-      "score": 3.7
+      "name": "-对陀螺式干部的认知",
+      "score": 12.1
     },
     {
-      "name": "对策措施",
-      "score": 20.3
+      "name": "分析理解（方向1）",
+      "score": 2.4
+    },
+    {
+      "name": "分析理解（方向2）",
+      "score": 13.3
     },
     {
       "name": "语言表达",
-      "score": 7.4
+      "score": 4.8
     },
     {
       "name": "创新思维",
-      "score": 3.6
+      "score": 2.4
     }
   ],
   "coreKeywords": [
@@ -54,6 +58,7 @@
     "语言官方"
   ],
   "scoringCriteria": [
+    "- 对陀螺式干部的认知（10分）",
     "：准确概括“被动应付、虚转空耗、回避矛盾”核心特征，结合湖南乡镇实际案例，提及核心识别词“陀螺式干部、虚转空耗、被动应付”（缺1个核心识别词扣2分）； - 根源分析（2分）",
     "：结合湖南乡镇实际，分析“责任不清、能力不足、激励不够”等根源，提及强关联识别词“责任、能力、激励”（缺1个强关联识别词扣2分）； - 解决措施（11分）",
     "：措施务实可操作，涵盖“压责任、强能力、明激励、强监督”4个方面，结合湖南“清单制、传帮带、实绩考核”等实际，提及强关联识别词“清单制、传帮带、实绩考核、群众监督”（缺1个强关联识别词扣2分，措施不贴合湖南实际扣3分）； - 语言表达（4分）",
@@ -116,20 +121,20 @@
     {
       "label": "程序化中档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200921-XZ-01/reference_mid.txt",
-      "expected_min": 11.6,
-      "expected_max": 16.6,
-      "llmExpectedMin": 12.8,
-      "llmExpectedMax": 17.8,
-      "notes": "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=11，截断=none，关键词削弱=medium。"
+      "expected_min": 10.5,
+      "expected_max": 14.4,
+      "llmExpectedMin": 11.9,
+      "llmExpectedMax": 16.1,
+      "notes": "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=6，截断=none，关键词削弱=medium。"
     },
     {
       "label": "程序化低档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200921-XZ-01/reference_low.txt",
-      "expected_min": 7.3,
-      "expected_max": 12.3,
-      "llmExpectedMin": 7.3,
-      "llmExpectedMax": 12.3,
-      "notes": "基于高分答案程序化降档生成；策略=template_analysis_low_2，句数=11，截断=none，关键词削弱=heavy，口语化=是。"
+      "expected_min": 7.5,
+      "expected_max": 11.4,
+      "llmExpectedMin": 6.9,
+      "llmExpectedMax": 11.4,
+      "notes": "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
     }
   ]
 }

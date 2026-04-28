@@ -4,8 +4,20 @@
 如果你第一次接触 FastAPI，可以把它理解成“后端程序真正启动的地方”。
 """
 
+from pathlib import Path
+import sys
+
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
+
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+
+# 兼容直接执行 python app/main.py 的场景。
+# 这时 Python 只会把 app/ 本身加入 sys.path，找不到顶层包名 app。
+if __package__ in (None, ""):
+    backend_root_str = str(BACKEND_ROOT)
+    if backend_root_str not in sys.path:
+        sys.path.insert(0, backend_root_str)
 
 from app.api.endpoints import interview
 from app.core.config import settings
@@ -68,4 +80,11 @@ if __name__ == "__main__":
 
     # 直接执行 python app/main.py 时，会通过 uvicorn 启动服务。
     # reload=True 表示代码改动后自动重启，适合开发环境，不建议生产环境打开。
-    uvicorn.run("app.main:app", host="0.0.0.0", port=9000, reload=True)
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",
+        port=9000,
+        reload=True,
+        app_dir=str(BACKEND_ROOT),
+        reload_dirs=[str(BACKEND_ROOT)],
+    )

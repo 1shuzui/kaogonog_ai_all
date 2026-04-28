@@ -2,28 +2,28 @@
   "id": "HN-20200920-JY-02",
   "type": "人际沟通·廉洁履职+实务处理+监狱执法类（适配湖南省考监狱岗）",
   "province": "湖南",
-  "fullScore": 35.0,
+  "fullScore": 30.0,
   "question": "作为一名监狱警察，有一天你收到了一条1000元话费充值的短信，经过多方调查你发现是一位犯人的父母为你充值的，你打算怎么处理？（30分）",
   "dimensions": [
     {
+      "name": "岗位适配",
+      "score": 7.0
+    },
+    {
+      "name": "流程执行（方向1）",
+      "score": 6.0
+    },
+    {
       "name": "沟通化解",
-      "score": 8.2
+      "score": 6.0
     },
     {
-      "name": "沟通化解2",
+      "name": "流程执行（方向2）",
       "score": 7.0
-    },
-    {
-      "name": "沟通化解3",
-      "score": 7.0
-    },
-    {
-      "name": "对策措施",
-      "score": 8.2
     },
     {
       "name": "创新思维",
-      "score": 4.6
+      "score": 4.0
     }
   ],
   "coreKeywords": [
@@ -84,25 +84,25 @@
     {
       "label": "低分/偏弱",
       "min_score": 0,
-      "max_score": 19.2,
+      "max_score": 16.5,
       "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
     },
     {
       "label": "基本合格",
-      "min_score": 19.3,
-      "max_score": 24.5,
+      "min_score": 16.6,
+      "max_score": 21.0,
       "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
     },
     {
       "label": "中高档",
-      "min_score": 24.6,
-      "max_score": 29.8,
+      "min_score": 21.1,
+      "max_score": 25.5,
       "description": "内容较完整，逻辑较清晰，接近高分答案。"
     },
     {
       "label": "高分标杆",
-      "min_score": 29.9,
-      "max_score": 35.0,
+      "min_score": 25.6,
+      "max_score": 30.0,
       "description": "高分参考答案区间，用于回归验证。"
     }
   ],
@@ -110,28 +110,28 @@
     {
       "label": "文档高分基准答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200920-JY-02/reference_high.txt",
-      "expected_min": 32.0,
-      "expected_max": 35.0,
-      "llmExpectedMin": 32.0,
-      "llmExpectedMax": 35.0,
+      "expected_min": 27.0,
+      "expected_max": 30.0,
+      "llmExpectedMin": 27.0,
+      "llmExpectedMax": 30.0,
       "notes": "来自原始题库文档的核心采分基准答案。"
     },
     {
       "label": "程序化中档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200920-JY-02/reference_mid.txt",
-      "expected_min": 7.8,
-      "expected_max": 12.8,
-      "llmExpectedMin": 10.0,
-      "llmExpectedMax": 13.8,
-      "notes": "基于高分答案程序化压缩生成；策略=template_interpersonal_mid_1，句数=3，截断=none，关键词削弱=medium。"
+      "expected_min": 6.5,
+      "expected_max": 9.6,
+      "llmExpectedMin": 7.1,
+      "llmExpectedMax": 11.4,
+      "notes": "基于高分答案程序化压缩生成；策略=template_interpersonal_mid_2，句数=4，截断=none，关键词削弱=medium。"
     },
     {
       "label": "程序化低档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200920-JY-02/reference_low.txt",
-      "expected_min": 4.5,
-      "expected_max": 9.5,
-      "llmExpectedMin": 3.7,
-      "llmExpectedMax": 9.5,
+      "expected_min": 3.5,
+      "expected_max": 6.6,
+      "llmExpectedMin": 1.7,
+      "llmExpectedMax": 6.6,
       "notes": "基于高分答案程序化降档生成；策略=template_interpersonal_low_2，句数=2，截断=none，关键词削弱=heavy，口语化=是。"
     }
   ]

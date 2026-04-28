@@ -1,0 +1,130 @@
+{
+  "id": "AHGX-20210117-01",
+  "type": "综合分析·比喻理解·省直机关专用",
+  "province": "安徽",
+  "fullScore": 32.0,
+  "question": "有人说，2020年是不平凡的一年，就像一部大剧一样，我们既是看剧人，也是剧中人。结合实际谈谈你的感受。",
+  "dimensions": [
+    {
+      "name": "看剧人",
+      "score": 5.0
+    },
+    {
+      "name": "必须含见证、时代、国家、大局",
+      "score": 6.0
+    },
+    {
+      "name": "岗位适配（方向1）",
+      "score": 6.0
+    },
+    {
+      "name": "必须含平凡、伟大、人民、实干",
+      "score": 6.0
+    },
+    {
+      "name": "岗位适配（方向2）",
+      "score": 4.0
+    },
+    {
+      "name": "必须含抗疫、复工、民生、基层",
+      "score": 5.0
+    }
+  ],
+  "coreKeywords": [
+    "看剧人",
+    "剧中人",
+    "时代",
+    "参与",
+    "奋斗"
+  ],
+  "strongKeywords": [
+    "省直",
+    "大局",
+    "岗位",
+    "落实",
+    "服务",
+    "躬身入局"
+  ],
+  "weakKeywords": [],
+  "bonusKeywords": [
+    "平凡铸就伟大",
+    "制度优势",
+    "承上启下",
+    "四个自信"
+  ],
+  "penaltyKeywords": [],
+  "scoringCriteria": [
+    "看剧人（5分）",
+    "：必须含见证、时代、国家、大局、自信，缺1个扣1分 剧中人（6分）",
+    "：必须含参与、奋斗、岗位、坚守、躬身入局，缺1个扣1分 感悟启示（6分）",
+    "：必须含平凡、伟大、人民、实干、奋斗，缺1个扣1 分省直职责（6分）",
+    "：必须含省直、承上启下、统筹、落实、服务，缺1个扣1分 结合实际（4分）",
+    "：必须含抗疫、复工、民生、基层，缺1个扣1分 未来践行（5分）"
+  ],
+  "deductionRules": [],
+  "sourceDocument": "2020-2025第二批次完全版.docx",
+  "referenceAnswer": "（省直专属） 2020年极不平凡、极不容易、极其难忘。这一年如时代大剧，我们每个人都是见证者，更是参与者、建设者、奋斗者，观之震撼、历之深刻、悟之长远。 第一，做“看剧人”，观时代大势，强家国自信。我们见证了抗疫阻击战的众志成城，见证了脱贫攻坚的决战决胜，见证了国家制度的显著优势，见证了中国人民的坚韧不拔。透过时代大剧，我们看到国家力量、民族精神、人民立场，更加坚定“四个自信”，增强大局意识与系统观念。 第二，做“剧中人”，躬身入局，扛起岗位责任。时代大剧没有旁观者，人人都是主角。作为省直机关干部，我们身处承上启下关键位置，政策制定、统筹协调、督导落实、服务基层，每一项工作都是剧情、每一份付出都是戏份。疫情防控、复工复产、基层减负、民生保障，我们始终在岗、在线、在状态。 第三，悟“剧中理”，平凡铸就伟大，奋斗成就未来。无数普通人坚守岗位、默默付出，汇成时代洪流。伟大出自平凡，英雄来自人民，奋斗成就历史，实干开创未来。这是最深刻的时代启示。 第四，践“肩上责”，立足省直岗位，服务全省大局。今后我将继续以“剧中人”的自觉，强化省直干部大局观、执行力、服务力、落实力，把个人奋斗融入时代发展，把岗位履职对接全省全局，以实干实绩当好新时代的答卷人。",
+  "tags": [
+    "安徽遴选",
+    "2021.1.17",
+    "省直",
+    "看剧人剧中人",
+    "综合分析",
+    "大局观"
+  ],
+  "scoreBands": [
+    {
+      "label": "低分/偏弱",
+      "min_score": 0,
+      "max_score": 17.6,
+      "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
+    },
+    {
+      "label": "基本合格",
+      "min_score": 17.7,
+      "max_score": 22.4,
+      "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
+    },
+    {
+      "label": "中高档",
+      "min_score": 22.5,
+      "max_score": 27.2,
+      "description": "内容较完整，逻辑较清晰，接近高分答案。"
+    },
+    {
+      "label": "高分标杆",
+      "min_score": 27.3,
+      "max_score": 32.0,
+      "description": "高分参考答案区间，用于回归验证。"
+    }
+  ],
+  "regressionCases": [
+    {
+      "label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHGX-20210117-01/reference_high.txt",
+      "expected_min": 29.0,
+      "expected_max": 32.0,
+      "llmExpectedMin": 29.0,
+      "llmExpectedMax": 32.0,
+      "notes": "来自原始题库文档的核心采分基准答案。"
+    },
+    {
+      "label": "程序化中档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHGX-20210117-01/reference_mid.txt",
+      "expected_min": 13.3,
+      "expected_max": 18.3,
+      "llmExpectedMin": 13.9,
+      "llmExpectedMax": 19.4,
+      "notes": "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=6，截断=none，关键词削弱=medium。"
+    },
+    {
+      "label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHGX-20210117-01/reference_low.txt",
+      "expected_min": 8.4,
+      "expected_max": 13.4,
+      "llmExpectedMin": 8.3,
+      "llmExpectedMax": 13.4,
+      "notes": "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
+    }
+  ]
+}

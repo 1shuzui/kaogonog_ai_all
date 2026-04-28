@@ -129,6 +129,17 @@ class LLMGenerationResult(BaseModel):
     parsed_payload: Dict[str, Any] = Field(default_factory=dict)
 
 
+class ViolationCheckPayload(BaseModel):
+    """违规检测阶段的结构化结果。"""
+
+    model_config = ConfigDict(extra="ignore")
+
+    is_violation: bool = False
+    category: str = ""
+    matched_terms: List[str] = Field(default_factory=list)
+    reason: str = ""
+
+
 class EvidenceItem(BaseModel):
     """单条评分证据。"""
 
@@ -225,6 +236,12 @@ class EvaluationResult(LLMEvaluationPayload):
 
     # matched_keywords 是系统自己匹配出来的，不完全依赖模型
     matched_keywords: Dict[str, List[str]] = Field(default_factory=dict)
+
+    # 违规检测命中后，前端可以直接据此整页拦截展示
+    violation_detected: bool = False
+    violation_category: str = ""
+    violation_reason: str = ""
+    violation_terms: List[str] = Field(default_factory=list)
 
     # validation_notes 会记录系统对模型输出做过哪些修正
     validation_notes: List[str] = Field(default_factory=list)

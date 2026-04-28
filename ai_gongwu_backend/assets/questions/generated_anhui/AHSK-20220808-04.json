@@ -1,0 +1,144 @@
+{
+  "id": "AHSK-20220808-04",
+  "type": "综合分析·辩证思维·哲理启示",
+  "province": "安徽",
+  "fullScore": 23.0,
+  "question": "雨水既可以滋润万物，也会造成灾害。在诗人的笔下可以是浪漫诗句，也可以是游子的眼泪。请谈谈你的看法。",
+  "dimensions": [
+    {
+      "name": "①辩证内涵理解",
+      "score": 6.0
+    },
+    {
+      "name": "②两面性论述",
+      "score": 7.0
+    },
+    {
+      "name": "③工作生活启示",
+      "score": 5.0
+    },
+    {
+      "name": "④岗位践行与安徽结合",
+      "score": 3.0
+    },
+    {
+      "name": "⑤语言逻辑",
+      "score": 2.0
+    }
+  ],
+  "coreKeywords": [
+    "辩证",
+    "两面性",
+    "雨水",
+    "启示",
+    "思维",
+    "理性",
+    "换位思考",
+    "担当"
+  ],
+  "strongKeywords": [
+    "事物利弊",
+    "立场差异",
+    "青年干部",
+    "安徽",
+    "务实",
+    "履职"
+  ],
+  "weakKeywords": [],
+  "bonusKeywords": [
+    "辩证思维",
+    "全面看待",
+    "换位思考",
+    "趋利避害",
+    "务实担当"
+  ],
+  "penaltyKeywords": [
+    "思维片面",
+    "论述空泛",
+    "脱离实际",
+    "逻辑混乱"
+  ],
+  "scoringCriteria": [
+    "①辩证内涵理解（6分）：准确把握两面性、立场差异核心哲理",
+    "②两面性论述（7分）：事物利弊、立场不同论述充分",
+    "③工作生活启示（5分）：理性思维、换位思考、趋利避害",
+    "④岗位践行与安徽结合（3分）：立足本职、贴合省情、务实担当",
+    "⑤语言逻辑（2分）：规范流畅、条理清晰。"
+  ],
+  "deductionRules": [
+    "①缺乏辩证思维、片面看待问题，扣5—6分",
+    "②论述空泛、无层次、无说服力，扣5—7分",
+    "③无工作启示、脱离实际，扣3—5分",
+    "④未结合干部岗位与安徽实际，扣2—3分",
+    "⑤逻辑混乱、语言生硬，扣2分"
+  ],
+  "sourceDocument": "2020-2025第二批次完全版.docx",
+  "referenceAnswer": "这句话生动体现了事物的两面性与立场差异性，告诉我们要坚持全面、辩证、理性看待问题，学会换位思考、趋利避害。 第一，事物具有两面性，要辩证看待。雨水可滋润万物、助力生长，也可引发洪涝、造成灾害，任何事物都有利有弊，不能片面看待、绝对化判断。 第二，立场不同感受不同，要换位思考。同样的雨水，在诗人眼中是浪漫诗意，在游子心中是思乡哀愁，不同视角、不同立场会有不同理解，要学会包容、尊重差异、理性看待。 第三，工作生活中要坚持理性思维。面对问题、困难、挑战，既要看到不利一面，更要看到有利一面，扬长避短、科学应对、精准施策。 第四，立足岗位践行辩证思维。作为安徽新时代青年干部，要始终坚持全面、辩证、理性看待问题，正视困难、把握机遇、趋利避害、务实担当，不断提升分析问题、解决问题的能力，以科学思维推动工作、服务群众、助力发展。",
+  "tags": [
+    "安徽",
+    "省考",
+    "面试",
+    "综合分析",
+    "辩证思维",
+    "两面性",
+    "哲理启示",
+    "换位思考",
+    "青年干部",
+    "务实担当"
+  ],
+  "scoreBands": [
+    {
+      "label": "低分/偏弱",
+      "min_score": 0,
+      "max_score": 12.7,
+      "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
+    },
+    {
+      "label": "基本合格",
+      "min_score": 12.8,
+      "max_score": 16.1,
+      "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
+    },
+    {
+      "label": "中高档",
+      "min_score": 16.2,
+      "max_score": 19.6,
+      "description": "内容较完整，逻辑较清晰，接近高分答案。"
+    },
+    {
+      "label": "高分标杆",
+      "min_score": 19.7,
+      "max_score": 23.0,
+      "description": "高分参考答案区间，用于回归验证。"
+    }
+  ],
+  "regressionCases": [
+    {
+      "label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHSK-20220808-04/reference_high.txt",
+      "expected_min": 20.0,
+      "expected_max": 23.0,
+      "llmExpectedMin": 20.0,
+      "llmExpectedMax": 23.0,
+      "notes": "来自原始题库文档的核心采分基准答案。"
+    },
+    {
+      "label": "程序化中档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHSK-20220808-04/reference_mid.txt",
+      "expected_min": 8.6,
+      "expected_max": 12.3,
+      "llmExpectedMin": 9.8,
+      "llmExpectedMax": 13.9,
+      "notes": "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=6，截断=none，关键词削弱=medium。"
+    },
+    {
+      "label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHSK-20220808-04/reference_low.txt",
+      "expected_min": 5.6,
+      "expected_max": 9.3,
+      "llmExpectedMin": 4.7,
+      "llmExpectedMax": 9.3,
+      "notes": "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
+    }
+  ]
+}

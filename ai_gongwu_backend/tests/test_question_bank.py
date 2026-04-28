@@ -42,6 +42,15 @@ class QuestionBankTestCase(unittest.TestCase):
         self.assertTrue(all(case.llmExpectedMin is not None for case in question.regressionCases))
         self.assertTrue(all(case.llmExpectedMax is not None for case in question.regressionCases))
 
+    def test_imported_anhui_question_is_loadable(self):
+        # 验证：新增的安徽自动题库也会被默认题库目录递归加载。
+        question = self.bank.get_question("AHGWY-20201113PM-01")
+        self.assertEqual(question.province, "安徽")
+        self.assertEqual(question.sourceDocument, "2020-2025第二批次完全版.docx")
+        self.assertTrue(question.tags)
+        self.assertTrue(question.referenceAnswer)
+        self.assertEqual(len(question.regressionCases), 3)
+
     def test_missing_question_raises(self):
         # 验证：不存在的题目应该抛出清晰异常，而不是返回 None 或直接崩溃。
         with self.assertRaises(QuestionNotFoundError):

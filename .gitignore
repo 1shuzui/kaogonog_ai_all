@@ -28,6 +28,8 @@ temp/
 *.db-wal
 .codex
 /uploads
+.claude
+
 
 
 # 4. IDE 与系统配置文件

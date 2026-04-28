@@ -129,10 +129,16 @@ export const useUserStore = defineStore('user', {
       this.preferences = loadPreferencesForUser(username)
 
       try {
-        await this.loadUserInfo()
+        await this.loadUserInfo({ requestConfig: { skipErrorHandler: true } })
       } catch (error) {
-        if (error?.response?.status === 401) {
-          this.logout()
+        this.logout()
+        if (error && typeof error === 'object') {
+          error.userMessage = error.userMessage
+            || error.normalizedMessage
+            || error?.response?.data?.detail
+            || (error?.response?.status === 401
+              ? '登录状态校验失败，请重试'
+              : '登录成功，但加载用户信息失败，请稍后重试')
         }
         throw error
       }
@@ -162,9 +168,9 @@ export const useUserStore = defineStore('user', {
       return registerApi(form)
     },
 
-    async loadUserInfo() {
+    async loadUserInfo(options = {}) {
       const billingStore = useBillingStore()
-      const info = await getUserInfo()
+      const info = await getUserInfo(options.requestConfig || {})
       const activeUsername = info?.id || this.username
 
       if (activeUsername && activeUsername !== this.username) {

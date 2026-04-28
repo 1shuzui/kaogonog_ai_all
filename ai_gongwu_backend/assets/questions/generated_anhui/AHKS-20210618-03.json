@@ -1,0 +1,139 @@
+{
+  "id": "AHKS-20210618-03",
+  "type": "现场宣讲·民生服务·乡镇/社区岗专用",
+  "province": "安徽",
+  "fullScore": 32.0,
+  "question": "社区计划开办幸福食堂，为老人提供安全放心餐饮。领导让你组织老年人宣讲会，你会在会上说些什么？",
+  "dimensions": [
+    {
+      "name": "问候开场",
+      "score": 4.0
+    },
+    {
+      "name": "分析理解",
+      "score": 5.0
+    },
+    {
+      "name": "安全保障",
+      "score": 7.0
+    },
+    {
+      "name": "必须含安全、卫生、食材、健康",
+      "score": 6.0
+    },
+    {
+      "name": "必须含方便、就近、就餐、送餐",
+      "score": 5.0
+    },
+    {
+      "name": "对策措施",
+      "score": 5.0
+    }
+  ],
+  "coreKeywords": [
+    "幸福食堂",
+    "老年人",
+    "宣讲",
+    "安全",
+    "服务"
+  ],
+  "strongKeywords": [
+    "社区",
+    "乡镇",
+    "暖心",
+    "养老",
+    "就餐",
+    "放心加分触发词：安心饭",
+    "暖心饭",
+    "家门口就餐",
+    "健康养生题型信息：现场宣讲·民生服务·乡镇",
+    "社区岗专用"
+  ],
+  "weakKeywords": [],
+  "bonusKeywords": [
+    "安心饭",
+    "暖心饭",
+    "家门口就餐",
+    "健康养生题型信息：现场宣讲·民生服务·乡镇",
+    "社区岗专用"
+  ],
+  "penaltyKeywords": [
+    "官腔重",
+    "不接地气",
+    "不讲老人关切"
+  ],
+  "scoringCriteria": [
+    "问候开场（4分）",
+    "：必须含大爷大妈、老年朋友、问候、感谢，缺1个扣1分 项目意义（5分）",
+    "：必须含幸福食堂、养老、暖心、实事、服务，缺1个扣1分安全保障（7分）",
+    "：必须含安全、卫生、食材、健康、营养，缺1个扣1分 服务便利（6分）",
+    "：必须含方便、就近、就餐、送餐、实惠，缺1个扣1分 征求意见（5分）",
+    "：必须含意见、建议、需求、倾听、改进，缺1个扣1分 呼吁支持（5分）"
+  ],
+  "deductionRules": [],
+  "sourceDocument": "2020-2025第二批次完全版.docx",
+  "referenceAnswer": "（乡镇/社区宣讲高分版） 各位大爷大妈、叔叔阿姨，大家上午好！今天把大家请来，主要是给大家讲讲咱们社区幸福食堂这件大好事、大实事。 第一，幸福食堂是专门为咱们老年人办的暖心工程，就是让大家吃得安全、吃得放心、吃得健康、吃得舒心，解决年纪大了做饭难、吃饭难的问题。 第二，食堂绝对保证安全卫生。食材统一采购、严格检验，厨房干净规范，饭菜新鲜营养，食谱专门适合老年人口味和健康需求，少油少盐、健康养生。 第三，服务方便又贴心。大家在家门口就能就餐，行动不便的我们还会尽量协调送餐上门，价格实惠公道，真正为大家减负、为子女分忧。 第四，食堂办得好不好，大家说了算。今天就是想听大家的意见：口味、时间、价格、菜品，大家尽管提，我们一定认真改、尽力办，让大家满意。大爷大妈们，幸福食堂是社区的暖心饭、安心饭、放心饭。希望大家多支持、多宣传，咱们一起把这件好事办好、实事办实，让各位老人安享幸福晚年！",
+  "tags": [
+    "安徽省考",
+    "2021.6.18",
+    "乡镇岗",
+    "幸福食堂",
+    "宣讲会",
+    "老年服务"
+  ],
+  "scoreBands": [
+    {
+      "label": "低分/偏弱",
+      "min_score": 0,
+      "max_score": 17.6,
+      "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
+    },
+    {
+      "label": "基本合格",
+      "min_score": 17.7,
+      "max_score": 22.4,
+      "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
+    },
+    {
+      "label": "中高档",
+      "min_score": 22.5,
+      "max_score": 27.2,
+      "description": "内容较完整，逻辑较清晰，接近高分答案。"
+    },
+    {
+      "label": "高分标杆",
+      "min_score": 27.3,
+      "max_score": 32.0,
+      "description": "高分参考答案区间，用于回归验证。"
+    }
+  ],
+  "regressionCases": [
+    {
+      "label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHKS-20210618-03/reference_high.txt",
+      "expected_min": 29.0,
+      "expected_max": 32.0,
+      "llmExpectedMin": 29.0,
+      "llmExpectedMax": 32.0,
+      "notes": "来自原始题库文档的核心采分基准答案。"
+    },
+    {
+      "label": "程序化中档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHKS-20210618-03/reference_mid.txt",
+      "expected_min": 11.4,
+      "expected_max": 14.3,
+      "llmExpectedMin": 11.8,
+      "llmExpectedMax": 16.3,
+      "notes": "基于高分答案程序化压缩生成；策略=template_scene_mid_1，句数=7，截断=none，关键词削弱=medium。"
+    },
+    {
+      "label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHKS-20210618-03/reference_low.txt",
+      "expected_min": 8.4,
+      "expected_max": 11.3,
+      "llmExpectedMin": 6.5,
+      "llmExpectedMax": 11.3,
+      "notes": "基于高分答案程序化降档生成；策略=template_scene_low_3，句数=7，截断=none，关键词削弱=medium，口语化=是。"
+    }
+  ]
+}

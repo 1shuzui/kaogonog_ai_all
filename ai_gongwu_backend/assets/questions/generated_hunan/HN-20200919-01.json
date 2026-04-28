@@ -2,28 +2,28 @@
   "id": "HN-20200919-01",
   "type": "综合分析·政策理解+精神内涵+公职履职类（适配湖南省考公职岗位）",
   "province": "湖南",
-  "fullScore": 30.0,
+  "fullScore": 35.0,
   "question": "习总书记说：“人无精神则不立，国无精神则不强。精神是一个民族赖以长久生存的灵魂，唯有精神上达到一定的高度，这个民族才能在历史的洪流中屹立不倒、奋勇向前。”请谈谈你的理解。（35分）",
   "dimensions": [
     {
-      "name": "分析理解",
-      "score": 8.0
+      "name": "分析理解（政治站位）",
+      "score": 9.3
     },
     {
-      "name": "对策措施",
-      "score": 7.0
+      "name": "分析理解（内涵解读）",
+      "score": 8.2
     },
     {
-      "name": "对策措施2",
-      "score": 8.0
+      "name": "岗位适配",
+      "score": 9.3
     },
     {
       "name": "语言表达",
-      "score": 5.0
+      "score": 5.8
     },
     {
       "name": "创新思维",
-      "score": 2.0
+      "score": 2.4
     }
   ],
   "coreKeywords": [
@@ -85,25 +85,25 @@
     {
       "label": "低分/偏弱",
       "min_score": 0,
-      "max_score": 16.5,
+      "max_score": 19.2,
       "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
     },
     {
       "label": "基本合格",
-      "min_score": 16.6,
-      "max_score": 21.0,
+      "min_score": 19.3,
+      "max_score": 24.5,
       "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
     },
     {
       "label": "中高档",
-      "min_score": 21.1,
-      "max_score": 25.5,
+      "min_score": 24.6,
+      "max_score": 29.8,
       "description": "内容较完整，逻辑较清晰，接近高分答案。"
     },
     {
       "label": "高分标杆",
-      "min_score": 25.6,
-      "max_score": 30.0,
+      "min_score": 29.9,
+      "max_score": 35.0,
       "description": "高分参考答案区间，用于回归验证。"
     }
   ],
@@ -111,29 +111,29 @@
     {
       "label": "文档高分基准答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200919-01/reference_high.txt",
-      "expected_min": 27.0,
-      "expected_max": 30.0,
-      "llmExpectedMin": 25.5,
-      "llmExpectedMax": 28.5,
+      "expected_min": 32.0,
+      "expected_max": 35.0,
+      "llmExpectedMin": 32.0,
+      "llmExpectedMax": 35.0,
       "notes": "来自原始题库文档的核心采分基准答案。"
     },
     {
       "label": "程序化中档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200919-01/reference_mid.txt",
-      "expected_min": 10.2,
-      "expected_max": 15.2,
-      "llmExpectedMin": 10.0,
-      "llmExpectedMax": 14.0,
-      "notes": "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=11，截断=none，关键词削弱=medium。"
+      "expected_min": 12.6,
+      "expected_max": 17.0,
+      "llmExpectedMin": 14.5,
+      "llmExpectedMax": 18.5,
+      "notes": "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=6，截断=none，关键词削弱=medium。"
     },
     {
       "label": "程序化低档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200919-01/reference_low.txt",
-      "expected_min": 5.8,
-      "expected_max": 10.8,
-      "llmExpectedMin": 6.5,
-      "llmExpectedMax": 9.5,
-      "notes": "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=11，截断=none，关键词削弱=heavy，口语化=是。"
+      "expected_min": 9.6,
+      "expected_max": 14.0,
+      "llmExpectedMin": 9.3,
+      "llmExpectedMax": 14.0,
+      "notes": "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
     }
   ]
 }

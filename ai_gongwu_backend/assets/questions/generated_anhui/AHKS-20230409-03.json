@@ -1,0 +1,143 @@
+{
+  "id": "AHKS-20230409-03",
+  "type": "沟通劝说·基层改革·群众工作",
+  "province": "安徽",
+  "fullScore": 24.0,
+  "question": "为贯彻落实《安徽省“小田变大田”改革试点工作实施方案》，村里打算开展整村推进“小田变大田”改造试点，结合农田建设、土地整治逐步解决细碎化问题，有村民担心自己家的良田会变坏田，不愿意配合工作。假如你是本项工作的负责人，你会怎么劝说村民？",
+  "dimensions": [
+    {
+      "name": "①共情沟通与态度",
+      "score": 5.0
+    },
+    {
+      "name": "②政策解读与利好宣传",
+      "score": 6.0
+    },
+    {
+      "name": "③核心顾虑化解",
+      "score": 7.0
+    },
+    {
+      "name": "④公开监督与长远收益",
+      "score": 4.0
+    },
+    {
+      "name": "⑤语言逻辑",
+      "score": 2.0
+    }
+  ],
+  "coreKeywords": [
+    "小田变大田",
+    "劝说",
+    "村民",
+    "顾虑",
+    "良田",
+    "坏田",
+    "改革试点"
+  ],
+  "strongKeywords": [
+    "安徽",
+    "乡镇岗",
+    "土地整治",
+    "农田建设",
+    "群众工作",
+    "乡村振兴"
+  ],
+  "weakKeywords": [],
+  "bonusKeywords": [
+    "共情理解",
+    "公开公平",
+    "全程监督",
+    "增产增收",
+    "政策利好"
+  ],
+  "penaltyKeywords": [
+    "态度生硬",
+    "政策不清",
+    "顾虑未破",
+    "脱离场景",
+    "逻辑混乱"
+  ],
+  "scoringCriteria": [
+    "①共情沟通与态度（5分）：理解、真诚、接地气、拉近距离",
+    "②政策解读与利好宣传（6分）：准确、通俗、讲清改革意义",
+    "③核心顾虑化解（7分）：良田不变坏、质量保障、公平公正",
+    "④公开监督与长远收益（4分）：村民参与、全程透明、算好账",
+    "⑤语言逻辑（2分）：流畅自然、说服力强、符合场景。"
+  ],
+  "deductionRules": [
+    "①态度生硬、不讲情理、引起抵触，扣5—7分",
+    "②政策不清、讲不明白、无法解惑，扣4—6分",
+    "③未打消“良田变坏田”核心顾虑，扣5—7分",
+    "④无公开监督、无公平承诺，村民不信任，扣3—4分",
+    "⑤语言生硬、脱离农村场景，扣2—3分"
+  ],
+  "sourceDocument": "2020-2025第二批次完全版.docx",
+  "referenceAnswer": "乡亲们，大家的担心我特别理解，田地是咱们的命根子，谁都怕把良田变坏田。今天我给大家把政策讲清楚、把道理说明白、把账算透彻，请大家放心。 第一，“小田变大田”是省里统一推进的好政策，目的是把零碎田变成连片田、方便田、高产田，完全是为咱们农民好。 第二，绝对不会把良田变坏田。咱们严格按规划施工，保护地力、完善水利、平整土地，只会越改越好、越种越顺。 第三，好处实实在在：大块田好机械化、省人力、降成本、抗灾害，产量更高、收益更多。 第四，全程公开公平公正。大家选代表参与监督，地块怎么划、标准怎么定、质量怎么管，全都公示、大家说了算，绝不搞暗箱操作。 第五，试点成功后，咱们村整体受益、长久受益。请乡亲们相信政策、相信村里、相信我，咱们一起把好事办好、实事办实，共同走上增收致富路！",
+  "tags": [
+    "安徽",
+    "省考",
+    "乡镇岗",
+    "面试",
+    "沟通劝说",
+    "小田变大田",
+    "农田改革",
+    "群众工作",
+    "乡村振兴"
+  ],
+  "scoreBands": [
+    {
+      "label": "低分/偏弱",
+      "min_score": 0,
+      "max_score": 13.2,
+      "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
+    },
+    {
+      "label": "基本合格",
+      "min_score": 13.3,
+      "max_score": 16.8,
+      "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
+    },
+    {
+      "label": "中高档",
+      "min_score": 16.9,
+      "max_score": 20.4,
+      "description": "内容较完整，逻辑较清晰，接近高分答案。"
+    },
+    {
+      "label": "高分标杆",
+      "min_score": 20.5,
+      "max_score": 24.0,
+      "description": "高分参考答案区间，用于回归验证。"
+    }
+  ],
+  "regressionCases": [
+    {
+      "label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHKS-20230409-03/reference_high.txt",
+      "expected_min": 21.0,
+      "expected_max": 24.0,
+      "llmExpectedMin": 21.0,
+      "llmExpectedMax": 24.0,
+      "notes": "来自原始题库文档的核心采分基准答案。"
+    },
+    {
+      "label": "程序化中档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHKS-20230409-03/reference_mid.txt",
+      "expected_min": 5.7,
+      "expected_max": 9.4,
+      "llmExpectedMin": 6.9,
+      "llmExpectedMax": 11.0,
+      "notes": "基于高分答案程序化压缩生成；策略=template_interpersonal_mid_1，句数=4，截断=none，关键词削弱=medium。"
+    },
+    {
+      "label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHKS-20230409-03/reference_low.txt",
+      "expected_min": 2.7,
+      "expected_max": 6.4,
+      "llmExpectedMin": 1.1,
+      "llmExpectedMax": 6.4,
+      "notes": "基于高分答案程序化降档生成；策略=template_interpersonal_low_2，句数=2，截断=none，关键词削弱=heavy，口语化=是。"
+    }
+  ]
+}

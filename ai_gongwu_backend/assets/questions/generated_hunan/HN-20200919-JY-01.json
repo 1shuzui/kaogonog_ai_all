@@ -6,15 +6,15 @@
   "question": "习近平总书记强调，公平正义是执法司法工作的生命线。请你结合自身，谈谈你的认识。（30分）",
   "dimensions": [
     {
-      "name": "岗位适配",
+      "name": "岗位适配（方向1）",
       "score": 8.0
     },
     {
-      "name": "对策措施",
+      "name": "分析理解",
       "score": 7.0
     },
     {
-      "name": "对策措施2",
+      "name": "岗位适配（方向2）",
       "score": 8.0
     },
     {
@@ -113,27 +113,27 @@
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200919-JY-01/reference_high.txt",
       "expected_min": 27.0,
       "expected_max": 30.0,
-      "llmExpectedMin": 25.5,
-      "llmExpectedMax": 28.5,
+      "llmExpectedMin": 27.0,
+      "llmExpectedMax": 30.0,
       "notes": "来自原始题库文档的核心采分基准答案。"
     },
     {
       "label": "程序化中档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200919-JY-01/reference_mid.txt",
-      "expected_min": 10.4,
-      "expected_max": 15.4,
-      "llmExpectedMin": 15.0,
-      "llmExpectedMax": 19.0,
-      "notes": "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=11，截断=none，关键词削弱=medium。"
+      "expected_min": 9.4,
+      "expected_max": 13.6,
+      "llmExpectedMin": 11.1,
+      "llmExpectedMax": 15.1,
+      "notes": "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=6，截断=none，关键词削弱=medium。"
     },
     {
       "label": "程序化低档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200919-JY-01/reference_low.txt",
-      "expected_min": 5.8,
-      "expected_max": 10.8,
-      "llmExpectedMin": 6.5,
-      "llmExpectedMax": 11.5,
-      "notes": "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=10，截断=none，关键词削弱=heavy，口语化=是。"
+      "expected_min": 6.4,
+      "expected_max": 10.6,
+      "llmExpectedMin": 5.8,
+      "llmExpectedMax": 10.6,
+      "notes": "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
     }
   ]
 }

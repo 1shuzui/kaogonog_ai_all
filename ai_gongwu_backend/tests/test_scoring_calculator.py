@@ -365,6 +365,143 @@ class ScoringCalculatorTestCase(unittest.TestCase):
             any("通用校准将总分上限压至" in note for note in result.validation_notes)
         )
 
+    def test_prepare_evidence_packet_can_normalize_language_alias_dimension_hint(self):
+        question = QuestionDefinition(
+            id="AH-ALIAS-001",
+            type="人际沟通",
+            province="安徽",
+            fullScore=24,
+            question="小李总喜欢在朋友圈做调研，你作为同事怎么劝他？",
+            dimensions=[
+                {"name": "①沟通态度与语气", "score": 5},
+                {"name": "②线上工作问题指出", "score": 6},
+                {"name": "③基层作风重要性论述", "score": 7},
+                {"name": "④引导建议与同事互助", "score": 4},
+                {"name": "⑤语言逻辑", "score": 2},
+            ],
+            scoringCriteria=[
+                "沟通态度与语气（5分）",
+                "线上工作问题指出（6分）",
+                "基层作风重要性论述（7分）",
+                "引导建议与同事互助（4分）",
+                "语言逻辑（2分）",
+            ],
+            deductionRules=[],
+        )
+        transcript = "我觉得这个事吧，还是得下到一线去看，不能老在朋友圈里做调研。"
+
+        evidence_packet, notes = prepare_evidence_packet(
+            raw_llm_result={
+                "evidence_items": [
+                    {
+                        "id": "",
+                        "dimension_hint": "language",
+                        "claim": "表达偏口语化",
+                        "evidence_text": "我觉得这个事吧",
+                        "evidence_type": "quote",
+                        "stance": "language",
+                    }
+                ]
+            },
+            transcript=transcript,
+            question=question,
+        )
+
+        self.assertTrue(
+            any(item.dimension_hint == "⑤语言逻辑" for item in evidence_packet.evidence_items)
+        )
+        self.assertTrue(any("已归一到 [⑤语言逻辑]" in note for note in notes))
+
+    def test_post_processing_can_resolve_generic_dimension_alias_from_reason_context(self):
+        question = QuestionDefinition(
+            id="AH-ALIAS-002",
+            type="人际沟通",
+            province="安徽",
+            fullScore=24,
+            question="小李总喜欢在朋友圈做调研，你作为同事怎么劝他？",
+            dimensions=[
+                {"name": "①沟通态度与语气", "score": 5},
+                {"name": "②线上工作问题指出", "score": 6},
+                {"name": "③基层作风重要性论述", "score": 7},
+                {"name": "④引导建议与同事互助", "score": 4},
+                {"name": "⑤语言逻辑", "score": 2},
+            ],
+            scoringCriteria=[
+                "沟通态度与语气（5分）",
+                "线上工作问题指出（6分）",
+                "基层作风重要性论述（7分）",
+                "引导建议与同事互助（4分）",
+                "语言逻辑（2分）",
+            ],
+            deductionRules=[],
+        )
+        transcript = (
+            "我觉得这个事吧，还是得下到一线去看。"
+            "后面我可以和你一起下村看看，别总停在朋友圈里做调研。"
+        )
+        evidence_packet, evidence_notes = prepare_evidence_packet(
+            raw_llm_result={
+                "evidence_items": [
+                    {
+                        "id": "",
+                        "dimension_hint": "language",
+                        "claim": "表达偏口语化",
+                        "evidence_text": "我觉得这个事吧",
+                        "evidence_type": "quote",
+                        "stance": "language",
+                    },
+                    {
+                        "id": "",
+                        "dimension_hint": "引导建议与同事互助",
+                        "claim": "给出一起下村的跟进动作",
+                        "evidence_text": "后面我可以和你一起下村看看",
+                        "evidence_type": "quote",
+                        "stance": "positive",
+                    },
+                ]
+            },
+            transcript=transcript,
+            question=question,
+        )
+        evidence_ids = {item.claim: item.id for item in evidence_packet.evidence_items}
+
+        result = apply_post_processing(
+            raw_llm_result={
+                "dimension_scores": {
+                    "①沟通态度与语气": 3.5,
+                    "②线上工作问题指出": 4.0,
+                    "③基层作风重要性论述": 4.5,
+                    "④引导建议与同事互助": 2.5,
+                    "⑤语言逻辑": 1.0,
+                },
+                "deduction_items": [
+                    {
+                        "reason": "表达还有点口语化，逻辑不够顺",
+                        "dimension": "通用",
+                        "evidence_ids": [evidence_ids["表达偏口语化"]],
+                    }
+                ],
+                "bonus_items": [
+                    {
+                        "reason": "愿意一起下去跟进，动作不算空",
+                        "dimension": "建议",
+                        "evidence_ids": [evidence_ids["给出一起下村的跟进动作"]],
+                    }
+                ],
+                "rationale": "基本能围绕题目沟通。",
+                "total_score": 15.5,
+            },
+            transcript=transcript,
+            question=question,
+            evidence_packet=evidence_packet,
+            extra_validation_notes=evidence_notes,
+        )
+
+        self.assertTrue(any(item.dimension == "⑤语言逻辑" for item in result.deduction_items))
+        self.assertTrue(any(item.dimension == "④引导建议与同事互助" for item in result.bonus_items))
+        self.assertTrue(any("deduction_items 中的维度 [通用] 已归一到 [⑤语言逻辑]" in note for note in result.validation_notes))
+        self.assertTrue(any("bonus_items 中的维度 [建议] 已归一到 [④引导建议与同事互助]" in note for note in result.validation_notes))
+
 
 if __name__ == "__main__":
     unittest.main()

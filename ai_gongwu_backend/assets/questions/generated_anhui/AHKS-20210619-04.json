@@ -1,0 +1,136 @@
+{
+  "id": "AHKS-20210619-04",
+  "type": "漫画联想·辩证思维·乡镇岗专用",
+  "province": "安徽",
+  "fullScore": 32.0,
+  "question": "漫画题：登山者一秒攀登珠峰0.9cm，复兴号一秒前进97m，谈谈感想。",
+  "dimensions": [
+    {
+      "name": "速度理解",
+      "score": 6.0
+    },
+    {
+      "name": "分析理解",
+      "score": 6.0
+    },
+    {
+      "name": "必须含登山者、坚守、积累、坚",
+      "score": 7.0
+    },
+    {
+      "name": "必须含快慢、统一、辩证、行稳",
+      "score": 4.0
+    },
+    {
+      "name": "创新思维",
+      "score": 6.0
+    },
+    {
+      "name": "岗位适配",
+      "score": 3.0
+    }
+  ],
+  "coreKeywords": [
+    "速度",
+    "慢",
+    "坚守",
+    "积累",
+    "复兴号",
+    "登山者"
+  ],
+  "strongKeywords": [
+    "快慢结合",
+    "辩证",
+    "基层",
+    "乡镇",
+    "奋斗",
+    "时代"
+  ],
+  "weakKeywords": [],
+  "bonusKeywords": [
+    "久久为功",
+    "行稳致远",
+    "只争朝夕",
+    "坚如磐石题型信息：漫画联想·辩证思维·乡镇岗专用"
+  ],
+  "penaltyKeywords": [
+    "片面化",
+    "不结合岗位",
+    "空洞无哲理",
+    "无高度"
+  ],
+  "scoringCriteria": [
+    "速度理解（6分）",
+    "：必须含复兴号、速度、飞跃、高效、发展，缺1个扣1分 慢的理解（6分）",
+    "：必须含登山者、坚守、积累、坚持、坚实，缺1个扣1分 辩证关系（7分）",
+    "：必须含快慢、统一、辩证、行稳致远、缺一不可，缺1个扣1分 国家时代（4分）",
+    "：必须含国家、中国、时代、力量、创新，缺1个扣1分基层结合（6分）",
+    "：必须含基层、乡镇、岗位、实干、乡村振兴，缺1个扣1分 践行升华（3分）"
+  ],
+  "deductionRules": [],
+  "sourceDocument": "2020-2025第二批次完全版.docx",
+  "referenceAnswer": "（乡镇岗高分版） 这幅漫画通过登山者的慢坚守、复兴号的快飞跃，形成鲜明对比，揭示了速度与厚度、快与慢、坚守与飞跃的辩证关系，寓意深刻、启发性强。 第一，复兴号之快，彰显时代速度与中国力量。一秒97米，代表国家发展、科技进步、时代飞跃，体现高效、创新、突破，告诉我们必须抢抓机遇、奋勇争先、跟上时代。 第二，登山者之慢，彰显坚守力量与积累之功。一秒0.9厘米，看似缓慢，却步步坚实、久久为功、终达顶峰。启示我们：伟大成就从来不是一蹴而就，而是日复一日的坚持与坚守。 第三，快与慢辩证统一，缺一不可。国家发展需要复兴号的快速度，基层奋斗需要登山者的慢功夫。快而不浮、慢而不懈，方能行稳致远。 第四，结合基层岗位，践行快慢之道。作为乡镇干部，服务群众、落实政策要学复兴号讲效率、讲速度；基层治理、乡村振兴、成长成才要学登山者讲坚守、讲积累。以坚如磐石的定力、只争朝夕的劲头，在平凡岗位坚守初心、在时代浪潮中担当作为，走好新时代基层赶考路。",
+  "tags": [
+    "安徽省考",
+    "2021.6.19",
+    "乡镇岗",
+    "漫画题",
+    "快慢结合",
+    "速度与坚守"
+  ],
+  "scoreBands": [
+    {
+      "label": "低分/偏弱",
+      "min_score": 0,
+      "max_score": 17.6,
+      "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
+    },
+    {
+      "label": "基本合格",
+      "min_score": 17.7,
+      "max_score": 22.4,
+      "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
+    },
+    {
+      "label": "中高档",
+      "min_score": 22.5,
+      "max_score": 27.2,
+      "description": "内容较完整，逻辑较清晰，接近高分答案。"
+    },
+    {
+      "label": "高分标杆",
+      "min_score": 27.3,
+      "max_score": 32.0,
+      "description": "高分参考答案区间，用于回归验证。"
+    }
+  ],
+  "regressionCases": [
+    {
+      "label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHKS-20210619-04/reference_high.txt",
+      "expected_min": 29.0,
+      "expected_max": 32.0,
+      "llmExpectedMin": 29.0,
+      "llmExpectedMax": 32.0,
+      "notes": "来自原始题库文档的核心采分基准答案。"
+    },
+    {
+      "label": "程序化中档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHKS-20210619-04/reference_mid.txt",
+      "expected_min": 12.1,
+      "expected_max": 16.8,
+      "llmExpectedMin": 14.3,
+      "llmExpectedMax": 18.1,
+      "notes": "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=6，截断=none，关键词削弱=medium。"
+    },
+    {
+      "label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHKS-20210619-04/reference_low.txt",
+      "expected_min": 9.1,
+      "expected_max": 13.8,
+      "llmExpectedMin": 8.8,
+      "llmExpectedMax": 13.8,
+      "notes": "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
+    }
+  ]
+}

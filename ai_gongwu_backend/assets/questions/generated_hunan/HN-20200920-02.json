@@ -1,33 +1,33 @@
 {
   "id": "HN-20200920-02",
-  "type": "综合分析题（漫画解读+作风建设+公职履职类，核心适配国家公务员岗位）",
+  "type": "综合分析·漫画解读+作风建设+公职履职类",
   "province": "湖南",
-  "fullScore": 70.0,
+  "fullScore": 60.0,
   "question": "一个人嘴巴翘得很高，嘴上有一根很长的绳子，绳子上面吊着一本书并写着“服务承诺”，此外，这个人的身上也写着“某单位”的字样。请自拟题目，并谈谈你的理解。（60分）",
   "dimensions": [
     {
       "name": "题目与观点",
-      "score": 11.5
+      "score": 9.8
     },
     {
-      "name": "分析理解",
+      "name": "漫画解读与危害",
+      "score": 11.8
+    },
+    {
+      "name": "根源分析",
+      "score": 11.8
+    },
+    {
+      "name": "落地路径",
       "score": 13.8
     },
     {
-      "name": "分析理解2",
-      "score": 13.8
-    },
-    {
-      "name": "对策措施",
-      "score": 16.1
-    },
-    {
-      "name": "整体契合度",
-      "score": 9.2
+      "name": "语言表达",
+      "score": 7.9
     },
     {
       "name": "创新思维",
-      "score": 5.6
+      "score": 4.9
     }
   ],
   "coreKeywords": [
@@ -58,12 +58,12 @@
     "逻辑混乱"
   ],
   "scoringCriteria": [
-    "题目与观点（10分）",
-    "：题目精准贴合漫画核心，观点鲜明有深度； 漫画解读与危害（12分）",
-    "：解读准确，深刻剖析本质与危害，结合湖南实际案例； 根源分析（12分）",
-    "：从理念、责任、监督、能力多维度溯源，逻辑清晰、贴合岗位； 落地路径（14分）",
-    "：措施务实可操作、有针对性，契合湖南政策要求，不少于4项； 语言表达（8分）",
-    "：规范流畅、庄重务实，符合公职人员表达习惯，结构完整； 创新思维（5分）"
+    "题目与观点（10分）：题目精准贴合漫画核心，观点鲜明有深度",
+    "漫画解读与危害（12分）：解读准确，深刻剖析本质与危害，结合湖南实际案例",
+    "根源分析（12分）：从理念、责任、监督、能力多维度溯源，逻辑清晰、贴合岗位",
+    "落地路径（14分）：措施务实可操作、有针对性，契合湖南政策要求，不少于4项",
+    "语言表达（8分）：规范流畅、庄重务实，符合公职人员表达习惯，结构完整",
+    "创新思维（5分）：出现码上监督、红黑榜等特色举措，贴合湖南实际与岗位需求"
   ],
   "deductionRules": [
     "题目偏离/观点模糊：未紧扣“服务承诺”“落实”，价值导向偏差，扣10-14分",
@@ -81,51 +81,31 @@
     "国家公务员",
     "湖南政务",
     "务实为民",
-    "形式主义纠治",
-    "题库说明",
-    "适配场景：湖南省考乡镇岗面试刷题",
-    "AI智能评分",
-    "考点检索",
-    "核心特色：紧扣乡镇基层“接地气",
-    "办实事",
-    "高效务实”的履职要求",
-    "深度融入湖南乡村振兴",
-    "基层治理",
-    "民生保障等本土实际",
-    "突出“性价比",
-    "可落地",
-    "群众认可”",
-    "无扣分关键词",
-    "按正向采分维度设计",
-    "确保评分精准公平",
-    "使用规范：可直接导入小程序后台",
-    "检索标签适配AI检索功能",
-    "仪态分计入100分总分",
-    "支持自动核算总分。"
+    "形式主义纠治"
   ],
   "scoreBands": [
     {
       "label": "低分/偏弱",
       "min_score": 0,
-      "max_score": 38.5,
+      "max_score": 33.0,
       "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
     },
     {
       "label": "基本合格",
-      "min_score": 38.6,
-      "max_score": 49.0,
+      "min_score": 33.1,
+      "max_score": 42.0,
       "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
     },
     {
       "label": "中高档",
-      "min_score": 49.1,
-      "max_score": 59.5,
+      "min_score": 42.1,
+      "max_score": 51.0,
       "description": "内容较完整，逻辑较清晰，接近高分答案。"
     },
     {
       "label": "高分标杆",
-      "min_score": 59.6,
-      "max_score": 70.0,
+      "min_score": 51.1,
+      "max_score": 60.0,
       "description": "高分参考答案区间，用于回归验证。"
     }
   ],
@@ -133,29 +113,29 @@
     {
       "label": "文档高分基准答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200920-02/reference_high.txt",
-      "expected_min": 67.0,
-      "expected_max": 70.0,
-      "llmExpectedMin": 67.0,
-      "llmExpectedMax": 70.0,
+      "expected_min": 57.0,
+      "expected_max": 60.0,
+      "llmExpectedMin": 57.0,
+      "llmExpectedMax": 60.0,
       "notes": "来自原始题库文档的核心采分基准答案。"
     },
     {
       "label": "程序化中档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200920-02/reference_mid.txt",
-      "expected_min": 32.5,
-      "expected_max": 37.5,
-      "llmExpectedMin": 33.4,
-      "llmExpectedMax": 39.4,
-      "notes": "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=11，截断=none，关键词削弱=medium。"
+      "expected_min": 23.4,
+      "expected_max": 28.4,
+      "llmExpectedMin": 24.3,
+      "llmExpectedMax": 30.1,
+      "notes": "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=6，截断=none，关键词削弱=medium。"
     },
     {
       "label": "程序化低档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200920-02/reference_low.txt",
-      "expected_min": 17.7,
-      "expected_max": 22.7,
-      "llmExpectedMin": 18.7,
-      "llmExpectedMax": 25.9,
-      "notes": "基于高分答案程序化降档生成；策略=template_analysis_low_2，句数=10，截断=none，关键词削弱=heavy，口语化=是。"
+      "expected_min": 18.8,
+      "expected_max": 23.8,
+      "llmExpectedMin": 19.5,
+      "llmExpectedMax": 23.8,
+      "notes": "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
     }
   ]
 }

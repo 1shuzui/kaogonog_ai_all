@@ -1,0 +1,144 @@
+{
+  "id": "AHKS-20230407-03",
+  "type": "人际沟通·同事劝导·作风建设",
+  "province": "安徽",
+  "fullScore": 24.0,
+  "question": "小李是镇政府工作人员，总是喜欢在朋友圈“做调研”，在微信群里“下基层”，领导让你跟小李谈谈，你作为他的同事，会怎么说？",
+  "dimensions": [
+    {
+      "name": "①沟通态度与语气",
+      "score": 5.0
+    },
+    {
+      "name": "②线上工作问题指出",
+      "score": 6.0
+    },
+    {
+      "name": "③基层作风重要性论述",
+      "score": 7.0
+    },
+    {
+      "name": "④引导建议与同事互助",
+      "score": 4.0
+    },
+    {
+      "name": "⑤语言逻辑",
+      "score": 2.0
+    }
+  ],
+  "coreKeywords": [
+    "小李",
+    "朋友圈",
+    "调研",
+    "微信群",
+    "下基层",
+    "同事",
+    "沟通",
+    "劝导"
+  ],
+  "strongKeywords": [
+    "安徽",
+    "乡镇岗",
+    "一改两为",
+    "作风建设",
+    "深入群众",
+    "基层工作"
+  ],
+  "weakKeywords": [],
+  "bonusKeywords": [
+    "深入一线",
+    "脚沾泥土",
+    "田间地头",
+    "群众心声",
+    "真抓实干"
+  ],
+  "penaltyKeywords": [
+    "态度生硬",
+    "认识偏差",
+    "脱离基层",
+    "逻辑混乱",
+    "脱离场景"
+  ],
+  "scoringCriteria": [
+    "①沟通态度与语气（5分）：真诚友善、先扬后抑、氛围平和",
+    "②线上工作问题指出（6分）：精准到位、切中要害、符合基层实际",
+    "③基层作风重要性论述（7分）：认识深刻、贴合群众、导向正确",
+    "④引导建议与同事互助（4分）：务实可行、共同进步、积极向上",
+    "⑤语言逻辑（2分）：表述规范、条理清晰、得体亲切。"
+  ],
+  "deductionRules": [
+    "①态度生硬、批评指责、易引发抵触，扣5—7分",
+    "②未认识线上局限、不强调实地基层重要性，扣4—6分",
+    "③未结合乡镇工作、群众路线、一改两为实际，扣3—5分",
+    "④无合理建议、只批评不引导，扣2—4分",
+    "⑤逻辑混乱、表达不流畅、场景不符，扣2—3分"
+  ],
+  "sourceDocument": "2020-2025第二批次完全版.docx",
+  "referenceAnswer": "答案小李，趁着有空咱俩聊几句，都是工作上的心里话，也是为了咱们更好地干好乡镇工作。你平时工作积极、责任心强，利用线上渠道收集信息、沟通工作，这种效率意识值得肯定。但是我也想真诚跟你说，咱们乡镇工作直接面对群众，朋友圈、微信群只能了解少量表面情况，真正的调研在田间地头，真正的基层在群众身边。 如果只靠线上“云调研”“云下基层”，很容易听不到真话、摸不到实情、办不好实事，既影响工作效果，也会拉开和群众的距离。总书记常说，脚下沾有多少泥土，心中就沉淀多少真情。咱们乡镇干部，就是要多走村入户、多坐群众板凳、多听群众心里话，用脚步丈量民情、用真心了解民意，这样才能把工作做到群众心坎上。 以后咱们可以一起多下村、多入户、多到现场看一看，既能掌握真实情况，也能把工作做得更实更细。相信你只要转变方式、深入一线，一定能把工作干得更出色、更让群众和领导满意。",
+  "tags": [
+    "安徽",
+    "省考",
+    "乡镇岗",
+    "面试",
+    "人际沟通",
+    "同事劝导",
+    "基层作风",
+    "一改两为",
+    "深入群众"
+  ],
+  "scoreBands": [
+    {
+      "label": "低分/偏弱",
+      "min_score": 0,
+      "max_score": 13.2,
+      "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
+    },
+    {
+      "label": "基本合格",
+      "min_score": 13.3,
+      "max_score": 16.8,
+      "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
+    },
+    {
+      "label": "中高档",
+      "min_score": 16.9,
+      "max_score": 20.4,
+      "description": "内容较完整，逻辑较清晰，接近高分答案。"
+    },
+    {
+      "label": "高分标杆",
+      "min_score": 20.5,
+      "max_score": 24.0,
+      "description": "高分参考答案区间，用于回归验证。"
+    }
+  ],
+  "regressionCases": [
+    {
+      "label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHKS-20230407-03/reference_high.txt",
+      "expected_min": 21.0,
+      "expected_max": 24.0,
+      "llmExpectedMin": 21.0,
+      "llmExpectedMax": 24.0,
+      "notes": "来自原始题库文档的核心采分基准答案。"
+    },
+    {
+      "label": "程序化中档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHKS-20230407-03/reference_mid.txt",
+      "expected_min": 5.9,
+      "expected_max": 10.9,
+      "llmExpectedMin": 8.1,
+      "llmExpectedMax": 11.8,
+      "notes": "基于高分答案程序化压缩生成；策略=template_interpersonal_mid_1，句数=4，截断=none，关键词削弱=medium。"
+    },
+    {
+      "label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHKS-20230407-03/reference_low.txt",
+      "expected_min": 2.6,
+      "expected_max": 7.6,
+      "llmExpectedMin": 1.7,
+      "llmExpectedMax": 7.6,
+      "notes": "基于高分答案程序化降档生成；策略=template_interpersonal_low_2，句数=2，截断=none，关键词削弱=heavy，口语化=是。"
+    }
+  ]
+}

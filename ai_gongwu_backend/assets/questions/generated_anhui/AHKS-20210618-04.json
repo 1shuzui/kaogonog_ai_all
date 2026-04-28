@@ -1,0 +1,129 @@
+{
+  "id": "AHKS-20210618-04",
+  "type": "主题演讲·责任担当·乡镇岗专用",
+  "province": "安徽",
+  "fullScore": 32.0,
+  "question": "“我在”是一种担当、一种责任。请以“我在场、有我在、我还在”为主题，结合实际讲一段话。",
+  "dimensions": [
+    {
+      "name": "我在场",
+      "score": 7.0
+    },
+    {
+      "name": "必须含在场、一线、现场、冲锋",
+      "score": 7.0
+    },
+    {
+      "name": "必须含担当、责任、主心骨、顶",
+      "score": 7.0
+    },
+    {
+      "name": "必须含坚守、长期、韧劲、不离",
+      "score": 6.0
+    },
+    {
+      "name": "必须含乡镇、群众、防汛、振兴",
+      "score": 5.0
+    }
+  ],
+  "coreKeywords": [
+    "我在场",
+    "有我在",
+    "我还在",
+    "担当",
+    "责任"
+  ],
+  "strongKeywords": [
+    "基层",
+    "乡镇",
+    "坚守",
+    "一线",
+    "群众",
+    "实干"
+  ],
+  "weakKeywords": [],
+  "bonusKeywords": [
+    "主心骨",
+    "冲在前",
+    "久久为功",
+    "在岗在位在状态题型信息：主题演讲·责任担当·乡镇岗专用"
+  ],
+  "penaltyKeywords": [
+    "偏离主题",
+    "空洞无物",
+    "不结合乡镇"
+  ],
+  "scoringCriteria": [
+    "我在场（7分）",
+    "：必须含在场、一线、现场、冲锋、及时，缺1个扣1分 有我在（7分）",
+    "：必须含担当、责任、主心骨、顶住、守护，缺1个扣1分 我还在（7分）",
+    "：必须含坚守、长期、韧劲、不离、在岗，缺1个扣1分 基层结合（6分）",
+    "：必须含乡镇、群众、防汛、振兴、服务，缺1个扣1分 结尾升华（5分）"
+  ],
+  "deductionRules": [],
+  "sourceDocument": "2020-2025第二批次完全版.docx",
+  "referenceAnswer": "（乡镇岗高分演讲） 大家好！我今天演讲的主题是：我在场、有我在、我还在。 “我在场”，是关键时刻站得出来、冲得上去。面对防汛防火、疫情防控、矛盾化解，基层干部必须第一时间到一线、到现场、到群众身边，不缺位、不迟滞、不退缩。 “有我在”，是危难面前扛得起来、顶得上去。群众有难、组织有令，我们敢于说“有我在”，用担当扛起责任，用行动守护平安，做群众的主心骨、贴心人。 “我还在”，是长期坚守守得住、耐得住、久久为功。基层工作日复一日、年复一年，乡村振兴、服务群众没有终点，我们要始终在岗、在位、在状态，坚守到底、不离不弃。 作为一名乡镇干部，我将始终牢记：困难面前我在场，风险面前有我在，长期坚守我还在，用担当诠释初心，用实干践行使命，做一名让组织放心、让群众安心的基层干部！",
+  "tags": [
+    "安徽省考",
+    "2021.6.18",
+    "乡镇岗",
+    "主题演讲",
+    "我在场有我在我还在",
+    "担当"
+  ],
+  "scoreBands": [
+    {
+      "label": "低分/偏弱",
+      "min_score": 0,
+      "max_score": 17.6,
+      "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
+    },
+    {
+      "label": "基本合格",
+      "min_score": 17.7,
+      "max_score": 22.4,
+      "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
+    },
+    {
+      "label": "中高档",
+      "min_score": 22.5,
+      "max_score": 27.2,
+      "description": "内容较完整，逻辑较清晰，接近高分答案。"
+    },
+    {
+      "label": "高分标杆",
+      "min_score": 27.3,
+      "max_score": 32.0,
+      "description": "高分参考答案区间，用于回归验证。"
+    }
+  ],
+  "regressionCases": [
+    {
+      "label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHKS-20210618-04/reference_high.txt",
+      "expected_min": 29.0,
+      "expected_max": 32.0,
+      "llmExpectedMin": 29.0,
+      "llmExpectedMax": 32.0,
+      "notes": "来自原始题库文档的核心采分基准答案。"
+    },
+    {
+      "label": "程序化中档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHKS-20210618-04/reference_mid.txt",
+      "expected_min": 14.8,
+      "expected_max": 18.0,
+      "llmExpectedMin": 15.5,
+      "llmExpectedMax": 19.8,
+      "notes": "基于高分答案程序化压缩生成；策略=template_scene_mid_1，句数=7，截断=none，关键词削弱=medium。"
+    },
+    {
+      "label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHKS-20210618-04/reference_low.txt",
+      "expected_min": 11.8,
+      "expected_max": 15.0,
+      "llmExpectedMin": 10.1,
+      "llmExpectedMax": 15.0,
+      "notes": "基于高分答案程序化降档生成；策略=template_scene_low_1，句数=6，截断=none，关键词削弱=medium，口语化=是。"
+    }
+  ]
+}

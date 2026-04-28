@@ -1,0 +1,115 @@
+{
+  "id": "AHXF-20220311-03",
+  "type": "现场模拟",
+  "province": "安徽消防",
+  "fullScore": 8.0,
+  "question": "：你单位召开了一个工作会议，会前先调研收集了各单位的意见，但在会议中，有单位反映你说的内容和之前他们说的意见不一样，会后领导让你跟他解释此事，你会怎么解释？请现场模拟。",
+  "dimensions": [
+    {
+      "name": "③整改措施具体可行",
+      "score": 6.0
+    },
+    {
+      "name": "④模拟语气得体自然",
+      "score": 2.0
+    }
+  ],
+  "coreKeywords": [
+    "意见",
+    "会议",
+    "解释",
+    "担责",
+    "整改",
+    "沟通"
+  ],
+  "strongKeywords": [
+    "调研",
+    "核对",
+    "规范",
+    "汇报",
+    "现场模拟",
+    "失误"
+  ],
+  "weakKeywords": [],
+  "bonusKeywords": [
+    "深刻检讨",
+    "立即整改",
+    "双人审核",
+    "反复校对"
+  ],
+  "penaltyKeywords": [],
+  "scoringCriteria": [
+    "③整改措施具体可行（6分）：立即整改、长效机制",
+    "④模拟语气得体自然（2分）：符合场景、不生硬。"
+  ],
+  "deductionRules": [
+    "③无整改措施、敷衍了事：扣4–6分；④语气生硬、不符合模拟场景：扣2–4分；⑤未体现工作严谨性、纪律意识：扣2分"
+  ],
+  "sourceDocument": "2020-2025第二批次完全版.docx",
+  "referenceAnswer": "（极致详尽·现场模拟） 领导，对不起！这次会议出现内容与前期收集意见不一致的误会，完全是我工作不细致、不严谨造成的，我向您作深刻检讨，承担全部责任。前期我们确实全面调研、逐条收集、认真梳理了各单位意见，所有意见建议一条没丢、全部吸纳、充分体现到会议材料中。出现现场同志感觉不一致，主要有三点原因： 第一，我们把各单位零散、具体、个性化的意见，进行了系统化、逻辑化、规范化整合，不是原文照搬，而是整体呈现； 第二，为贴合会议部署要求，对意见进行了提炼概括、规范表述、统一口径； 第三，最关键的问题是我会前审核不到位、沟通不充分、没有提前做好解释说明，导致大家产生误解。领导，我现在立即采取三条措施：一是马上向相关单位逐一解释、当面沟通、核对确认；二是立即梳理对照，确保所有意见完全体现、不打折扣； 三是今后严格执行双人审核、反复校对、会前沟通机制，坚决杜绝此类问题再次发生。请领导批评指正，我一定深刻反思、彻底整改、绝不再犯！",
+  "tags": [
+    "安徽消防",
+    "面试",
+    "现场模拟",
+    "意见分歧",
+    "工作失误",
+    "沟通汇报",
+    "担责整改",
+    "严谨规范"
+  ],
+  "scoreBands": [
+    {
+      "label": "低分/偏弱",
+      "min_score": 0,
+      "max_score": 4.4,
+      "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
+    },
+    {
+      "label": "基本合格",
+      "min_score": 4.5,
+      "max_score": 5.6,
+      "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
+    },
+    {
+      "label": "中高档",
+      "min_score": 5.7,
+      "max_score": 6.8,
+      "description": "内容较完整，逻辑较清晰，接近高分答案。"
+    },
+    {
+      "label": "高分标杆",
+      "min_score": 6.9,
+      "max_score": 8.0,
+      "description": "高分参考答案区间，用于回归验证。"
+    }
+  ],
+  "regressionCases": [
+    {
+      "label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHXF-20220311-03/reference_high.txt",
+      "expected_min": 6.8,
+      "expected_max": 8.0,
+      "llmExpectedMin": 6.8,
+      "llmExpectedMax": 8.0,
+      "notes": "来自原始题库文档的核心采分基准答案。"
+    },
+    {
+      "label": "程序化中档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHXF-20220311-03/reference_mid.txt",
+      "expected_min": 3.4,
+      "expected_max": 5.7,
+      "llmExpectedMin": 3.2,
+      "llmExpectedMax": 6.3,
+      "notes": "基于高分答案程序化压缩生成；策略=template_scene_mid_1，句数=7，截断=none，关键词削弱=medium。"
+    },
+    {
+      "label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHXF-20220311-03/reference_low.txt",
+      "expected_min": 0.4,
+      "expected_max": 2.7,
+      "llmExpectedMin": 0.0,
+      "llmExpectedMax": 2.7,
+      "notes": "基于高分答案程序化降档生成；策略=template_scene_low_3，句数=7，截断=none，关键词削弱=medium，口语化=是。"
+    }
+  ]
+}

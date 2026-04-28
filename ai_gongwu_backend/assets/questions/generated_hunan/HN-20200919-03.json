@@ -2,28 +2,28 @@
   "id": "HN-20200919-03",
   "type": "计划组织·宣传创意+文化建设+团队赋能类（适配湖南省考公职岗位）",
   "province": "湖南",
-  "fullScore": 35.0,
+  "fullScore": 30.0,
   "question": "单位要组织周末读书分享会之类的活动,请你给这个活动拟定一个宣传语,说明你的立意和出发点。（30分）",
   "dimensions": [
     {
-      "name": "宣传语创意",
-      "score": 7.9
-    },
-    {
-      "name": "立意深度",
-      "score": 7.9
-    },
-    {
-      "name": "出发点适配",
+      "name": "宣传语创意（方向1）",
       "score": 6.8
     },
     {
-      "name": "整体契合度",
-      "score": 7.9
+      "name": "立意深度",
+      "score": 6.8
+    },
+    {
+      "name": "出发点适配",
+      "score": 5.8
+    },
+    {
+      "name": "宣传语创意（方向2）",
+      "score": 6.8
     },
     {
       "name": "创新思维",
-      "score": 4.5
+      "score": 3.8
     }
   ],
   "coreKeywords": [
@@ -83,25 +83,25 @@
     {
       "label": "低分/偏弱",
       "min_score": 0,
-      "max_score": 19.2,
+      "max_score": 16.5,
       "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
     },
     {
       "label": "基本合格",
-      "min_score": 19.3,
-      "max_score": 24.5,
+      "min_score": 16.6,
+      "max_score": 21.0,
       "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
     },
     {
       "label": "中高档",
-      "min_score": 24.6,
-      "max_score": 29.8,
+      "min_score": 21.1,
+      "max_score": 25.5,
       "description": "内容较完整，逻辑较清晰，接近高分答案。"
     },
     {
       "label": "高分标杆",
-      "min_score": 29.9,
-      "max_score": 35.0,
+      "min_score": 25.6,
+      "max_score": 30.0,
       "description": "高分参考答案区间，用于回归验证。"
     }
   ],
@@ -109,29 +109,29 @@
     {
       "label": "文档高分基准答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200919-03/reference_high.txt",
-      "expected_min": 32.0,
-      "expected_max": 35.0,
-      "llmExpectedMin": 32.0,
-      "llmExpectedMax": 35.0,
+      "expected_min": 27.0,
+      "expected_max": 30.0,
+      "llmExpectedMin": 27.0,
+      "llmExpectedMax": 30.0,
       "notes": "来自原始题库文档的核心采分基准答案。"
     },
     {
       "label": "程序化中档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200919-03/reference_mid.txt",
-      "expected_min": 10.6,
-      "expected_max": 15.6,
-      "llmExpectedMin": 12.3,
-      "llmExpectedMax": 16.8,
-      "notes": "基于高分答案程序化压缩生成；策略=template_organization_mid_1，句数=11，截断=none，关键词削弱=medium。"
+      "expected_min": 11.0,
+      "expected_max": 16.0,
+      "llmExpectedMin": 12.0,
+      "llmExpectedMax": 17.1,
+      "notes": "基于高分答案程序化压缩生成；策略=template_organization_mid_2，句数=8，截断=none，关键词削弱=medium。"
     },
     {
       "label": "程序化低档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200919-03/reference_low.txt",
-      "expected_min": 6.8,
-      "expected_max": 11.8,
-      "llmExpectedMin": 6.8,
-      "llmExpectedMax": 11.8,
-      "notes": "基于高分答案程序化降档生成；策略=template_organization_low_2，句数=9，截断=none，关键词削弱=heavy，口语化=是。"
+      "expected_min": 6.5,
+      "expected_max": 11.5,
+      "llmExpectedMin": 6.3,
+      "llmExpectedMax": 11.5,
+      "notes": "基于高分答案程序化降档生成；策略=template_organization_low_3，句数=6，截断=none，关键词削弱=medium，口语化=是。"
     }
   ]
 }

@@ -64,9 +64,12 @@ export function useMediaRecorder() {
   function startRecording() {
     if (!stream.value) {
       error.value = '请先初始化媒体流'
-      return
+      return false
     }
 
+    clearInterval(durationTimer)
+    duration.value = 0
+    error.value = ''
     chunks = []
     const mimeType = getSupportedMimeType(hasVideo.value)
     const recorderOptions = mimeType ? { mimeType } : {}
@@ -75,7 +78,7 @@ export function useMediaRecorder() {
       mediaRecorder = new MediaRecorder(stream.value, recorderOptions)
     } catch (e) {
       error.value = '创建录制器失败: ' + e.message
-      return
+      return false
     }
 
     mediaRecorder.ondataavailable = (e) => {
@@ -97,26 +100,34 @@ export function useMediaRecorder() {
         duration.value = Math.floor((performance.now() - startTime) / 1000)
       }
     }, 200)
+    return true
   }
 
   function stopRecording() {
     return new Promise((resolve) => {
       if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+        isRecording.value = false
         resolve(null)
         return
       }
 
-      mediaRecorder.onstop = () => {
+      const currentRecorder = mediaRecorder
+      currentRecorder.onstop = () => {
         clearInterval(durationTimer)
         isRecording.value = false
         isPaused.value = false
-        const mimeType = getSupportedMimeType(hasVideo.value) || 'video/webm'
+        const mimeType = getSupportedMimeType(hasVideo.value) || (hasVideo.value ? 'video/webm' : 'audio/webm')
         const blob = new Blob(chunks, { type: mimeType })
+        mediaRecorder = null
         chunks = []
-        resolve(blob)
+        resolve(blob.size > 0 ? blob : null)
       }
 
-      mediaRecorder.stop()
+      try {
+        currentRecorder.requestData?.()
+      } catch {}
+
+      currentRecorder.stop()
     })
   }
 
@@ -135,10 +146,17 @@ export function useMediaRecorder() {
   }
 
   function destroyStream() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      try {
+        mediaRecorder.stop()
+      } catch {}
+    }
     if (stream.value) {
       stream.value.getTracks().forEach(t => t.stop())
       stream.value = null
     }
+    mediaRecorder = null
+    chunks = []
     clearInterval(durationTimer)
     isRecording.value = false
     isPaused.value = false

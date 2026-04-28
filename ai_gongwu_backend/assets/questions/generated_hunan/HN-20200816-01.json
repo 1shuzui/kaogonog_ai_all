@@ -6,15 +6,15 @@
   "question": "习总书记在全国企业家座谈会上，提出了四点对小微企业的建议：第一，落实好纾困惠企政策；第二，打造市场化、法治化、国际化营商环境；第三，构建亲清政商关系；第四，高度重视支持个体工商户发展。请从税务工作者的角度，谈谈你的看法。（30分）",
   "dimensions": [
     {
-      "name": "分析理解",
+      "name": "岗位适配",
       "score": 8.0
     },
     {
-      "name": "对策措施",
+      "name": "分析理解",
       "score": 7.0
     },
     {
-      "name": "对策措施2",
+      "name": "对策措施",
       "score": 8.0
     },
     {
@@ -125,20 +125,20 @@
     {
       "label": "程序化中档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200816-01/reference_mid.txt",
-      "expected_min": 9.4,
-      "expected_max": 14.4,
-      "llmExpectedMin": 11.3,
-      "llmExpectedMax": 15.5,
-      "notes": "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=11，截断=none，关键词削弱=medium。"
+      "expected_min": 9.0,
+      "expected_max": 12.7,
+      "llmExpectedMin": 10.2,
+      "llmExpectedMax": 14.4,
+      "notes": "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=6，截断=none，关键词削弱=medium。"
     },
     {
       "label": "程序化低档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200816-01/reference_low.txt",
-      "expected_min": 5.8,
-      "expected_max": 10.8,
-      "llmExpectedMin": 5.6,
-      "llmExpectedMax": 10.8,
-      "notes": "基于高分答案程序化降档生成；策略=template_analysis_low_2，句数=13，截断=none，关键词削弱=heavy，口语化=是。"
+      "expected_min": 6.0,
+      "expected_max": 9.7,
+      "llmExpectedMin": 5.2,
+      "llmExpectedMax": 9.7,
+      "notes": "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
     }
   ]
 }

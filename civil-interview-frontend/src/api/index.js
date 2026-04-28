@@ -11,7 +11,7 @@ const http = axios.create({
   timeout: 180000
 })
 
-function normalizeErrorMessage(payload) {
+export function normalizeErrorMessage(payload, fallback = 'Request failed') {
   const detail = payload?.detail ?? payload?.message ?? payload
 
   if (Array.isArray(detail)) {
@@ -24,7 +24,7 @@ function normalizeErrorMessage(payload) {
       })
       .filter(Boolean)
 
-    return items.join('; ') || 'Request failed'
+    return items.join('; ') || fallback
   }
 
   if (detail && typeof detail === 'object') {
@@ -35,10 +35,10 @@ function normalizeErrorMessage(payload) {
       .flat()
       .map((value) => (typeof value === 'string' ? value : ''))
       .filter(Boolean)
-      .join('; ') || 'Request failed'
+      .join('; ') || fallback
   }
 
-  return detail ? String(detail) : 'Request failed'
+  return detail ? String(detail) : fallback
 }
 
 http.interceptors.request.use((config) => {
@@ -52,7 +52,22 @@ http.interceptors.request.use((config) => {
 http.interceptors.response.use(
   (res) => res.data,
   (err) => {
+    const { response, config = {} } = err
+    const status = response?.status || 0
+    const isSilentRequest = !!config.skipErrorHandler
+    const fallbackMessage = !response
+      ? '网络请求失败，请检查后端服务是否已启动'
+      : status >= 500
+        ? '服务暂时不可用，请稍后重试'
+        : err.message || 'Request failed'
+    const msg = normalizeErrorMessage(response?.data, fallbackMessage)
+    err.normalizedMessage = msg
+
     if (err.response?.status === 401) {
+      if (isSilentRequest) {
+        return Promise.reject(err)
+      }
+
       localStorage.removeItem(TOKEN_STORAGE_KEY)
       localStorage.removeItem(USERNAME_STORAGE_KEY)
       message.warning('Session expired, please log in again')
@@ -62,8 +77,9 @@ http.interceptors.response.use(
       return Promise.reject(err)
     }
 
-    const msg = normalizeErrorMessage(err.response?.data || err.message)
-    message.error(msg)
+    if (!isSilentRequest) {
+      message.error(msg)
+    }
     return Promise.reject(err)
   }
 )

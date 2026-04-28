@@ -1,0 +1,129 @@
+{
+  "id": "AHXDS-20210720-03",
+  "type": "人际沟通·情绪疏导·选调生",
+  "province": "安徽",
+  "fullScore": 16.0,
+  "question": "单位小李工作能力很强，平时工作表现也比较出色，但是在本次的年度评优评先中没有评上，之后的工作中也出现了一些失误并被领导批评，小李因此心情沮丧，你会如何劝说他？",
+  "dimensions": [
+    {
+      "name": "①安抚情绪与肯定",
+      "score": 5.0
+    },
+    {
+      "name": "②理性看待评优",
+      "score": 3.0
+    },
+    {
+      "name": "③正视失误与批评",
+      "score": 4.0
+    },
+    {
+      "name": "④鼓励鼓劲与帮助",
+      "score": 4.0
+    }
+  ],
+  "coreKeywords": [
+    "小李",
+    "评优落选",
+    "失误",
+    "批评",
+    "沮丧",
+    "劝说"
+  ],
+  "strongKeywords": [
+    "安抚",
+    "肯定",
+    "疏导",
+    "整改",
+    "鼓励",
+    "同事",
+    "团队"
+  ],
+  "weakKeywords": [],
+  "bonusKeywords": [
+    "共情沟通",
+    "正视批评",
+    "重拾状态",
+    "共同进步",
+    "真诚关怀题型信息：人际沟通·情绪疏导·选调生"
+  ],
+  "penaltyKeywords": [],
+  "scoringCriteria": [
+    "①安抚情绪与肯定（5分）：共情、认可、拉近距离，无安抚扣3—5分",
+    "②理性看待评优（3分）：疏导心态、正确看待，无疏导扣3分",
+    "③正视失误与批评（4分）：引导整改、正视问题，无纠正引导扣4分",
+    "④鼓励鼓劲与帮助（4分）：激励振作、主动协助，无鼓励扣4分。"
+  ],
+  "deductionRules": [
+    "②不安抚、不肯定，直接讲大道理：扣3—5分",
+    "③不引导正视失误，一味纵容安慰：扣3—4分",
+    "④无鼓励、无帮助，沟通不闭环：扣3—4分",
+    "⑤语气生硬、缺乏真诚、不符合同事相处：扣1—2分"
+  ],
+  "sourceDocument": "2020-2025第二批次完全版.docx",
+  "referenceAnswer": "我会坚持先安抚情绪、再理性疏导、后激励鼓劲的原则，真诚沟通、耐心劝说，帮助小李正视问题、重拾状态、振作精神。 第一，真诚安抚，肯定认可。主动找到小李，真诚肯定他平时工作能力强、表现出色、付出很多，大家有目共睹；理解评优落选、被批评后的失落心情，让他感受到关心与认可。 第二，理性疏导，正确看待。耐心劝导评优名额有限、综合多方面因素，不是对能力的否定，不能因此否定自己；领导批评是对工作负责、对他负责，是帮助改进、促进成长。 第三，正视失误，及时整改。引导他正视近期工作失误，放下情绪包袱，认真查找原因、及时纠正改进，把批评转化为提升动力，避免影响后续工作。 第四，鼓励鼓劲，重拾干劲。再次肯定他的能力与潜力，鼓励他振作精神、调整状态，继续保持优秀表现，只要坚持实干，未来机会很多，组织和同事都会看在眼里。 第五，主动帮助，共同进步。表示愿意在工作上积极配合、互相支持，一起把工作做好，共同成长、共同进步。",
+  "tags": [
+    "安徽选调生",
+    "2021.7.20",
+    "人际沟通",
+    "评优落选",
+    "情绪疏导",
+    "同事劝说",
+    "第四题（现场模拟·红色直播·选调生·14分）"
+  ],
+  "scoreBands": [
+    {
+      "label": "低分/偏弱",
+      "min_score": 0,
+      "max_score": 8.8,
+      "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
+    },
+    {
+      "label": "基本合格",
+      "min_score": 8.9,
+      "max_score": 11.2,
+      "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
+    },
+    {
+      "label": "中高档",
+      "min_score": 11.3,
+      "max_score": 13.6,
+      "description": "内容较完整，逻辑较清晰，接近高分答案。"
+    },
+    {
+      "label": "高分标杆",
+      "min_score": 13.7,
+      "max_score": 16.0,
+      "description": "高分参考答案区间，用于回归验证。"
+    }
+  ],
+  "regressionCases": [
+    {
+      "label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHXDS-20210720-03/reference_high.txt",
+      "expected_min": 13.6,
+      "expected_max": 16.0,
+      "llmExpectedMin": 13.6,
+      "llmExpectedMax": 16.0,
+      "notes": "来自原始题库文档的核心采分基准答案。"
+    },
+    {
+      "label": "程序化中档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHXDS-20210720-03/reference_mid.txt",
+      "expected_min": 4.0,
+      "expected_max": 8.1,
+      "llmExpectedMin": 5.6,
+      "llmExpectedMax": 9.4,
+      "notes": "基于高分答案程序化压缩生成；策略=template_interpersonal_mid_2，句数=4，截断=none，关键词削弱=medium。"
+    },
+    {
+      "label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHXDS-20210720-03/reference_low.txt",
+      "expected_min": 1.0,
+      "expected_max": 5.1,
+      "llmExpectedMin": 0.0,
+      "llmExpectedMax": 5.1,
+      "notes": "基于高分答案程序化降档生成；策略=template_interpersonal_low_2，句数=2，截断=none，关键词削弱=heavy，口语化=是。"
+    }
+  ]
+}

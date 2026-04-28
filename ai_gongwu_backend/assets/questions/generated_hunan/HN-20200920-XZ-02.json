@@ -1,20 +1,20 @@
 {
   "id": "HN-20200920-XZ-02",
-  "type": "综合分析题（漫画解读+乡村振兴+基层实干类，核心适配湖南省考乡镇岗）",
+  "type": "综合分析·漫画解读+乡村振兴+基层实干类",
   "province": "湖南",
   "fullScore": 35.0,
   "question": "漫画题：村干部开着农耕机(农耕机上面写了\"扶贫号\"),笑着在耕田,农民在后面播种,旁边写了一个勤字,谈谈你的看法。（35分）",
   "dimensions": [
     {
-      "name": "分析理解",
+      "name": "漫画解读",
       "score": 9.0
     },
     {
-      "name": "：准确把握“干部带头、群",
+      "name": "观点提炼",
       "score": 8.0
     },
     {
-      "name": "岗位适配",
+      "name": "案例适配",
       "score": 7.0
     },
     {
@@ -55,11 +55,11 @@
     "逻辑混乱"
   ],
   "scoringCriteria": [
-    "漫画解读（9分）",
-    "：准确把握“干部带头、群众参与、勤劳实干”核心，贴合乡镇实际； 观点提炼（8分）",
-    "：观点鲜明，结合湖南扶贫/乡村振兴实践，有深度、不空洞； 案例适配（7分）",
-    "：融入湖南农村真实案例，体现“接地气、办实事”； 语言表达（7分）",
-    "：朴实自然、条理清晰，符合乡镇干部表达习惯，有感染力； 创新思维（4分）"
+    "漫画解读（9分）：准确把握“干部带头、群众参与、勤劳实干”核心，贴合乡镇实际",
+    "观点提炼（8分）：观点鲜明，结合湖南扶贫/乡村振兴实践，有深度、不空洞",
+    "案例适配（7分）：融入湖南农村真实案例，体现“接地气、办实事”",
+    "语言表达（7分）：朴实自然、条理清晰，符合乡镇干部表达习惯，有感染力",
+    "创新思维（4分）：出现本土化案例、实务延伸等特色表述，贴合乡镇发展实际"
   ],
   "deductionRules": [
     "解读偏差/脱离实际：未抓住“干部带头、勤”核心，或脱离乡镇/扶贫场景，扣7-9分",
@@ -111,27 +111,27 @@
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200920-XZ-02/reference_high.txt",
       "expected_min": 32.0,
       "expected_max": 35.0,
-      "llmExpectedMin": 30.5,
-      "llmExpectedMax": 33.5,
+      "llmExpectedMin": 32.0,
+      "llmExpectedMax": 35.0,
       "notes": "来自原始题库文档的核心采分基准答案。"
     },
     {
       "label": "程序化中档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200920-XZ-02/reference_mid.txt",
-      "expected_min": 13.5,
-      "expected_max": 18.5,
-      "llmExpectedMin": 15.0,
-      "llmExpectedMax": 19.0,
-      "notes": "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=11，截断=none，关键词削弱=medium。"
+      "expected_min": 11.3,
+      "expected_max": 16.0,
+      "llmExpectedMin": 13.5,
+      "llmExpectedMax": 17.4,
+      "notes": "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=6，截断=none，关键词削弱=medium。"
     },
     {
       "label": "程序化低档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200920-XZ-02/reference_low.txt",
-      "expected_min": 7.8,
-      "expected_max": 12.8,
-      "llmExpectedMin": 7.0,
-      "llmExpectedMax": 12.0,
-      "notes": "基于高分答案程序化降档生成；策略=template_analysis_low_2，句数=10，截断=none，关键词削弱=heavy，口语化=是。"
+      "expected_min": 8.3,
+      "expected_max": 13.0,
+      "llmExpectedMin": 8.1,
+      "llmExpectedMax": 13.0,
+      "notes": "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
     }
   ]
 }

@@ -1,0 +1,134 @@
+{
+  "id": "AHKS-20210619-01",
+  "type": "综合分析·群众路线·乡镇岗专用",
+  "province": "安徽",
+  "fullScore": 32.0,
+  "question": "习总书记在山西考察时，去到搬迁户中，坐在炕沿儿上拉家常，让人倍感温暖。有人说，我们要多去老百姓的炕头坐坐，要多走老百姓的地头，谈谈你的看法。",
+  "dimensions": [
+    {
+      "name": "炕头意义",
+      "score": 6.0
+    },
+    {
+      "name": "分析理解",
+      "score": 6.0
+    },
+    {
+      "name": "必须含地头、基层、实情、实际",
+      "score": 6.0
+    },
+    {
+      "name": "必须含人民、群众、民心、冷暖",
+      "score": 4.0
+    },
+    {
+      "name": "必须含鱼水情、距离、信任、密",
+      "score": 4.0
+    },
+    {
+      "name": "岗位适配",
+      "score": 6.0
+    }
+  ],
+  "coreKeywords": [
+    "炕头",
+    "地头",
+    "群众",
+    "民心",
+    "基层"
+  ],
+  "strongKeywords": [
+    "乡镇",
+    "拉家常",
+    "办实事",
+    "接地气",
+    "干群关系"
+  ],
+  "weakKeywords": [],
+  "bonusKeywords": [
+    "坐到一条板凳上",
+    "脚下有泥",
+    "心中有民",
+    "鱼水情深"
+  ],
+  "penaltyKeywords": [
+    "不接地气",
+    "脱离群众",
+    "官腔官调",
+    "无落实"
+  ],
+  "scoringCriteria": [
+    "炕头意义（6分）",
+    "：必须含炕头、家常、民心、倾听、贴近，缺1个扣1分 地头意义（6分）",
+    "：必须含地头、基层、实情、实际、精准，缺1个扣1分 群众立场（6分）",
+    "：必须含人民、群众、民心、冷暖、服务，缺1个扣1分 干群关系（4分）",
+    "：必须含鱼水情、距离、信任、密切，缺1个扣1分 作风建设（4分）",
+    "：必须含务实、作风、反对形式主义、接地气，缺1个扣1分 岗位践行（6分）"
+  ],
+  "deductionRules": [],
+  "sourceDocument": "2020-2025第二批次完全版.docx",
+  "referenceAnswer": "（乡镇岗高分版） 总书记坐炕头、拉家常的画面，是最好的示范、最生动的教材，深刻诠释了以人民为中心的根本立场，对基层干部具有极强的指导意义。 第一，常坐炕头，才能贴近民心、倾听真话。炕头是群众最放松、最实在的地方。坐炕头、拉家常，才能听到真心话、了解真困难、掌握真诉求，真正和群众坐到一条板凳上，拉近心与心的距离。 第二，常走地头，才能掌握实情、办好实事。田间地头是工作第一线。多走地头，才能看清产业发展、粮食生产、环境整治、基础设施的真实情况，让决策更务实、措施更精准、成效更惠民。 第三，炕头连民心，地头显担当。基层干部最大的底气来自群众，最大的能力是服务群众。只有常坐炕头、常走地头，才能做到心中有民、脚下有力、肩上有责。 第四，立足乡镇岗位，躬身践行群众路线。今后我会坚持多进村、多入户、多下田，把群众的小事当大事办，把群众的诉求当家事办，用脚步丈量民情，用实干赢得民心，做一名群众信得过、靠得住、离不开的基层干部。",
+  "tags": [
+    "安徽省考",
+    "2021.6.19",
+    "乡镇岗",
+    "炕头地头",
+    "群众路线",
+    "为民服务"
+  ],
+  "scoreBands": [
+    {
+      "label": "低分/偏弱",
+      "min_score": 0,
+      "max_score": 17.6,
+      "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
+    },
+    {
+      "label": "基本合格",
+      "min_score": 17.7,
+      "max_score": 22.4,
+      "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
+    },
+    {
+      "label": "中高档",
+      "min_score": 22.5,
+      "max_score": 27.2,
+      "description": "内容较完整，逻辑较清晰，接近高分答案。"
+    },
+    {
+      "label": "高分标杆",
+      "min_score": 27.3,
+      "max_score": 32.0,
+      "description": "高分参考答案区间，用于回归验证。"
+    }
+  ],
+  "regressionCases": [
+    {
+      "label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHKS-20210619-01/reference_high.txt",
+      "expected_min": 29.0,
+      "expected_max": 32.0,
+      "llmExpectedMin": 29.0,
+      "llmExpectedMax": 32.0,
+      "notes": "来自原始题库文档的核心采分基准答案。"
+    },
+    {
+      "label": "程序化中档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHKS-20210619-01/reference_mid.txt",
+      "expected_min": 14.5,
+      "expected_max": 19.5,
+      "llmExpectedMin": 15.4,
+      "llmExpectedMax": 20.6,
+      "notes": "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=6，截断=none，关键词削弱=medium。"
+    },
+    {
+      "label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHKS-20210619-01/reference_low.txt",
+      "expected_min": 9.9,
+      "expected_max": 14.9,
+      "llmExpectedMin": 9.8,
+      "llmExpectedMax": 14.9,
+      "notes": "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
+    }
+  ]
+}

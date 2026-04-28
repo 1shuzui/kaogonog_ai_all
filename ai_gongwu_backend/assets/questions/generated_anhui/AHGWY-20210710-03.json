@@ -1,0 +1,113 @@
+{
+  "id": "AHGWY-20210710-03",
+  "type": "自我认知·职位匹配·非乡镇岗",
+  "province": "安徽",
+  "fullScore": 4.0,
+  "question": "给出几个词：“忠诚、诚信、担当、友善、正直、朴实”。请从中选三个词，说说你认为靠谱的人应具有的品质，并说明理由。",
+  "dimensions": [
+    {
+      "name": "品质选择",
+      "score": 4.0
+    }
+  ],
+  "coreKeywords": [
+    "忠诚",
+    "担当",
+    "诚信",
+    "靠谱",
+    "品质"
+  ],
+  "strongKeywords": [
+    "公职人员",
+    "机关岗位",
+    "安徽",
+    "实干",
+    "为民",
+    "政治底色"
+  ],
+  "weakKeywords": [],
+  "bonusKeywords": [
+    "江淮儿女",
+    "一改两为",
+    "国之大者",
+    "岗位匹配",
+    "现代化美好安徽"
+  ],
+  "penaltyKeywords": [],
+  "scoringCriteria": [
+    "品质选择（4分）"
+  ],
+  "deductionRules": [
+    "只选不阐述，或理由空洞无岗位结合：扣6—8分",
+    "无安徽作风、无机关实际，纯个人感悟：扣4—6分",
+    "逻辑混乱、表述口语化：扣2—4分"
+  ],
+  "sourceDocument": "2020-2025第二批次完全版.docx",
+  "referenceAnswer": "（安徽本土·无AI味·全覆盖·无省略） 我选择的三个词是：忠诚、担当、诚信。我认为，靠谱的人，首先是政治上忠诚、工作中担当、为人上诚信，这既是做人做事的基本准则，也是安徽公职人员最应具备的品质。第一，忠诚是靠谱的政治底色。忠诚就是对党忠诚、对人民忠诚、对事业忠诚，始终心怀“国之大者”，始终同党中央保持高度一致，始终把人民放在心中最高位置。对安徽干部而言，忠诚就是坚决贯彻中央及省委决策部署，扎根安徽、服务安徽，在思想上政治上行动上同组织保持高度一致，做政治上的明白人、老实人，这是靠谱的第一标准。第二，担当是靠谱的履职关键。担当就是面对任务不推诿、面对困难不退缩、面对责任不逃避，平常时候看得出来、关键时刻站得出来。在安徽高质量发展、长三角一体化、三地一区建设中，担当就是主动为民办实事、为企优环境，勇于攻坚克难、善于狠抓落实，以实干实绩诠释责任，这是靠谱最直接的体现。第三，诚信是靠谱的立身之本。诚信就是言必信、行必果，对党坦诚、对群众真诚、对同事坦诚，不弄虚作假、不阳奉阴违、不推诿扯皮。江淮儿女历来崇尚朴实诚信，作为公职人员，更要坚守诚信底线，以诚待人、以信立身，赢得群众信任、组织认可，这是靠谱长久的基石。总之，忠诚定方向、担当践使命、诚信守底线，三者兼备，才是组织放心、群众满意、同事认可的真正靠谱之人。",
+  "tags": [
+    "（全覆盖）",
+    "安徽省考",
+    "2021.7.10",
+    "非乡镇岗",
+    "自我认知",
+    "靠谱品质",
+    "忠诚担当诚信",
+    "机关素养",
+    "安徽本土"
+  ],
+  "scoreBands": [
+    {
+      "label": "低分/偏弱",
+      "min_score": 0,
+      "max_score": 2.2,
+      "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
+    },
+    {
+      "label": "基本合格",
+      "min_score": 2.3,
+      "max_score": 2.8,
+      "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
+    },
+    {
+      "label": "中高档",
+      "min_score": 2.9,
+      "max_score": 3.4,
+      "description": "内容较完整，逻辑较清晰，接近高分答案。"
+    },
+    {
+      "label": "高分标杆",
+      "min_score": 3.5,
+      "max_score": 4.0,
+      "description": "高分参考答案区间，用于回归验证。"
+    }
+  ],
+  "regressionCases": [
+    {
+      "label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHGWY-20210710-03/reference_high.txt",
+      "expected_min": 3.4,
+      "expected_max": 4.0,
+      "llmExpectedMin": 3.4,
+      "llmExpectedMax": 4.0,
+      "notes": "来自原始题库文档的核心采分基准答案。"
+    },
+    {
+      "label": "程序化中档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHGWY-20210710-03/reference_mid.txt",
+      "expected_min": 2.7,
+      "expected_max": 2.9,
+      "llmExpectedMin": 3.8,
+      "llmExpectedMax": 3.8,
+      "notes": "基于高分答案程序化压缩生成；策略=leading，句数=11，截断=160，关键词削弱=none。"
+    },
+    {
+      "label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHGWY-20210710-03/reference_low.txt",
+      "expected_min": 0.0,
+      "expected_max": 3.3,
+      "llmExpectedMin": 0.0,
+      "llmExpectedMax": 3.3,
+      "notes": "基于高分答案程序化降档生成；策略=hybrid，句数=3，截断=90，关键词削弱=medium，口语化=是。"
+    }
+  ]
+}

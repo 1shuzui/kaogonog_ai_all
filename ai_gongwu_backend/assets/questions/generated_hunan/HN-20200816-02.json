@@ -6,19 +6,19 @@
   "question": "老年人对智能穿戴设备不太了解，请你从社区公益组织角度设计两个切实可行的活动方案，并就其中一个展开详细论述。（35分）",
   "dimensions": [
     {
-      "name": "适老化设计",
+      "name": "适老化设计（服务原则）",
+      "score": 9.0
+    },
+    {
+      "name": "方案设计",
       "score": 9.0
     },
     {
       "name": "流程执行",
-      "score": 9.0
-    },
-    {
-      "name": "流程执行2",
       "score": 6.0
     },
     {
-      "name": "适老化设计2",
+      "name": "适老化设计（安全保障）",
       "score": 7.0
     },
     {
@@ -125,20 +125,20 @@
     {
       "label": "程序化中档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200816-02/reference_mid.txt",
-      "expected_min": 11.5,
-      "expected_max": 16.5,
-      "llmExpectedMin": 12.3,
-      "llmExpectedMax": 17.7,
-      "notes": "基于高分答案程序化压缩生成；策略=template_organization_mid_1，句数=11，截断=none，关键词削弱=medium。"
+      "expected_min": 10.5,
+      "expected_max": 13.5,
+      "llmExpectedMin": 11.0,
+      "llmExpectedMax": 15.7,
+      "notes": "基于高分答案程序化压缩生成；策略=template_organization_mid_1，句数=7，截断=none，关键词削弱=medium。"
     },
     {
       "label": "程序化低档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200816-02/reference_low.txt",
-      "expected_min": 6.8,
-      "expected_max": 11.8,
-      "llmExpectedMin": 6.8,
-      "llmExpectedMax": 11.8,
-      "notes": "基于高分答案程序化降档生成；策略=template_organization_low_2，句数=13，截断=none，关键词削弱=heavy，口语化=是。"
+      "expected_min": 7.5,
+      "expected_max": 10.5,
+      "llmExpectedMin": 6.5,
+      "llmExpectedMax": 10.5,
+      "notes": "基于高分答案程序化降档生成；策略=template_organization_low_3，句数=5，截断=none，关键词削弱=medium，口语化=是。"
     }
   ]
 }

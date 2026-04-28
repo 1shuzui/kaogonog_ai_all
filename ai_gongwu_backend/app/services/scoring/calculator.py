@@ -137,6 +137,22 @@ RULE_BASED_DIMENSIONS = (
     "语言逻辑与岗位适配",
     "创新思维",
 )
+DIMENSION_ALIAS_HINTS = (
+    (("language", "语言", "表达", "语气", "口语", "逻辑"), ("语言", "表达", "语气", "逻辑", "沟通")),
+    (("attitude", "态度", "认可", "安抚", "疏导", "情绪"), ("态度", "认可", "安抚", "疏导", "情绪", "沟通")),
+    (("analysis", "现象", "问题", "原因", "根源", "症结", "解释", "判断", "偏见", "误解"), ("现象", "问题", "原因", "根源", "症结", "解释", "判断", "偏见", "误解", "指出")),
+    (("measure", "措施", "对策", "执行", "落实", "整改", "补救", "建议", "方案", "跟进"), ("措施", "对策", "执行", "落实", "整改", "补救", "建议", "方案", "跟进")),
+    (("growth", "培养", "成长", "帮带", "反思", "提升"), ("培养", "成长", "帮带", "反思", "提升")),
+    (("innovation", "创新", "亮点", "特色"), ("创新", "亮点", "特色")),
+)
+ENGLISH_DIMENSION_ALIAS_HINTS = {
+    "language": ("语言", "表达", "逻辑"),
+    "attitude": ("态度", "沟通", "语气"),
+    "analysis": ("分析", "问题", "原因", "解释"),
+    "measure": ("措施", "建议", "补救", "整改", "落实"),
+    "innovation": ("创新", "亮点", "特色"),
+    "growth": ("成长", "培养", "反思", "帮带"),
+}
 
 
 def _effective_text_length(text: str) -> int:
@@ -227,6 +243,155 @@ def _normalize_dimension_scores(
         )
 
     return normalized_scores
+
+
+def _normalize_dimension_lookup_key(text: str) -> str:
+    """把维度名压平为便于别名匹配的形式。"""
+
+    normalized = str(text or "").lower().strip()
+    normalized = re.sub(r"[①②③④⑤⑥⑦⑧⑨⑩]", "", normalized)
+    normalized = re.sub(r"^[0-9一二三四五六七八九十]+", "", normalized)
+    normalized = re.sub(r"[()（）【】\[\]{}·•\-_/、，,。:：；;“”\"'` ]+", "", normalized)
+    return normalized
+
+
+def _resolve_dimension_alias(
+    raw_dimension: str,
+    question: QuestionDefinition,
+    *,
+    context_text: str = "",
+) -> str:
+    """尽量把 LLM 返回的泛化维度或英文维度归一到题目真实维度。"""
+
+    raw_dimension = str(raw_dimension or "").strip()
+    if not raw_dimension:
+        return ""
+
+    expected_names = [item.name for item in question.dimensions]
+    if raw_dimension in expected_names:
+        return raw_dimension
+
+    normalized_raw = _normalize_dimension_lookup_key(raw_dimension)
+    candidates: list[tuple[str, str, str, str]] = []
+    for index, dimension in enumerate(question.dimensions):
+        criterion = question.scoringCriteria[index] if index < len(question.scoringCriteria) else ""
+        candidate_text = f"{dimension.name} {criterion}"
+        candidates.append(
+            (
+                dimension.name,
+                candidate_text,
+                _normalize_dimension_lookup_key(dimension.name),
+                _normalize_dimension_lookup_key(candidate_text),
+            )
+        )
+
+    direct_matches = [
+        name
+        for name, _, normalized_name, normalized_context in candidates
+        if normalized_raw and normalized_raw in {normalized_name, normalized_context}
+    ]
+    if len(direct_matches) == 1:
+        return direct_matches[0]
+
+    overlap_matches = [
+        name
+        for name, _, normalized_name, normalized_context in candidates
+        if normalized_raw
+        and (
+            normalized_raw in normalized_name
+            or normalized_raw in normalized_context
+            or normalized_name in normalized_raw
+        )
+    ]
+    if len(overlap_matches) == 1:
+        return overlap_matches[0]
+
+    normalized_context_text = _normalize_dimension_lookup_key(f"{raw_dimension} {context_text}")
+    best_name = ""
+    best_score = 0
+    tied = False
+
+    for name, _, normalized_name, normalized_candidate_text in candidates:
+        score = 0
+        if normalized_raw and normalized_raw in normalized_name:
+            score += 4
+        if normalized_raw and normalized_raw in normalized_candidate_text:
+            score += 2
+        for token in (
+            "语言",
+            "表达",
+            "语气",
+            "口语",
+            "逻辑",
+            "沟通",
+            "态度",
+            "问题",
+            "原因",
+            "现象",
+            "解释",
+            "分析",
+            "措施",
+            "建议",
+            "补救",
+            "整改",
+            "落实",
+            "跟进",
+            "成长",
+            "培养",
+            "反思",
+            "帮带",
+            "创新",
+            "亮点",
+            "特色",
+        ):
+            if token in normalized_context_text and token in normalized_candidate_text:
+                score += 1
+        if normalized_raw in ENGLISH_DIMENSION_ALIAS_HINTS and any(
+            token in normalized_candidate_text
+            for token in ENGLISH_DIMENSION_ALIAS_HINTS[normalized_raw]
+        ):
+            score += 4
+        for alias_tokens, target_tokens in DIMENSION_ALIAS_HINTS:
+            if any(token in normalized_context_text for token in alias_tokens) and any(
+                token in normalized_candidate_text for token in target_tokens
+            ):
+                score += 3
+        if raw_dimension in {"通用", "综合", "general", "overall"}:
+            if any(
+                token in normalized_context_text
+                for token in ("语言", "表达", "语气", "口语", "逻辑", "顺")
+            ) and any(
+                token in normalized_candidate_text
+                for token in ("语言", "表达", "语气", "逻辑", "沟通")
+            ):
+                score += 2
+            if any(
+                token in normalized_context_text
+                for token in ("措施", "建议", "补救", "跟进", "方案", "落实", "整改")
+            ) and any(
+                token in normalized_candidate_text
+                for token in ("措施", "建议", "补救", "跟进", "方案", "落实", "整改")
+            ):
+                score += 2
+            if any(
+                token in normalized_context_text
+                for token in ("原因", "问题", "现象", "偏见", "误解", "解释", "分析")
+            ) and any(
+                token in normalized_candidate_text
+                for token in ("原因", "问题", "现象", "偏见", "误解", "解释", "分析")
+            ):
+                score += 2
+
+        if score > best_score:
+            best_name = name
+            best_score = score
+            tied = False
+        elif score == best_score and score > 0:
+            tied = True
+
+    if best_score > 0 and not tied:
+        return best_name
+    return ""
 
 
 def _deduplicate_evidence_items(items: Sequence[EvidenceItem]) -> list[EvidenceItem]:
@@ -1022,11 +1187,21 @@ def prepare_evidence_packet(
             validation_notes.append(
                 f"第一阶段证据未逐字命中，已自动对齐为原文片段: {resolved_evidence_text}"
             )
-        dimension_hint = item.dimension_hint if item.dimension_hint in expected_dimensions else ""
-        if item.dimension_hint and not dimension_hint:
-            validation_notes.append(
-                f"第一阶段证据使用了未知维度 [{item.dimension_hint}]，已清空维度提示。"
+        dimension_hint = ""
+        if item.dimension_hint:
+            dimension_hint = _resolve_dimension_alias(
+                item.dimension_hint,
+                question,
+                context_text=f"{item.claim} {resolved_evidence_text}",
             )
+            if dimension_hint and dimension_hint != item.dimension_hint:
+                validation_notes.append(
+                    f"第一阶段证据维度 [{item.dimension_hint}] 已归一到 [{dimension_hint}]。"
+                )
+            elif not dimension_hint and item.dimension_hint not in expected_dimensions:
+                validation_notes.append(
+                    f"第一阶段证据使用了未知维度 [{item.dimension_hint}]，已清空维度提示。"
+                )
         evidence_items.append(
             EvidenceItem(
                 id="",
@@ -1063,12 +1238,13 @@ def prepare_evidence_packet(
 def _normalize_reason_items(
     raw_items: Sequence[Any],
     evidence_map: Dict[str, EvidenceItem],
-    expected_dimensions: set[str],
+    question: QuestionDefinition,
     validation_notes: list[str],
     field_name: str,
 ) -> list[ReasonedScoreItem]:
     normalized: list[ReasonedScoreItem] = []
     seen = set()
+    expected_dimensions = {item.name for item in question.dimensions}
 
     for raw_item in raw_items or []:
         try:
@@ -1081,12 +1257,6 @@ def _normalize_reason_items(
         if not reason:
             validation_notes.append(f"{field_name} 中存在空理由项，已忽略。")
             continue
-
-        if item.dimension and item.dimension not in expected_dimensions:
-            validation_notes.append(
-                f"{field_name} 使用了未知维度 [{item.dimension}]，已清空维度。"
-            )
-            item.dimension = ""
 
         evidence_ids = []
         evidence_texts = []
@@ -1109,14 +1279,32 @@ def _normalize_reason_items(
             )
             continue
 
-        key = (reason, item.dimension, tuple(evidence_ids))
+        resolved_dimension = item.dimension.strip()
+        if resolved_dimension and resolved_dimension not in expected_dimensions:
+            alias_dimension = _resolve_dimension_alias(
+                resolved_dimension,
+                question,
+                context_text=f"{reason} {' '.join(evidence_texts)}",
+            )
+            if alias_dimension:
+                validation_notes.append(
+                    f"{field_name} 中的维度 [{resolved_dimension}] 已归一到 [{alias_dimension}]。"
+                )
+                resolved_dimension = alias_dimension
+            else:
+                validation_notes.append(
+                    f"{field_name} 使用了未知维度 [{resolved_dimension}]，已清空维度。"
+                )
+                resolved_dimension = ""
+
+        key = (reason, resolved_dimension, tuple(evidence_ids))
         if key in seen:
             continue
         seen.add(key)
         normalized.append(
             ReasonedScoreItem(
                 reason=reason,
-                dimension=item.dimension,
+                dimension=resolved_dimension,
                 evidence_ids=evidence_ids,
                 evidence_texts=evidence_texts,
             )
@@ -1230,7 +1418,6 @@ def apply_post_processing(
     parsed_result = _parse_raw_result(raw_llm_result)
     validation_notes = list(extra_validation_notes or [])
     evidence_map = {item.id: item for item in evidence_packet.evidence_items}
-    expected_dimensions = {item.name for item in question.dimensions}
 
     try:
         scoring_payload = StageTwoScoringPayload.model_validate(parsed_result)
@@ -1247,14 +1434,14 @@ def apply_post_processing(
     deduction_items = _normalize_reason_items(
         raw_items=scoring_payload.deduction_items,
         evidence_map=evidence_map,
-        expected_dimensions=expected_dimensions,
+        question=question,
         validation_notes=validation_notes,
         field_name="deduction_items",
     )
     bonus_items = _normalize_reason_items(
         raw_items=scoring_payload.bonus_items,
         evidence_map=evidence_map,
-        expected_dimensions=expected_dimensions,
+        question=question,
         validation_notes=validation_notes,
         field_name="bonus_items",
     )

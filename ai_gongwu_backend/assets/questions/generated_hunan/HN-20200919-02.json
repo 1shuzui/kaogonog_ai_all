@@ -10,15 +10,15 @@
       "score": 7.7
     },
     {
-      "name": "沟通化解",
+      "name": "流程执行",
       "score": 6.9
     },
     {
-      "name": "沟通化解2",
+      "name": "沟通化解",
       "score": 6.0
     },
     {
-      "name": "整体契合度",
+      "name": "方案设计",
       "score": 6.0
     },
     {
@@ -119,18 +119,18 @@
       "label": "程序化中档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200919-02/reference_mid.txt",
       "expected_min": 6.4,
-      "expected_max": 11.3,
-      "llmExpectedMin": 8.8,
-      "llmExpectedMax": 12.2,
-      "notes": "基于高分答案程序化压缩生成；策略=template_interpersonal_mid_1，句数=3，截断=none，关键词削弱=medium。"
+      "expected_max": 9.4,
+      "llmExpectedMin": 6.9,
+      "llmExpectedMax": 11.3,
+      "notes": "基于高分答案程序化压缩生成；策略=template_interpersonal_mid_2，句数=4，截断=none，关键词削弱=medium。"
     },
     {
       "label": "程序化低档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200919-02/reference_low.txt",
       "expected_min": 3.4,
-      "expected_max": 8.3,
-      "llmExpectedMin": 2.5,
-      "llmExpectedMax": 8.3,
+      "expected_max": 6.4,
+      "llmExpectedMin": 1.6,
+      "llmExpectedMax": 6.4,
       "notes": "基于高分答案程序化降档生成；策略=template_interpersonal_low_2，句数=2，截断=none，关键词削弱=heavy，口语化=是。"
     }
   ]

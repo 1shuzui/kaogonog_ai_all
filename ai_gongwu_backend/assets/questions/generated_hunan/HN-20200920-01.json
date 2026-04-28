@@ -1,6 +1,6 @@
 {
   "id": "HN-20200920-01",
-  "type": "串词表达题（价值引领+职业认知+语言表达类，核心适配国家公务员岗位）",
+  "type": "串词表达·价值引领+职业认知+公职适配类",
   "province": "湖南",
   "fullScore": 35.0,
   "question": "请从下列七组词语：\"青年、奋斗、幸福、担当、时代、理想、人生\"中任意选择三个词语串成一段话。（35分）",
@@ -10,11 +10,11 @@
       "score": 10.0
     },
     {
-      "name": "词语运用2",
+      "name": "价值导向",
       "score": 9.0
     },
     {
-      "name": "岗位适配",
+      "name": "省情与岗位适配",
       "score": 8.0
     },
     {
@@ -53,11 +53,11 @@
     "内容空洞"
   ],
   "scoringCriteria": [
-    "词语运用（10分）",
-    "：所选三个词语自然融入，无生硬堆砌，逻辑连贯，形成完整语义； 价值导向（9分）",
-    "：内容正向积极，贴合国家公务员岗位追求，体现青年公职人员的担当与理想； 省情与岗位适配（8分）",
-    "：融入湖南发展实际或公职人员履职场景，内容接地气、有温度； 语言表达（6分）",
-    "：流畅优美、生动自然，有感染力，符合公职人员表达习惯； 创新思维（2分）"
+    "词语运用（10分）：所选三个词语自然融入，无生硬堆砌，逻辑连贯，形成完整语义",
+    "价值导向（9分）：内容正向积极，贴合国家公务员岗位追求，体现青年公职人员的担当与理想",
+    "省情与岗位适配（8分）：融入湖南发展实际或公职人员履职场景，内容接地气、有温度",
+    "语言表达（6分）：流畅优美、生动自然，有感染力，符合公职人员表达习惯",
+    "创新思维（2分）：出现案例融入、场景化表达等特色方式，表述有个性、有亮点"
   ],
   "deductionRules": [
     "词语堆砌/逻辑混乱：词语使用牵强、无法形成完整语义，扣3-4分",
@@ -115,20 +115,20 @@
     {
       "label": "程序化中档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200920-01/reference_mid.txt",
-      "expected_min": 9.6,
-      "expected_max": 14.6,
-      "llmExpectedMin": 9.9,
-      "llmExpectedMax": 15.6,
-      "notes": "基于高分答案程序化压缩生成；策略=template_scene_mid_2，句数=3，截断=none，关键词削弱=medium。"
+      "expected_min": 10.4,
+      "expected_max": 15.4,
+      "llmExpectedMin": 11.1,
+      "llmExpectedMax": 16.4,
+      "notes": "基于高分答案程序化压缩生成；策略=template_scene_mid_1，句数=6，截断=none，关键词削弱=medium。"
     },
     {
       "label": "程序化低档参考答案",
       "sample_path": "assets/regression_samples/generated_hunan/HN-20200920-01/reference_low.txt",
-      "expected_min": 4.4,
-      "expected_max": 9.4,
-      "llmExpectedMin": 3.6,
-      "llmExpectedMax": 9.4,
-      "notes": "基于高分答案程序化降档生成；策略=template_scene_low_3，句数=4，截断=none，关键词削弱=heavy，口语化=是。"
+      "expected_min": 5.6,
+      "expected_max": 10.6,
+      "llmExpectedMin": 4.8,
+      "llmExpectedMax": 10.6,
+      "notes": "基于高分答案程序化降档生成；策略=template_scene_low_3，句数=5，截断=none，关键词削弱=medium，口语化=是。"
     }
   ]
 }

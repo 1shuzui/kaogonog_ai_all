@@ -1,0 +1,140 @@
+{
+  "id": "AHSK-20220808-03",
+  "type": "人际沟通·同事关系·心态调适",
+  "province": "安徽",
+  "fullScore": 23.0,
+  "question": "小赵和小李是两位同时进单位的新同事，小赵工作成绩突出，因而骄傲自满；小李有几次工作完成得不好，因而不愿意承担重要工作。你作为他们的同事，你会分别给他们提什么建议？",
+  "dimensions": [
+    {
+      "name": "①对小赵建议",
+      "score": 8.0
+    },
+    {
+      "name": "②对小李建议",
+      "score": 9.0
+    },
+    {
+      "name": "③同事立场与团队意识",
+      "score": 4.0
+    },
+    {
+      "name": "④语言逻辑",
+      "score": 2.0
+    }
+  ],
+  "coreKeywords": [
+    "小赵",
+    "小李",
+    "骄傲",
+    "信心",
+    "担当",
+    "建议",
+    "心态",
+    "沟通",
+    "成长"
+  ],
+  "strongKeywords": [
+    "同事",
+    "新干部",
+    "团队",
+    "团结",
+    "提升",
+    "安徽",
+    "机关工作"
+  ],
+  "weakKeywords": [],
+  "bonusKeywords": [
+    "戒骄戒躁",
+    "谦虚谨慎",
+    "树立信心",
+    "勇于担当",
+    "共同进步"
+  ],
+  "penaltyKeywords": [
+    "笼统作答",
+    "建议空洞",
+    "态度不当",
+    "逻辑混乱"
+  ],
+  "scoringCriteria": [
+    "①对小赵建议（8分）：戒骄戒躁、谦虚学习、团结同事、持续进步",
+    "②对小李建议（9分）：树立信心、正视不足、勇于担当、主动提升",
+    "③同事立场与团队意识（4分）：态度真诚、互帮互助、团结协作",
+    "④语言逻辑（2分）：规范得体、条理清晰。"
+  ],
+  "deductionRules": [
+    "①未分别提出建议、笼统作答，扣6—9分",
+    "②建议空洞、不具体、无操作性，扣5—8分",
+    "③缺乏团队意识、态度生硬、不符合沟通场景，扣3—4分",
+    "④逻辑混乱、语言不当，扣2分"
+  ],
+  "sourceDocument": "2020-2025第二批次完全版.docx",
+  "referenceAnswer": "作为同事，我会坚持真诚友善、互帮互助、理性引导的原则，分别对小赵和小李提出务实建议，帮助他们调整心态、提升能力、共同进步。对小赵的建议： 第一，戒骄戒躁、谦虚低调。成绩属于过去，未来仍需努力，不能因一时成绩骄傲自满，要保持清醒、保持初心。 第二，注重学习、持续提升。正视自身不足，主动学习他人长处，不断补齐短板、提升能力。 第三，团结同事、共同进步。主动帮助身边同事，加强沟通协作，共同营造积极向上的团队氛围。 对小李的建议：第一，树立信心、正视挫折。偶尔失误不可怕，不代表能力不足，要重拾信心、振作精神。 第二，正视不足、主动改进。认真总结经验教训，查找问题根源，加强学习、提升能力。第三，勇于担当、积极作为。主动承担工作任务，在实践中锻炼成长，不断提升履职能力。作为同事，我会主动关心、积极帮助、互相支持，与大家一起共同成长、共同进步，共同干好各项工作。",
+  "tags": [
+    "安徽",
+    "省考",
+    "面试",
+    "人际沟通",
+    "同事关系",
+    "心态调适",
+    "骄傲自满",
+    "信心不足",
+    "青年干部",
+    "团队协作"
+  ],
+  "scoreBands": [
+    {
+      "label": "低分/偏弱",
+      "min_score": 0,
+      "max_score": 12.7,
+      "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
+    },
+    {
+      "label": "基本合格",
+      "min_score": 12.8,
+      "max_score": 16.1,
+      "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
+    },
+    {
+      "label": "中高档",
+      "min_score": 16.2,
+      "max_score": 19.6,
+      "description": "内容较完整，逻辑较清晰，接近高分答案。"
+    },
+    {
+      "label": "高分标杆",
+      "min_score": 19.7,
+      "max_score": 23.0,
+      "description": "高分参考答案区间，用于回归验证。"
+    }
+  ],
+  "regressionCases": [
+    {
+      "label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHSK-20220808-03/reference_high.txt",
+      "expected_min": 20.0,
+      "expected_max": 23.0,
+      "llmExpectedMin": 20.0,
+      "llmExpectedMax": 23.0,
+      "notes": "来自原始题库文档的核心采分基准答案。"
+    },
+    {
+      "label": "程序化中档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHSK-20220808-03/reference_mid.txt",
+      "expected_min": 5.5,
+      "expected_max": 10.4,
+      "llmExpectedMin": 7.9,
+      "llmExpectedMax": 11.4,
+      "notes": "基于高分答案程序化压缩生成；策略=template_interpersonal_mid_2，句数=4，截断=none，关键词削弱=medium。"
+    },
+    {
+      "label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHSK-20220808-03/reference_low.txt",
+      "expected_min": 2.5,
+      "expected_max": 7.4,
+      "llmExpectedMin": 1.5,
+      "llmExpectedMax": 7.4,
+      "notes": "基于高分答案程序化降档生成；策略=template_interpersonal_low_2，句数=2，截断=none，关键词削弱=heavy，口语化=是。"
+    }
+  ]
+}

@@ -1,0 +1,135 @@
+{
+  "id": "AHKS-20210619-03",
+  "type": "现场模拟·群众劝说·乡镇岗专用",
+  "province": "安徽",
+  "fullScore": 32.0,
+  "question": "村里部分闲置办公场所，被村民用来娱乐、储物；现在计划改建成特色农产品加工室，部分村民反对，你作为负责人如何劝说？",
+  "dimensions": [
+    {
+      "name": "共情理解",
+      "score": 6.0
+    },
+    {
+      "name": "分析理解（方向1）",
+      "score": 7.0
+    },
+    {
+      "name": "必须含加工室、特色、农产品、",
+      "score": 6.0
+    },
+    {
+      "name": "必须含就业、收入、致富、集体",
+      "score": 6.0
+    },
+    {
+      "name": "分析理解（方向2）",
+      "score": 3.0
+    },
+    {
+      "name": "必须含大账、长远、发展、好处",
+      "score": 4.0
+    }
+  ],
+  "coreKeywords": [
+    "劝说",
+    "改建",
+    "加工室",
+    "村民",
+    "反对"
+  ],
+  "strongKeywords": [
+    "乡镇",
+    "增收",
+    "就业",
+    "顾虑",
+    "支持",
+    "产业"
+  ],
+  "weakKeywords": [],
+  "bonusKeywords": [
+    "掏心窝子",
+    "家门口就业",
+    "算大账",
+    "富民工程题型信息：现场模拟·群众劝说·乡镇岗专用"
+  ],
+  "penaltyKeywords": [
+    "官腔重",
+    "不讲实惠",
+    "不解决顾虑",
+    "态度生硬"
+  ],
+  "scoringCriteria": [
+    "共情理解（6分）",
+    "：必须含理解、习惯、方便、心情、接受，缺1个扣1分 项目意义（7分）",
+    "：必须含加工室、特色、农产品、增收、增值，缺1个扣1分 群众利益（6分）",
+    "：必须含就业、收入、致富、集体、全村，缺1个扣1分 顾虑解决（6分）",
+    "：必须含活动室、储物、安排、保障、不影响，缺1个扣1分 引导算账（3分）",
+    "：必须含大账、长远、发展、好处、实惠，缺1个扣1分 呼吁支持（4分）"
+  ],
+  "deductionRules": [],
+  "sourceDocument": "2020-2025第二批次完全版.docx",
+  "referenceAnswer": "（乡镇岗高分劝说版） 各位乡亲、父老兄弟，大家先静一静，听我说几句掏心窝子的话！我特别理解大家的心情！这些闲置场所，大家平时娱乐、放东西，用习惯了、也方便，现在要改建，大家一时不接受、有想法，我完全理解！但是乡亲们，咱们改建特色农产品加工室，真的是为了全村、为了大家、为了咱们以后能多增收、多赚钱！咱们村有好产品，但卖不上价，就是因为缺加工、缺包装、缺品牌。建加工室，咱们的果蔬、粮油、土特产，就地加工、就地增值，大家能家门口就业、多一份收入，村集体也能增收，反哺村里修路、装灯、搞福利，这是一举多得的大好事！大家担心娱乐、储物没地方，这个我们早就考虑了！村里会另外协调专门的活动室、储物间，保证大家娱乐有去处、储物有地方，绝不影响大家生活！乡亲们，闲置场所换产业、换增收、换发展，眼前一时不便，长远是大利！咱们要算大账、算长远账，不要算小账、眼前账。这是惠及家家户户的富民工程，希望大家多理解、多支持、多帮忙，咱们一起把好事办好，让咱们村越来越富、越来越好！",
+  "tags": [
+    "安徽省考",
+    "2021.6.19",
+    "乡镇岗",
+    "闲置场所改建",
+    "劝说村民",
+    "现场模拟"
+  ],
+  "scoreBands": [
+    {
+      "label": "低分/偏弱",
+      "min_score": 0,
+      "max_score": 17.6,
+      "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
+    },
+    {
+      "label": "基本合格",
+      "min_score": 17.7,
+      "max_score": 22.4,
+      "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
+    },
+    {
+      "label": "中高档",
+      "min_score": 22.5,
+      "max_score": 27.2,
+      "description": "内容较完整，逻辑较清晰，接近高分答案。"
+    },
+    {
+      "label": "高分标杆",
+      "min_score": 27.3,
+      "max_score": 32.0,
+      "description": "高分参考答案区间，用于回归验证。"
+    }
+  ],
+  "regressionCases": [
+    {
+      "label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHKS-20210619-03/reference_high.txt",
+      "expected_min": 29.0,
+      "expected_max": 32.0,
+      "llmExpectedMin": 29.0,
+      "llmExpectedMax": 32.0,
+      "notes": "来自原始题库文档的核心采分基准答案。"
+    },
+    {
+      "label": "程序化中档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHKS-20210619-03/reference_mid.txt",
+      "expected_min": 13.7,
+      "expected_max": 16.7,
+      "llmExpectedMin": 14.2,
+      "llmExpectedMax": 18.6,
+      "notes": "基于高分答案程序化压缩生成；策略=template_scene_mid_1，句数=7，截断=none，关键词削弱=medium。"
+    },
+    {
+      "label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHKS-20210619-03/reference_low.txt",
+      "expected_min": 10.7,
+      "expected_max": 13.7,
+      "llmExpectedMin": 8.9,
+      "llmExpectedMax": 13.7,
+      "notes": "基于高分答案程序化降档生成；策略=template_scene_low_3，句数=7，截断=none，关键词削弱=medium，口语化=是。"
+    }
+  ]
+}

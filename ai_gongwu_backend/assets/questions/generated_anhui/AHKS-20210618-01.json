@@ -1,0 +1,134 @@
+{
+  "id": "AHKS-20210618-01",
+  "type": "综合分析·党史学习·乡镇岗专用",
+  "province": "安徽",
+  "fullScore": 32.0,
+  "question": "习总书记曾说过：“历史是最好的教科书，也是最好的清醒剂。”结合党史学习教育，谈谈你的看法。",
+  "dimensions": [
+    {
+      "name": "教科书理解",
+      "score": 5.0
+    },
+    {
+      "name": "分析理解（方向1）",
+      "score": 5.0
+    },
+    {
+      "name": "分析理解（方向2）",
+      "score": 6.0
+    },
+    {
+      "name": "必须含明理、增信、崇德、力行",
+      "score": 7.0
+    },
+    {
+      "name": "岗位适配",
+      "score": 5.0
+    },
+    {
+      "name": "必须含乡镇、乡村振兴、治理、",
+      "score": 4.0
+    }
+  ],
+  "coreKeywords": [
+    "教科书",
+    "清醒剂",
+    "党史",
+    "学习",
+    "为民"
+  ],
+  "strongKeywords": [
+    "基层",
+    "乡镇",
+    "办实事",
+    "实干",
+    "乡村振兴"
+  ],
+  "weakKeywords": [],
+  "bonusKeywords": [
+    "学史力行",
+    "我为群众办实事",
+    "田间地头",
+    "扎根基层"
+  ],
+  "penaltyKeywords": [
+    "不接地气",
+    "脱离基层",
+    "只谈理论不落实"
+  ],
+  "scoringCriteria": [
+    "教科书理解（5分）",
+    "：必须含历史、党史、经验、传承、信念，缺1个扣1分 清醒剂理解（5分）",
+    "：必须含清醒、底线、初心、使命、自律，缺1个扣1分 党史学习意义（6分）",
+    "：必须含明理、增信、崇德、力行、方向，缺1个扣1分 为民办实事（7分）",
+    "：必须含群众、基层、民生、解忧、服务，缺1个扣1分 乡镇岗位结合（5分）",
+    "：必须含乡镇、乡村振兴、治理、实干、扎根，缺1个扣1分 践行表态（4分）"
+  ],
+  "deductionRules": [],
+  "sourceDocument": "2020-2025第二批次完全版.docx",
+  "referenceAnswer": "（乡镇岗高分版） 总书记这句话深刻指出了学史明理、学史增信、学史崇德、学史力行的重要意义，对基层干部具有极强的指导意义。 第一，历史是教科书，让我们知来路、守初心。百年党史是一部奋斗史、为民史、探索史，告诉我们我们从哪里来、要到哪里去，让我们坚定信仰、站稳立场、传承红色基因。 第二，历史是清醒剂，让我们明得失、守底线。学史能够让我们时刻保持清醒，不骄不躁、不迷方向、不碰红线，始终做到忠诚、干净、担当。 第三，学习党史，最终要落到为民办实事。作为乡镇干部，学习党史不能停在嘴上、写在纸上，而是要走进田间地头、走进群众家中，解决群众急难愁盼，把好事办实、实事办好。 第四，立足乡镇岗位，以实干践行使命。把党史学习同乡村振兴、基层治理、民生保障、矛盾化解结合起来，以“我为群众办实事”体现学习成效，做一名组织放心、群众满意的基层干部。",
+  "tags": [
+    "安徽省考",
+    "2021.6.18",
+    "乡镇岗",
+    "党史学习",
+    "教科书",
+    "清醒剂",
+    "综合分析"
+  ],
+  "scoreBands": [
+    {
+      "label": "低分/偏弱",
+      "min_score": 0,
+      "max_score": 17.6,
+      "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
+    },
+    {
+      "label": "基本合格",
+      "min_score": 17.7,
+      "max_score": 22.4,
+      "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
+    },
+    {
+      "label": "中高档",
+      "min_score": 22.5,
+      "max_score": 27.2,
+      "description": "内容较完整，逻辑较清晰，接近高分答案。"
+    },
+    {
+      "label": "高分标杆",
+      "min_score": 27.3,
+      "max_score": 32.0,
+      "description": "高分参考答案区间，用于回归验证。"
+    }
+  ],
+  "regressionCases": [
+    {
+      "label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHKS-20210618-01/reference_high.txt",
+      "expected_min": 29.0,
+      "expected_max": 32.0,
+      "llmExpectedMin": 29.0,
+      "llmExpectedMax": 32.0,
+      "notes": "来自原始题库文档的核心采分基准答案。"
+    },
+    {
+      "label": "程序化中档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHKS-20210618-01/reference_mid.txt",
+      "expected_min": 12.5,
+      "expected_max": 17.5,
+      "llmExpectedMin": 15.0,
+      "llmExpectedMax": 18.6,
+      "notes": "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=6，截断=none，关键词削弱=medium。"
+    },
+    {
+      "label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHKS-20210618-01/reference_low.txt",
+      "expected_min": 9.5,
+      "expected_max": 14.5,
+      "llmExpectedMin": 9.4,
+      "llmExpectedMax": 14.5,
+      "notes": "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
+    }
+  ]
+}

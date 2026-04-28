@@ -11,7 +11,10 @@ import logging
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from app.utils.encoding import ensure_utf8_stdio
 
+
+ensure_utf8_stdio()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -71,7 +74,7 @@ class Settings(BaseSettings):
     # =========================
     # 支持的媒体格式
     # =========================
-    SUPPORTED_VIDEO_EXTENSIONS: tuple[str, ...] = (".mp4", ".avi", ".mov", ".mkv", ".webm")
+    SUPPORTED_VIDEO_EXTENSIONS: tuple[str, ...] = (".mp4", ".avi", ".mov", ".mkv")
     SUPPORTED_AUDIO_EXTENSIONS: tuple[str, ...] = (".mp3", ".wav", ".m4a")
 
     # 读取 .env 文件。

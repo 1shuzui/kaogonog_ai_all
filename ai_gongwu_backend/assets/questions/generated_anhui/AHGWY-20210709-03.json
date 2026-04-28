@@ -1,0 +1,131 @@
+{
+  "id": "AHGWY-20210709-03",
+  "type": "应急应变·舆情处置·非乡镇岗",
+  "province": "安徽",
+  "fullScore": 16.0,
+  "question": "你单位网站发布的一则消息中有错别字，这个消息被其他网站转载了。有群众打电话咨询，上级主管领导也打电话询问情况。领导让你去处理此事,你怎么办?",
+  "dimensions": [
+    {
+      "name": "快速纠错",
+      "score": 4.0
+    },
+    {
+      "name": "、回应群众",
+      "score": 3.0
+    },
+    {
+      "name": "、汇报上级",
+      "score": 3.0
+    },
+    {
+      "name": "、自查反思",
+      "score": 3.0
+    },
+    {
+      "name": "流程执行",
+      "score": 3.0
+    }
+  ],
+  "coreKeywords": [
+    "错别字",
+    "更正",
+    "转载",
+    "群众",
+    "上级",
+    "处置"
+  ],
+  "strongKeywords": [
+    "政务信息",
+    "三审三校",
+    "审核",
+    "舆情",
+    "规范"
+  ],
+  "weakKeywords": [],
+  "bonusKeywords": [
+    "源头管控",
+    "双向回应",
+    "闭环处置",
+    "零差错题型信息：应急应变·舆情处置·非乡镇岗"
+  ],
+  "penaltyKeywords": [],
+  "scoringCriteria": [
+    "快速纠错（4分）",
+    "、回应群众（3分）",
+    "、汇报上级（3分）",
+    "、自查反思（3分）",
+    "、长效机制（3分）"
+  ],
+  "deductionRules": [
+    "处置迟缓、不控源头：扣3—4分",
+    "-不回应群众、态度生硬：扣2—3分",
+    "-隐瞒不报、不落实上级要求：扣2—3分",
+    "-无长效机制、屡犯不改：扣2—3分"
+  ],
+  "sourceDocument": "2020-2025第二批次完全版.docx",
+  "referenceAnswer": "（安徽政务实务·无AI味） 面对政务信息错误、转载扩散、群众咨询、上级过问，我会快速反应、规范处置、及时回应、全面整改，维护单位形象与政务公信力。 第一，立即更正错误、管控源头。第一时间修改本网站错误内容，迅速联系各转载平台，说明情况请求立即更正或撤稿，坚决防止影响扩大。 第二，耐心回应群众咨询。对来电群众诚恳致歉，说明错误情况与整改措施，耐心解释、消除疑虑，体现政务服务温度。 第三，如实向上级领导汇报。第一时间向上级报告事件经过、错误原因、处置措施、整改进展，不隐瞒、不拖延，落实上级指示。 第四，全面自查、深刻反思。查找审核、校对、发布环节漏洞，明确是单人审核、疏忽大意导致，认真吸取教训。 第五，健全长效机制、杜绝再犯。严格落实政务信息三审三校制度，实行双人校对、责任到人、审核留痕，强化业务规范，确保信息发布零差错。 第六，及时向本单位领导汇报处置全过程，提出完善建议，推动工作规范化。",
+  "tags": [
+    "安徽省考",
+    "2021.7.9",
+    "非乡镇岗",
+    "应急应变",
+    "网站错别字",
+    "舆情处置",
+    "政务规范"
+  ],
+  "scoreBands": [
+    {
+      "label": "低分/偏弱",
+      "min_score": 0,
+      "max_score": 8.8,
+      "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
+    },
+    {
+      "label": "基本合格",
+      "min_score": 8.9,
+      "max_score": 11.2,
+      "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
+    },
+    {
+      "label": "中高档",
+      "min_score": 11.3,
+      "max_score": 13.6,
+      "description": "内容较完整，逻辑较清晰，接近高分答案。"
+    },
+    {
+      "label": "高分标杆",
+      "min_score": 13.7,
+      "max_score": 16.0,
+      "description": "高分参考答案区间，用于回归验证。"
+    }
+  ],
+  "regressionCases": [
+    {
+      "label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHGWY-20210709-03/reference_high.txt",
+      "expected_min": 13.6,
+      "expected_max": 16.0,
+      "llmExpectedMin": 13.6,
+      "llmExpectedMax": 16.0,
+      "notes": "来自原始题库文档的核心采分基准答案。"
+    },
+    {
+      "label": "程序化中档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHGWY-20210709-03/reference_mid.txt",
+      "expected_min": 9.5,
+      "expected_max": 13.1,
+      "llmExpectedMin": 9.6,
+      "llmExpectedMax": 13.1,
+      "notes": "基于高分答案程序化压缩生成；策略=hybrid，句数=10，截断=160，关键词削弱=medium。"
+    },
+    {
+      "label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_anhui/AHGWY-20210709-03/reference_low.txt",
+      "expected_min": 4.1,
+      "expected_max": 9.1,
+      "llmExpectedMin": 3.8,
+      "llmExpectedMax": 9.1,
+      "notes": "基于高分答案程序化降档生成；策略=spread，句数=6，截断=90，关键词削弱=heavy，口语化=否。"
+    }
+  ]
+}
