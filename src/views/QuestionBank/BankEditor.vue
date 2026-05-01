@@ -10,10 +10,10 @@
 
       <a-row :gutter="12">
         <a-col :span="12">
-          <a-form-item label="所属维度">
-            <a-select v-model:value="form.dimension" placeholder="选择维度">
-              <a-select-option v-for="d in DIMENSIONS" :key="d.key" :value="d.key">
-                {{ d.name }}
+          <a-form-item label="题目分类">
+            <a-select v-model:value="form.dimension" placeholder="选择题目分类">
+              <a-select-option v-for="item in questionCategoryOptions" :key="item.key" :value="item.key">
+                {{ item.name }}
               </a-select-option>
             </a-select>
           </a-form-item>
@@ -91,7 +91,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import { useQuestionBankStore } from '@/stores/questionBank'
 import { getQuestionById } from '@/api/questionBank'
-import { DIMENSIONS, PROVINCES } from '@/utils/constants'
+import { PROVINCES } from '@/utils/constants'
 import { message } from 'ant-design-vue'
 
 const route = useRoute()
@@ -100,6 +100,14 @@ const bankStore = useQuestionBankStore()
 
 const isEdit = !!route.params.id
 const saving = ref(false)
+const questionCategoryOptions = [
+  { key: 'analysis', name: '综合分析' },
+  { key: 'practical', name: '组织管理' },
+  { key: 'emergency', name: '应急应变' },
+  { key: 'logic', name: '人际沟通' },
+  { key: 'expression', name: '现场模拟' },
+  { key: 'legal', name: '职业认知' }
+]
 
 const form = reactive({
   stem: '',

@@ -2,8 +2,27 @@ import { defineStore } from 'pinia'
 import { EXAM_STATUS } from '@/utils/constants'
 import { startExam, uploadRecording } from '@/api/exam'
 import { transcribeAudio, evaluateAnswer } from '@/api/scoring'
+import {
+  getScoringUnavailableMessage,
+  isQuestionIdScoringSupported,
+  normalizeScoringErrorMessage
+} from '@/utils/scoringSupport'
 
 const answerProcessingTasks = new Map()
+
+function assertQuestionScoringSupported(questionId) {
+  if (isQuestionIdScoringSupported(questionId)) return
+
+  throw new Error(getScoringUnavailableMessage(1))
+}
+
+function normalizeExamError(error) {
+  const message = normalizeScoringErrorMessage(error?.normalizedMessage || error?.message || '')
+  if (message && message !== error?.message) {
+    error.message = message
+  }
+  return error
+}
 
 export const useExamStore = defineStore('exam', {
   state: () => ({
@@ -125,7 +144,7 @@ export const useExamStore = defineStore('exam', {
           return answer
         }
 
-        await uploadRecording(this.examId, blob)
+        await uploadRecording(this.examId, questionId, blob)
 
         this.submitStep = 'transcribing'
         const { transcript } = await transcribeAudio(blob)
@@ -133,6 +152,7 @@ export const useExamStore = defineStore('exam', {
 
         let result = null
         if (!this.mockMode) {
+          assertQuestionScoringSupported(questionId)
           this.submitStep = 'scoring'
           result = await evaluateAnswer({
             questionId,
@@ -141,31 +161,34 @@ export const useExamStore = defineStore('exam', {
           })
         }
 
+        const resolvedTranscript = result?.transcript || transcript
         this.scoringResult = result
         this.answers.push({
           questionId,
           questionIndex,
           recordingBlob: blob,
-          transcript,
+          transcript: resolvedTranscript,
           scoringResult: result,
           submittedAt: new Date().toISOString()
         })
+        this.transcript = resolvedTranscript
 
         this.status = EXAM_STATUS.COMPLETED
         this.submitStep = ''
       } catch (err) {
         this.status = EXAM_STATUS.ANSWERING
         this.submitStep = ''
-        throw err
+        throw normalizeExamError(err)
       }
     },
 
     queueMockAnswerProcessing(answer) {
       const task = this.processMockAnswer(answer)
         .catch((error) => {
+          const normalizedError = normalizeExamError(error)
           answer.processingStatus = 'failed'
           answer.processingError = error?.message || '未知错误'
-          throw error
+          throw normalizedError
         })
         .finally(() => {
           answerProcessingTasks.delete(answer.questionIndex)
@@ -179,7 +202,7 @@ export const useExamStore = defineStore('exam', {
       const answerExamId = answer.examId || this.examId
       answer.processingError = ''
       answer.processingStatus = 'uploading'
-      await uploadRecording(answerExamId, answer.recordingBlob)
+      await uploadRecording(answerExamId, answer.questionId, answer.recordingBlob)
 
       answer.processingStatus = 'transcribing'
       const { transcript } = await transcribeAudio(answer.recordingBlob)
@@ -190,15 +213,19 @@ export const useExamStore = defineStore('exam', {
       }
 
       answer.processingStatus = 'scoring'
+      assertQuestionScoringSupported(answer.questionId)
       const result = await evaluateAnswer({
         questionId: answer.questionId,
         transcript,
         examId: answerExamId
       })
+      const resolvedTranscript = result?.transcript || transcript
+      answer.transcript = resolvedTranscript
       answer.scoringResult = result
       answer.processingStatus = 'completed'
 
       if (this.examId === answerExamId && this.currentIndex === answer.questionIndex) {
+        this.transcript = resolvedTranscript
         this.scoringResult = result
       }
 
@@ -245,6 +272,7 @@ export const useExamStore = defineStore('exam', {
 
       try {
         for (const answer of finalPendingAnswers) {
+          assertQuestionScoringSupported(answer.questionId)
           const result = await evaluateAnswer({
             questionId: answer.questionId,
             transcript: answer.transcript,
@@ -262,7 +290,7 @@ export const useExamStore = defineStore('exam', {
       } catch (err) {
         this.status = previousStatus
         this.submitStep = ''
-        throw err
+        throw normalizeExamError(err)
       }
     },
 

@@ -1,9 +1,11 @@
 node_modules
 dist
+.venv-ai-gongwu/
 .DS_Store
 *.local
 backend/
 new_backend/
+external/
 nul
 .qoder/
 .mysql-data/

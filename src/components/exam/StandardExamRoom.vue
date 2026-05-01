@@ -20,10 +20,16 @@
 
     <div class="exam-room__main">
       <div class="exam-room__question">
-        <a-tag color="blue" style="margin-bottom: 8px">
-          {{ dimensionName }}
-        </a-tag>
-        <div class="question-stem">{{ examStore.currentQuestion.stem }}</div>
+        <QuestionMetaTags :question="examStore.currentQuestion" emphasis :max-keywords="5" />
+        <div class="question-stem">
+          <QuestionRichContent
+            :text="examStore.currentQuestion.stem"
+            dark
+            scrollable
+            :scroll-height="220"
+            :collapsed-height="160"
+          />
+        </div>
       </div>
     </div>
 
@@ -106,12 +112,14 @@ import { useMediaRecorder } from '@/composables/useMediaRecorder'
 import { useCountdown } from '@/composables/useCountdown'
 import { useNetworkStatus } from '@/composables/useNetworkStatus'
 import { completeExam } from '@/api/exam'
-import { DIMENSIONS, EXAM_STATUS, getGrade } from '@/utils/constants'
+import { EXAM_STATUS, getGrade } from '@/utils/constants'
 import VideoPreview from '@/components/recording/VideoPreview.vue'
 import AudioWaveform from '@/components/recording/AudioWaveform.vue'
 import CountdownTimer from '@/components/common/CountdownTimer.vue'
 import RecordingControl from '@/components/recording/RecordingControl.vue'
 import ScoreRing from '@/components/common/ScoreRing.vue'
+import QuestionMetaTags from '@/components/common/QuestionMetaTags.vue'
+import QuestionRichContent from '@/components/common/QuestionRichContent.vue'
 import { message } from 'ant-design-vue'
 
 const router = useRouter()
@@ -129,13 +137,6 @@ const formattedElapsed = computed(() => {
   const m = Math.floor(elapsed.value / 60)
   const s = elapsed.value % 60
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-})
-
-const dimensionName = computed(() => {
-  const q = examStore.currentQuestion
-  if (!q) return ''
-  const dim = DIMENSIONS.find((d) => d.key === q.dimension)
-  return dim ? dim.name : q.dimension
 })
 
 const gradeLabel = computed(() => {
@@ -249,8 +250,10 @@ async function exitExam() {
 @import '@/styles/exam-room.less';
 
 .question-stem {
-  font-size: 15px;
-  line-height: 1.7;
+  margin-top: 10px;
+}
+
+.question-stem :deep(.question-rich-content__body) {
   color: rgba(255, 255, 255, 0.9);
 }
 

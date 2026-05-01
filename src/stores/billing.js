@@ -147,6 +147,16 @@ export const useBillingStore = defineStore('billing', {
       persistBillingState(this.$state)
     },
 
+    applyBackendState(rawBillingState = {}) {
+      const nextState = normalizeBillingState(rawBillingState)
+      this.planType = nextState.planType
+      this.remainingSeconds = nextState.remainingSeconds
+      this.monthlyExpireAt = nextState.monthlyExpireAt
+      this.activatedAt = nextState.activatedAt
+      this.orderHistory = nextState.orderHistory
+      this.persist()
+    },
+
     syncPlanState() {
       if (this.isMonthlyPlan && this.monthlyExpireAt > 0 && this.monthlyExpireAt <= Date.now()) {
         this.planType = BILLING_PLAN_KEYS.TRIAL

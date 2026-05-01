@@ -49,6 +49,22 @@
       :message="`你刚刚从“${paywallSource}”跳转到套餐页`"
     />
 
+    <div class="pricing-risk card">
+      <div class="pricing-risk__head">
+        <h3>开通前风险提示</h3>
+        <span>请务必阅读</span>
+      </div>
+      <div class="pricing-risk__list">
+        <div class="pricing-risk__item">账号权益建议仅限本人使用，不建议多人共用。</div>
+        <div class="pricing-risk__item">多设备同时登录或多人切换使用，可能导致练习记录、录音、评分结果出现错位或覆盖。</div>
+        <div class="pricing-risk__item">当前演示版的支付权益以本地账号状态和当前浏览器数据为准，清理浏览器数据后可能需要重新同步。</div>
+        <div class="pricing-risk__item">如果出现订单、权限或设备异常，请通过个人中心的客服反馈入口联系管理员处理。</div>
+      </div>
+      <div class="pricing-risk__actions">
+        <a-button @click="router.push('/profile')">前往客服反馈</a-button>
+      </div>
+    </div>
+
     <div class="pricing-grid">
       <div
         v-for="plan in plans"
@@ -280,6 +296,62 @@ function activatePlan(planKey) {
 
 .pricing-paywall-tip {
   margin-top: 16px;
+}
+
+.pricing-risk {
+  margin-top: 18px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  border: 1px solid rgba(212, 135, 25, 0.18);
+  background: linear-gradient(180deg, #fffaf1 0%, #fffefb 100%);
+}
+
+.pricing-risk__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.pricing-risk__head h3 {
+  margin: 0;
+  color: @text-primary;
+  font-size: @font-size-lg;
+}
+
+.pricing-risk__head span {
+  color: #8a4d17;
+  font-size: @font-size-xs;
+  font-weight: 600;
+}
+
+.pricing-risk__list {
+  display: grid;
+  gap: 10px;
+}
+
+.pricing-risk__actions {
+  margin-top: 14px;
+}
+
+.pricing-risk__item {
+  position: relative;
+  padding-left: 16px;
+  color: @text-regular;
+  font-size: @font-size-sm;
+  line-height: 1.8;
+}
+
+.pricing-risk__item::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #d48806;
 }
 
 .pricing-grid {

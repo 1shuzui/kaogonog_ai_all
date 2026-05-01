@@ -1,9 +1,9 @@
 import { http, USE_MOCK } from './index'
 import { getMockUserInfo, getMockProvinces } from './mock/user'
 
-export async function getUserInfo() {
+export async function getUserInfo(config = {}) {
   if (USE_MOCK) return getMockUserInfo()
-  return http.get('/user/info')
+  return http.get('/user/info', config)
 }
 
 export async function updatePreferences(data) {

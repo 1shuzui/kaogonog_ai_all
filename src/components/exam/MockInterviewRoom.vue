@@ -112,7 +112,14 @@
             <span class="question-card__index">第 {{ index + 1 }} 题</span>
             <span class="question-card__status">{{ questionStatusText(index) }}</span>
           </div>
-          <div class="question-card__stem">{{ question.stem }}</div>
+          <QuestionMetaTags :question="question" emphasis compact :max-keywords="4" />
+          <div class="question-card__stem">
+            <QuestionRichContent
+              :text="question.stem"
+              compact
+              :collapsed-height="156"
+            />
+          </div>
           <div class="question-card__meta">
             <span>{{ getDimensionLabel(question.dimension) }}</span>
             <span>建议 {{ formatQuestionMinutes(question) }} 分钟</span>
@@ -168,6 +175,19 @@
             <h3>{{ currentQuestionTitle }}</h3>
           </div>
           <a-tag :color="currentQuestionTag.color">{{ currentQuestionTag.text }}</a-tag>
+        </div>
+
+        <div class="candidate-panel__question">
+          <QuestionMetaTags :question="examStore.currentQuestion" emphasis :max-keywords="6" />
+          <div class="candidate-panel__question-body">
+            <QuestionRichContent
+              :text="examStore.currentQuestion?.stem || ''"
+              dark
+              scrollable
+              :scroll-height="220"
+              :collapsed-height="170"
+            />
+          </div>
         </div>
 
         <p class="candidate-panel__hint">{{ currentQuestionHint }}</p>
@@ -273,9 +293,11 @@ import { completeExam } from '@/api/exam'
 import { useNetworkStatus } from '@/composables/useNetworkStatus'
 import { useMediaRecorder } from '@/composables/useMediaRecorder'
 import { useExamStore } from '@/stores/exam'
-import { DIMENSIONS, EXAM_STATUS } from '@/utils/constants'
+import { DIMENSIONS, EXAM_STATUS, getQuestionTypeName } from '@/utils/constants'
 import AudioWaveform from '@/components/recording/AudioWaveform.vue'
 import VideoPreview from '@/components/recording/VideoPreview.vue'
+import QuestionMetaTags from '@/components/common/QuestionMetaTags.vue'
+import QuestionRichContent from '@/components/common/QuestionRichContent.vue'
 import mockRoomBg from '@/assets/exam/mock-interview-ai-clean.jpg'
 import judgeRoomReferenceOriginal from '@/assets/exam/mock-interview-room-live.jpg'
 import judgeRoomReferenceStage2026 from '@/assets/exam/mock-interview-room-stage-2026.jpg'
@@ -595,8 +617,7 @@ function formatClock(totalSeconds = 0) {
 }
 
 function getDimensionLabel(key) {
-  const matched = DIMENSIONS.find((item) => item.key === key)
-  return matched ? matched.name : key || '综合题'
+  return getQuestionTypeName(key) || DIMENSIONS.find((item) => item.key === key)?.name || key || '结构化面试题'
 }
 
 function formatQuestionMinutes(question) {
@@ -1617,11 +1638,16 @@ async function exitExam() {
 }
 
 .question-card__stem {
-  margin: 16px 0 20px;
-  font-size: 17px;
-  line-height: 1.9;
+  margin: 12px 0 18px;
+}
+
+.question-card__stem :deep(.question-rich-content__body) {
   color: #2f2319;
-  word-break: break-word;
+}
+
+.question-card__stem :deep(.question-rich-content__paragraph) {
+  font-size: 16px;
+  line-height: 1.85;
 }
 
 .question-nav {
@@ -1700,9 +1726,25 @@ async function exitExam() {
 }
 
 .candidate-panel__hint {
-  margin: 0 0 12px;
+  margin: 14px 0 12px;
   color: rgba(255, 244, 232, 0.86);
   line-height: 1.8;
+}
+
+.candidate-panel__question {
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(255, 246, 233, 0.08);
+  border: 1px solid rgba(255, 226, 195, 0.12);
+}
+
+.candidate-panel__question-body {
+  margin-top: 10px;
+}
+
+.candidate-panel__question-body :deep(.question-rich-content__body) {
+  color: rgba(255, 244, 232, 0.92);
 }
 
 .candidate-panel__summary {

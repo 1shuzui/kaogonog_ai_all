@@ -50,6 +50,7 @@
       >
         <div class="question-item__idx">{{ idx + 1 }}</div>
         <div class="question-item__content">
+          <QuestionMetaTags :question="q" compact :max-keywords="4" />
           <div class="question-item__stem">{{ q.stem }}</div>
         </div>
         <RightOutlined class="question-item__arrow" />
@@ -68,9 +69,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { LeftOutlined, ThunderboltOutlined, RightOutlined, BulbOutlined } from '@ant-design/icons-vue'
+import { message } from 'ant-design-vue'
 import { TRAINING_CATEGORY_TIPS, getTrainingCategory, mergeTrainingProgress } from '@/utils/constants'
 import { useTrainingStore } from '@/stores/training'
 import { generateTrainingQuestions } from '@/api/training'
+import QuestionMetaTags from '@/components/common/QuestionMetaTags.vue'
+import { getScoringUnavailableMessage, isQuestionScoringSupported } from '@/utils/scoringSupport'
 
 const route = useRoute()
 const router = useRouter()
@@ -121,6 +125,11 @@ async function generateQuestions() {
 }
 
 function startPractice(question) {
+  if (!isQuestionScoringSupported(question)) {
+    message.warning(getScoringUnavailableMessage(1))
+    return
+  }
+
   // 暂存题目到 sessionStorage，因为动态生成的题目不在后端题库中
   sessionStorage.setItem('training_question', JSON.stringify(question))
   router.push({ path: '/exam/prepare', query: { questionId: question.id, source: 'training' } })
@@ -256,6 +265,7 @@ onMounted(() => {
 }
 
 .question-item__stem {
+  margin-top: 8px;
   font-size: @font-size-base;
   color: @text-regular;
   display: -webkit-box;
