@@ -1,0 +1,127 @@
+{
+  "easycom": {
+    "autoscan": true
+  },
+  "pages": [
+    {
+      "path": "pages/login/index",
+      "style": {
+        "navigationBarTitleText": "登录"
+      }
+    },
+    {
+      "path": "pages/home/index",
+      "style": {
+        "navigationBarTitleText": "公考面试AI测评",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/bank/index",
+      "style": {
+        "navigationBarTitleText": "题库"
+      }
+    },
+    {
+      "path": "pages/bank/detail",
+      "style": {
+        "navigationBarTitleText": "题目详情"
+      }
+    },
+    {
+      "path": "pages/exam/prepare",
+      "style": {
+        "navigationBarTitleText": "模考准备"
+      }
+    },
+    {
+      "path": "pages/exam/room",
+      "style": {
+        "navigationBarTitleText": "模拟考场",
+        "disableScroll": true
+      }
+    },
+    {
+      "path": "pages/result/index",
+      "style": {
+        "navigationBarTitleText": "测评结果"
+      }
+    },
+    {
+      "path": "pages/history/index",
+      "style": {
+        "navigationBarTitleText": "历史记录"
+      }
+    },
+    {
+      "path": "pages/targeted/index",
+      "style": {
+        "navigationBarTitleText": "定向备面"
+      }
+    },
+    {
+      "path": "pages/targeted/focus",
+      "style": {
+        "navigationBarTitleText": "重点分析"
+      }
+    },
+    {
+      "path": "pages/training/index",
+      "style": {
+        "navigationBarTitleText": "专项训练"
+      }
+    },
+    {
+      "path": "pages/training/dimension",
+      "style": {
+        "navigationBarTitleText": "题型训练"
+      }
+    },
+    {
+      "path": "pages/pricing/index",
+      "style": {
+        "navigationBarTitleText": "套餐中心"
+      }
+    },
+    {
+      "path": "pages/profile/index",
+      "style": {
+        "navigationBarTitleText": "我的"
+      }
+    }
+  ],
+  "tabBar": {
+    "color": "#8c8c8c",
+    "selectedColor": "#1b5faa",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/targeted/index",
+        "text": "定向"
+      },
+      {
+        "pagePath": "pages/bank/index",
+        "text": "题库"
+      },
+      {
+        "pagePath": "pages/training/index",
+        "text": "训练"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的"
+      }
+    ]
+  },
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "公考面试AI测评",
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#f0f5fa"
+  }
+}

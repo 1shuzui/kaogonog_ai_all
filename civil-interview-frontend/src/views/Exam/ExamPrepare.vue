@@ -25,7 +25,7 @@
             <p style="color: #CF1322; margin-bottom: 8px">{{ permissionError }}</p>
             <a-space>
               <a-button size="small" type="primary" @click="retryPermission">重新检测</a-button>
-              <a-button size="small" v-if="!micReady" @click="tryMicOnly">仅使用麦克风</a-button>
+              <a-button size="small" v-if="micReady && !cameraReady" @click="tryMicOnly">仅使用麦克风</a-button>
             </a-space>
             <div class="permission-tips">
               <p>常见原因:</p>
@@ -95,6 +95,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { message } from 'ant-design-vue'
 import { usePermission } from '@/composables/usePermission'
 import { useMediaRecorder } from '@/composables/useMediaRecorder'
 import { useExamStore } from '@/stores/exam'
@@ -102,6 +103,10 @@ import { useBillingStore } from '@/stores/billing'
 import { getRandomQuestions, getQuestionById } from '@/api/questionBank'
 import { useUserStore } from '@/stores/user'
 import { useTargetedStore } from '@/stores/targeted'
+import {
+  getScoringUnavailableMessage,
+  splitScoringSupportedQuestions
+} from '@/utils/scoringSupport'
 
 const router = useRouter()
 const route = useRoute()
@@ -134,6 +139,86 @@ const waitCountdown = computed(() => {
 let countdownTimer = null
 let waitTimer = null
 let pendingQuestions = null
+const DEFAULT_EXAM_QUESTION_COUNT = 5
+const RANDOM_FETCH_BUFFER = 6
+const RANDOM_FETCH_ATTEMPTS = 3
+
+function notifyUnsupportedQuestions(unsupportedCount, replaced = false) {
+  if (!unsupportedCount) return
+
+  if (replaced) {
+    message.warning(`已跳过 ${unsupportedCount} 道未接入评分题库的题目，并自动替换为可评分题目。`)
+    return
+  }
+
+  message.warning(`已跳过 ${unsupportedCount} 道未接入评分题库的题目，本次仅保留可评分题目。`)
+}
+
+async function fetchScoringReadyRandomQuestions(count = DEFAULT_EXAM_QUESTION_COUNT, options = {}) {
+  const targetCount = Math.max(Number(count) || 0, 0)
+  const excludeIds = new Set(Array.isArray(options.excludeIds) ? options.excludeIds.filter(Boolean) : [])
+  const collected = []
+
+  for (let attempt = 0; attempt < RANDOM_FETCH_ATTEMPTS && collected.length < targetCount; attempt++) {
+    const batch = await getRandomQuestions({
+      province: userStore.selectedProvince,
+      count: Math.max(targetCount + RANDOM_FETCH_BUFFER, targetCount),
+      ...options.params
+    })
+
+    const { supported } = splitScoringSupportedQuestions(batch)
+    for (const question of supported) {
+      if (!question?.id || excludeIds.has(question.id)) continue
+      excludeIds.add(question.id)
+      collected.push(question)
+      if (collected.length >= targetCount) break
+    }
+  }
+
+  return collected.slice(0, targetCount)
+}
+
+async function ensureScoringReadyQuestions(questions, options = {}) {
+  const candidateList = Array.isArray(questions) ? questions.filter(Boolean) : []
+  const requiredCount = Math.max(Number(options.requiredCount) || 0, 0)
+  const allowAutoSupplement = options.allowAutoSupplement !== false
+
+  const { supported, unsupported } = splitScoringSupportedQuestions(candidateList)
+  let resolved = [...supported]
+
+  if (!resolved.length) {
+    if (!allowAutoSupplement || !requiredCount) {
+      message.error(getScoringUnavailableMessage(candidateList.length || 1))
+      return []
+    }
+
+    const replacementQuestions = await fetchScoringReadyRandomQuestions(requiredCount)
+    if (!replacementQuestions.length) {
+      message.error('当前没有可用的评分题目，请稍后再试。')
+      return []
+    }
+
+    notifyUnsupportedQuestions(candidateList.length || 1, true)
+    return replacementQuestions
+  }
+
+  if (unsupported.length) {
+    notifyUnsupportedQuestions(unsupported.length)
+  }
+
+  if (allowAutoSupplement && requiredCount && resolved.length < requiredCount) {
+    const supplementQuestions = await fetchScoringReadyRandomQuestions(requiredCount - resolved.length, {
+      excludeIds: resolved.map((question) => question?.id)
+    })
+
+    if (supplementQuestions.length) {
+      resolved = [...resolved, ...supplementQuestions]
+      message.info(`已自动补足 ${supplementQuestions.length} 道可评分题目。`)
+    }
+  }
+
+  return resolved.slice(0, requiredCount || resolved.length)
+}
 
 onMounted(() => {
   doPermissionCheck()
@@ -154,6 +239,13 @@ async function doPermissionCheck() {
   const ok = await checkBoth()
   if (ok) {
     videoEnabled.value = true
+    currentStep.value = 1
+    await initRecorder()
+    return
+  }
+
+  if (micReady.value && !cameraReady.value) {
+    videoEnabled.value = false
     currentStep.value = 1
     await initRecorder()
   }
@@ -221,7 +313,7 @@ function confirmDevice() {
   examStore.setDeviceReady(true)
 }
 
-async function enterExam() {
+async function enterExamLegacy() {
   recorder.destroyStream()
   // 保存视频模式到 store，供 ExamRoom 使用
   examStore.setVideoEnabled(videoEnabled.value)
@@ -281,6 +373,70 @@ async function enterExam() {
     await examStore.initExam(questions, false)
     router.push('/exam/room')
   }
+}
+
+async function enterExam() {
+  let questions = []
+  const isTrialEntry = String(route.query.trial || '') === '1'
+  const source = String(route.query.source || '')
+  const recommendedId = String(route.query.questionId || '')
+
+  if (isTrialEntry) {
+    try {
+      const trialQuestion = await getQuestionById(billingStore.trialQuestion.id)
+      questions = await ensureScoringReadyQuestions([trialQuestion], { requiredCount: 1 })
+    } catch {
+      questions = await fetchScoringReadyRandomQuestions(1)
+    }
+  } else if (source === 'targeted' && targetedStore.generatedQuestions.length) {
+    questions = await ensureScoringReadyQuestions(targetedStore.generatedQuestions, {
+      allowAutoSupplement: false
+    })
+  } else if (source === 'targeted' && recommendedId) {
+    try {
+      const cached = sessionStorage.getItem('targeted_question')
+      const selectedQuestion = cached ? JSON.parse(cached) : await getQuestionById(recommendedId)
+      questions = await ensureScoringReadyQuestions([selectedQuestion], {
+        allowAutoSupplement: false
+      })
+    } catch {
+      questions = await fetchScoringReadyRandomQuestions(DEFAULT_EXAM_QUESTION_COUNT)
+    }
+  } else if (source === 'training' && recommendedId) {
+    try {
+      const cached = sessionStorage.getItem('training_question')
+      const selectedQuestion = cached ? JSON.parse(cached) : await getQuestionById(recommendedId)
+      questions = await ensureScoringReadyQuestions([selectedQuestion], {
+        allowAutoSupplement: false
+      })
+    } catch {
+      questions = await fetchScoringReadyRandomQuestions(DEFAULT_EXAM_QUESTION_COUNT)
+    }
+  } else if (recommendedId) {
+    try {
+      const question = await getQuestionById(recommendedId)
+      questions = await ensureScoringReadyQuestions([question], { requiredCount: 1 })
+    } catch {
+      questions = await fetchScoringReadyRandomQuestions(DEFAULT_EXAM_QUESTION_COUNT)
+    }
+  } else {
+    questions = await fetchScoringReadyRandomQuestions(DEFAULT_EXAM_QUESTION_COUNT)
+  }
+
+  if (!questions.length) {
+    return
+  }
+
+  recorder.destroyStream()
+  examStore.setVideoEnabled(videoEnabled.value)
+
+  if (examMode.value === 'mock') {
+    await examStore.initExam(questions, true)
+  } else {
+    await examStore.initExam(questions, false)
+  }
+
+  router.push('/exam/room')
 }
 
 async function skipWaiting() {

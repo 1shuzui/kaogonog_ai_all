@@ -29,12 +29,22 @@ const active = ref(false)
 const formattedDuration = computed(() => formatTime(props.duration))
 
 watch(() => props.stream, (stream) => {
-  if (videoEl.value && stream) {
+  if (!videoEl.value) return
+
+  const hasVideoTrack = Boolean(
+    stream
+    && typeof stream.getVideoTracks === 'function'
+    && stream.getVideoTracks().some((track) => track.readyState === 'live')
+  )
+
+  if (stream && hasVideoTrack) {
     videoEl.value.srcObject = stream
     active.value = true
-  } else {
-    active.value = false
+    return
   }
+
+  videoEl.value.srcObject = null
+  active.value = false
 }, { immediate: true })
 
 onUnmounted(() => {

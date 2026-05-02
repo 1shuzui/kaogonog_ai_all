@@ -44,6 +44,11 @@
         <span class="menu-item__label">错题本 / 收藏夹</span>
         <RightOutlined class="menu-item__arrow" />
       </div>
+      <div class="card menu-item" @click="$router.push('/support')">
+        <CustomerServiceOutlined class="menu-item__icon" />
+        <span class="menu-item__label">{{ userStore.isAdmin ? '客服反馈后台' : '客服反馈中心' }}</span>
+        <RightOutlined class="menu-item__arrow" />
+      </div>
       <div class="card menu-item" @click="$router.push('/profile/account')">
         <SettingOutlined class="menu-item__icon" />
         <span class="menu-item__label">账号管理</span>
@@ -74,6 +79,11 @@
       <a-button type="primary" @click="savePreferences">保存设置</a-button>
     </div>
 
+    <div class="card profile-section">
+      <h3>客服与反馈</h3>
+      <SupportCenterPanel />
+    </div>
+
     <!-- 关于 -->
     <div class="card profile-section">
       <h3>关于</h3>
@@ -89,10 +99,18 @@
 <script setup>
 import { reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { BarChartOutlined, HistoryOutlined, StarOutlined, SettingOutlined, RightOutlined } from '@ant-design/icons-vue'
+import {
+  BarChartOutlined,
+  CustomerServiceOutlined,
+  HistoryOutlined,
+  StarOutlined,
+  SettingOutlined,
+  RightOutlined
+} from '@ant-design/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { useHistoryStore } from '@/stores/history'
 import { useFavoritesStore } from '@/stores/favorites'
+import SupportCenterPanel from '@/components/common/SupportCenterPanel.vue'
 import { message } from 'ant-design-vue'
 
 const router = useRouter()

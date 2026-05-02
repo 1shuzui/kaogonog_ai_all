@@ -8,6 +8,80 @@ export const DIMENSIONS = [
   { key: 'emergency', name: '应急应变', maxScore: 15 }
 ]
 
+// 前端题型分类（用于专项训练和题型展示）
+export const QUESTION_TYPE_NAME_MAP = {
+  analysis: '综合分析',
+  organization: '组织管理',
+  practical: '组织管理',
+  emergency: '应急应变',
+  adaptability: '应急应变',
+  interpersonal: '人际沟通',
+  '人际沟通': '人际沟通',
+  simulation: '现场模拟',
+  expression: '现场模拟',
+  career: '职业认知',
+  '职业认知': '职业认知',
+  legal: '职业认知',
+  logic: '人际沟通'
+}
+
+export const TRAINING_CATEGORIES = [
+  {
+    key: 'analysis',
+    name: '综合分析',
+    requestDimension: 'analysis',
+    progressKeys: ['analysis'],
+    icon: '🔍',
+    bgColor: '#E6FAFF',
+    maxScore: 100
+  },
+  {
+    key: 'organization',
+    name: '组织管理',
+    requestDimension: 'practical',
+    progressKeys: ['organization', 'practical'],
+    icon: '🗂️',
+    bgColor: '#EAF7E6',
+    maxScore: 100
+  },
+  {
+    key: 'emergency',
+    name: '应急应变',
+    requestDimension: 'emergency',
+    progressKeys: ['adaptability', 'emergency'],
+    icon: '🚨',
+    bgColor: '#FFF1F0',
+    maxScore: 100
+  },
+  {
+    key: 'interpersonal',
+    name: '人际沟通',
+    requestDimension: '人际沟通',
+    progressKeys: ['interpersonal', 'logic'],
+    icon: '🤝',
+    bgColor: '#EEF4FF',
+    maxScore: 100
+  },
+  {
+    key: 'simulation',
+    name: '现场模拟',
+    requestDimension: 'expression',
+    progressKeys: ['simulation', 'expression'],
+    icon: '🎭',
+    bgColor: '#FFF7E8',
+    maxScore: 100
+  },
+  {
+    key: 'career',
+    name: '职业认知',
+    requestDimension: '职业认知',
+    progressKeys: ['career', 'legal'],
+    icon: '🧭',
+    bgColor: '#F5F0FF',
+    maxScore: 100
+  }
+]
+
 // 省份列表
 export const PROVINCES = [
   { code: 'national', name: '国考' },
@@ -68,6 +142,15 @@ export const DIMENSION_TIPS = {
   '应急应变': '突发事件类题目要抓住"稳定局面-了解情况-分类处理-总结预防"的基本框架，体现冷静和担当。'
 }
 
+export const TRAINING_CATEGORY_TIPS = {
+  '综合分析': '围绕社会现象、政策观点和公共议题，重点训练立场鲜明、分析全面、辩证作答的能力。',
+  '组织管理': '重点练习活动策划、任务推进、统筹协调和复盘总结，作答时尽量体现步骤、节点和落地性。',
+  '应急应变': '围绕突发事件、舆情处置和现场情况变化作答，优先体现稳控局面、快速研判、分类处置和复盘预防。',
+  '人际沟通': '重点练习与领导、同事、群众和服务对象的沟通协调，答题时注意对象意识、情绪安抚、说服策略和关系修复。',
+  '现场模拟': '尽量用口语化、场景化的方式直接开口作答，注意身份代入、交流对象、语气分寸和说服效果。',
+  '职业认知': '围绕报考动机、岗位理解、价值取向和自我认知展开，重点体现政治素养、服务意识和岗位匹配度。'
+}
+
 // 薄弱维度阈值（低于此百分比标记为薄弱）
 export const WEAK_THRESHOLD = 60
 
@@ -84,3 +167,38 @@ export const POSITION_SYSTEMS = [
   { code: 'finance', name: '银保监会' },
   { code: 'diplomacy', name: '外交系统' }
 ]
+
+export function getQuestionTypeName(key) {
+  return QUESTION_TYPE_NAME_MAP[key] || key
+}
+
+export function getTrainingCategory(key) {
+  return TRAINING_CATEGORIES.find((item) => item.key === key) || null
+}
+
+export function mergeTrainingProgress(progressList = []) {
+  const merged = {
+    attempts: 0,
+    totalScore: 0,
+    bestScore: 0,
+    recentScores: [],
+    lastPracticeDate: null
+  }
+
+  for (const item of progressList) {
+    if (!item) continue
+    merged.attempts += Number(item.attempts || 0)
+    merged.totalScore += Number(item.totalScore || 0)
+    merged.bestScore = Math.max(merged.bestScore, Number(item.bestScore || 0))
+    merged.recentScores.push(...(Array.isArray(item.recentScores) ? item.recentScores : []))
+
+    const nextDate = item.lastPracticeDate ? new Date(item.lastPracticeDate).getTime() : 0
+    const currentDate = merged.lastPracticeDate ? new Date(merged.lastPracticeDate).getTime() : 0
+    if (nextDate > currentDate) {
+      merged.lastPracticeDate = item.lastPracticeDate
+    }
+  }
+
+  merged.recentScores = merged.recentScores.slice(-10)
+  return merged
+}

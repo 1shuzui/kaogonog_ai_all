@@ -1,0 +1,28 @@
+{
+  "name": "公考面试AI测评",
+  "appid": "__UNI__KAOGONGAI",
+  "description": "公务员面试练习与 AI 测评微信小程序端",
+  "versionName": "1.0.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "mp-weixin": {
+    "appid": "",
+    "setting": {
+      "urlCheck": false,
+      "es6": true,
+      "postcss": true,
+      "minified": true
+    },
+    "usingComponents": true,
+    "permission": {
+      "scope.record": {
+        "desc": "用于录制面试作答音频并提交 AI 测评"
+      }
+    }
+  },
+  "h5": {
+    "router": {
+      "mode": "hash"
+    }
+  }
+}

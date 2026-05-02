@@ -1,0 +1,80 @@
+{
+  "entryPagePath": "pages/home/index",
+  "pages": [
+    "pages/home/index",
+    "pages/targeted/index",
+    "pages/bank/index",
+    "pages/training/index",
+    "pages/profile/index",
+    "pages/auth/login",
+    "pages/billing/pricing",
+    "pages/billing/orders",
+    "pages/exam/prepare",
+    "pages/exam/room",
+    "pages/exam/complete",
+    "pages/result/index",
+    "pages/bank/import",
+    "pages/bank/edit",
+    "pages/history/index",
+    "pages/favorites/index",
+    "pages/targeted/focus",
+    "pages/training/dimension",
+    "pages/profile/account",
+    "pages/profile/analysis",
+    "pages/support/index",
+    "pages/not-found/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "考公AI面试",
+    "navigationBarBackgroundColor": "#1B5FAA",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#F5F7FA",
+    "backgroundTextStyle": "light",
+    "enablePullDownRefresh": false
+  },
+  "tabBar": {
+    "color": "#6B7280",
+    "selectedColor": "#1B5FAA",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/targeted/index",
+        "text": "定向备面"
+      },
+      {
+        "pagePath": "pages/bank/index",
+        "text": "题库"
+      },
+      {
+        "pagePath": "pages/training/index",
+        "text": "专项训练"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的"
+      }
+    ]
+  },
+  "permission": {
+    "scope.record": {
+      "desc": "用于录制面试作答音频，完成转写和评分"
+    },
+    "scope.camera": {
+      "desc": "用于模拟面试时录制作答视频"
+    }
+  },
+  "networkTimeout": {
+    "request": 180000,
+    "connectSocket": 60000,
+    "uploadFile": 60000,
+    "downloadFile": 60000
+  },
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents",
+  "sitemapLocation": "sitemap.json"
+}

@@ -124,6 +124,12 @@ const routes = [
     meta: { title: '订单记录', layout: 'simple' }
   },
   {
+    path: '/support',
+    name: 'SupportDesk',
+    component: () => import('@/views/Support/SupportDeskPage.vue'),
+    meta: { title: '客服反馈中心', layout: 'simple' }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/NotFound.vue'),

@@ -1,4 +1,40 @@
 import { http, USE_MOCK } from './index'
+import { getQuestionTypeName } from '@/utils/constants'
+
+function normalizeFocusAnalysis(response = {}) {
+  const focusAreas = Array.isArray(response?.focusAreas) ? response.focusAreas : []
+  if (!focusAreas.length || response?.coreFocus) {
+    return response
+  }
+
+  const priorityToWeight = {
+    high: 35,
+    medium: 25,
+    low: 15
+  }
+
+  const priorityToFrequency = {
+    high: '高',
+    medium: '中',
+    low: '低'
+  }
+
+  return {
+    ...response,
+    coreFocus: focusAreas.map((item) => ({
+      name: item.label || getQuestionTypeName(item.type),
+      weight: priorityToWeight[item.priority] || 20,
+      desc: item.description || ''
+    })),
+    highFreqTypes: focusAreas.map((item) => ({
+      type: getQuestionTypeName(item.type),
+      frequency: priorityToFrequency[item.priority] || '中',
+      example: item.description || item.label || ''
+    })),
+    hotTopics: focusAreas.map((item) => item.label).filter(Boolean),
+    strategy: focusAreas.map((item) => item.description).filter(Boolean)
+  }
+}
 
 export async function getPositions() {
   if (USE_MOCK) {
@@ -27,14 +63,16 @@ export async function getFocusAnalysis(data) {
         { name: '廉政风险防范', weight: 20, desc: '考察在执法过程中的廉洁自律意识' }
       ],
       highFreqTypes: [
-        { type: '综合分析', frequency: '高', example: '谈谈你对"放管服"改革在税务领域落地的看法' },
+        { type: '综合分析', frequency: '高', example: '谈谈你对“放管服”改革在税务领域落地的看法' },
         { type: '应急应变', frequency: '高', example: '纳税人对税务处理决定不满并情绪激动，你如何处理？' }
       ],
       hotTopics: ['数电发票推广', '税费优惠政策落实', '税收营商环境优化'],
       strategy: ['熟悉最新税收政策和法规', '关注本省经济发展重点', '练习服务类和执法类场景题']
     }
   }
-  return http.post('/targeted/focus', data)
+
+  const response = await http.post('/targeted/focus', data)
+  return normalizeFocusAnalysis(response)
 }
 
 export async function generateQuestions(data) {
@@ -42,7 +80,7 @@ export async function generateQuestions(data) {
     return [
       {
         id: `gen_${Date.now()}_1`,
-        stem: '某地税务局推行"非接触式"办税服务，但部分老年纳税人反映操作困难，你作为窗口工作人员，如何解决这一问题？',
+        stem: '某地税务局推行“非接触式”办税服务，但部分老年纳税人反映操作困难，你作为窗口工作人员，如何解决这一问题？',
         dimension: 'practical',
         province: data.province,
         prepTime: 90,
@@ -60,5 +98,7 @@ export async function generateQuestions(data) {
       }
     ]
   }
-  return http.post('/questions/generate', data)
+
+  const response = await http.post('/targeted/generate', data)
+  return Array.isArray(response?.questions) ? response.questions : []
 }

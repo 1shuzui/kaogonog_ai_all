@@ -1,4 +1,4 @@
-"""LLM (Qwen) and ASR utilities"""
+"""LLM and ASR utilities"""
 import asyncio
 import base64
 import io
@@ -23,18 +23,18 @@ DASHSCOPE_CHAT_AUDIO_SAFE_BYTES = 12 * 1024 * 1024
 VIDEO_EXTENSIONS = {".mp4", ".avi", ".mov", ".mkv", ".webm"}
 _whisper_model = None
 
-# OpenAI-compatible client for Qwen
+# OpenAI-compatible client for the configured LLM provider
 _client: Optional[OpenAI] = None
 
 
 def get_client() -> Optional[OpenAI]:
     global _client
-    if not settings.qwen_api_key:
+    if not settings.llm_api_key:
         return None
     if _client is None:
         _client = OpenAI(
-            api_key=settings.qwen_api_key,
-            base_url=settings.qwen_base_url,
+            api_key=settings.llm_api_key,
+            base_url=settings.llm_base_url,
             timeout=settings.llm_timeout_seconds,
         )
     return _client
@@ -51,11 +51,11 @@ def call_llm_api(
 
     client = get_client()
     if not client:
-        logger.warning("No QWEN_API_KEY configured, skipping LLM call")
+        logger.warning("No LLM_API_KEY configured, skipping LLM call")
         return None
     try:
         response = client.chat.completions.create(
-            model=settings.qwen_model,
+            model=settings.llm_model,
             messages=[
                 {"role": "system", "content": system_msg},
                 {"role": "user", "content": prompt},
@@ -91,10 +91,10 @@ async def call_llm_api_async(
 
 
 def _resolve_asr_model() -> str:
-    configured = str(settings.qwen_asr_model or "").strip()
+    configured = str(settings.llm_asr_model or "").strip()
     if configured:
         return configured
-    if "dashscope.aliyuncs.com" in str(settings.qwen_base_url or ""):
+    if settings.llm_provider == "qwen" or "dashscope.aliyuncs.com" in str(settings.llm_base_url or ""):
         return DASHSCOPE_DEFAULT_ASR_MODEL
     return ""
 
@@ -247,7 +247,7 @@ async def transcribe_audio_file(audio_bytes: bytes, filename: str = "answer.webm
     if client and asr_model:
         try:
             prepared_bytes, prepared_name = _normalize_media_for_asr(audio_bytes, filename)
-            if "dashscope.aliyuncs.com" in str(settings.qwen_base_url or ""):
+            if "dashscope.aliyuncs.com" in str(settings.llm_base_url or ""):
                 text = _transcribe_with_dashscope_chat_asr(client, prepared_bytes, prepared_name, asr_model)
             else:
                 file_obj = io.BytesIO(prepared_bytes)

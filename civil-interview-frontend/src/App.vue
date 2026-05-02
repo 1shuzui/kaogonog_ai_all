@@ -10,6 +10,7 @@
         </router-view>
       </ErrorBoundary>
     </main>
+    <ProvinceGateModal :open="showProvinceGate" />
     <BillingPaywallModal v-if="showPaywall" />
     <AppTabBar v-if="showTabBar" />
   </div>
@@ -20,11 +21,11 @@ import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useBillingStore } from '@/stores/billing'
-import http from '@/api/index'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppTabBar from '@/components/layout/AppTabBar.vue'
 import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
 import BillingPaywallModal from '@/components/billing/BillingPaywallModal.vue'
+import ProvinceGateModal from '@/components/common/ProvinceGateModal.vue'
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -35,11 +36,24 @@ const layoutClass = computed(() => `layout-${layout.value}`)
 const showHeader = computed(() => layout.value !== 'fullscreen' && layout.value !== 'blank')
 const showTabBar = computed(() => layout.value === 'default')
 const showPaywall = computed(() => billingStore.paywallVisible && !userStore.isAdmin)
+const showProvinceGate = computed(() => {
+  if (layout.value === 'blank') return false
+  if (route.name === 'NotFound') return false
+  return !userStore.hasConfirmedProvinceSelection
+})
 
 onMounted(async () => {
+  try {
+    if (!userStore.provinces.length) {
+      await userStore.loadProvinces()
+    }
+  } catch {
+    // ignore province loading failure here
+  }
+
   if (userStore.isAuthenticated) {
     try {
-      await http.get('/user/me')
+      await userStore.loadUserInfo()
     } catch {
       // handled by the axios interceptor
     }

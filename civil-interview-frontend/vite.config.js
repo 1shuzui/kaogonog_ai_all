@@ -5,7 +5,7 @@ import Components from 'unplugin-vue-components/vite'
 import { AntDesignVueResolver } from 'unplugin-vue-components/resolvers'
 
 const devApiTarget = process.env.VITE_DEV_API_TARGET || process.env.DEV_API_TARGET || 'http://127.0.0.1:8003'
-const devServerPort = Number(process.env.VITE_DEV_SERVER_PORT || process.env.DEV_SERVER_PORT || 3002)
+const devServerPort = Number(process.env.VITE_DEV_SERVER_PORT || process.env.DEV_SERVER_PORT || 3003)
 
 export default defineConfig({
   plugins: [

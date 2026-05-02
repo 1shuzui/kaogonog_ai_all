@@ -12,7 +12,7 @@ export async function uploadRecording(examId, questionId, blob) {
   const formData = buildExamUploadFormData({
     questionId,
     blob,
-    filename: `recording_${Date.now()}.webm`,
+    filename: `recording_${Date.now()}.webm`
   })
   return http.post(`/exam/${examId}/upload`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },

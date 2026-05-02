@@ -72,7 +72,7 @@ import { useRouter } from 'vue-router'
 import { StarFilled, RedoOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import { useFavoritesStore } from '@/stores/favorites'
 import { useExamStore } from '@/stores/exam'
-import { DIMENSIONS } from '@/utils/constants'
+import { getQuestionTypeName } from '@/utils/constants'
 import { formatDate } from '@/utils/formatter'
 import { getQuestionById } from '@/api/questionBank'
 import EmptyState from '@/components/common/EmptyState.vue'
@@ -95,8 +95,7 @@ const emptyText = computed(() => {
 })
 
 function dimensionName(key) {
-  const dim = DIMENSIONS.find(d => d.key === key)
-  return dim ? dim.name : key
+  return getQuestionTypeName(key)
 }
 
 function dimensionColor(key) {

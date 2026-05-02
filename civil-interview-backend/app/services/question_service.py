@@ -838,7 +838,7 @@ async def generate_questions_by_position(
             return generated
         fallback_reason = (
             "AI 定向题服务未配置，已回退为本地真题/题库题"
-            if not settings.qwen_api_key
+            if not settings.llm_api_key
             else "AI 定向题服务返回异常，已回退为本地真题/题库题"
         )
         return [
@@ -905,7 +905,7 @@ async def generate_training_questions(
 
     fallback_reason = (
         "AI 训练题服务未配置，已回退为本地题库题"
-        if not settings.qwen_api_key
+        if not settings.llm_api_key
         else "AI 训练题服务返回异常，已回退为本地题库题"
     )
     return [

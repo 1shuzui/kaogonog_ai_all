@@ -18,13 +18,13 @@
         <ProvinceSelector @change="onProvinceChange" />
         <a-select
           v-model:value="dimensionFilter"
-          placeholder="评分维度"
+          placeholder="题目分类"
           allow-clear
-          style="width: 120px"
+          style="width: 140px"
           @change="onFilterChange"
         >
-          <a-select-option v-for="d in DIMENSIONS" :key="d.key" :value="d.key">
-            {{ d.name }}
+          <a-select-option v-for="item in questionCategoryOptions" :key="item.key" :value="item.key">
+            {{ item.name }}
           </a-select-option>
         </a-select>
         <a-input-search
@@ -46,13 +46,14 @@
           class="bank-list__item card"
         >
           <div class="bank-list__item-header">
-            <a-tag color="blue">{{ getDimensionName(q.dimension) }}</a-tag>
-            <a-tag>{{ getProvinceName(q.province) }}</a-tag>
+            <QuestionMetaTags :question="q" emphasis :max-keywords="5" />
             <span class="bank-list__item-points">
               {{ q.scoringPoints?.length || 0 }} 个采分点
             </span>
           </div>
-          <div class="bank-list__item-stem">{{ q.stem }}</div>
+          <div class="bank-list__item-stem">
+            <QuestionRichContent :text="q.stem" :collapsed-height="128" />
+          </div>
           <div class="bank-list__item-actions">
             <a-button type="link" size="small" @click="$router.push(`/bank/edit/${q.id}`)">
               编辑
@@ -84,30 +85,27 @@
 import { ref, onMounted } from 'vue'
 import { UploadOutlined, PlusOutlined } from '@ant-design/icons-vue'
 import { useQuestionBankStore } from '@/stores/questionBank'
-import { useUserStore } from '@/stores/user'
-import { DIMENSIONS, PROVINCES } from '@/utils/constants'
 import ProvinceSelector from '@/components/common/ProvinceSelector.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import QuestionMetaTags from '@/components/common/QuestionMetaTags.vue'
+import QuestionRichContent from '@/components/common/QuestionRichContent.vue'
 import { message } from 'ant-design-vue'
 
 const bankStore = useQuestionBankStore()
-const userStore = useUserStore()
 const dimensionFilter = ref(undefined)
 const keyword = ref('')
+const questionCategoryOptions = [
+  { key: 'analysis', name: '综合分析' },
+  { key: 'practical', name: '组织管理' },
+  { key: 'emergency', name: '应急应变' },
+  { key: 'logic', name: '人际沟通' },
+  { key: 'expression', name: '现场模拟' },
+  { key: 'legal', name: '职业认知' }
+]
 
 onMounted(() => {
   bankStore.fetchQuestions()
 })
-
-function getDimensionName(key) {
-  const d = DIMENSIONS.find(d => d.key === key)
-  return d ? d.name : key
-}
-
-function getProvinceName(code) {
-  const p = PROVINCES.find(p => p.code === code)
-  return p ? p.name : code
-}
 
 function onProvinceChange(value) {
   bankStore.switchProvince(value === 'all' ? '' : value)
@@ -161,8 +159,8 @@ async function onDelete(id) {
 
 .bank-list__item-header {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 12px;
   margin-bottom: 8px;
 }
 
@@ -170,16 +168,15 @@ async function onDelete(id) {
   font-size: @font-size-xs;
   color: @text-secondary;
   margin-left: auto;
+  white-space: nowrap;
 }
 
 .bank-list__item-stem {
-  font-size: @font-size-base;
+  margin-top: 10px;
+}
+
+.bank-list__item-stem :deep(.question-rich-content__body) {
   color: @text-regular;
-  line-height: 1.6;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .bank-list__item-actions {

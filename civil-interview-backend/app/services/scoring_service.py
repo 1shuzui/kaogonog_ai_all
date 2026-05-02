@@ -826,7 +826,7 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
             result,
             visual_observation=visual_observation,
             scoring_trace=_build_scoring_trace(
-                model_name=settings.qwen_model,
+                model_name=settings.llm_model,
                 scoring_mode=result.get("scoringMode", "conservative"),
                 visual_observation=visual_observation,
             ),
@@ -841,18 +841,18 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
             result,
             visual_observation=visual_observation,
             scoring_trace=_build_scoring_trace(
-                model_name=settings.qwen_model,
+                model_name=settings.llm_model,
                 scoring_mode=result.get("scoringMode", "screened_zero"),
                 visual_observation=visual_observation,
             ),
         )
         return _persist_result(db, exam_id, question_id, transcript, result)
 
-    if not settings.qwen_api_key:
+    if not settings.llm_api_key:
         result = _build_rule_based_result(
             question,
             transcript,
-            "当前未配置 Qwen 评分模型，",
+            "当前未配置 AI 评分模型，",
         )
         result = _apply_short_answer_cap(result, transcript)
         result = _decorate_result(
@@ -861,7 +861,7 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
             result,
             visual_observation=visual_observation,
             scoring_trace=_build_scoring_trace(
-                model_name=settings.qwen_model,
+                model_name=settings.llm_model,
                 scoring_mode=result.get("scoringMode", "rule_based"),
                 visual_observation=visual_observation,
             ),
@@ -920,7 +920,7 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
             result,
             visual_observation=visual_observation,
             scoring_trace=_build_scoring_trace(
-                model_name=settings.qwen_model,
+                model_name=settings.llm_model,
                 scoring_mode=result.get("scoringMode", "rule_based"),
                 evidence_prompt=evidence_prompt,
                 evidence_raw=evidence_raw,
@@ -953,7 +953,7 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
         result,
         visual_observation=visual_observation,
         scoring_trace=_build_scoring_trace(
-            model_name=settings.qwen_model,
+            model_name=settings.llm_model,
             scoring_mode=result.get("scoringMode", "llm"),
             evidence_prompt=evidence_prompt,
             evidence_raw=evidence_raw,

@@ -8,11 +8,14 @@ export async function login(username, password) {
   params.append('username', username)
   params.append('password', password)
   return http.post('/token', params, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    skipErrorHandler: true
   })
 }
 
 export async function register(form) {
   if (USE_MOCK) return mockRegister(form)
-  return http.post('/register', form)
+  return http.post('/register', form, {
+    skipErrorHandler: true
+  })
 }

@@ -16,7 +16,14 @@
               <a-tag :color="dimensionColor(item.dimension)">{{ dimensionName(item.dimension) }}</a-tag>
               <span class="smart-rec__reason">{{ item.reason }}</span>
             </div>
-            <div class="smart-rec__stem">{{ item.stem }}</div>
+            <QuestionMetaTags :question="item" emphasis :max-keywords="5" />
+            <div class="smart-rec__stem">
+              <QuestionRichContent
+                :text="item.stem"
+                compact
+                :collapsed-height="110"
+              />
+            </div>
             <div class="smart-rec__footer">
               <span class="smart-rec__difficulty">
                 难度：{{ '★'.repeat(item.difficulty) }}{{ '☆'.repeat(5 - item.difficulty) }}
@@ -42,10 +49,14 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { message } from 'ant-design-vue'
 import { BulbOutlined, CheckCircleOutlined } from '@ant-design/icons-vue'
 import { getQuestions } from '@/api/questionBank'
 import { DIMENSIONS } from '@/utils/constants'
 import { useDebounce } from '@/composables/useDebounce'
+import QuestionMetaTags from '@/components/common/QuestionMetaTags.vue'
+import QuestionRichContent from '@/components/common/QuestionRichContent.vue'
+import { getScoringUnavailableMessage, isQuestionScoringSupported } from '@/utils/scoringSupport'
 
 const props = defineProps({
   weakDimensions: { type: Array, default: () => [] }
@@ -85,6 +96,7 @@ async function fetchRecommendations() {
       const res = await getQuestions({ dimension: dim, pageSize: 2 })
       const list = res.list || res || []
       for (const q of list) {
+        if (!isQuestionScoringSupported(q)) continue
         const difficulty = Math.min(5, Math.max(1, (q.scoringPoints?.length || 3)))
         results.push({
           id: q.id,
@@ -106,6 +118,11 @@ async function fetchRecommendations() {
 const { run: debouncedFetch } = useDebounce(fetchRecommendations, 500)
 
 function startPractice(item) {
+  if (!isQuestionScoringSupported(item)) {
+    message.warning(getScoringUnavailableMessage(1))
+    return
+  }
+
   router.push({ path: '/exam/prepare', query: { questionId: item.id } })
 }
 
@@ -133,10 +150,12 @@ watch(() => props.weakDimensions, () => {
 }
 
 .smart-rec__item {
-  padding: 12px;
-  background: @page-bg;
-  border-radius: @border-radius;
+  padding: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+  border-radius: 16px;
   margin-bottom: 10px;
+  border: 1px solid rgba(27, 95, 170, 0.08);
+  box-shadow: 0 10px 22px rgba(21, 66, 126, 0.06);
 }
 
 .smart-rec__item-header {
@@ -152,20 +171,18 @@ watch(() => props.weakDimensions, () => {
 }
 
 .smart-rec__stem {
-  font-size: @font-size-base;
+  margin: 10px 0 12px;
+}
+
+.smart-rec__stem :deep(.question-rich-content__body) {
   color: @text-regular;
-  line-height: 1.6;
-  margin-bottom: 10px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .smart-rec__footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
 }
 
 .smart-rec__difficulty {
