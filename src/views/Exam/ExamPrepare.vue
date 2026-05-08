@@ -84,7 +84,7 @@
           </a-space>
         </a-radio-group>
       </div>
-      <a-button type="primary" size="large" block @click="enterExam" style="margin-top: 16px">
+      <a-button type="primary" size="large" block :loading="enteringExam" :disabled="enteringExam" @click="enterExam" style="margin-top: 16px">
         {{ examMode === 'mock' ? '开始模拟面试' : '进入考场' }}
       </a-button>
     </div>
@@ -126,6 +126,7 @@ const testCountdown = ref(3)
 const allReady = ref(false)
 const videoEnabled = ref(true)
 const examMode = ref('free')
+const enteringExam = ref(false)
 
 // 候考室
 const waitingRoom = ref(false)
@@ -376,67 +377,78 @@ async function enterExamLegacy() {
 }
 
 async function enterExam() {
+  if (enteringExam.value) return
+
+  enteringExam.value = true
   let questions = []
   const isTrialEntry = String(route.query.trial || '') === '1'
   const source = String(route.query.source || '')
   const recommendedId = String(route.query.questionId || '')
 
-  if (isTrialEntry) {
-    try {
-      const trialQuestion = await getQuestionById(billingStore.trialQuestion.id)
-      questions = await ensureScoringReadyQuestions([trialQuestion], { requiredCount: 1 })
-    } catch {
-      questions = await fetchScoringReadyRandomQuestions(1)
-    }
-  } else if (source === 'targeted' && targetedStore.generatedQuestions.length) {
-    questions = await ensureScoringReadyQuestions(targetedStore.generatedQuestions, {
-      allowAutoSupplement: false
-    })
-  } else if (source === 'targeted' && recommendedId) {
-    try {
-      const cached = sessionStorage.getItem('targeted_question')
-      const selectedQuestion = cached ? JSON.parse(cached) : await getQuestionById(recommendedId)
-      questions = await ensureScoringReadyQuestions([selectedQuestion], {
+  try {
+    if (isTrialEntry) {
+      try {
+        const trialQuestion = await getQuestionById(billingStore.trialQuestion.id)
+        questions = await ensureScoringReadyQuestions([trialQuestion], { requiredCount: 1 })
+      } catch {
+        questions = await fetchScoringReadyRandomQuestions(1)
+      }
+    } else if (source === 'targeted' && targetedStore.generatedQuestions.length) {
+      questions = await ensureScoringReadyQuestions(targetedStore.generatedQuestions, {
         allowAutoSupplement: false
       })
-    } catch {
+    } else if (source === 'targeted' && recommendedId) {
+      try {
+        const cached = sessionStorage.getItem('targeted_question')
+        const selectedQuestion = cached ? JSON.parse(cached) : await getQuestionById(recommendedId)
+        questions = await ensureScoringReadyQuestions([selectedQuestion], {
+          allowAutoSupplement: false
+        })
+      } catch {
+        questions = await fetchScoringReadyRandomQuestions(DEFAULT_EXAM_QUESTION_COUNT)
+      }
+    } else if (source === 'training' && recommendedId) {
+      try {
+        const cached = sessionStorage.getItem('training_question')
+        const selectedQuestion = cached ? JSON.parse(cached) : await getQuestionById(recommendedId)
+        questions = await ensureScoringReadyQuestions([selectedQuestion], {
+          allowAutoSupplement: false
+        })
+      } catch {
+        questions = await fetchScoringReadyRandomQuestions(DEFAULT_EXAM_QUESTION_COUNT)
+      }
+    } else if (recommendedId) {
+      try {
+        const question = await getQuestionById(recommendedId)
+        questions = await ensureScoringReadyQuestions([question], { requiredCount: 1 })
+      } catch {
+        questions = await fetchScoringReadyRandomQuestions(DEFAULT_EXAM_QUESTION_COUNT)
+      }
+    } else {
       questions = await fetchScoringReadyRandomQuestions(DEFAULT_EXAM_QUESTION_COUNT)
     }
-  } else if (source === 'training' && recommendedId) {
-    try {
-      const cached = sessionStorage.getItem('training_question')
-      const selectedQuestion = cached ? JSON.parse(cached) : await getQuestionById(recommendedId)
-      questions = await ensureScoringReadyQuestions([selectedQuestion], {
-        allowAutoSupplement: false
-      })
-    } catch {
-      questions = await fetchScoringReadyRandomQuestions(DEFAULT_EXAM_QUESTION_COUNT)
+
+    if (!questions.length) {
+      userStore.requireProvinceSelection(true)
+      message.warning('当前省份暂无可用题目，请先重新选择省份。')
+      return
     }
-  } else if (recommendedId) {
-    try {
-      const question = await getQuestionById(recommendedId)
-      questions = await ensureScoringReadyQuestions([question], { requiredCount: 1 })
-    } catch {
-      questions = await fetchScoringReadyRandomQuestions(DEFAULT_EXAM_QUESTION_COUNT)
+
+    recorder.destroyStream()
+    examStore.setVideoEnabled(videoEnabled.value)
+
+    if (examMode.value === 'mock') {
+      await examStore.initExam(questions, true)
+    } else {
+      await examStore.initExam(questions, false)
     }
-  } else {
-    questions = await fetchScoringReadyRandomQuestions(DEFAULT_EXAM_QUESTION_COUNT)
+
+    router.push('/exam/room')
+  } catch (error) {
+    message.error(error?.normalizedMessage || error?.message || '进入考场失败，请稍后重试。')
+  } finally {
+    enteringExam.value = false
   }
-
-  if (!questions.length) {
-    return
-  }
-
-  recorder.destroyStream()
-  examStore.setVideoEnabled(videoEnabled.value)
-
-  if (examMode.value === 'mock') {
-    await examStore.initExam(questions, true)
-  } else {
-    await examStore.initExam(questions, false)
-  }
-
-  router.push('/exam/room')
 }
 
 async function skipWaiting() {

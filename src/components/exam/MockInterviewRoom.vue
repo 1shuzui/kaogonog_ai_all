@@ -298,9 +298,7 @@ import AudioWaveform from '@/components/recording/AudioWaveform.vue'
 import VideoPreview from '@/components/recording/VideoPreview.vue'
 import QuestionMetaTags from '@/components/common/QuestionMetaTags.vue'
 import QuestionRichContent from '@/components/common/QuestionRichContent.vue'
-import mockRoomBg from '@/assets/exam/mock-interview-ai-clean.jpg'
-import judgeRoomReferenceOriginal from '@/assets/exam/mock-interview-room-live.jpg'
-import judgeRoomReferenceStage2026 from '@/assets/exam/mock-interview-room-stage-2026.jpg'
+import mockRoomBg from '@/assets/exam/mock-interview-room-user-reference.jpg'
 
 const router = useRouter()
 const route = useRoute()
@@ -319,30 +317,21 @@ const speechInProgress = ref(false)
 const totalRemainingSeconds = ref(0)
 const finishRequested = ref(false)
 const currentYearLabel = `${new Date().getFullYear()}年度`
-const bakedJudgeRoomYearLabel = '2026年度'
-const useBakedJudgeStage = computed(() => currentYearLabel === bakedJudgeRoomYearLabel)
-const judgeRoomReference = computed(() => (
-  useBakedJudgeStage.value ? judgeRoomReferenceStage2026 : judgeRoomReferenceOriginal
-))
+const judgeRoomReference = mockRoomBg
 let totalTimer = null
 let speechUtterance = null
 const judgeStageSourceImageCache = new Map()
 const judgeStageSourceImagePromiseCache = new Map()
-const judgeStageViewport = {
-  sourceX: 175,
-  sourceWidth: 545
-}
-
 const judgeTimerPanelConfig = {
-  x: 686,
-  y: 284,
-  width: 56,
-  height: 36,
+  x: 679,
+  y: 322,
+  width: 43,
+  height: 29,
   rotate: 0
 }
 
 function loadJudgeStageSourceImage() {
-  const src = judgeRoomReference.value
+  const src = judgeRoomReference
   const cached = judgeStageSourceImageCache.get(src)
   if (cached) return Promise.resolve(cached)
 
@@ -464,6 +453,41 @@ function drawTimerPanel(ctx) {
   ctx.restore()
 }
 
+function drawStageTimerDisplay(ctx) {
+  const { x, y, width, height, rotate } = judgeTimerPanelConfig
+
+  ctx.save()
+  ctx.translate(x, y)
+  ctx.rotate(rotate * Math.PI / 180)
+
+  const screenGradient = ctx.createLinearGradient(0, -height / 2, 0, height / 2)
+  screenGradient.addColorStop(0, 'rgba(26, 14, 12, 0.98)')
+  screenGradient.addColorStop(0.5, 'rgba(14, 11, 11, 0.98)')
+  screenGradient.addColorStop(1, 'rgba(30, 11, 10, 0.98)')
+  ctx.fillStyle = screenGradient
+  ctx.strokeStyle = 'rgba(255, 126, 82, 0.08)'
+  ctx.lineWidth = 0.9
+  drawRoundedRect(ctx, -width / 2, -height / 2, width, height, 2.6)
+  ctx.fill()
+  ctx.stroke()
+
+  const gloss = ctx.createLinearGradient(0, -height / 2, 0, 1)
+  gloss.addColorStop(0, 'rgba(255, 182, 148, 0.16)')
+  gloss.addColorStop(1, 'rgba(255, 182, 148, 0)')
+  ctx.fillStyle = gloss
+  drawRoundedRect(ctx, -width / 2 + 1.5, -height / 2 + 1.5, width - 3, height * 0.38, 2)
+  ctx.fill()
+
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.shadowColor = 'rgba(255, 72, 35, 0.9)'
+  ctx.shadowBlur = 8
+  ctx.fillStyle = '#ff5f3d'
+  ctx.font = '700 16px "Bahnschrift", "Consolas", monospace'
+  ctx.fillText(formattedTotalRemaining.value, 0, 1)
+  ctx.restore()
+}
+
 async function renderJudgeStage() {
   const canvas = judgeStageCanvasRef.value
   if (!canvas) return
@@ -475,14 +499,8 @@ async function renderJudgeStage() {
   if (!context) return
 
   context.clearRect(0, 0, judgeStageSceneSize.width, judgeStageSceneSize.height)
-  if (useBakedJudgeStage.value) {
-    context.drawImage(image, 0, 0, judgeStageSceneSize.width, judgeStageSceneSize.height)
-  } else {
-    const { sourceX, sourceWidth } = judgeStageViewport
-    context.drawImage(image, sourceX, 0, sourceWidth, image.height, 0, 0, judgeStageSceneSize.width, judgeStageSceneSize.height)
-    drawYearPatch(context, image)
-  }
-  drawTimerPanel(context)
+  context.drawImage(image, 0, 0, judgeStageSceneSize.width, judgeStageSceneSize.height)
+  drawStageTimerDisplay(context)
 }
 
 const candidateLabel = computed(() => {

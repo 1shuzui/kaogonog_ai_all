@@ -295,6 +295,15 @@ export const useUserStore = defineStore('user', {
       }
     },
 
+    requireProvinceSelection(resetProvince = false) {
+      this.provinceConfirmed = false
+      saveProvinceConfirmedToStorage(false, this.username)
+
+      if (resetProvince) {
+        this.setProvince('national')
+      }
+    },
+
     async savePreferences(prefs) {
       this.preferences = normalizePreferences({
         ...this.preferences,

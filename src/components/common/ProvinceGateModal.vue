@@ -57,24 +57,35 @@ const props = defineProps({
 const emit = defineEmits(['confirmed'])
 const userStore = useUserStore()
 
+function isExplicitProvince(code = '') {
+  const normalized = String(code || '').trim()
+  return !!normalized && normalized !== 'national'
+}
+
 const options = computed(() => {
-  if (userStore.provinces.length) return userStore.provinces
-  return PROVINCES
+  const source = userStore.provinces.length ? userStore.provinces : PROVINCES
+  return source.filter((item) => isExplicitProvince(item?.code))
 })
 
-const selectedProvince = ref(userStore.selectedProvince || '')
+const selectedProvince = ref(
+  userStore.hasConfirmedProvinceSelection && isExplicitProvince(userStore.selectedProvince)
+    ? userStore.selectedProvince
+    : ''
+)
 
 watch(
   () => props.open,
   (value) => {
     if (value) {
-      selectedProvince.value = userStore.selectedProvince || ''
+      selectedProvince.value = userStore.hasConfirmedProvinceSelection && isExplicitProvince(userStore.selectedProvince)
+        ? userStore.selectedProvince
+        : ''
     }
   }
 )
 
 async function confirmProvince() {
-  if (!selectedProvince.value) return
+  if (!isExplicitProvince(selectedProvince.value)) return
   const result = await userStore.confirmProvinceSelection(selectedProvince.value)
   if (result?.success === false) {
     message.error('省份保存失败，请稍后重试')
