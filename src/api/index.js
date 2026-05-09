@@ -1,7 +1,6 @@
 import axios from 'axios'
 import { message } from 'ant-design-vue'
 import router from '@/router'
-import { normalizeScoringErrorMessage } from '@/utils/scoringSupport'
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
 const TOKEN_STORAGE_KEY = 'token'
@@ -39,7 +38,7 @@ export function normalizeErrorMessage(payload, fallback = 'Request failed') {
       .join('; ') || fallback
   }
 
-  return normalizeScoringErrorMessage(detail ? String(detail) : fallback) || fallback
+  return detail ? String(detail) : fallback
 }
 
 http.interceptors.request.use((config) => {

@@ -25,7 +25,7 @@
             <p style="color: #CF1322; margin-bottom: 8px">{{ permissionError }}</p>
             <a-space>
               <a-button size="small" type="primary" @click="retryPermission">重新检测</a-button>
-              <a-button size="small" v-if="micReady && !cameraReady" @click="tryMicOnly">仅使用麦克风</a-button>
+              <a-button size="small" v-if="!micReady" @click="tryMicOnly">仅使用麦克风</a-button>
             </a-space>
             <div class="permission-tips">
               <p>常见原因:</p>
@@ -63,6 +63,9 @@
               <a-button size="small" type="primary" @click="confirmDevice">确认正常</a-button>
             </div>
           </div>
+          <div v-else-if="currentStep === 2 && allReady" style="color: #389E0D">
+            设备检测已确认，可直接进入考场。
+          </div>
         </template>
       </a-step>
     </a-steps>
@@ -84,7 +87,7 @@
           </a-space>
         </a-radio-group>
       </div>
-      <a-button type="primary" size="large" block :loading="enteringExam" :disabled="enteringExam" @click="enterExam" style="margin-top: 16px">
+      <a-button type="primary" size="large" block @click="enterExam" style="margin-top: 16px">
         {{ examMode === 'mock' ? '开始模拟面试' : '进入考场' }}
       </a-button>
     </div>
@@ -103,10 +106,6 @@ import { useBillingStore } from '@/stores/billing'
 import { getRandomQuestions, getQuestionById } from '@/api/questionBank'
 import { useUserStore } from '@/stores/user'
 import { useTargetedStore } from '@/stores/targeted'
-import {
-  getScoringUnavailableMessage,
-  splitScoringSupportedQuestions
-} from '@/utils/scoringSupport'
 
 const router = useRouter()
 const route = useRoute()
@@ -124,9 +123,9 @@ const testBlob = ref(null)
 const testBlobUrl = ref('')
 const testCountdown = ref(3)
 const allReady = ref(false)
+const recorderReady = ref(false)
 const videoEnabled = ref(true)
 const examMode = ref('free')
-const enteringExam = ref(false)
 
 // 候考室
 const waitingRoom = ref(false)
@@ -140,88 +139,12 @@ const waitCountdown = computed(() => {
 let countdownTimer = null
 let waitTimer = null
 let pendingQuestions = null
-const DEFAULT_EXAM_QUESTION_COUNT = 5
-const RANDOM_FETCH_BUFFER = 6
-const RANDOM_FETCH_ATTEMPTS = 3
-
-function notifyUnsupportedQuestions(unsupportedCount, replaced = false) {
-  if (!unsupportedCount) return
-
-  if (replaced) {
-    message.warning(`已跳过 ${unsupportedCount} 道未接入评分题库的题目，并自动替换为可评分题目。`)
-    return
-  }
-
-  message.warning(`已跳过 ${unsupportedCount} 道未接入评分题库的题目，本次仅保留可评分题目。`)
-}
-
-async function fetchScoringReadyRandomQuestions(count = DEFAULT_EXAM_QUESTION_COUNT, options = {}) {
-  const targetCount = Math.max(Number(count) || 0, 0)
-  const excludeIds = new Set(Array.isArray(options.excludeIds) ? options.excludeIds.filter(Boolean) : [])
-  const collected = []
-
-  for (let attempt = 0; attempt < RANDOM_FETCH_ATTEMPTS && collected.length < targetCount; attempt++) {
-    const batch = await getRandomQuestions({
-      province: userStore.selectedProvince,
-      count: Math.max(targetCount + RANDOM_FETCH_BUFFER, targetCount),
-      ...options.params
-    })
-
-    const { supported } = splitScoringSupportedQuestions(batch)
-    for (const question of supported) {
-      if (!question?.id || excludeIds.has(question.id)) continue
-      excludeIds.add(question.id)
-      collected.push(question)
-      if (collected.length >= targetCount) break
-    }
-  }
-
-  return collected.slice(0, targetCount)
-}
-
-async function ensureScoringReadyQuestions(questions, options = {}) {
-  const candidateList = Array.isArray(questions) ? questions.filter(Boolean) : []
-  const requiredCount = Math.max(Number(options.requiredCount) || 0, 0)
-  const allowAutoSupplement = options.allowAutoSupplement !== false
-
-  const { supported, unsupported } = splitScoringSupportedQuestions(candidateList)
-  let resolved = [...supported]
-
-  if (!resolved.length) {
-    if (!allowAutoSupplement || !requiredCount) {
-      message.error(getScoringUnavailableMessage(candidateList.length || 1))
-      return []
-    }
-
-    const replacementQuestions = await fetchScoringReadyRandomQuestions(requiredCount)
-    if (!replacementQuestions.length) {
-      message.error('当前没有可用的评分题目，请稍后再试。')
-      return []
-    }
-
-    notifyUnsupportedQuestions(candidateList.length || 1, true)
-    return replacementQuestions
-  }
-
-  if (unsupported.length) {
-    notifyUnsupportedQuestions(unsupported.length)
-  }
-
-  if (allowAutoSupplement && requiredCount && resolved.length < requiredCount) {
-    const supplementQuestions = await fetchScoringReadyRandomQuestions(requiredCount - resolved.length, {
-      excludeIds: resolved.map((question) => question?.id)
-    })
-
-    if (supplementQuestions.length) {
-      resolved = [...resolved, ...supplementQuestions]
-      message.info(`已自动补足 ${supplementQuestions.length} 道可评分题目。`)
-    }
-  }
-
-  return resolved.slice(0, requiredCount || resolved.length)
-}
 
 onMounted(() => {
+  if (examStore.deviceReady) {
+    restorePreparationState()
+    return
+  }
   doPermissionCheck()
 })
 
@@ -235,20 +158,18 @@ onUnmounted(() => {
 })
 
 async function doPermissionCheck() {
+  resetPreparationState({ clearStoreReady: true })
   currentStep.value = 0
   permissionError.value = ''
   const ok = await checkBoth()
   if (ok) {
     videoEnabled.value = true
-    currentStep.value = 1
-    await initRecorder()
-    return
-  }
-
-  if (micReady.value && !cameraReady.value) {
-    videoEnabled.value = false
-    currentStep.value = 1
-    await initRecorder()
+    const ready = await initRecorder()
+    if (ready) {
+      currentStep.value = 1
+      return
+    }
+    permissionError.value = recorder.error.value || '录制设备初始化失败，请重试'
   }
 }
 
@@ -258,18 +179,26 @@ async function retryPermission() {
 }
 
 async function tryMicOnly() {
+  resetPreparationState({ clearStoreReady: true })
   permissionError.value = ''
   currentStep.value = 0
   const ok = await checkMicOnly()
   if (ok) {
     videoEnabled.value = false
-    currentStep.value = 1
-    await initRecorder()
+    const ready = await initRecorder()
+    if (ready) {
+      currentStep.value = 1
+      return
+    }
+    permissionError.value = recorder.error.value || '录制设备初始化失败，请重试'
   }
 }
 
 async function initRecorder() {
-  await recorder.initStream({ videoEnabled: videoEnabled.value })
+  recorderReady.value = false
+  const stream = await recorder.initStream({ videoEnabled: videoEnabled.value })
+  recorderReady.value = !!stream
+  return recorderReady.value
 }
 
 function stepStatus(step) {
@@ -279,14 +208,36 @@ function stepStatus(step) {
 }
 
 async function startTestRecord() {
+  if (testRecording.value) return
+
+  if (!recorderReady.value) {
+    const ready = await initRecorder()
+    if (!ready) {
+      message.error(recorder.error.value || '录制设备初始化失败，请重新检测')
+      return
+    }
+  }
+
+  const started = recorder.startRecording()
+  if (!started) {
+    message.error(recorder.error.value || '开始试录失败，请重试')
+    return
+  }
+
+  clearInterval(countdownTimer)
   testRecording.value = true
+  testBlob.value = null
+  if (testBlobUrl.value) {
+    URL.revokeObjectURL(testBlobUrl.value)
+    testBlobUrl.value = ''
+  }
   testCountdown.value = 3
-  recorder.startRecording()
 
   countdownTimer = setInterval(() => {
     testCountdown.value--
     if (testCountdown.value <= 0) {
       clearInterval(countdownTimer)
+      countdownTimer = null
       finishTestRecord()
     }
   }, 1000)
@@ -296,25 +247,61 @@ async function finishTestRecord() {
   const blob = await recorder.stopRecording()
   testRecording.value = false
   testBlob.value = blob
-  if (blob) {
-    testBlobUrl.value = URL.createObjectURL(blob)
-    currentStep.value = 2
+  if (!blob) {
+    currentStep.value = 1
+    message.warning('本次试录未生成有效录音，请重新试录')
+    return
   }
+
+  testBlobUrl.value = URL.createObjectURL(blob)
+  currentStep.value = 2
 }
 
 function retryTest() {
+  clearInterval(countdownTimer)
+  countdownTimer = null
   testBlob.value = null
   if (testBlobUrl.value) URL.revokeObjectURL(testBlobUrl.value)
   testBlobUrl.value = ''
+  testRecording.value = false
+  testCountdown.value = 3
   currentStep.value = 1
 }
 
 function confirmDevice() {
   allReady.value = true
+  examStore.setVideoEnabled(videoEnabled.value)
   examStore.setDeviceReady(true)
 }
 
-async function enterExamLegacy() {
+function resetPreparationState({ clearStoreReady = false } = {}) {
+  clearInterval(countdownTimer)
+  countdownTimer = null
+  allReady.value = false
+  recorderReady.value = false
+  testRecording.value = false
+  testBlob.value = null
+  testCountdown.value = 3
+  if (testBlobUrl.value) {
+    URL.revokeObjectURL(testBlobUrl.value)
+    testBlobUrl.value = ''
+  }
+  if (clearStoreReady) {
+    examStore.setDeviceReady(false)
+  }
+}
+
+function restorePreparationState() {
+  resetPreparationState()
+  allReady.value = true
+  currentStep.value = 2
+  permissionError.value = ''
+  videoEnabled.value = examStore.videoEnabled
+  micReady.value = true
+  cameraReady.value = examStore.videoEnabled
+}
+
+async function enterExam() {
   recorder.destroyStream()
   // 保存视频模式到 store，供 ExamRoom 使用
   examStore.setVideoEnabled(videoEnabled.value)
@@ -373,81 +360,6 @@ async function enterExamLegacy() {
   } else {
     await examStore.initExam(questions, false)
     router.push('/exam/room')
-  }
-}
-
-async function enterExam() {
-  if (enteringExam.value) return
-
-  enteringExam.value = true
-  let questions = []
-  const isTrialEntry = String(route.query.trial || '') === '1'
-  const source = String(route.query.source || '')
-  const recommendedId = String(route.query.questionId || '')
-
-  try {
-    if (isTrialEntry) {
-      try {
-        const trialQuestion = await getQuestionById(billingStore.trialQuestion.id)
-        questions = await ensureScoringReadyQuestions([trialQuestion], { requiredCount: 1 })
-      } catch {
-        questions = await fetchScoringReadyRandomQuestions(1)
-      }
-    } else if (source === 'targeted' && targetedStore.generatedQuestions.length) {
-      questions = await ensureScoringReadyQuestions(targetedStore.generatedQuestions, {
-        allowAutoSupplement: false
-      })
-    } else if (source === 'targeted' && recommendedId) {
-      try {
-        const cached = sessionStorage.getItem('targeted_question')
-        const selectedQuestion = cached ? JSON.parse(cached) : await getQuestionById(recommendedId)
-        questions = await ensureScoringReadyQuestions([selectedQuestion], {
-          allowAutoSupplement: false
-        })
-      } catch {
-        questions = await fetchScoringReadyRandomQuestions(DEFAULT_EXAM_QUESTION_COUNT)
-      }
-    } else if (source === 'training' && recommendedId) {
-      try {
-        const cached = sessionStorage.getItem('training_question')
-        const selectedQuestion = cached ? JSON.parse(cached) : await getQuestionById(recommendedId)
-        questions = await ensureScoringReadyQuestions([selectedQuestion], {
-          allowAutoSupplement: false
-        })
-      } catch {
-        questions = await fetchScoringReadyRandomQuestions(DEFAULT_EXAM_QUESTION_COUNT)
-      }
-    } else if (recommendedId) {
-      try {
-        const question = await getQuestionById(recommendedId)
-        questions = await ensureScoringReadyQuestions([question], { requiredCount: 1 })
-      } catch {
-        questions = await fetchScoringReadyRandomQuestions(DEFAULT_EXAM_QUESTION_COUNT)
-      }
-    } else {
-      questions = await fetchScoringReadyRandomQuestions(DEFAULT_EXAM_QUESTION_COUNT)
-    }
-
-    if (!questions.length) {
-      userStore.requireProvinceSelection(true)
-      message.warning('当前省份暂无可用题目，请先重新选择省份。')
-      return
-    }
-
-    recorder.destroyStream()
-    examStore.setVideoEnabled(videoEnabled.value)
-
-    if (examMode.value === 'mock') {
-      await examStore.initExam(questions, true)
-    } else {
-      await examStore.initExam(questions, false)
-    }
-
-    router.push('/exam/room')
-  } catch (error) {
-    message.error(error?.normalizedMessage || error?.message || '进入考场失败，请稍后重试。')
-  } finally {
-    enteringExam.value = false
   }
 }
 

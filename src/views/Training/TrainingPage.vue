@@ -1,7 +1,7 @@
 <template>
   <div class="training-page page-container">
     <h2>专项训练</h2>
-    <p class="training-page__desc">按考公面试常见题型分类训练，集中突破短板题型</p>
+    <p class="training-page__desc">针对薄弱维度进行专项突破，AI智能出题评分</p>
 
     <div class="dimension-grid">
       <div
@@ -15,7 +15,7 @@
         </div>
         <div class="dimension-card__info">
           <h4>{{ dim.name }}</h4>
-          <p class="dimension-card__score">单题满分 {{ dim.maxScore }} 分</p>
+          <p class="dimension-card__score">满分 {{ dim.maxScore }} 分</p>
           <div class="dimension-card__progress" v-if="getProgress(dim.key).attempts > 0">
             <span class="progress-label">练习 {{ getProgress(dim.key).attempts }} 次</span>
             <span class="progress-best">最佳 {{ getProgress(dim.key).bestScore }} 分</span>
@@ -38,7 +38,7 @@
         </div>
         <div class="overview-item">
           <div class="overview-item__value">{{ trainedDimensions }}</div>
-          <div class="overview-item__label">已训练题型</div>
+          <div class="overview-item__label">已训练维度</div>
         </div>
         <div class="overview-item">
           <div class="overview-item__value">{{ overallAvg }}</div>
@@ -53,23 +53,33 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { RightOutlined } from '@ant-design/icons-vue'
-import { TRAINING_CATEGORIES, mergeTrainingProgress } from '@/utils/constants'
+import { DIMENSIONS } from '@/utils/constants'
 import { useTrainingStore } from '@/stores/training'
 
 const router = useRouter()
 const trainingStore = useTrainingStore()
 
-const dimensionList = TRAINING_CATEGORIES
+const dimensionList = DIMENSIONS.map(d => ({
+  ...d,
+  icon: getDimIcon(d.key),
+  bgColor: getDimBgColor(d.key)
+}))
+
+function getDimIcon(key) {
+  const icons = { legal: '⚖️', practical: '🛠️', logic: '🧠', expression: '🎤', analysis: '🔍', emergency: '🚨' }
+  return icons[key] || '📝'
+}
+
+function getDimBgColor(key) {
+  const colors = {
+    legal: '#F0E6FF', practical: '#E6F7E6', logic: '#E6F0FF',
+    expression: '#FFF0E6', analysis: '#E6FAFF', emergency: '#FFE6E6'
+  }
+  return colors[key] || '#F0F0F0'
+}
 
 function getProgress(key) {
-  const category = dimensionList.find((item) => item.key === key)
-  if (!category) {
-    return mergeTrainingProgress([])
-  }
-
-  return mergeTrainingProgress(
-    category.progressKeys.map((progressKey) => trainingStore.getDimensionProgress(progressKey))
-  )
+  return trainingStore.getDimensionProgress(key)
 }
 
 function goToDimension(key) {
@@ -77,23 +87,23 @@ function goToDimension(key) {
 }
 
 const hasAnyProgress = computed(() => {
-  return dimensionList.some((item) => getProgress(item.key).attempts > 0)
+  return DIMENSIONS.some(d => getProgress(d.key).attempts > 0)
 })
 
 const totalAttempts = computed(() => {
-  return dimensionList.reduce((sum, item) => sum + getProgress(item.key).attempts, 0)
+  return DIMENSIONS.reduce((sum, d) => sum + getProgress(d.key).attempts, 0)
 })
 
 const trainedDimensions = computed(() => {
-  return dimensionList.filter((item) => getProgress(item.key).attempts > 0).length
+  return DIMENSIONS.filter(d => getProgress(d.key).attempts > 0).length
 })
 
 const overallAvg = computed(() => {
   let total = 0, count = 0
-  for (const item of dimensionList) {
-    const p = getProgress(item.key)
+  for (const d of DIMENSIONS) {
+    const p = getProgress(d.key)
     if (p.attempts > 0) {
-      total += (p.totalScore / p.attempts / item.maxScore) * 100
+      total += (p.totalScore / p.attempts / d.maxScore) * 100
       count++
     }
   }

@@ -5,23 +5,23 @@
         <span class="pricing-hero__eyebrow">套餐方案</span>
         <h1>解锁更完整的面试训练</h1>
         <p>
-          试用用户可以先体验 1 道引导题。当前为前端演示版，
-          开通后可解锁完整模拟面试、定向备考和专项训练。
+          普通用户未开通时只能体验 1 道试用题。开通后可解锁完整模拟面试、
+          定向备考和专项训练，题库管理仅管理员可用。
         </p>
         <div class="pricing-hero__chips">
           <span>单题试用</span>
-          <span>路由级拦截</span>
-          <span>本地演示开通</span>
+          <span>服务端鉴权</span>
+          <span>账号级套餐</span>
         </div>
       </div>
 
       <div class="pricing-hero__status">
         <div class="pricing-status-card">
           <span class="pricing-status-card__label">当前套餐</span>
-          <strong>{{ billingStore.planLabel }}</strong>
-          <p>{{ billingStore.planStatusText }}</p>
+          <strong>{{ currentPlanLabel }}</strong>
+          <p>{{ currentPlanStatus }}</p>
           <a-button
-            v-if="billingStore.isPaid"
+            v-if="canContinue"
             class="pricing-status-card__cta"
             type="primary"
             @click="goNextStep"
@@ -48,22 +48,6 @@
       show-icon
       :message="`你刚刚从“${paywallSource}”跳转到套餐页`"
     />
-
-    <div class="pricing-risk card">
-      <div class="pricing-risk__head">
-        <h3>开通前风险提示</h3>
-        <span>请务必阅读</span>
-      </div>
-      <div class="pricing-risk__list">
-        <div class="pricing-risk__item">账号权益建议仅限本人使用，不建议多人共用。</div>
-        <div class="pricing-risk__item">多设备同时登录或多人切换使用，可能导致练习记录、录音、评分结果出现错位或覆盖。</div>
-        <div class="pricing-risk__item">当前演示版的支付权益以本地账号状态和当前浏览器数据为准，清理浏览器数据后可能需要重新同步。</div>
-        <div class="pricing-risk__item">如果出现订单、权限或设备异常，请通过个人中心的客服反馈入口联系管理员处理。</div>
-      </div>
-      <div class="pricing-risk__actions">
-        <a-button @click="router.push('/profile')">前往客服反馈</a-button>
-      </div>
-    </div>
 
     <div class="pricing-grid">
       <div
@@ -109,7 +93,7 @@
     <div class="pricing-support card">
       <div class="pricing-support__header">
         <h3>已解锁模块</h3>
-        <span>当前为纯前端演示</span>
+        <span>账号级权限已联动</span>
       </div>
       <div class="pricing-support__grid">
         <div v-for="moduleName in PREMIUM_MODULES" :key="moduleName" class="pricing-support__item">
@@ -117,8 +101,8 @@
         </div>
       </div>
       <p class="pricing-support__note">
-        当前页面仅提供本地演示开通。真实支付、订单校验以及后端权限联动，
-        后续再接入。
+        当前页面仍是演示开通流程，但套餐状态已经写回当前账号，
+        并由后端接口统一执行权限校验。
       </p>
     </div>
 
@@ -150,16 +134,25 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { useBillingStore } from '@/stores/billing'
+import { useUserStore } from '@/stores/user'
 import { BILLING_PLANS, BILLING_PLAN_KEYS, PREMIUM_MODULES } from '@/utils/billing'
 
 const route = useRoute()
 const router = useRouter()
 const billingStore = useBillingStore()
+const userStore = useUserStore()
 
 const plans = BILLING_PLANS
 const paywallSource = computed(() => String(route.query.source || billingStore.lastPaywallSource || ''))
 const redirectTarget = computed(() => String(route.query.redirect || billingStore.lastIntendedPath || '/'))
 const trialQuestion = computed(() => billingStore.trialQuestion)
+const currentPlanLabel = computed(() => (userStore.isAdmin ? '管理员' : billingStore.planLabel))
+const currentPlanStatus = computed(() => (
+  userStore.isAdmin
+    ? '管理员账号默认开放全部功能，题库管理仅管理员可用'
+    : billingStore.planStatusText
+))
+const canContinue = computed(() => userStore.isAdmin || billingStore.isPaid)
 const successVisible = ref(false)
 const latestOrder = ref(null)
 
@@ -189,8 +182,12 @@ function goOrders() {
   router.push('/profile/orders')
 }
 
-function activatePlan(planKey) {
-  latestOrder.value = billingStore.activatePlan(planKey)
+async function activatePlan(planKey) {
+  if (!userStore.isAuthenticated) {
+    router.push({ path: '/login', query: { redirect: route.fullPath } })
+    return
+  }
+  latestOrder.value = await billingStore.activatePlan(planKey)
   message.success(`已开通：${latestOrder.value?.title || '套餐'}`)
   successVisible.value = true
 }
@@ -296,62 +293,6 @@ function activatePlan(planKey) {
 
 .pricing-paywall-tip {
   margin-top: 16px;
-}
-
-.pricing-risk {
-  margin-top: 18px;
-  padding: 18px 20px;
-  border-radius: 22px;
-  border: 1px solid rgba(212, 135, 25, 0.18);
-  background: linear-gradient(180deg, #fffaf1 0%, #fffefb 100%);
-}
-
-.pricing-risk__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.pricing-risk__head h3 {
-  margin: 0;
-  color: @text-primary;
-  font-size: @font-size-lg;
-}
-
-.pricing-risk__head span {
-  color: #8a4d17;
-  font-size: @font-size-xs;
-  font-weight: 600;
-}
-
-.pricing-risk__list {
-  display: grid;
-  gap: 10px;
-}
-
-.pricing-risk__actions {
-  margin-top: 14px;
-}
-
-.pricing-risk__item {
-  position: relative;
-  padding-left: 16px;
-  color: @text-regular;
-  font-size: @font-size-sm;
-  line-height: 1.8;
-}
-
-.pricing-risk__item::before {
-  content: '';
-  position: absolute;
-  top: 10px;
-  left: 0;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #d48806;
 }
 
 .pricing-grid {

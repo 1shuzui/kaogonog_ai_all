@@ -298,7 +298,7 @@ import AudioWaveform from '@/components/recording/AudioWaveform.vue'
 import VideoPreview from '@/components/recording/VideoPreview.vue'
 import QuestionMetaTags from '@/components/common/QuestionMetaTags.vue'
 import QuestionRichContent from '@/components/common/QuestionRichContent.vue'
-import mockRoomBg from '@/assets/exam/mock-interview-room-user-reference.jpg'
+import mockRoomBg from '@/assets/exam/mock-interview-room-user-download-20260509.jpg'
 
 const router = useRouter()
 const route = useRoute()
@@ -310,7 +310,8 @@ const stream = recorder.stream
 const recorderDuration = recorder.duration
 const questionStripRef = ref(null)
 const judgeStageCanvasRef = ref(null)
-const judgeStageSceneSize = { width: 720, height: 404 }
+const judgeStageSceneSize = { width: 960, height: 640 }
+const judgeStageSourceSize = { width: 2508, height: 1672 }
 
 const mockStarted = ref(false)
 const speechInProgress = ref(false)
@@ -323,11 +324,11 @@ let speechUtterance = null
 const judgeStageSourceImageCache = new Map()
 const judgeStageSourceImagePromiseCache = new Map()
 const judgeTimerPanelConfig = {
-  x: 679,
-  y: 322,
-  width: 43,
-  height: 29,
-  rotate: 0
+  x: 170,
+  y: 834,
+  width: 216,
+  height: 122,
+  radius: 12
 }
 
 function loadJudgeStageSourceImage() {
@@ -369,6 +370,35 @@ function drawRoundedRect(ctx, x, y, width, height, radius) {
   ctx.lineTo(x, y + safeRadius)
   ctx.quadraticCurveTo(x, y, x + safeRadius, y)
   ctx.closePath()
+}
+
+function scaleStageRect(config) {
+  const scaleX = judgeStageSceneSize.width / judgeStageSourceSize.width
+  const scaleY = judgeStageSceneSize.height / judgeStageSourceSize.height
+  return {
+    x: config.x * scaleX,
+    y: config.y * scaleY,
+    width: config.width * scaleX,
+    height: config.height * scaleY,
+    radius: (config.radius || 0) * Math.min(scaleX, scaleY)
+  }
+}
+
+function drawSpacedText(ctx, text, centerX, centerY, spacing = 0) {
+  const chars = Array.from(String(text || ''))
+  if (!chars.length) return
+
+  const widths = chars.map((char) => ctx.measureText(char).width)
+  const totalWidth = widths.reduce((sum, width) => sum + width, 0) + spacing * (chars.length - 1)
+  let cursor = centerX - totalWidth / 2
+
+  ctx.save()
+  ctx.textAlign = 'left'
+  chars.forEach((char, index) => {
+    ctx.fillText(char, cursor, centerY)
+    cursor += widths[index] + spacing
+  })
+  ctx.restore()
 }
 
 function drawYearPatch(ctx, image) {
@@ -413,78 +443,34 @@ function drawYearPatch(ctx, image) {
   ctx.restore()
 }
 
-function drawTimerPanel(ctx) {
-  const { x, y, width, height, rotate } = judgeTimerPanelConfig
-
-  ctx.save()
-  ctx.translate(x, y)
-  ctx.rotate(rotate * Math.PI / 180)
-
-  ctx.fillStyle = 'rgba(32, 18, 9, 0.16)'
-  drawRoundedRect(ctx, -width / 2 + 1.5, -height / 2 + 3, width - 2, height - 2, 4)
-  ctx.fill()
-
-  const panelGradient = ctx.createLinearGradient(0, -height / 2, 0, height / 2)
-  panelGradient.addColorStop(0, 'rgba(180, 158, 118, 0.96)')
-  panelGradient.addColorStop(1, 'rgba(129, 104, 68, 0.96)')
-  ctx.fillStyle = panelGradient
-  ctx.strokeStyle = 'rgba(87, 63, 35, 0.34)'
-  ctx.lineWidth = 0.8
-  drawRoundedRect(ctx, -width / 2, -height / 2, width, height, 4)
-  ctx.fill()
-  ctx.stroke()
-
-  ctx.fillStyle = 'rgba(78, 54, 28, 0.94)'
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.font = '600 7px "SimSun", "Songti SC", serif'
-  ctx.fillText('计时员', 0, -height / 2 + 6)
-
-  drawRoundedRect(ctx, -width / 2 + 6, -5, width - 12, 20, 3)
-  ctx.fillStyle = 'rgba(26, 31, 27, 0.98)'
-  ctx.fill()
-  ctx.strokeStyle = 'rgba(220, 235, 210, 0.12)'
-  ctx.lineWidth = 0.6
-  ctx.stroke()
-
-  ctx.fillStyle = '#d9ffd4'
-  ctx.font = '700 11px "Consolas", "Courier New", monospace'
-  ctx.fillText(formattedTotalRemaining.value, 0, 4)
-  ctx.restore()
-}
-
 function drawStageTimerDisplay(ctx) {
-  const { x, y, width, height, rotate } = judgeTimerPanelConfig
+  const { x, y, width, height, radius } = scaleStageRect(judgeTimerPanelConfig)
+  const left = x - width / 2
+  const top = y - height / 2
 
   ctx.save()
-  ctx.translate(x, y)
-  ctx.rotate(rotate * Math.PI / 180)
-
-  const screenGradient = ctx.createLinearGradient(0, -height / 2, 0, height / 2)
-  screenGradient.addColorStop(0, 'rgba(26, 14, 12, 0.98)')
-  screenGradient.addColorStop(0.5, 'rgba(14, 11, 11, 0.98)')
-  screenGradient.addColorStop(1, 'rgba(30, 11, 10, 0.98)')
-  ctx.fillStyle = screenGradient
-  ctx.strokeStyle = 'rgba(255, 126, 82, 0.08)'
-  ctx.lineWidth = 0.9
-  drawRoundedRect(ctx, -width / 2, -height / 2, width, height, 2.6)
+  ctx.fillStyle = 'rgba(8, 9, 10, 0.96)'
+  drawRoundedRect(ctx, left, top, width, height, radius)
   ctx.fill()
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)'
+  ctx.lineWidth = Math.max(1, width * 0.012)
+  drawRoundedRect(ctx, left, top, width, height, radius)
   ctx.stroke()
 
-  const gloss = ctx.createLinearGradient(0, -height / 2, 0, 1)
-  gloss.addColorStop(0, 'rgba(255, 182, 148, 0.16)')
-  gloss.addColorStop(1, 'rgba(255, 182, 148, 0)')
+  const gloss = ctx.createLinearGradient(0, top, 0, top + height * 0.52)
+  gloss.addColorStop(0, 'rgba(255, 255, 255, 0.12)')
+  gloss.addColorStop(1, 'rgba(255, 255, 255, 0)')
   ctx.fillStyle = gloss
-  drawRoundedRect(ctx, -width / 2 + 1.5, -height / 2 + 1.5, width - 3, height * 0.38, 2)
+  drawRoundedRect(ctx, left + width * 0.04, top + height * 0.05, width * 0.92, height * 0.34, radius * 0.65)
   ctx.fill()
 
-  ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
+  ctx.font = `700 ${Math.max(20, height * 0.56)}px "Bahnschrift", "Consolas", monospace`
   ctx.shadowColor = 'rgba(255, 72, 35, 0.9)'
-  ctx.shadowBlur = 8
+  ctx.shadowBlur = Math.max(10, width * 0.14)
   ctx.fillStyle = '#ff5f3d'
-  ctx.font = '700 16px "Bahnschrift", "Consolas", monospace'
-  ctx.fillText(formattedTotalRemaining.value, 0, 1)
+  drawSpacedText(ctx, formattedTotalRemaining.value, x, y + height * 0.04, Math.max(1.6, width * 0.015))
   ctx.restore()
 }
 

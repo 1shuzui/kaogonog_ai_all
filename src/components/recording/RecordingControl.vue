@@ -39,7 +39,7 @@
       loading
       disabled
     >
-      {{ submittingText }}
+      评分中...
     </a-button>
 
     <div v-else-if="status === 'completed'" class="recording-control__done">
@@ -76,8 +76,7 @@ import {
 
 defineProps({
   status: { type: String, default: 'idle' },
-  isLast: { type: Boolean, default: false },
-  submittingText: { type: String, default: '处理中...' }
+  isLast: { type: Boolean, default: false }
 })
 
 defineEmits(['start-prep', 'start-answer', 'submit', 'next', 'finish'])

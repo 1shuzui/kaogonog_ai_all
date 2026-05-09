@@ -20,16 +20,10 @@
 
     <div class="exam-room__main">
       <div class="exam-room__question">
-        <QuestionMetaTags :question="examStore.currentQuestion" emphasis :max-keywords="5" />
-        <div class="question-stem">
-          <QuestionRichContent
-            :text="examStore.currentQuestion.stem"
-            dark
-            scrollable
-            :scroll-height="220"
-            :collapsed-height="160"
-          />
-        </div>
+        <a-tag color="blue" style="margin-bottom: 8px">
+          {{ dimensionName }}
+        </a-tag>
+        <div class="question-stem">{{ examStore.currentQuestion.stem }}</div>
       </div>
     </div>
 
@@ -112,14 +106,12 @@ import { useMediaRecorder } from '@/composables/useMediaRecorder'
 import { useCountdown } from '@/composables/useCountdown'
 import { useNetworkStatus } from '@/composables/useNetworkStatus'
 import { completeExam } from '@/api/exam'
-import { EXAM_STATUS, getGrade } from '@/utils/constants'
+import { DIMENSIONS, EXAM_STATUS, getGrade } from '@/utils/constants'
 import VideoPreview from '@/components/recording/VideoPreview.vue'
 import AudioWaveform from '@/components/recording/AudioWaveform.vue'
 import CountdownTimer from '@/components/common/CountdownTimer.vue'
 import RecordingControl from '@/components/recording/RecordingControl.vue'
 import ScoreRing from '@/components/common/ScoreRing.vue'
-import QuestionMetaTags from '@/components/common/QuestionMetaTags.vue'
-import QuestionRichContent from '@/components/common/QuestionRichContent.vue'
 import { message } from 'ant-design-vue'
 
 const router = useRouter()
@@ -137,6 +129,13 @@ const formattedElapsed = computed(() => {
   const m = Math.floor(elapsed.value / 60)
   const s = elapsed.value % 60
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+})
+
+const dimensionName = computed(() => {
+  const q = examStore.currentQuestion
+  if (!q) return ''
+  const dim = DIMENSIONS.find((d) => d.key === q.dimension)
+  return dim ? dim.name : q.dimension
 })
 
 const gradeLabel = computed(() => {
@@ -182,8 +181,12 @@ function onStartPrep() {
 
 function onStartAnswer() {
   countdown.stop()
+  const started = recorder.startRecording()
+  if (!started) {
+    message.error(recorder.error.value || '录制启动失败，请检查设备权限后重试')
+    return
+  }
   examStore.startAnswering()
-  recorder.startRecording()
   const q = examStore.currentQuestion
   countdown.reset(q.answerTime || 180)
   countdown.onFinish(() => {
@@ -196,11 +199,11 @@ async function onSubmit() {
   countdown.stop()
   try {
     const blob = await recorder.stopRecording()
-    if (blob) {
-      await examStore.submitAnswer(blob)
-    }
+    await examStore.submitAnswer(blob)
   } catch (error) {
-    message.error(`提交失败: ${error.message || '未知错误'}`)
+    if (!error?.normalizedMessage) {
+      message.error(`提交失败: ${error.message || '未知错误'}`)
+    }
   }
 }
 
@@ -250,10 +253,8 @@ async function exitExam() {
 @import '@/styles/exam-room.less';
 
 .question-stem {
-  margin-top: 10px;
-}
-
-.question-stem :deep(.question-rich-content__body) {
+  font-size: 15px;
+  line-height: 1.7;
   color: rgba(255, 255, 255, 0.9);
 }
 

@@ -71,10 +71,8 @@
       >
         <div class="question-item__idx">{{ idx + 1 }}</div>
         <div class="question-item__content">
-          <QuestionMetaTags :question="q" emphasis compact :max-keywords="4" />
-          <div class="question-item__stem">
-            <QuestionRichContent :text="q.stem" compact :collapsed-height="112" />
-          </div>
+          <div class="question-item__stem">{{ q.stem }}</div>
+          <a-tag :color="dimensionColor(q.dimension)" size="small">{{ dimensionName(q.dimension) }}</a-tag>
         </div>
         <RightOutlined class="question-item__arrow" />
       </div>
@@ -86,12 +84,8 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { SearchOutlined, ThunderboltOutlined, RightOutlined } from '@ant-design/icons-vue'
-import { message } from 'ant-design-vue'
 import { useTargetedStore } from '@/stores/targeted'
-import { PROVINCES, POSITION_SYSTEMS } from '@/utils/constants'
-import QuestionMetaTags from '@/components/common/QuestionMetaTags.vue'
-import QuestionRichContent from '@/components/common/QuestionRichContent.vue'
-import { getScoringUnavailableMessage, isQuestionScoringSupported } from '@/utils/scoringSupport'
+import { PROVINCES, POSITION_SYSTEMS, DIMENSIONS } from '@/utils/constants'
 
 const router = useRouter()
 const targetedStore = useTargetedStore()
@@ -103,6 +97,16 @@ const selectedProvince = ref(targetedStore.selectedProvince || '')
 const selectedPosition = ref(targetedStore.selectedPosition || '')
 
 const canProceed = computed(() => !!selectedProvince.value && !!selectedPosition.value)
+
+function dimensionName(key) {
+  const dim = DIMENSIONS.find(d => d.key === key)
+  return dim ? dim.name : key
+}
+
+function dimensionColor(key) {
+  const colors = { analysis: 'blue', practical: 'green', emergency: 'orange', legal: 'purple', logic: 'cyan', expression: 'geekblue' }
+  return colors[key] || 'default'
+}
 
 function syncSelection() {
   targetedStore.setSelection(selectedProvince.value, selectedPosition.value)
@@ -119,11 +123,6 @@ async function generateAndPractice() {
 }
 
 function startSinglePractice(question) {
-  if (!isQuestionScoringSupported(question)) {
-    message.warning(getScoringUnavailableMessage(1))
-    return
-  }
-
   sessionStorage.setItem('targeted_question', JSON.stringify(question))
   router.push({ path: '/exam/prepare', query: { questionId: question.id, source: 'targeted' } })
 }
@@ -239,11 +238,13 @@ function startSinglePractice(question) {
 }
 
 .question-item__stem {
-  margin-top: 8px;
-}
-
-.question-item__stem :deep(.question-rich-content__body) {
+  font-size: @font-size-base;
   color: @text-regular;
+  margin-bottom: 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .question-item__arrow {

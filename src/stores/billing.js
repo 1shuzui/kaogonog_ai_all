@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { updatePreferences } from '@/api/user'
 import {
   BILLING_PLAN_KEYS,
   BILLING_ORDER_STATUS,
@@ -16,6 +17,8 @@ import {
 } from '@/utils/billing'
 
 const BILLING_STORAGE_KEY = 'civil_billing_state'
+const USERNAME_STORAGE_KEY = 'username'
+const GUEST_STORAGE_SCOPE = 'guest'
 
 function createDefaultState() {
   return {
@@ -31,6 +34,23 @@ function createDefaultState() {
     lastPaywallSource: '',
     lastIntendedPath: ''
   }
+}
+
+function getStoredUsername() {
+  try {
+    return localStorage.getItem(USERNAME_STORAGE_KEY) || ''
+  } catch {
+    return ''
+  }
+}
+
+function getStorageScope(username = '') {
+  const scope = String(username || getStoredUsername() || GUEST_STORAGE_SCOPE).trim()
+  return scope || GUEST_STORAGE_SCOPE
+}
+
+function buildScopedStorageKey(key, username = '') {
+  return `${key}:${getStorageScope(username)}`
 }
 
 function normalizeBillingState(rawState = {}) {
@@ -66,9 +86,13 @@ function normalizeBillingState(rawState = {}) {
   }
 }
 
-function loadBillingState() {
+function loadBillingState(username = '') {
   try {
-    const raw = localStorage.getItem(BILLING_STORAGE_KEY)
+    const scope = getStorageScope(username)
+    const scopedKey = buildScopedStorageKey(BILLING_STORAGE_KEY, username)
+    const scopedRaw = localStorage.getItem(scopedKey)
+    const legacyRaw = scope === GUEST_STORAGE_SCOPE ? '' : localStorage.getItem(BILLING_STORAGE_KEY)
+    const raw = scopedRaw || legacyRaw
     if (!raw) return createDefaultState()
     return normalizeBillingState(JSON.parse(raw))
   } catch {
@@ -76,9 +100,12 @@ function loadBillingState() {
   }
 }
 
-function persistBillingState(state) {
+function persistBillingState(state, username = '') {
   try {
-    localStorage.setItem(BILLING_STORAGE_KEY, JSON.stringify(normalizeBillingState(state)))
+    localStorage.setItem(
+      buildScopedStorageKey(BILLING_STORAGE_KEY, username),
+      JSON.stringify(normalizeBillingState(state))
+    )
   } catch {
     // ignore local storage failures
   }
@@ -143,18 +170,41 @@ export const useBillingStore = defineStore('billing', {
   },
 
   actions: {
-    persist() {
-      persistBillingState(this.$state)
+    persist(username = '') {
+      persistBillingState(this.$state, username)
     },
 
-    applyBackendState(rawBillingState = {}) {
-      const nextState = normalizeBillingState(rawBillingState)
-      this.planType = nextState.planType
-      this.remainingSeconds = nextState.remainingSeconds
-      this.monthlyExpireAt = nextState.monthlyExpireAt
-      this.activatedAt = nextState.activatedAt
-      this.orderHistory = nextState.orderHistory
-      this.persist()
+    toServerPayload() {
+      const state = normalizeBillingState(this.$state)
+      return {
+        planType: state.planType,
+        remainingSeconds: state.remainingSeconds,
+        monthlyExpireAt: state.monthlyExpireAt,
+        activatedAt: state.activatedAt,
+        orderHistory: state.orderHistory
+      }
+    },
+
+    applyServerBilling(rawState = {}, username = '') {
+      const nextState = normalizeBillingState({
+        ...createDefaultState(),
+        ...rawState,
+        lastPaywallSource: this.lastPaywallSource,
+        lastIntendedPath: this.lastIntendedPath
+      })
+      this.$patch(nextState)
+      this.persist(username)
+    },
+
+    resetLocalState(username = '') {
+      this.$patch(loadBillingState(username))
+      this.persist(username)
+    },
+
+    async syncServerBilling() {
+      const payload = this.toServerPayload()
+      await updatePreferences({ billing: payload })
+      return payload
     },
 
     syncPlanState() {
@@ -219,7 +269,8 @@ export const useBillingStore = defineStore('billing', {
       return order
     },
 
-    activatePlan(planType) {
+    async activatePlan(planType) {
+      const previousState = normalizeBillingState(this.$state)
       const now = Date.now()
       let order = null
 
@@ -242,6 +293,13 @@ export const useBillingStore = defineStore('billing', {
       this.activatedAt = now
       this.activeSessionStartedAt = 0
       this.activeSessionKind = ''
+      try {
+        await this.syncServerBilling()
+      } catch (error) {
+        this.$patch(previousState)
+        this.persist()
+        throw error
+      }
       this.persist()
       return order
     },
