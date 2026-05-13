@@ -71,7 +71,7 @@ export const TRAINING_CATEGORIES = [
   {
     key: 'interpersonal',
     name: '人际沟通',
-    requestDimension: '人际沟通',
+    requestDimension: 'practical',
     icon: '沟',
     tone: '#eef4ff',
     maxScore: 100,
@@ -89,7 +89,7 @@ export const TRAINING_CATEGORIES = [
   {
     key: 'career',
     name: '职业认知',
-    requestDimension: '职业认知',
+    requestDimension: 'analysis',
     icon: '岗',
     tone: '#f5f0ff',
     maxScore: 100,

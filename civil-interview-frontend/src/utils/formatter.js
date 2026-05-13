@@ -18,7 +18,9 @@ export function formatScore(score, maxScore) {
  * 格式化日期
  */
 export function formatDate(dateStr) {
+  if (!dateStr) return ''
   const d = new Date(dateStr)
+  if (Number.isNaN(d.getTime())) return String(dateStr)
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')

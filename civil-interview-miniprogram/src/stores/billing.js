@@ -29,6 +29,11 @@ function loadState() {
       planName: '',
       status: '',
       remainingSeconds: 0,
+      remainingMinutes: 0,
+      remainingDailyMinutes: 0,
+      dailyLimitMinutes: 0,
+      usedMinutes: 0,
+      totalMinutes: 0,
       monthlyExpireAt: 0,
       orderHistory: [],
       ...(raw ? JSON.parse(raw) : {})
@@ -41,6 +46,11 @@ function loadState() {
       planName: '',
       status: '',
       remainingSeconds: 0,
+      remainingMinutes: 0,
+      remainingDailyMinutes: 0,
+      dailyLimitMinutes: 0,
+      usedMinutes: 0,
+      totalMinutes: 0,
       monthlyExpireAt: 0,
       orderHistory: []
     }
@@ -88,6 +98,11 @@ export const useBillingStore = defineStore('billing', {
       this.planName = String(billing.planName || PLANS[this.planType]?.title || '')
       this.status = String(billing.status || '')
       this.remainingSeconds = Math.max(0, Number(billing.remainingSeconds || 0))
+      this.remainingMinutes = Math.max(0, Number(billing.remainingMinutes || Math.ceil(this.remainingSeconds / 60) || 0))
+      this.remainingDailyMinutes = Math.max(0, Number(billing.remainingDailyMinutes || 0))
+      this.dailyLimitMinutes = Math.max(0, Number(billing.dailyLimitMinutes || 0))
+      this.usedMinutes = Math.max(0, Number(billing.usedMinutes || 0))
+      this.totalMinutes = Math.max(0, Number(billing.totalMinutes || 0))
       this.monthlyExpireAt = Math.max(0, Number(billing.monthlyExpireAt || 0))
       this.orderHistory = Array.isArray(billing.orderHistory) ? billing.orderHistory : this.orderHistory || []
       uni.setStorageSync(BILLING_STORAGE_KEY, JSON.stringify(this.$state))
@@ -100,6 +115,11 @@ export const useBillingStore = defineStore('billing', {
       this.planName = ''
       this.status = ''
       this.remainingSeconds = 0
+      this.remainingMinutes = 0
+      this.remainingDailyMinutes = 0
+      this.dailyLimitMinutes = 0
+      this.usedMinutes = 0
+      this.totalMinutes = 0
       this.monthlyExpireAt = 0
       this.orderHistory = []
       uni.setStorageSync(BILLING_STORAGE_KEY, JSON.stringify(this.$state))

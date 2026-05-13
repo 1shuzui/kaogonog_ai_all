@@ -8,12 +8,9 @@
     <div class="billing-paywall">
       <span class="billing-paywall__eyebrow">需要开通</span>
       <h3>{{ billingStore.paywallSource || billingStore.lastPaywallSource || '付费功能' }}</h3>
-      <p>
-        当前试用模式下暂未开放该功能。你可以先免费体验 1 道试用题，
-        或前往套餐页开通完整训练能力。
-      </p>
+      <p>{{ paywallDescription }}</p>
       <div class="billing-paywall__actions">
-        <a-button @click="startTrial">先试用</a-button>
+        <a-button v-if="showTrialAction" @click="startTrial">先试用</a-button>
         <a-button type="primary" @click="goPricing">查看套餐</a-button>
       </div>
     </div>
@@ -21,11 +18,31 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useBillingStore } from '@/stores/billing'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
 const billingStore = useBillingStore()
+const userStore = useUserStore()
+
+const hasPaidHistory = computed(() => {
+  const billing = userStore.userInfo?.billing || {}
+  return billing.isPaid === true
+    || billing.hasActivePlan === true
+    || billing.trialCompleted === true
+    || billingStore.isPaid
+    || billingStore.recentOrders.some((order) => order.status === 'paid')
+})
+
+const showTrialAction = computed(() => !hasPaidHistory.value)
+const paywallDescription = computed(() => {
+  if (showTrialAction.value) {
+    return '当前试用模式下暂未开放该功能。你可以先免费体验 1 道试用题，或前往套餐页开通完整训练能力。'
+  }
+  return '当前套餐额度不足或已到期，请前往套餐页开通、续费或查看订单权益。'
+})
 
 function startTrial() {
   billingStore.closePaywall()

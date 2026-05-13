@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { login as loginApi, register as registerApi } from '../api/auth'
-import { getProvinces, getUserInfo, updatePreferences } from '../api/user'
+import { getProvinces, getUserInfo, updatePreferences, updateUserProfile } from '../api/user'
 import { useBillingStore } from './billing'
 import {
   DEFAULT_PREFERENCES,
@@ -10,6 +10,7 @@ import {
   TOKEN_STORAGE_KEY,
   USERNAME_STORAGE_KEY
 } from '../utils/constants'
+import { logger } from '../utils/logger'
 
 function readStorage(key, fallback = '') {
   try {
@@ -27,6 +28,18 @@ function readJsonStorage(key, fallback) {
     return typeof value === 'string' ? JSON.parse(value) : value
   } catch {
     return fallback
+  }
+}
+
+function safeSetStorage(key, value) {
+  try {
+    uni.setStorageSync(key, value)
+  } catch (error) {
+    logger.warn('Local storage write failed', {
+      event: 'mini.storage.write_failed',
+      key,
+      error
+    })
   }
 }
 
@@ -134,13 +147,18 @@ export const useUserStore = defineStore('user', {
       const billing = {
         planType: info?.billing?.planType || 'trial',
         remainingSeconds: Number(info?.billing?.remainingSeconds || 0),
+        remainingMinutes: Number(info?.billing?.remainingMinutes || 0),
+        remainingDailyMinutes: Number(info?.billing?.remainingDailyMinutes || 0),
+        dailyLimitMinutes: Number(info?.billing?.dailyLimitMinutes || 0),
+        usedMinutes: Number(info?.billing?.usedMinutes || 0),
+        totalMinutes: Number(info?.billing?.totalMinutes || 0),
         monthlyExpireAt: Number(info?.billing?.monthlyExpireAt || 0),
         activatedAt: Number(info?.billing?.activatedAt || 0),
         orderHistory: Array.isArray(info?.billing?.orderHistory) ? info.billing.orderHistory : [],
         isPaid: isAdmin || permissions.canAccessPremiumModules || info?.billing?.isPaid === true
       }
       this.username = username
-      if (username) uni.setStorageSync(USERNAME_STORAGE_KEY, username)
+      if (username) safeSetStorage(USERNAME_STORAGE_KEY, username)
 
       this.userInfo = {
         id: username,
@@ -152,14 +170,29 @@ export const useUserStore = defineStore('user', {
         billing,
         permissions
       }
-      billingStore.applyBackendState(billing, permissions)
-      if (info?.province) this.setProvince(info.province)
+      try {
+        billingStore.applyBackendState(billing, permissions)
+      } catch (error) {
+        logger.warn('Billing state sync failed', {
+          event: 'mini.billing.sync_failed',
+          username,
+          error
+        })
+      }
+      if (info?.province) {
+        this.selectedProvince = info.province
+        this.userInfo = {
+          ...this.userInfo,
+          province: this.selectedProvince
+        }
+        safeSetStorage(PROVINCE_STORAGE_KEY, this.selectedProvince)
+      }
       if (info?.preferences) {
         this.preferences = normalizePreferences({
           ...this.preferences,
           ...info.preferences
         })
-        uni.setStorageSync(PREFERENCES_STORAGE_KEY, JSON.stringify(this.preferences))
+        safeSetStorage(PREFERENCES_STORAGE_KEY, JSON.stringify(this.preferences))
       }
       return this.userInfo
     },
@@ -195,14 +228,15 @@ export const useUserStore = defineStore('user', {
         ...this.userInfo,
         province: this.selectedProvince
       }
-      uni.setStorageSync(PROVINCE_STORAGE_KEY, this.selectedProvince)
+      safeSetStorage(PROVINCE_STORAGE_KEY, this.selectedProvince)
     },
 
     async savePreferences(preferences) {
       this.preferences = normalizePreferences(preferences)
-      uni.setStorageSync(PREFERENCES_STORAGE_KEY, JSON.stringify(this.preferences))
+      safeSetStorage(PREFERENCES_STORAGE_KEY, JSON.stringify(this.preferences))
       try {
         await updatePreferences(this.preferences)
+        await updateUserProfile({ province: this.selectedProvince || 'national' })
       } catch {
         return this.preferences
       }

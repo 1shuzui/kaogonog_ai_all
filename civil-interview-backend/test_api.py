@@ -2,7 +2,7 @@
 import logging
 import requests
 
-BASE = "http://localhost:8050"
+BASE = "https://xzqianmianyuzhoukeji.com/api"
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 

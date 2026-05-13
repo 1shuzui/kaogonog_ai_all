@@ -23,6 +23,11 @@ function createDefaultState() {
     remainingSeconds: 0,
     monthlyExpireAt: 0,
     activatedAt: 0,
+    remainingMinutes: 0,
+    remainingDailyMinutes: 0,
+    dailyLimitMinutes: 0,
+    usedMinutes: 0,
+    totalMinutes: 0,
     orderHistory: [],
     paywallVisible: false,
     paywallSource: '',
@@ -44,6 +49,11 @@ function normalizeBillingState(rawState = {}) {
     remainingSeconds: Math.max(0, Math.floor(Number(rawState.remainingSeconds) || 0)),
     monthlyExpireAt: Math.max(0, Number(rawState.monthlyExpireAt) || 0),
     activatedAt: Math.max(0, Number(rawState.activatedAt) || 0),
+    remainingMinutes: Math.max(0, Math.floor(Number(rawState.remainingMinutes) || 0)),
+    remainingDailyMinutes: Math.max(0, Math.floor(Number(rawState.remainingDailyMinutes) || 0)),
+    dailyLimitMinutes: Math.max(0, Math.floor(Number(rawState.dailyLimitMinutes) || 0)),
+    usedMinutes: Math.max(0, Math.floor(Number(rawState.usedMinutes) || 0)),
+    totalMinutes: Math.max(0, Math.floor(Number(rawState.totalMinutes) || 0)),
     orderHistory: Array.isArray(rawState.orderHistory)
       ? rawState.orderHistory
         .map((order) => ({
@@ -153,6 +163,11 @@ export const useBillingStore = defineStore('billing', {
       this.remainingSeconds = nextState.remainingSeconds
       this.monthlyExpireAt = nextState.monthlyExpireAt
       this.activatedAt = nextState.activatedAt
+      this.remainingMinutes = nextState.remainingMinutes
+      this.remainingDailyMinutes = nextState.remainingDailyMinutes
+      this.dailyLimitMinutes = nextState.dailyLimitMinutes
+      this.usedMinutes = nextState.usedMinutes
+      this.totalMinutes = nextState.totalMinutes
       this.orderHistory = nextState.orderHistory
       this.persist()
     },
@@ -164,6 +179,7 @@ export const useBillingStore = defineStore('billing', {
       }
       if (this.isHourlyPlan && this.remainingSeconds <= 0) {
         this.remainingSeconds = 0
+        this.remainingMinutes = 0
       }
       if (!this.isHourlyPlan && this.activeSessionStartedAt) {
         this.activeSessionStartedAt = 0

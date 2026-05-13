@@ -21,3 +21,30 @@ export function register(data) {
     skipErrorHandler: true
   })
 }
+
+export function requestPasswordReset(data) {
+  return request({
+    url: '/password-reset/request',
+    method: 'POST',
+    data,
+    skipErrorHandler: true
+  })
+}
+
+export function verifyPasswordReset(data) {
+  return request({
+    url: '/password-reset/verify',
+    method: 'POST',
+    data,
+    skipErrorHandler: true
+  })
+}
+
+export function confirmPasswordReset(data) {
+  return request({
+    url: '/password-reset/confirm',
+    method: 'POST',
+    data,
+    skipErrorHandler: true
+  })
+}

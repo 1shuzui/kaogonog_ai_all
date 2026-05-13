@@ -2,11 +2,12 @@
   <div class="support-desk page-container">
     <div class="support-desk__hero card">
       <div class="support-desk__hero-copy">
+        <a-button type="text" class="support-desk__back" @click="goBack">返回</a-button>
         <span class="support-desk__eyebrow">{{ userStore.isAdmin ? '反馈后台' : '客服反馈中心' }}</span>
-        <h2>{{ userStore.isAdmin ? '本地反馈后台总览' : '提交问题并查看处理状态' }}</h2>
+        <h2>{{ userStore.isAdmin ? '全站反馈后台总览' : '提交问题并查看处理状态' }}</h2>
         <p>
-          当前为纯前端方案，反馈记录保存在本机浏览器。管理员账号可查看全部记录、
-          标记处理状态和删除无效记录。
+          反馈记录已与后端同步。管理员账号可查看全站反馈、标记处理状态和删除无效记录，
+          普通用户可提交并跟踪自己的反馈进度。
         </p>
       </div>
       <div class="support-desk__hero-actions">
@@ -44,6 +45,11 @@
         <span class="support-contact-card__label">客服微信</span>
         <strong>{{ SUPPORT_CONTACT.wechatId }}</strong>
         <p>服务时间：{{ SUPPORT_CONTACT.workTime }}</p>
+      </div>
+      <div class="support-contact-card">
+        <span class="support-contact-card__label">客服 QQ</span>
+        <strong>{{ SUPPORT_CONTACT.qqId }}</strong>
+        <p>也可通过 QQ 留言反馈题库、支付和录音问题。</p>
       </div>
     </div>
 
@@ -173,26 +179,36 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { useUserStore } from '@/stores/user'
 import { PROVINCES } from '@/utils/constants'
 import {
   FEEDBACK_STATUS_OPTIONS,
   FEEDBACK_TYPES,
-  SUPPORT_CONTACT,
-  loadFeedbackRecords,
-  removeFeedbackRecord,
-  saveFeedbackRecord,
-  updateFeedbackRecord
+  SUPPORT_CONTACT
 } from '@/utils/support'
+import {
+  createSupportFeedback,
+  deleteSupportFeedback,
+  getSupportFeedback,
+  updateSupportFeedback
+} from '@/api/support'
 import { getProvinceLabel } from '@/utils/questionPresentation'
 
 const route = useRoute()
+const router = useRouter()
 const userStore = useUserStore()
 
 const formVisible = ref(false)
 const records = ref([])
+const stats = reactive({
+  total: 0,
+  pending: 0,
+  handled: 0,
+  today: 0,
+  mine: 0
+})
 
 const filters = reactive({
   type: undefined,
@@ -223,45 +239,8 @@ const provinceOptions = computed(() => {
   }))
 })
 
-const currentUsername = computed(() => userStore.userInfo?.name || userStore.username || '游客')
-
-const sourceRecords = computed(() => {
-  if (userStore.isAdmin && filters.scope === 'all') return records.value
-  return records.value.filter((item) => item.username === currentUsername.value)
-})
-
 const filteredRecords = computed(() => {
-  const keyword = String(filters.keyword || '').trim().toLowerCase()
-
-  return sourceRecords.value.filter((item) => {
-    if (filters.type && item.type !== filters.type) return false
-    if (filters.status && item.status !== filters.status) return false
-    if (filters.province && item.province !== filters.province) return false
-    if (!keyword) return true
-
-    return [
-      item.questionId,
-      item.summary,
-      item.contact,
-      item.username,
-      item.routePath
-    ]
-      .map((value) => String(value || '').toLowerCase())
-      .some((value) => value.includes(keyword))
-  })
-})
-
-const stats = computed(() => {
-  const todayString = new Date().toISOString().slice(0, 10)
-  const mine = records.value.filter((item) => item.username === currentUsername.value)
-
-  return {
-    total: records.value.length,
-    pending: records.value.filter((item) => item.status !== 'handled').length,
-    handled: records.value.filter((item) => item.status === 'handled').length,
-    today: records.value.filter((item) => String(item.createdAt || '').startsWith(todayString)).length,
-    mine: mine.length
-  }
+  return records.value
 })
 
 onMounted(async () => {
@@ -273,11 +252,25 @@ onMounted(async () => {
     // ignore province loading failure
   }
 
-  refreshRecords()
+  await refreshRecords()
 })
 
-function refreshRecords() {
-  records.value = loadFeedbackRecords()
+async function refreshRecords() {
+  try {
+    const response = await getSupportFeedback({
+      current: 1,
+      pageSize: 200,
+      type: filters.type || undefined,
+      status: filters.status || undefined,
+      province: filters.province || undefined,
+      keyword: filters.keyword || undefined,
+      scope: userStore.isAdmin ? filters.scope : 'mine'
+    })
+    records.value = response.list || []
+    Object.assign(stats, response.summary || {})
+  } catch (error) {
+    message.error(error?.normalizedMessage || error?.message || '反馈记录加载失败')
+  }
 }
 
 function resetFilters() {
@@ -286,6 +279,7 @@ function resetFilters() {
   filters.province = undefined
   filters.keyword = ''
   filters.scope = 'all'
+  refreshRecords()
 }
 
 function resetForm() {
@@ -297,6 +291,14 @@ function resetForm() {
 
 function openForm() {
   formVisible.value = true
+}
+
+function goBack() {
+  if (window.history.length > 1) {
+    router.back()
+    return
+  }
+  router.push('/profile')
 }
 
 function getStatusLabel(status) {
@@ -312,39 +314,49 @@ async function copyWechat() {
   }
 }
 
-function submitFeedback() {
+async function submitFeedback() {
   if (!form.summary.trim()) {
     message.warning('请先填写问题描述')
     return
   }
 
-  saveFeedbackRecord({
-    type: form.type,
-    questionId: form.questionId.trim(),
-    summary: form.summary.trim(),
-    contact: form.contact.trim(),
-    routePath: route.fullPath,
-    province: getProvinceLabel(userStore.selectedProvince),
-    username: currentUsername.value
-  })
-
-  refreshRecords()
-  formVisible.value = false
-  resetForm()
-  message.success('反馈已保存')
+  try {
+    await createSupportFeedback({
+      type: form.type,
+      questionId: form.questionId.trim(),
+      summary: form.summary.trim(),
+      contact: form.contact.trim(),
+      routePath: route.fullPath,
+      province: getProvinceLabel(userStore.selectedProvince)
+    })
+    await refreshRecords()
+    formVisible.value = false
+    resetForm()
+    message.success('反馈已提交')
+  } catch (error) {
+    message.error(error?.normalizedMessage || error?.message || '反馈提交失败')
+  }
 }
 
-function toggleStatus(record) {
+async function toggleStatus(record) {
   const nextStatus = record.status === 'handled' ? 'pending' : 'handled'
-  updateFeedbackRecord(record.id, { status: nextStatus })
-  refreshRecords()
-  message.success(nextStatus === 'handled' ? '已标记为已处理' : '已改回待处理')
+  try {
+    await updateSupportFeedback(record.id, { status: nextStatus })
+    await refreshRecords()
+    message.success(nextStatus === 'handled' ? '已标记为已处理' : '已改回待处理')
+  } catch (error) {
+    message.error(error?.normalizedMessage || error?.message || '状态更新失败')
+  }
 }
 
-function deleteRecord(recordId) {
-  removeFeedbackRecord(recordId)
-  refreshRecords()
-  message.success('反馈已删除')
+async function deleteRecord(recordId) {
+  try {
+    await deleteSupportFeedback(recordId)
+    await refreshRecords()
+    message.success('反馈已删除')
+  } catch (error) {
+    message.error(error?.normalizedMessage || error?.message || '反馈删除失败')
+  }
 }
 
 function formatTime(value = '') {
@@ -373,6 +385,15 @@ function formatTime(value = '') {
     radial-gradient(circle at top right, rgba(255, 255, 255, 0.16), transparent 24%),
     linear-gradient(135deg, #15477a 0%, @primary-color 58%, #5fa0e8 100%);
   color: #fff;
+}
+
+.support-desk__hero-copy {
+  min-width: 0;
+}
+
+.support-desk__back {
+  margin: -8px 0 8px -8px;
+  color: rgba(255, 255, 255, 0.88);
 }
 
 .support-desk__eyebrow {
@@ -432,7 +453,7 @@ function formatTime(value = '') {
 
 .support-desk__contact {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   padding: 16px;
 }

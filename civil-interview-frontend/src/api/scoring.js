@@ -1,6 +1,10 @@
 import { http, USE_MOCK } from './index'
 import { getMockTranscript, getMockScoringResult } from './mock/exam'
 
+export async function getAsrStatus(config = {}) {
+  return http.get('/scoring/asr-status', config)
+}
+
 export async function transcribeAudio(audioBlob) {
   if (USE_MOCK) return getMockTranscript()
   const formData = new FormData()

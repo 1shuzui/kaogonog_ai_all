@@ -47,21 +47,49 @@
       <a-button type="primary" :loading="changingPwd" @click="changePassword">修改密码</a-button>
     </div>
 
+    <div class="card account-section">
+      <h3>协议与隐私</h3>
+      <p class="data-hint">
+        当前版本：{{ terms.latestVersion || '-' }}
+        <span v-if="terms.agreedAt">，最近同意时间：{{ formatTime(terms.agreedAt) }}</span>
+      </p>
+      <div class="agreement-actions">
+        <a-button @click="$router.push('/legal')">查看协议正文</a-button>
+        <a-button
+          v-if="terms.needsUpdate"
+          type="primary"
+          :loading="agreeingTerms"
+          @click="agreeLatestTerms"
+        >
+          同意最新版
+        </a-button>
+      </div>
+    </div>
+
     <!-- 数据管理 -->
     <div class="card account-section">
       <h3>数据管理</h3>
       <p class="data-hint">清除本地缓存数据（包括收藏、训练进度等）</p>
-      <a-button danger @click="clearLocalData">清除本地数据</a-button>
+      <a-popconfirm
+        title="确认清除本地数据？"
+        description="这会删除本机缓存的收藏、训练进度、题库筛选和本地反馈记录，不会删除服务器账号数据。"
+        ok-text="确认清除"
+        cancel-text="取消"
+        @confirm="clearLocalData"
+      >
+        <a-button danger>清除本地数据</a-button>
+      </a-popconfirm>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { LeftOutlined } from '@ant-design/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { message } from 'ant-design-vue'
 import http from '@/api/index'
+import { agreeTerms, getTermsStatus } from '@/api/user'
 
 const userStore = useUserStore()
 
@@ -72,12 +100,31 @@ const oldPassword = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
 const changingPwd = ref(false)
+const agreeingTerms = ref(false)
+const terms = reactive({
+  hasAgreed: false,
+  agreedVersion: '',
+  latestVersion: '',
+  updatedAt: '',
+  effectiveAt: '',
+  agreedAt: '',
+  needsUpdate: false
+})
 
 onMounted(async () => {
   await userStore.loadUserInfo()
   nickname.value = userStore.userInfo?.name || ''
   email.value = userStore.email || ''
+  await loadTermsStatus()
 })
+
+async function loadTermsStatus() {
+  try {
+    Object.assign(terms, await getTermsStatus({ skipErrorHandler: true }))
+  } catch {
+    // ignore
+  }
+}
 
 async function saveProfile() {
   saving.value = true
@@ -128,9 +175,40 @@ async function changePassword() {
 }
 
 function clearLocalData() {
-  const keys = ['civil_favorites', 'civil_training_progress']
-  keys.forEach(key => localStorage.removeItem(key))
+  const prefixes = [
+    'civil_favorites',
+    'civil_training_progress',
+    'civil_support_feedback_records',
+    'civil_selected_province',
+    'civil_selected_province_confirmed',
+    'civil_user_preferences',
+    'civil_billing_state'
+  ]
+  Object.keys(localStorage)
+    .filter((key) => prefixes.some((prefix) => key === prefix || key.startsWith(`${prefix}:`)))
+    .forEach((key) => localStorage.removeItem(key))
   message.success('本地数据已清除')
+}
+
+async function agreeLatestTerms() {
+  if (!terms.latestVersion) return
+  agreeingTerms.value = true
+  try {
+    await agreeTerms(terms.latestVersion)
+    await loadTermsStatus()
+    await userStore.loadUserInfo()
+    message.success('已同意最新版协议')
+  } catch {
+    // handled by interceptor
+  } finally {
+    agreeingTerms.value = false
+  }
+}
+
+function formatTime(value = '') {
+  const date = value ? new Date(value) : null
+  if (!date || Number.isNaN(date.getTime())) return ''
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
 }
 </script>
 
@@ -174,5 +252,11 @@ function clearLocalData() {
   font-size: @font-size-sm;
   color: @text-secondary;
   margin-bottom: 12px;
+}
+
+.agreement-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 </style>

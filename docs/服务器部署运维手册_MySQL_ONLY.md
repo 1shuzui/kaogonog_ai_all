@@ -361,9 +361,13 @@ sudo systemctl status nginx --no-pager -l
 
 ```dotenv
 # PC 前端：civil-interview-frontend/.env.production
+VITE_API_BASE=https://xzqianmianyuzhoukeji.com/api
 VITE_LOG_LEVEL=error
 
 # 小程序：civil-interview-miniprogram/.env.production
+VITE_API_BASE=https://xzqianmianyuzhoukeji.com/api
+VITE_API_BASE_H5=https://xzqianmianyuzhoukeji.com/api
+VITE_API_BASE_MP_WEIXIN=https://xzqianmianyuzhoukeji.com/api
 VITE_LOG_LEVEL=error
 ```
 

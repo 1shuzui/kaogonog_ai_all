@@ -11,6 +11,8 @@ from app.api.v1.routes.trial_routes import router as trial_router
 from app.api.v1.routes.usage_routes import router as usage_router
 from app.api.v1.routes.payment_routes import router as payment_router
 from app.api.v1.routes.scoring_routes import router as scoring_router
+from app.api.v1.routes.legal_routes import router as legal_router
+from app.api.v1.routes.support_routes import router as support_router
 
 api_router = APIRouter()
 api_router.include_router(auth_router)
@@ -24,3 +26,5 @@ api_router.include_router(trial_router)
 api_router.include_router(usage_router)
 api_router.include_router(payment_router)
 api_router.include_router(scoring_router)
+api_router.include_router(legal_router)
+api_router.include_router(support_router)

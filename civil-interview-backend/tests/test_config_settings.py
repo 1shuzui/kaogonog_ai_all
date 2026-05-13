@@ -15,6 +15,10 @@ class SettingsCompatibilityTestCase(unittest.TestCase):
         self.assertTrue(hasattr(settings, "qwen_model"))
         self.assertTrue(hasattr(settings, "qwen_asr_model"))
         self.assertTrue(hasattr(settings, "llm_timeout_seconds"))
+        self.assertTrue(hasattr(settings, "asr_provider"))
+        self.assertTrue(hasattr(settings, "whisper_model_size"))
+        self.assertTrue(hasattr(settings, "password_reset_code_ttl_minutes"))
+        self.assertTrue(hasattr(settings, "sms_provider"))
 
 
 if __name__ == "__main__":

@@ -56,7 +56,7 @@ export const TRAINING_CATEGORIES = [
   {
     key: 'interpersonal',
     name: '人际沟通',
-    requestDimension: '人际沟通',
+    requestDimension: 'practical',
     progressKeys: ['interpersonal', 'logic'],
     icon: '🤝',
     bgColor: '#EEF4FF',
@@ -74,7 +74,7 @@ export const TRAINING_CATEGORIES = [
   {
     key: 'career',
     name: '职业认知',
-    requestDimension: '职业认知',
+    requestDimension: 'analysis',
     progressKeys: ['career', 'legal'],
     icon: '🧭',
     bgColor: '#F5F0FF',

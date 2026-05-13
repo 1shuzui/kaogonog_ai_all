@@ -22,7 +22,7 @@
             <text class="muted">录音 / 摄像头</text>
           </view>
 
-          <view v-if="textInputModeVisible" class="text-answer-panel">
+          <view class="text-answer-panel">
             <view class="section-head section-head--compact">
               <text class="section-title section-title--small">文字作答</text>
               <text class="muted">{{ answerText.length }} 字</text>
@@ -36,6 +36,7 @@
           </view>
 
           <view class="camera-panel">
+            <!-- #ifdef MP-WEIXIN -->
             <camera
               class="camera-preview"
               mode="normal"
@@ -43,6 +44,12 @@
               flash="off"
               @error="onCameraError"
             />
+            <!-- #endif -->
+            <!-- #ifndef MP-WEIXIN -->
+            <view class="camera-preview camera-preview--fallback">
+              <text>当前运行环境不支持小程序摄像头组件</text>
+            </view>
+            <!-- #endif -->
             <view class="record-panel__status camera-panel__status">
               <text>{{ cameraStatusText }}</text>
               <text v-if="recordedVideoFile" class="record-panel__ready">已录像</text>
@@ -50,7 +57,7 @@
             <view class="record-actions">
               <button
                 class="secondary-button"
-                :disabled="videoRecording || recording || examStore.loading"
+                :disabled="!cameraAvailable || videoRecording || recording || examStore.loading"
                 @tap="startVideoRecord"
               >
                 开始录像
@@ -123,7 +130,6 @@ const phase = ref('preparing')
 const prepLeft = ref(userStore.preferences.defaultPrepTime)
 const answerLeft = ref(userStore.preferences.defaultAnswerTime)
 const answerText = ref('')
-const textInputModeVisible = ref(false)
 const recording = ref(false)
 const recordedFile = ref('')
 const recorder = ref(null)
@@ -131,10 +137,12 @@ const videoRecording = ref(false)
 const recordedVideoFile = ref('')
 const cameraContext = ref(null)
 const cameraError = ref('')
+const cameraAvailable = ref(false)
 const selectedMediaType = ref('')
 const questionStartedAt = ref(Date.now())
 const reportedQuestionKeys = new Set()
 let timer = null
+let pendingRecordStopResolve = null
 
 const question = computed(() => examStore.currentQuestion)
 const points = computed(() => Array.isArray(question.value?.scoringPoints) ? question.value.scoringPoints.slice(0, 6) : [])
@@ -144,6 +152,7 @@ const cameraStatusText = computed(() => {
   if (cameraError.value) return cameraError.value
   if (videoRecording.value) return '摄像头录像中，请保持正对镜头'
   if (recordedVideoFile.value) return '录像已保存，可提交或重新录制'
+  if (!cameraAvailable.value) return '当前环境暂不支持录像，可使用录音或文字提交'
   return '请授权摄像头，可使用录像提交作答'
 })
 const recordStatusText = computed(() => {
@@ -174,13 +183,13 @@ onReady(() => {
 })
 
 onHide(() => {
-  if (videoRecording.value) stopVideoRecord()
+  if (videoRecording.value) stopVideoRecord({ silent: true })
 })
 
 onBeforeUnmount(() => {
   clearInterval(timer)
   if (recording.value) stopRecord()
-  if (videoRecording.value) stopVideoRecord()
+  if (videoRecording.value) stopVideoRecord({ silent: true })
 })
 
 function setupRecorder() {
@@ -191,21 +200,30 @@ function setupRecorder() {
     recordedFile.value = res.tempFilePath || ''
     if (recordedFile.value) {
       selectedMediaType.value = 'audio'
-      toast('录音已保存', 'success')
+    }
+    if (pendingRecordStopResolve) {
+      pendingRecordStopResolve(recordedFile.value)
+      pendingRecordStopResolve = null
     }
   })
   recorder.value.onError((error) => {
     recording.value = false
+    if (pendingRecordStopResolve) {
+      pendingRecordStopResolve('')
+      pendingRecordStopResolve = null
+    }
     toast(error?.errMsg || '录音失败')
   })
 }
 
 function setupCamera() {
   if (typeof uni.createCameraContext !== 'function') {
+    cameraAvailable.value = false
     cameraError.value = '当前环境不支持摄像头录像'
     return
   }
   cameraContext.value = uni.createCameraContext()
+  cameraAvailable.value = true
 }
 
 function startTimer() {
@@ -293,6 +311,20 @@ function stopRecord() {
   recorder.value.stop()
 }
 
+function stopRecordAsync() {
+  if (!recorder.value || !recording.value) return Promise.resolve('')
+  return new Promise((resolve) => {
+    pendingRecordStopResolve = resolve
+    try {
+      recorder.value.stop()
+    } catch {
+      recording.value = false
+      pendingRecordStopResolve = null
+      resolve('')
+    }
+  })
+}
+
 function handleVideoSaved(res, message = '录像已保存') {
   videoRecording.value = false
   const videoPath = res?.tempVideoPath || ''
@@ -328,9 +360,11 @@ function startVideoRecord() {
       },
       success() {
         videoRecording.value = true
+        cameraAvailable.value = true
       },
       fail(error) {
         videoRecording.value = false
+        cameraAvailable.value = false
         const message = error?.errMsg || '无法启动摄像头录像'
         cameraError.value = message
         toast(message)
@@ -338,42 +372,59 @@ function startVideoRecord() {
     })
   } catch (error) {
     videoRecording.value = false
+    cameraAvailable.value = false
     const message = error?.message || '无法启动摄像头录像'
     cameraError.value = message
     toast(message)
   }
 }
 
-function stopVideoRecord() {
-  if (!cameraContext.value || !videoRecording.value) return
-  try {
-    cameraContext.value.stopRecord({
-      compressed: true,
-      success(res) {
-        handleVideoSaved(res)
-      },
-      fail(error) {
-        videoRecording.value = false
-        toast(error?.errMsg || '录像停止失败')
-      }
-    })
-  } catch (error) {
-    videoRecording.value = false
-    toast(error?.message || '录像停止失败')
-  }
+function stopVideoRecord(options = {}) {
+  const silent = options.silent === true
+  if (!cameraContext.value || !videoRecording.value) return Promise.resolve('')
+  return new Promise((resolve) => {
+    try {
+      cameraContext.value.stopRecord({
+        compressed: true,
+        success(res) {
+          videoRecording.value = false
+          recordedVideoFile.value = res?.tempVideoPath || ''
+          if (recordedVideoFile.value) selectedMediaType.value = 'video'
+          if (silent) {
+            resolve(recordedVideoFile.value)
+          } else {
+            handleVideoSaved(res, '录像已保存')
+            resolve(recordedVideoFile.value)
+          }
+        },
+        fail(error) {
+          videoRecording.value = false
+          if (!silent) toast(error?.errMsg || '录像停止失败')
+          resolve('')
+        }
+      })
+    } catch (error) {
+      videoRecording.value = false
+      if (!silent) toast(error?.message || '录像停止失败')
+      resolve('')
+    }
+  })
 }
 
 function onCameraError(error) {
   cameraError.value = error?.detail?.errMsg || error?.errMsg || '摄像头不可用，请检查授权'
+  cameraAvailable.value = false
 }
 
 async function submitAnswer() {
-  if (recording.value || videoRecording.value) {
-    toast(recording.value ? '请先停止录音' : '请先停止录像')
-    return
+  if (recording.value) {
+    await stopRecordAsync()
+  }
+  if (videoRecording.value) {
+    await stopVideoRecord()
   }
   const media = currentMedia.value
-  const visibleAnswerText = textInputModeVisible.value ? answerText.value : ''
+  const visibleAnswerText = answerText.value
 
   showLoading('提交评分')
   try {
@@ -385,9 +436,11 @@ async function submitAnswer() {
     await syncUsageAndTrial(answer)
 
     if (examStore.isLastQuestion) {
+      const finishedExamId = examStore.examId
       await examStore.finish()
+      examStore.reset()
       uni.redirectTo({
-        url: `/pages/result/index?examId=${encodeURIComponent(examStore.examId)}&questionId=${encodeURIComponent(answer.questionId)}`
+        url: `/pages/result/index?examId=${encodeURIComponent(finishedExamId)}&questionId=${encodeURIComponent(answer.questionId)}`
       })
       return
     }
@@ -399,8 +452,7 @@ async function submitAnswer() {
       cancelText: '看结果',
       success(res) {
         if (res.confirm) {
-          examStore.goNext()
-          resetQuestionState()
+          if (examStore.goNext()) resetQuestionState()
         } else {
           uni.navigateTo({
             url: `/pages/result/index?examId=${encodeURIComponent(examStore.examId)}&questionId=${encodeURIComponent(answer.questionId)}`
@@ -425,6 +477,8 @@ function goBackHome() {
     content: '当前作答进度可能不会保存，确认退出吗？',
     success(res) {
       if (res.confirm) {
+        if (recording.value) stopRecord()
+        if (videoRecording.value) stopVideoRecord({ silent: true })
         examStore.reset()
         uni.switchTab({ url: '/pages/home/index' })
       }
@@ -506,7 +560,15 @@ function goBackHome() {
 }
 
 .text-answer-panel {
-  display: none;
+  margin-bottom: 22rpx;
+}
+
+.camera-preview--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 25rpx;
 }
 
 .camera-panel {

@@ -5,7 +5,7 @@
     <!-- 筛选 -->
     <div class="card" style="padding: 12px 16px; margin-bottom: 12px">
       <a-space wrap>
-        <ProvinceSelector @change="onProvinceChange" />
+        <ProvinceSelector v-model:value="provinceFilter" @change="onProvinceChange" />
         <a-range-picker
           v-model:value="dateRange"
           size="small"
@@ -75,7 +75,7 @@ import EmptyState from '@/components/common/EmptyState.vue'
 
 const historyStore = useHistoryStore()
 const dateRange = ref(null)
-const provinceFilter = ref('')
+const provinceFilter = ref('all')
 
 function gradeColor(grade) {
   return GRADE_CONFIG[grade]?.color || '#8C8C8C'
@@ -90,23 +90,34 @@ function barColor(dim) {
 }
 
 onMounted(() => {
-  historyStore.fetchRecords()
+  historyStore.fetchRecords({ page: 1, current: 1 })
 })
 
 function onProvinceChange(value) {
-  provinceFilter.value = value === 'all' ? '' : value
-  historyStore.fetchRecords({ province: provinceFilter.value, page: 1 })
+  provinceFilter.value = value || 'all'
+  historyStore.fetchRecords({ province: provinceFilter.value === 'all' ? '' : provinceFilter.value, page: 1, current: 1 })
 }
 
 function onFilterChange() {
+  const [start, end] = dateRange.value || []
   historyStore.fetchRecords({
-    province: provinceFilter.value,
-    page: 1
+    province: provinceFilter.value === 'all' ? '' : provinceFilter.value,
+    startDate: start?.format?.('YYYY-MM-DD') || '',
+    endDate: end?.format?.('YYYY-MM-DD') || '',
+    page: 1,
+    current: 1
   })
 }
 
 function onPageChange(page) {
-  historyStore.fetchRecords({ page })
+  const [start, end] = dateRange.value || []
+  historyStore.fetchRecords({
+    page,
+    current: page,
+    province: provinceFilter.value === 'all' ? '' : provinceFilter.value,
+    startDate: start?.format?.('YYYY-MM-DD') || '',
+    endDate: end?.format?.('YYYY-MM-DD') || ''
+  })
 }
 </script>
 

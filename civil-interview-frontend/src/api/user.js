@@ -20,3 +20,23 @@ export async function getProvinces() {
   if (USE_MOCK) return getMockProvinces()
   return http.get('/user/provinces')
 }
+
+export async function getTermsStatus(config = {}) {
+  if (USE_MOCK) {
+    return {
+      hasAgreed: false,
+      agreedVersion: '',
+      latestVersion: '2026-05-12',
+      updatedAt: '2026-05-12',
+      effectiveAt: '2026-05-12',
+      agreedAt: '',
+      needsUpdate: true
+    }
+  }
+  return http.get('/user/terms-status', config)
+}
+
+export async function agreeTerms(version) {
+  if (USE_MOCK) return { success: true, version, agreedAt: new Date().toISOString() }
+  return http.post('/user/agree-terms', { version })
+}

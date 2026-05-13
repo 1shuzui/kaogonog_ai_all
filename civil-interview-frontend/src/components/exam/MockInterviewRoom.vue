@@ -414,9 +414,8 @@ const candidateLabel = computed(() => {
 })
 
 const totalDurationSeconds = computed(() => examStore.questionList.reduce((sum, question) => {
-  const prep = Math.max(0, Number(question?.prepTime) || 90)
-  const answer = Math.max(0, Number(question?.answerTime) || 180)
-  return sum + prep + answer
+  const answer = Math.max(60, Number(question?.answerTime) || 300)
+  return sum + answer
 }, 0))
 
 const totalDurationMinutes = computed(() => Math.max(1, Math.ceil(totalDurationSeconds.value / 60)))
@@ -543,7 +542,7 @@ function getDimensionLabel(key) {
 }
 
 function formatQuestionMinutes(question) {
-  const seconds = Math.max(60, Number(question?.prepTime || 90) + Number(question?.answerTime || 180))
+  const seconds = Math.max(60, Number(question?.answerTime || 300))
   return Math.max(1, Math.ceil(seconds / 60))
 }
 
@@ -740,6 +739,7 @@ async function finishExam() {
   }
 
   recorder.destroyStream()
+  examStore.exitExam()
   router.push(`/result/${examId}`)
 }
 

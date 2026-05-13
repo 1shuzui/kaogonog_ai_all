@@ -6,7 +6,7 @@
         <h1>解锁更完整的面试训练</h1>
         <p>
           试用用户可以先体验 1 道引导题。套餐开通会创建后端订单，
-          微信支付 mock 模式下会自动模拟回调并同步权益。
+          在小程序端完成微信支付后会自动同步权益。
         </p>
         <div class="pricing-hero__chips">
           <span>单题试用</span>
@@ -57,7 +57,7 @@
       <div class="pricing-risk__list">
         <div class="pricing-risk__item">账号权益建议仅限本人使用，不建议多人共用。</div>
         <div class="pricing-risk__item">多设备同时登录或多人切换使用，可能导致练习记录、录音、评分结果出现错位或覆盖。</div>
-        <div class="pricing-risk__item">当前支付以服务器订单和订阅状态为准；mock 支付仅用于联调流程，不代表真实扣款。</div>
+        <div class="pricing-risk__item">当前支付以服务器订单、微信支付通知和订阅状态为准；PC 端创建订单后请在小程序端完成真实支付。</div>
         <div class="pricing-risk__item">如果出现订单、权限或设备异常，请通过个人中心的客服反馈入口联系管理员处理。</div>
       </div>
       <div class="pricing-risk__actions">
@@ -118,7 +118,7 @@
         </div>
       </div>
       <p class="pricing-support__note">
-        PC 端用于订单联调与权益同步；小程序端拿到真实 openId 后可使用同一套后端支付接口拉起微信支付。
+        PC 端用于查看套餐、创建订单和核对权益；小程序端使用同一套后端支付接口拉起微信支付。
       </p>
     </div>
 
@@ -237,17 +237,21 @@ async function activatePlan(plan) {
 
     let callbackResult = null
     if (order.payParams?.mode === 'mock') {
-      callbackResult = await mockWechatPaymentCallback({
-        orderNo: order.orderNo,
-        status: 'paid',
-        amountTotal: Math.round(Number(order.amount || 0) * 100),
-        callbackPayload: {
-          source: 'pc_pricing_page',
-          packageCode: order.packageCode
-        }
-      })
-      await userStore.loadUserInfo().catch(() => null)
-      message.success(`已开通：${order.packageName || plan.title}`)
+      if (import.meta.env.PROD) {
+        message.warning('服务器仍返回测试支付参数，请在小程序端完成真实支付或检查后端微信支付配置')
+      } else {
+        callbackResult = await mockWechatPaymentCallback({
+          orderNo: order.orderNo,
+          status: 'paid',
+          amountTotal: Math.round(Number(order.amount || 0) * 100),
+          callbackPayload: {
+            source: 'pc_pricing_page',
+            packageCode: order.packageCode
+          }
+        })
+        await userStore.loadUserInfo().catch(() => null)
+        message.success(`已开通：${order.packageName || plan.title}`)
+      }
     } else {
       message.success('订单已创建，请在微信支付完成后等待回调同步')
     }

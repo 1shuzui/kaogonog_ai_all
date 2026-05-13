@@ -50,6 +50,11 @@ export const useSubscriptionStore = defineStore('subscription', {
         planName: this.status.planName,
         status: this.status.status,
         remainingSeconds: this.status.remainingMinutes * 60,
+        remainingMinutes: this.status.remainingMinutes,
+        remainingDailyMinutes: this.status.remainingDailyMinutes,
+        dailyLimitMinutes: this.status.dailyLimitMinutes,
+        usedMinutes: this.status.usedMinutes,
+        totalMinutes: this.status.totalMinutes,
         monthlyExpireAt: this.status.expiresAt ? Date.parse(this.status.expiresAt) || 0 : 0,
         isPaid: this.status.hasActivePlan
       }, {

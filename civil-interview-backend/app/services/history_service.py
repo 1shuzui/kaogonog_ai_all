@@ -16,12 +16,27 @@ DIM_DEFS = [
 ]
 
 
+def _as_utc(value: datetime | None) -> datetime | None:
+    if not value:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
+def _iso_utc(value: datetime | None) -> str:
+    normalized = _as_utc(value)
+    if not normalized:
+        return ""
+    return normalized.isoformat().replace("+00:00", "Z")
+
+
 def _has_final_score(answer: ExamAnswer) -> bool:
     return isinstance(answer.score_result, dict) and "totalScore" in answer.score_result
 
 
 def _record_to_dict(r: HistoryRecord) -> dict:
-    completed_at = r.completed_at.isoformat() if r.completed_at else ""
+    completed_at = _iso_utc(r.completed_at)
     question_count = r.question_count or 0
     return {
         "examId": r.exam_id,
@@ -67,7 +82,7 @@ def _load_exam_context(db: Session, exam: Exam) -> tuple[list[str], list[ExamAns
     answers.sort(
         key=lambda answer: (
             order_map.get(answer.question_id, len(order_map)),
-            answer.answered_at or datetime.min.replace(tzinfo=timezone.utc),
+            _as_utc(answer.answered_at) or datetime.min.replace(tzinfo=timezone.utc),
         )
     )
     return lookup_ids, answers, question_lookup
@@ -144,7 +159,7 @@ def _build_exam_summary(exam: Exam, answers: list[ExamAnswer], question_lookup: 
         total_score = round(total_score / question_count, 2) if question_count else 0.0
         grade = _grade_for_score(total_score, max_score)
 
-    latest_answered_at = max((answer.answered_at for answer in answers if answer.answered_at), default=None)
+    latest_answered_at = max((_as_utc(answer.answered_at) for answer in answers if answer.answered_at), default=None)
     if record and record.completed_at:
         sort_dt = record.completed_at
     elif exam.end_time:
@@ -153,7 +168,7 @@ def _build_exam_summary(exam: Exam, answers: list[ExamAnswer], question_lookup: 
         sort_dt = latest_answered_at
     else:
         sort_dt = exam.start_time
-    sort_at = sort_dt.isoformat() if sort_dt else ""
+    sort_at = _iso_utc(sort_dt)
     total_questions = len(question_ids) or question_count
     status = exam.status or ("completed" if record else "in_progress")
     question_summary = (
@@ -172,7 +187,7 @@ def _build_exam_summary(exam: Exam, answers: list[ExamAnswer], question_lookup: 
         "grade": grade or _grade_for_score(total_score, max_score),
         "province": _resolve_exam_province(exam, record, question_lookup, question_ids),
         "dimensions": dimensions,
-        "completedAt": record.completed_at.isoformat() if record and record.completed_at else sort_at,
+        "completedAt": _iso_utc(record.completed_at) if record and record.completed_at else sort_at,
         "date": sort_at,
         "status": status,
         "questionSummary": question_summary,
@@ -196,7 +211,7 @@ def _answer_to_dict(ans: ExamAnswer, question: Question | None) -> dict:
         "mediaType": media_record.get("mediaType", ""),
         "mediaFilename": media_record.get("originalFilename", ""),
         "mediaSource": media_record.get("source", ""),
-        "answeredAt": ans.answered_at.isoformat() if ans.answered_at else "",
+        "answeredAt": _iso_utc(ans.answered_at),
     }
 
 
@@ -292,8 +307,8 @@ def get_history_detail(db: Session, exam_id: str) -> dict:
 
     detail = _build_exam_summary(exam, answers, question_lookup, question_ids, record=r)
     detail.update({
-        "startTime": exam.start_time.isoformat() if exam.start_time else "",
-        "endTime": exam.end_time.isoformat() if exam.end_time else detail["date"],
+        "startTime": _iso_utc(exam.start_time),
+        "endTime": _iso_utc(exam.end_time) if exam.end_time else detail["date"],
         "questionIds": question_ids,
         "answers": [_answer_to_dict(answer, question_lookup.get(answer.question_id)) for answer in answers],
     })

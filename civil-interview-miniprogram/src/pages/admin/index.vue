@@ -18,6 +18,13 @@
         </view>
         <text class="menu-item__arrow">›</text>
       </view>
+      <view class="menu-item card" @tap="goSupport">
+        <view>
+          <text class="menu-item__title">客服反馈后台</text>
+          <text class="menu-item__desc">查看全站反馈并处理用户提交的问题</text>
+        </view>
+        <text class="menu-item__arrow">›</text>
+      </view>
     </view>
 
     <view v-else class="card">
@@ -45,6 +52,10 @@ function goRefunds() {
 
 function goQuestions() {
   uni.navigateTo({ url: '/pages/admin/questions' })
+}
+
+function goSupport() {
+  uni.navigateTo({ url: '/pages/support/index' })
 }
 </script>
 

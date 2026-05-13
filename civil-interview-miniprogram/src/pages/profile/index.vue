@@ -3,12 +3,32 @@
     <view class="profile-card">
       <view class="profile-card__avatar">{{ initial }}</view>
       <view class="profile-card__copy">
-        <text class="profile-card__name">{{ userStore.displayName }}</text>
-        <text class="profile-card__meta">{{ userStore.selectedProvinceName }} · {{ billingStore.plan.title }}</text>
+        <text class="profile-card__name">{{ safeDisplayName }}</text>
+        <text class="profile-card__meta">{{ userStore.selectedProvinceName }} · {{ safePlanTitle }}</text>
+        <text v-if="userStore.isAdmin" class="profile-card__badge">管理员权限</text>
       </view>
     </view>
 
-    <StatGrid :items="statItems" />
+    <view class="profile-stats">
+      <view v-for="item in statItems" :key="item.label" class="profile-stats__item">
+        <text class="profile-stats__value">{{ item.value }}</text>
+        <text class="profile-stats__label">{{ item.label }}</text>
+      </view>
+    </view>
+
+    <view v-if="profileLoading" class="sync-strip">正在同步账户信息...</view>
+    <view v-else-if="profileError" class="sync-strip sync-strip--error" @tap="refreshProfile">
+      {{ profileError }}，点此重试
+    </view>
+
+    <view class="card balance-card">
+      <view>
+        <text class="balance-card__label">当前权益余额</text>
+        <text class="balance-card__title">{{ balanceTitle }}</text>
+        <text class="balance-card__desc">{{ balanceDescription }}</text>
+      </view>
+      <button class="secondary-button balance-card__button" @tap="goSubscription">查看权益</button>
+    </view>
 
     <view class="card">
       <view class="section-head">
@@ -52,6 +72,14 @@
         <text>账号安全</text>
         <text class="menu-item__arrow">›</text>
       </view>
+      <view class="menu-item card" @tap="contactSupport">
+        <text>客服反馈中心</text>
+        <text class="menu-item__arrow">›</text>
+      </view>
+      <view class="menu-item card" @tap="goLegalDocuments">
+        <text>用户协议与隐私协议</text>
+        <text class="menu-item__arrow">›</text>
+      </view>
       <view v-if="userStore.isAdmin" class="menu-item card" @tap="goAdmin">
         <text>管理员中心</text>
         <text class="menu-item__arrow">›</text>
@@ -71,13 +99,13 @@
 </template>
 
 <script setup>
-import { computed, reactive } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import StatGrid from '../../components/StatGrid.vue'
 import { useBillingStore } from '../../stores/billing'
 import { useHistoryStore } from '../../stores/history'
 import { useUserStore } from '../../stores/user'
 import { PROVINCES } from '../../utils/constants'
+import { logger } from '../../utils/logger'
 import { requireLogin, toast } from '../../utils/navigation'
 
 const userStore = useUserStore()
@@ -88,26 +116,133 @@ const preferences = reactive({
   defaultAnswerTime: 180,
   enableAudio: true
 })
+const profileLoading = ref(false)
+const profileError = ref('')
+let profileLoadTask = null
 
-const initial = computed(() => userStore.displayName.slice(0, 1).toUpperCase())
+const safeDisplayName = computed(() => String(userStore.displayName || userStore.username || '考生'))
+const initial = computed(() => safeDisplayName.value.slice(0, 1).toUpperCase() || '我')
 const provinceOptions = computed(() => userStore.provinces.length ? userStore.provinces : PROVINCES)
 const provinceNames = computed(() => provinceOptions.value.map((item) => item.name))
 const provinceIndex = computed(() => Math.max(0, provinceOptions.value.findIndex((item) => item.code === userStore.selectedProvince)))
+const safePlanTitle = computed(() => {
+  if (userStore.isAdmin) return '管理员完整权限'
+  return billingStore.plan?.title || '试用版'
+})
+const balanceTitle = computed(() => {
+  if (userStore.isAdmin) return '管理员完整权限'
+  return safePlanTitle.value
+})
+const balanceDescription = computed(() => {
+  if (userStore.isAdmin) return '管理员账号不扣减套餐余额，可访问全部训练与管理功能。'
+  const billing = userStore.userInfo?.billing || {}
+  const remaining = Number(billing.remainingMinutes || 0)
+  const daily = Number(billing.remainingDailyMinutes || 0)
+  if (remaining > 0 || daily > 0) {
+    return `剩余总时长 ${remaining} 分钟，今日可用 ${daily || remaining} 分钟。`
+  }
+  return billingStore.plan?.status || '开通套餐后可查看剩余额度。'
+})
 const statItems = computed(() => [
   { label: '练习次数', value: historyStore.stats?.totalExams || 0 },
   { label: '最高分', value: historyStore.bestScore || 0 },
-  { label: '当前套餐', value: billingStore.plan.title }
+  { label: '当前权益', value: safePlanTitle.value }
 ])
 
-onShow(async () => {
+onShow(() => {
   if (!requireLogin()) return
-  await Promise.allSettled([
-    userStore.loadProvinces(),
-    userStore.loadUserInfo(),
-    historyStore.fetchStats()
-  ])
-  Object.assign(preferences, userStore.preferences)
+  refreshProfile()
 })
+
+function withTimeout(promise, timeoutMs, label) {
+  let timer = null
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} 请求超时`)), timeoutMs)
+  })
+  return Promise.race([promise, timeout]).then((value) => {
+    if (timer) clearTimeout(timer)
+    return value
+  }, (error) => {
+    if (timer) clearTimeout(timer)
+    throw error
+  })
+}
+
+function settleAll(promises) {
+  if (typeof Promise.allSettled === 'function') {
+    return Promise.allSettled(promises)
+  }
+  return Promise.all(promises.map((promise) => Promise.resolve(promise)
+    .then((value) => ({ status: 'fulfilled', value }))
+    .catch((reason) => ({ status: 'rejected', reason }))))
+}
+
+function getErrorMessage(error, fallback = '同步失败') {
+  return String(error?.message || error?.errMsg || error || fallback)
+}
+
+function normalizePagePreferences(raw = {}) {
+  return {
+    defaultPrepTime: Math.max(30, Number(raw.defaultPrepTime || preferences.defaultPrepTime || 90)),
+    defaultAnswerTime: Math.max(60, Number(raw.defaultAnswerTime || preferences.defaultAnswerTime || 180)),
+    enableAudio: raw.enableAudio !== false && raw.enableVideo !== false
+  }
+}
+
+function applyPreferencesFromStore() {
+  Object.assign(preferences, normalizePagePreferences(userStore.preferences))
+}
+
+async function refreshProfile() {
+  if (profileLoadTask) return profileLoadTask
+  profileLoading.value = true
+  profileError.value = ''
+  const task = (async () => {
+    const results = await settleAll([
+      withTimeout(userStore.loadProvinces(), 8000, '省份配置'),
+      withTimeout(userStore.loadUserInfo(), 10000, '账户信息'),
+      withTimeout(historyStore.fetchStats(), 6000, '练习统计')
+    ])
+    applyPreferencesFromStore()
+    const [provinceResult, accountResult, statsResult] = results
+    if (provinceResult?.status === 'rejected') {
+      logger.warn('Profile province sync failed', {
+        event: 'mini.profile.province_sync_failed',
+        error: provinceResult.reason
+      })
+    }
+    if (statsResult?.status === 'rejected') {
+      logger.warn('Profile stats sync failed', {
+        event: 'mini.profile.stats_sync_failed',
+        error: statsResult.reason
+      })
+    }
+    if (accountResult?.status === 'rejected') {
+      logger.error('Profile account sync failed', {
+        event: 'mini.profile.account_sync_failed',
+        error: accountResult.reason
+      })
+      if (!userStore.userInfo?.id && !userStore.username) {
+        profileError.value = `账户信息同步失败：${getErrorMessage(accountResult.reason)}`
+      }
+    }
+    return results
+  })()
+
+  profileLoadTask = task.then((result) => {
+    profileLoading.value = false
+    profileLoadTask = null
+    return result
+  }, (error) => {
+    profileLoading.value = false
+    profileLoadTask = null
+    if (!userStore.userInfo?.id && !userStore.username) {
+      profileError.value = `账户信息同步失败：${getErrorMessage(error)}`
+    }
+    return null
+  })
+  return profileLoadTask
+}
 
 function onProvinceChange(event) {
   const selected = provinceOptions.value[Number(event.detail.value)]
@@ -147,6 +282,14 @@ function goSecurity() {
   uni.navigateTo({ url: '/pages/account/security' })
 }
 
+function contactSupport() {
+  uni.navigateTo({ url: '/pages/support/index' })
+}
+
+function goLegalDocuments() {
+  uni.navigateTo({ url: '/pages/legal/index' })
+}
+
 function goAdmin() {
   uni.navigateTo({ url: '/pages/admin/index' })
 }
@@ -184,9 +327,13 @@ function logout() {
 
 .profile-card__name {
   display: block;
+  overflow: hidden;
   color: #1a1a2e;
   font-size: 36rpx;
   font-weight: 800;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .profile-card__meta {
@@ -194,6 +341,74 @@ function logout() {
   margin-top: 8rpx;
   color: #6f7c8f;
   font-size: 24rpx;
+}
+
+.profile-card__copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-card__badge {
+  display: inline-flex;
+  margin-top: 12rpx;
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
+  background: #e8f4fd;
+  color: #1b5faa;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.profile-stats {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 20rpx;
+}
+
+.profile-stats__item {
+  flex: 1;
+  min-width: 0;
+  min-height: 120rpx;
+  padding: 22rpx 12rpx;
+  border: 1rpx solid rgba(27, 95, 170, 0.08);
+  border-radius: 16rpx;
+  background: #ffffff;
+  text-align: center;
+  box-shadow: 0 6rpx 18rpx rgba(23, 48, 78, 0.05);
+}
+
+.profile-stats__value {
+  display: block;
+  overflow: hidden;
+  color: #1b5faa;
+  font-size: 32rpx;
+  font-weight: 800;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-stats__label {
+  display: block;
+  margin-top: 8rpx;
+  color: #6f7c8f;
+  font-size: 23rpx;
+}
+
+.sync-strip {
+  margin-bottom: 20rpx;
+  padding: 16rpx 22rpx;
+  border: 1rpx solid #d9e3ef;
+  border-radius: 14rpx;
+  background: #f8fbff;
+  color: #6f7c8f;
+  font-size: 24rpx;
+}
+
+.sync-strip--error {
+  border-color: #ffd6d6;
+  background: #fff5f5;
+  color: #cf1322;
 }
 
 .setting-row {
@@ -208,6 +423,45 @@ function logout() {
 .setting-row text:last-child {
   color: #1b5faa;
   font-weight: 600;
+}
+
+.balance-card {
+  display: flex;
+  gap: 18rpx;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.balance-card__label,
+.balance-card__title,
+.balance-card__desc {
+  display: block;
+}
+
+.balance-card__label {
+  color: #1b5faa;
+  font-size: 23rpx;
+  font-weight: 800;
+}
+
+.balance-card__title {
+  margin-top: 6rpx;
+  color: #1a1a2e;
+  font-size: 32rpx;
+  font-weight: 900;
+}
+
+.balance-card__desc {
+  margin-top: 6rpx;
+  color: #6f7c8f;
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.balance-card__button {
+  flex: 0 0 180rpx;
+  min-height: 76rpx;
+  font-size: 25rpx;
 }
 
 .setting-slider {

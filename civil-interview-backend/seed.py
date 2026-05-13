@@ -31,6 +31,7 @@ def seed():
                 full_name="管理员",
                 email="admin@example.com",
                 province="national",
+                role="admin",
             )
             db.add(admin)
             logger.info("Seed default admin created", extra={"event": "seed.admin.created", "username": "admin"})

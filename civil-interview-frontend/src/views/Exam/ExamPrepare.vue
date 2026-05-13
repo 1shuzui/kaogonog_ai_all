@@ -14,6 +14,13 @@
     <template v-else>
     <h2 class="exam-prepare__title">设备检测</h2>
     <p class="exam-prepare__desc">开始测评前，请确认摄像头和麦克风正常工作</p>
+    <a-alert
+      v-if="asrUnavailable"
+      class="exam-prepare__asr-alert"
+      type="warning"
+      show-icon
+      :message="asrStatusText"
+    />
 
     <a-steps :current="currentStep" direction="vertical" class="exam-prepare__steps">
       <a-step title="设备权限检测" :status="stepStatus(0)">
@@ -116,8 +123,8 @@
           </div>
         </div>
       </div>
-      <a-button type="primary" size="large" block :loading="enteringExam" :disabled="enteringExam" @click="enterExam" style="margin-top: 16px">
-        {{ examMode === 'mock' ? '开始模拟面试' : '进入考场' }}
+      <a-button type="primary" size="large" block :loading="enteringExam" :disabled="enteringExam || asrUnavailable" @click="enterExam" style="margin-top: 16px">
+        {{ asrUnavailable ? '语音服务未就绪' : examMode === 'mock' ? '开始模拟面试' : '进入考场' }}
       </a-button>
     </div>
     </template>
@@ -133,6 +140,7 @@ import { useMediaRecorder } from '@/composables/useMediaRecorder'
 import { useExamStore } from '@/stores/exam'
 import { useBillingStore } from '@/stores/billing'
 import { getRandomQuestions, getQuestionById } from '@/api/questionBank'
+import { getAsrStatus } from '@/api/scoring'
 import { useUserStore } from '@/stores/user'
 import { useTargetedStore } from '@/stores/targeted'
 import {
@@ -161,6 +169,7 @@ const examMode = ref('free')
 const enteringExam = ref(false)
 const questionCount = ref(5)
 const dimensionFilters = ref(['random'])
+const asrStatus = ref(null)
 
 // 候考室
 const waitingRoom = ref(false)
@@ -190,6 +199,11 @@ const questionCategoryOptions = [
 
 const isTrialEntry = computed(() => String(route.query.trial || '') === '1' && !billingStore.isPaid)
 const showPracticeConfig = computed(() => examMode.value === 'free')
+const asrUnavailable = computed(() => asrStatus.value && asrStatus.value.ready === false)
+const asrStatusText = computed(() => {
+  if (!asrStatus.value) return ''
+  return asrStatus.value.message || '语音转写服务未就绪，请联系管理员检查后端 Whisper/ffmpeg 配置。'
+})
 const selectedSpecificDimensions = computed(() => (
   dimensionFilters.value.filter((item) => item && item !== RANDOM_DIMENSION_KEY)
 ))
@@ -200,6 +214,21 @@ function handleDimensionFiltersChange(values = []) {
   const selected = Array.isArray(values) ? values.filter(Boolean) : []
   const specific = selected.filter((item) => item !== RANDOM_DIMENSION_KEY)
   dimensionFilters.value = specific.length ? specific : [RANDOM_DIMENSION_KEY]
+}
+
+function applyUserPracticePreferencesToQuestions(questions = []) {
+  const prefs = userStore.preferences || {}
+  const prepTime = Number(prefs.defaultPrepTime || 0)
+  const answerTime = Number(prefs.defaultAnswerTime || 0)
+  return questions.map((question) => ({
+    ...question,
+    prepTime: prepTime || Number(question?.prepTime || 90),
+    answerTime: answerTime || Number(question?.answerTime || 180)
+  }))
+}
+
+async function loadAsrStatus() {
+  asrStatus.value = await getAsrStatus({ skipErrorHandler: true }).catch(() => null)
 }
 
 function notifyUnsupportedQuestions(unsupportedCount, replaced = false) {
@@ -281,6 +310,7 @@ async function ensureScoringReadyQuestions(questions, options = {}) {
 }
 
 onMounted(() => {
+  loadAsrStatus().catch(() => null)
   doPermissionCheck()
 })
 
@@ -439,6 +469,12 @@ async function enterExamLegacy() {
 async function enterExam() {
   if (enteringExam.value) return
 
+  await loadAsrStatus().catch(() => null)
+  if (asrUnavailable.value) {
+    message.warning('语音转写服务未就绪，请稍后重试。')
+    return
+  }
+
   enteringExam.value = true
   let questions = []
   const source = String(route.query.source || '')
@@ -500,6 +536,8 @@ async function enterExam() {
       return
     }
 
+    questions = applyUserPracticePreferencesToQuestions(questions)
+
     recorder.destroyStream()
     examStore.setVideoEnabled(videoEnabled.value)
 
@@ -557,6 +595,10 @@ async function startMockExam(questions) {
 .exam-prepare__desc {
   color: @text-secondary;
   margin-bottom: 24px;
+}
+
+.exam-prepare__asr-alert {
+  margin-bottom: 18px;
 }
 
 .exam-prepare__steps {

@@ -31,6 +31,13 @@
                 :prefix="h(LockOutlined)"
               />
             </a-form-item>
+            <div class="legal-hint">
+              登录即表示您已阅读并同意
+              <a-button type="link" size="small" @click="$router.push('/legal')">《用户协议》与《隐私协议》</a-button>
+            </div>
+            <div class="login-tools">
+              <a-button type="link" size="small" @click="resetModalVisible = true">忘记密码？</a-button>
+            </div>
             <a-form-item>
               <a-button
                 type="primary"
@@ -77,6 +84,12 @@
                 :prefix="h(LockOutlined)"
               />
             </a-form-item>
+            <a-form-item name="agreedTerms">
+              <a-checkbox v-model:checked="registerForm.agreedTerms">
+                我已阅读并同意
+                <a-button type="link" size="small" @click.stop="$router.push('/legal')">《用户协议》与《隐私协议》</a-button>
+              </a-checkbox>
+            </a-form-item>
             <a-form-item>
               <a-button
                 type="primary"
@@ -91,6 +104,48 @@
           </a-form>
         </a-tab-pane>
       </a-tabs>
+
+      <a-modal
+        v-model:open="resetModalVisible"
+        title="找回密码"
+        ok-text="重置密码"
+        cancel-text="取消"
+        :confirm-loading="resetLoading"
+        @ok="handlePasswordResetConfirm"
+      >
+        <a-form layout="vertical">
+          <a-form-item label="用户名">
+            <a-input v-model:value="resetForm.username" placeholder="请输入要找回的用户名" />
+          </a-form-item>
+          <a-form-item label="邮箱或手机号（可选）">
+            <a-input v-model:value="resetForm.contact" placeholder="如账号绑定过邮箱，可填写用于校验" />
+          </a-form-item>
+          <a-space style="margin-bottom: 12px">
+            <a-button size="small" :loading="resetRequesting" @click="handlePasswordResetRequest">
+              获取验证码
+            </a-button>
+            <a-button size="small" :disabled="!resetForm.code" @click="handlePasswordResetVerify">
+              验证
+            </a-button>
+          </a-space>
+          <a-alert
+            v-if="resetTip"
+            :message="resetTip"
+            type="info"
+            show-icon
+            style="margin-bottom: 12px"
+          />
+          <a-form-item label="验证码">
+            <a-input v-model:value="resetForm.code" placeholder="请输入验证码" />
+          </a-form-item>
+          <a-form-item label="新密码">
+            <a-input-password v-model:value="resetForm.newPassword" placeholder="至少 6 位" />
+          </a-form-item>
+          <a-form-item label="确认新密码">
+            <a-input-password v-model:value="resetForm.confirmPassword" placeholder="请再次输入新密码" />
+          </a-form-item>
+        </a-form>
+      </a-modal>
     </div>
   </div>
 </template>
@@ -101,17 +156,33 @@ import { useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { UserOutlined, LockOutlined } from '@ant-design/icons-vue'
 import { useUserStore } from '@/stores/user'
+import {
+  confirmPasswordReset,
+  requestPasswordReset,
+  verifyPasswordReset
+} from '@/api/auth'
 
 const route = useRoute()
 const userStore = useUserStore()
 
 const activeTab = ref('login')
 const loading = ref(false)
+const resetModalVisible = ref(false)
+const resetLoading = ref(false)
+const resetRequesting = ref(false)
+const resetTip = ref('')
 const loginFormRef = ref(null)
 const registerFormRef = ref(null)
 
 const loginForm = reactive({ username: '', password: '' })
-const registerForm = reactive({ username: '', password: '', confirmPassword: '' })
+const registerForm = reactive({ username: '', password: '', confirmPassword: '', agreedTerms: false })
+const resetForm = reactive({
+  username: '',
+  contact: '',
+  code: '',
+  newPassword: '',
+  confirmPassword: ''
+})
 
 const loginRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
@@ -137,6 +208,17 @@ const registerRules = {
         return Promise.resolve()
       },
       trigger: 'blur'
+    }
+  ],
+  agreedTerms: [
+    {
+      validator: (_, value) => {
+        if (!value) {
+          return Promise.reject('请先阅读并同意用户协议与隐私协议')
+        }
+        return Promise.resolve()
+      },
+      trigger: 'change'
     }
   ]
 }
@@ -169,12 +251,14 @@ async function handleRegister() {
   try {
     await userStore.register({
       username: registerForm.username,
-      password: registerForm.password
+      password: registerForm.password,
+      agreedTermsVersion: '2026-05-12'
     })
     message.success('注册成功，请登录')
     activeTab.value = 'login'
     loginForm.username = registerForm.username
     loginForm.password = ''
+    registerForm.agreedTerms = false
   } catch (e) {
     const msg = e.normalizedMessage || e.response?.data?.detail || '注册失败'
     message.error(msg)
@@ -182,7 +266,89 @@ async function handleRegister() {
     loading.value = false
   }
 }
+
+async function handlePasswordResetRequest() {
+  if (!resetForm.username.trim()) {
+    message.warning('请先填写用户名')
+    return
+  }
+  resetRequesting.value = true
+  resetTip.value = ''
+  try {
+    const result = await requestPasswordReset({
+      username: resetForm.username.trim(),
+      contact: resetForm.contact.trim()
+    })
+    resetTip.value = result?.debugCode
+      ? `验证码：${result.debugCode}。短信服务尚未接入时，请由管理员转交该验证码。`
+      : (result?.message || '验证码已发送，请查收。')
+    message.success('验证码已生成')
+  } catch (e) {
+    message.error(e.normalizedMessage || e.response?.data?.detail || '验证码生成失败')
+  } finally {
+    resetRequesting.value = false
+  }
+}
+
+async function handlePasswordResetVerify() {
+  if (!resetForm.username.trim() || !resetForm.code.trim()) {
+    message.warning('请填写用户名和验证码')
+    return
+  }
+  try {
+    await verifyPasswordReset({
+      username: resetForm.username.trim(),
+      code: resetForm.code.trim()
+    })
+    message.success('验证码验证通过')
+  } catch (e) {
+    message.error(e.normalizedMessage || e.response?.data?.detail || '验证码验证失败')
+  }
+}
+
+async function handlePasswordResetConfirm() {
+  if (!resetForm.username.trim() || !resetForm.code.trim()) {
+    message.warning('请填写用户名和验证码')
+    return
+  }
+  if (resetForm.newPassword.length < 6) {
+    message.warning('新密码至少 6 位')
+    return
+  }
+  if (resetForm.newPassword !== resetForm.confirmPassword) {
+    message.warning('两次输入的新密码不一致')
+    return
+  }
+  resetLoading.value = true
+  try {
+    await confirmPasswordReset({
+      username: resetForm.username.trim(),
+      code: resetForm.code.trim(),
+      newPassword: resetForm.newPassword
+    })
+    message.success('密码已重置，请登录')
+    loginForm.username = resetForm.username.trim()
+    loginForm.password = ''
+    resetModalVisible.value = false
+    resetForm.code = ''
+    resetForm.newPassword = ''
+    resetForm.confirmPassword = ''
+    resetTip.value = ''
+  } catch (e) {
+    message.error(e.normalizedMessage || e.response?.data?.detail || '密码重置失败')
+  } finally {
+    resetLoading.value = false
+  }
+}
 </script>
+
+<style scoped>
+.legal-hint {
+  margin-bottom: 12px;
+  color: #8c8c8c;
+  font-size: 13px;
+}
+</style>
 
 <style lang="less" scoped>
 @import '@/styles/variables.less';
@@ -219,5 +385,11 @@ async function handleRegister() {
     font-size: @font-size-sm;
     color: @text-secondary;
   }
+}
+
+.login-tools {
+  display: flex;
+  justify-content: flex-end;
+  margin: -8px 0 10px;
 }
 </style>

@@ -3,31 +3,81 @@ import { createRequestId, logger } from '../utils/logger'
 import { toast } from '../utils/navigation'
 
 const RUNTIME_API_BASE_KEY = 'civil_runtime_api_base'
+const DEFAULT_API_BASE = 'https://xzqianmianyuzhoukeji.com/api'
 
 function normalizeBase(base) {
-  return String(base || '').trim().replace(/\/$/, '')
+  return String(base || '').trim().replace(/\/+$/, '')
+}
+
+function readRuntimeApiBase() {
+  try {
+    return normalizeBase(uni.getStorageSync(RUNTIME_API_BASE_KEY))
+  } catch {
+    return ''
+  }
+}
+
+function clearRuntimeApiBase() {
+  try {
+    uni.removeStorageSync(RUNTIME_API_BASE_KEY)
+  } catch {
+    // Storage can be unavailable during very early app bootstrap in devtools.
+  }
+}
+
+function isLegacyOrUnsafeApiBase(base) {
+  const normalized = normalizeBase(base)
+  return (
+    !normalized
+    || normalized === '/api'
+    || normalized.startsWith('/')
+    || normalized.includes('xzqianmianyuzhoukeji.cn')
+    || /localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(normalized)
+  )
+}
+
+function resolveRuntimeApiBase(fallbackBase) {
+  const runtimeBase = readRuntimeApiBase()
+  if (!runtimeBase) return ''
+
+  if (import.meta.env.PROD || isLegacyOrUnsafeApiBase(runtimeBase)) {
+    clearRuntimeApiBase()
+    return ''
+  }
+
+  if (!/^https?:\/\//i.test(runtimeBase)) {
+    clearRuntimeApiBase()
+    return ''
+  }
+
+  return runtimeBase || fallbackBase
 }
 
 function resolveApiBase() {
-  const runtimeBase = normalizeBase(uni.getStorageSync(RUNTIME_API_BASE_KEY))
-  if (runtimeBase) {
-    return runtimeBase
-  }
-
   const h5Base = normalizeBase(import.meta.env.VITE_API_BASE_H5)
   const mpWeixinBase = normalizeBase(import.meta.env.VITE_API_BASE_MP_WEIXIN)
   const commonBase = normalizeBase(import.meta.env.VITE_API_BASE)
 
   // #ifdef MP-WEIXIN
-  return mpWeixinBase || commonBase || 'http://127.0.0.1:8050'
+  {
+    const fallbackBase = mpWeixinBase || commonBase || DEFAULT_API_BASE
+    return resolveRuntimeApiBase(fallbackBase) || fallbackBase
+  }
   // #endif
   // #ifdef H5
-  return h5Base || commonBase || '/api'
+  {
+    const fallbackBase = h5Base || commonBase || DEFAULT_API_BASE
+    return resolveRuntimeApiBase(fallbackBase) || fallbackBase
+  }
   // #endif
-  return mpWeixinBase || h5Base || commonBase || '/api'
+  {
+    const fallbackBase = mpWeixinBase || h5Base || commonBase || DEFAULT_API_BASE
+    return resolveRuntimeApiBase(fallbackBase) || fallbackBase
+  }
 }
 
 export const API_BASE = resolveApiBase()
+let unauthorizedRedirecting = false
 
 function nowMs() {
   return Date.now()
@@ -62,8 +112,17 @@ function normalizeErrorMessage(payload, fallback = '请求失败') {
 function handleUnauthorized() {
   uni.removeStorageSync(TOKEN_STORAGE_KEY)
   uni.removeStorageSync(USERNAME_STORAGE_KEY)
+  if (unauthorizedRedirecting) return
+  unauthorizedRedirecting = true
   toast('登录已过期，请重新登录')
-  uni.reLaunch({ url: '/pages/login/index' })
+  setTimeout(() => {
+    uni.reLaunch({
+      url: '/pages/login/index',
+      complete: () => {
+        unauthorizedRedirecting = false
+      }
+    })
+  }, 0)
 }
 
 function normalizeNetworkError(err) {
@@ -73,7 +132,7 @@ function normalizeNetworkError(err) {
     || rawMessage.includes('request:fail')
     || rawMessage.includes('timeout')
   ) {
-    return `后端服务连接失败：${API_BASE || '(未配置 API 地址)'}。请检查 VITE_API_BASE_MP_WEIXIN / VITE_API_BASE_H5 配置，或在运行时通过 uni.setStorageSync('${RUNTIME_API_BASE_KEY}', 'http://可访问地址:8050') 覆盖后重启小程序。`
+    return `后端服务连接失败：${API_BASE || '(未配置 API 地址)'}。请检查 VITE_API_BASE_MP_WEIXIN / VITE_API_BASE_H5 配置，或清理微信开发者工具缓存后重新导入小程序。`
   }
   return rawMessage || '网络请求失败，请检查后端服务'
 }

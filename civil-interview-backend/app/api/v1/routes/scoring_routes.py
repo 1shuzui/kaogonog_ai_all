@@ -8,6 +8,7 @@ from app.core.security import get_current_user
 from app.db.session import get_db
 from app.models.entities import ExamAnswer, Question
 from app.schemas.common import AuthUser, EvaluateRequest
+from app.core.ai import get_asr_runtime_status
 from app.services.scoring_service import transcribe, evaluate_answer, get_scoring_result
 
 router = APIRouter(prefix="/scoring", tags=["scoring"])
@@ -89,6 +90,11 @@ def _persist_result(db: Session, exam_id: str | None, question_id: str, transcri
 async def scoring_transcribe(audio: UploadFile = File(...), current_user: AuthUser = Depends(get_current_user)):
     audio_bytes = await audio.read()
     return await transcribe(audio_bytes, filename=audio.filename or "answer.webm")
+
+
+@router.get("/asr-status")
+def scoring_asr_status(current_user: AuthUser = Depends(get_current_user)):
+    return get_asr_runtime_status()
 
 
 @router.post("/evaluate")

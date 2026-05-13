@@ -12,3 +12,4 @@ sqlalchemy
 pymysql
 cryptography
 python-dotenv
+openai-whisper

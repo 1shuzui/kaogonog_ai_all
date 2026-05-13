@@ -32,7 +32,7 @@
     <div v-if="visibleRecords.length" class="support-center__records">
       <div class="support-center__records-head">
         <h4>{{ userStore.isAdmin ? '反馈记录总览' : '我最近的反馈' }}</h4>
-        <span>本地保存，仅当前浏览器可见</span>
+        <span>已与后端同步</span>
       </div>
       <div
         v-for="record in visibleRecords"
@@ -94,17 +94,16 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { useUserStore } from '@/stores/user'
 import {
   FEEDBACK_STATUS_OPTIONS,
   FEEDBACK_TYPES,
-  SUPPORT_CONTACT,
-  loadFeedbackRecords,
-  saveFeedbackRecord
+  SUPPORT_CONTACT
 } from '@/utils/support'
+import { createSupportFeedback, getSupportFeedback } from '@/api/support'
 import { getProvinceLabel } from '@/utils/questionPresentation'
 
 const route = useRoute()
@@ -112,7 +111,7 @@ const router = useRouter()
 const userStore = useUserStore()
 
 const formVisible = ref(false)
-const records = ref(loadFeedbackRecords())
+const records = ref([])
 const feedbackOptions = FEEDBACK_TYPES.map((item) => ({ value: item, label: item }))
 
 const form = reactive({
@@ -123,11 +122,15 @@ const form = reactive({
 })
 
 const visibleRecords = computed(() => {
-  const source = userStore.isAdmin
-    ? records.value
-    : records.value.filter((item) => item.username === (userStore.userInfo?.name || userStore.username || '游客'))
+  return records.value.slice(0, userStore.isAdmin ? 12 : 5)
+})
 
-  return source.slice(0, userStore.isAdmin ? 12 : 5)
+onMounted(() => {
+  loadRecords()
+})
+
+watch(() => userStore.isAdmin, () => {
+  loadRecords()
 })
 
 function resetForm() {
@@ -154,26 +157,28 @@ async function copyWechat() {
   }
 }
 
-function submitFeedback() {
+async function submitFeedback() {
   if (!form.summary.trim()) {
     message.warning('请先填写问题描述')
     return
   }
 
-  saveFeedbackRecord({
-    type: form.type,
-    questionId: form.questionId.trim(),
-    summary: form.summary.trim(),
-    contact: form.contact.trim(),
-    routePath: route.fullPath,
-    province: getProvinceLabel(userStore.selectedProvince),
-    username: userStore.userInfo?.name || userStore.username || '游客'
-  })
-
-  records.value = loadFeedbackRecords()
-  formVisible.value = false
-  resetForm()
-  message.success('反馈已保存，建议同时通过客服微信补充说明')
+  try {
+    await createSupportFeedback({
+      type: form.type,
+      questionId: form.questionId.trim(),
+      summary: form.summary.trim(),
+      contact: form.contact.trim(),
+      routePath: route.fullPath,
+      province: getProvinceLabel(userStore.selectedProvince)
+    })
+    await loadRecords()
+    formVisible.value = false
+    resetForm()
+    message.success('反馈已提交，管理员端可实时查看')
+  } catch (error) {
+    message.error(error?.normalizedMessage || error?.message || '反馈提交失败')
+  }
 }
 
 function getStatusLabel(status) {
@@ -184,6 +189,19 @@ function formatTime(value = '') {
   const date = value ? new Date(value) : null
   if (!date || Number.isNaN(date.getTime())) return ''
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+}
+
+async function loadRecords() {
+  try {
+    const response = await getSupportFeedback({
+      current: 1,
+      pageSize: userStore.isAdmin ? 12 : 5,
+      scope: userStore.isAdmin ? 'all' : 'mine'
+    })
+    records.value = response.list || []
+  } catch {
+    records.value = []
+  }
 }
 </script>
 

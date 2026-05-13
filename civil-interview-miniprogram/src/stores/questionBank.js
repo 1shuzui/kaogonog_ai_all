@@ -24,8 +24,10 @@ export const useQuestionBankStore = defineStore('questionBank', {
     async fetchQuestions(params = {}) {
       this.loading = true
       try {
+        const requestedPage = Number(params.current || params.page || this.pagination.current || 1)
         const response = await getQuestions({
-          page: this.pagination.current,
+          current: requestedPage,
+          page: requestedPage,
           pageSize: this.pagination.pageSize,
           ...this.filters,
           ...params
@@ -33,10 +35,22 @@ export const useQuestionBankStore = defineStore('questionBank', {
         const normalized = normalizeListResponse(response)
         this.questions = normalized.list
         this.pagination.total = normalized.total
-        if (params.page) this.pagination.current = params.page
+        this.pagination.current = requestedPage
       } finally {
         this.loading = false
       }
+    },
+
+    async fetchMore(params = {}) {
+      const previous = [...this.questions]
+      await this.fetchQuestions(params)
+      const seen = new Set()
+      this.questions = [...previous, ...this.questions].filter((item) => {
+        const key = item.id || item.stem
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
     },
 
     async fetchQuestion(id) {

@@ -3,11 +3,15 @@
     <text class="page-title">定向备面</text>
     <text class="page-desc">选择省份与岗位系统，生成更贴近报考方向的训练题。</text>
 
-    <view v-if="readonlyMode" class="card">
+    <view v-if="readonlyMode" class="card access-card">
       <view class="section-head">
-        <text class="section-title">界面预览</text>
+        <text class="section-title">定向备面未开通</text>
       </view>
-      <text class="muted">当前仅展示页面结构，相关内容暂不展示。</text>
+      <text class="access-card__desc">选择省份和岗位系统后，开通套餐即可生成定向训练题并查看面试重点；也可以先体验 1 道试用题。</text>
+      <view class="access-card__actions">
+        <button class="secondary-button" @tap="startTrial">试用 1 题</button>
+        <button class="primary-button" @tap="goPricing">开通套餐</button>
+      </view>
     </view>
 
     <view class="card">
@@ -45,9 +49,9 @@
       </view>
     </view>
 
-    <view class="targeted-actions">
-      <button class="primary-button" :disabled="readonlyMode || !canProceed" @tap="goFocus">分析面试重点</button>
-      <button class="secondary-button" :disabled="readonlyMode || !canProceed" :loading="targetedStore.generateLoading" @tap="generate">
+    <view v-if="!readonlyMode" class="targeted-actions">
+      <button class="primary-button" :disabled="!canProceed" @tap="goFocus">分析面试重点</button>
+      <button class="secondary-button" :disabled="!canProceed" :loading="targetedStore.generateLoading" @tap="generate">
         生成题目
       </button>
     </view>
@@ -73,21 +77,32 @@ import { onShow } from '@dcloudio/uni-app'
 import QuestionCard from '../../components/QuestionCard.vue'
 import { useBillingStore } from '../../stores/billing'
 import { useExamStore } from '../../stores/exam'
+import { useSubscriptionStore } from '../../stores/subscription'
 import { useTargetedStore } from '../../stores/targeted'
+import { useUserStore } from '../../stores/user'
 import { POSITION_SYSTEMS, PROVINCES } from '../../utils/constants'
 import { JIANGSU_TARGETED_POSITIONS } from '../../utils/jiangsuJobs'
 import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
 
 const billingStore = useBillingStore()
+const subscriptionStore = useSubscriptionStore()
 const targetedStore = useTargetedStore()
 const examStore = useExamStore()
+const userStore = useUserStore()
 const selectedProvince = ref(targetedStore.selectedProvince || 'national')
 const selectedPosition = ref(targetedStore.selectedPosition || 'general')
 const currentPositionSystems = computed(() => (
   selectedProvince.value === 'jiangsu' ? JIANGSU_TARGETED_POSITIONS : POSITION_SYSTEMS
 ))
 const canProceed = computed(() => !!selectedProvince.value && !!selectedPosition.value)
-const readonlyMode = computed(() => !billingStore.isPaid)
+const hasFullAccess = computed(() => (
+  userStore.isAdmin
+  || billingStore.isPaid
+  || subscriptionStore.status.hasActivePlan
+  || userStore.userInfo?.billing?.isPaid === true
+  || userStore.userInfo?.permissions?.canAccessPremiumModules === true
+))
+const readonlyMode = computed(() => !hasFullAccess.value)
 
 function getDefaultPositionCode() {
   if (selectedProvince.value === 'jiangsu') return JIANGSU_TARGETED_POSITIONS[0]?.code || ''
@@ -101,8 +116,17 @@ watch(selectedProvince, () => {
 }, { immediate: true })
 
 onShow(() => {
-  requireLogin()
+  if (!requireLogin()) return
+  refreshAccessState().catch(() => null)
 })
+
+async function refreshAccessState() {
+  if (!userStore.isAuthenticated) return
+  await Promise.allSettled([
+    userStore.loadUserInfo(),
+    subscriptionStore.refresh({ skipErrorHandler: true })
+  ])
+}
 
 function syncSelection() {
   targetedStore.setSelection(selectedProvince.value, selectedPosition.value)
@@ -121,6 +145,11 @@ async function generate() {
     toast('请先选择省份和岗位系统')
     return
   }
+  await refreshAccessState().catch(() => null)
+  if (readonlyMode.value) {
+    toast('请先开通套餐后使用定向备面')
+    return
+  }
   syncSelection()
   showLoading('生成题目')
   try {
@@ -137,7 +166,12 @@ async function startQuestion(question) {
   if (readonlyMode.value) return
   showLoading('创建考场')
   try {
-    await examStore.startFromQuestions([question], 'targeted')
+    const prefs = userStore.preferences || {}
+    await examStore.startFromQuestions([{
+      ...question,
+      prepTime: Number(prefs.defaultPrepTime || question?.prepTime || 90),
+      answerTime: Number(prefs.defaultAnswerTime || question?.answerTime || 180)
+    }], 'targeted')
     uni.navigateTo({ url: '/pages/exam/room' })
   } catch (error) {
     toast(error?.message || '无法开始练习')
@@ -145,9 +179,36 @@ async function startQuestion(question) {
     hideLoading()
   }
 }
+
+function goPricing() {
+  uni.navigateTo({ url: '/pages/pricing/index' })
+}
+
+function startTrial() {
+  uni.navigateTo({ url: '/pages/exam/prepare?trial=1' })
+}
 </script>
 
 <style scoped>
+.access-card {
+  border-color: #bfd7ef;
+  background: #f4f9fe;
+}
+
+.access-card__desc {
+  display: block;
+  color: #5f6f83;
+  font-size: 24rpx;
+  line-height: 1.6;
+}
+
+.access-card__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+  margin-top: 22rpx;
+}
+
 .targeted-actions {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 220rpx;

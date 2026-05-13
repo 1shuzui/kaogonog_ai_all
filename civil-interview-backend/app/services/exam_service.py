@@ -19,6 +19,16 @@ def _sanitize_upload_name(raw_name: str) -> str:
     return safe_name or "recording.webm"
 
 
+def _iso_utc(value: datetime | None) -> str:
+    if not value:
+        return ""
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    else:
+        value = value.astimezone(timezone.utc)
+    return value.isoformat().replace("+00:00", "Z")
+
+
 def start_exam(db: Session, data: ExamStartRequest, username: str) -> dict:
     question_ids = list(dict.fromkeys(data.questionIds))
     existing_ids = {
@@ -43,7 +53,7 @@ def start_exam(db: Session, data: ExamStartRequest, username: str) -> dict:
     return {
         "examId": exam_id,
         "questionIds": question_ids,
-        "startTime": exam.start_time.isoformat(),
+        "startTime": _iso_utc(exam.start_time),
     }
 
 
@@ -80,7 +90,7 @@ def upload_recording(
         "originalFilename": original_name,
         "mediaType": media_type or "application/octet-stream",
         "source": source or "live_recording",
-        "uploadedAt": datetime.now(timezone.utc).isoformat(),
+        "uploadedAt": _iso_utc(datetime.now(timezone.utc)),
     }
     existing_result = answer.score_result if isinstance(answer.score_result, dict) else {}
     if "totalScore" not in existing_result:
@@ -136,5 +146,5 @@ def complete_exam(db: Session, exam_id: str) -> dict:
         "status": exam.status,
         "questionCount": question_count,
         "finalScore": avg,
-        "completedAt": exam.end_time.isoformat() if exam.end_time else "",
+        "completedAt": _iso_utc(exam.end_time),
     }

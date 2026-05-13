@@ -1,6 +1,7 @@
 export const SUPPORT_CONTACT = {
   adminName: '平台管理员',
-  wechatId: '请替换为你的客服微信号',
+  wechatId: 'Yudigege0924',
+  qqId: '609885775',
   workTime: '09:00 - 21:00',
   serviceScope: '题目内容反馈、题库版本差异、支付权益异常、录音评分报错'
 }

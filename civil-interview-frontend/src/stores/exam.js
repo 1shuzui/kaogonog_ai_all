@@ -30,15 +30,7 @@ function buildZeroScoreResult() {
 }
 
 async function evaluateEmptyAnswer(questionId, examId) {
-  try {
-    return await evaluateAnswer({
-      questionId,
-      transcript: '',
-      examId
-    })
-  } catch {
-    return buildZeroScoreResult()
-  }
+  return buildZeroScoreResult()
 }
 
 function assertQuestionScoringSupported(questionId) {

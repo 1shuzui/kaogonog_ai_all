@@ -9,7 +9,7 @@ const TOKEN_STORAGE_KEY = 'token'
 const USERNAME_STORAGE_KEY = 'username'
 
 const http = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE || '/api',
+  baseURL: import.meta.env.VITE_API_BASE || 'https://xzqianmianyuzhoukeji.com/api',
   timeout: 180000
 })
 

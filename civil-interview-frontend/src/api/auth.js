@@ -19,3 +19,21 @@ export async function register(form) {
     skipErrorHandler: true
   })
 }
+
+export async function requestPasswordReset(data) {
+  return http.post('/password-reset/request', data, {
+    skipErrorHandler: true
+  })
+}
+
+export async function verifyPasswordReset(data) {
+  return http.post('/password-reset/verify', data, {
+    skipErrorHandler: true
+  })
+}
+
+export async function confirmPasswordReset(data) {
+  return http.post('/password-reset/confirm', data, {
+    skipErrorHandler: true
+  })
+}

@@ -6,6 +6,11 @@ from sqlalchemy.orm import Session
 
 from app.core.access import build_access_context, normalize_billing_state
 from app.core.security import verify_password, get_password_hash
+from app.data.legal_documents import (
+    LATEST_TERMS_EFFECTIVE_AT,
+    LATEST_TERMS_UPDATED_AT,
+    LATEST_TERMS_VERSION,
+)
 from app.models.entities import User
 from app.schemas.common import AuthUser, UserProfileUpdate, UserPasswordUpdate
 
@@ -25,8 +30,6 @@ PROVINCES = [
 ]
 
 VALID_PROVINCES = {item["code"] for item in PROVINCES}
-LATEST_TERMS_VERSION = "v1.0"
-
 DEFAULT_PREFERENCES = {
     "defaultPrepTime": 90,
     "defaultAnswerTime": 180,
@@ -129,6 +132,8 @@ def get_terms_status(db: Session, username: str) -> dict:
         "hasAgreed": agreed_version == LATEST_TERMS_VERSION,
         "agreedVersion": agreed_version,
         "latestVersion": LATEST_TERMS_VERSION,
+        "updatedAt": LATEST_TERMS_UPDATED_AT,
+        "effectiveAt": LATEST_TERMS_EFFECTIVE_AT,
         "agreedAt": user.agreed_terms_at.isoformat() if user.agreed_terms_at else "",
         "needsUpdate": agreed_version != LATEST_TERMS_VERSION,
     }

@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useBillingStore } from '@/stores/billing'
+import { useExamStore } from '@/stores/exam'
 
 const routes = [
   {
@@ -142,6 +143,12 @@ const routes = [
     meta: { title: '客服反馈中心', layout: 'simple' }
   },
   {
+    path: '/legal',
+    name: 'LegalDocuments',
+    component: () => import('@/views/Legal/LegalDocumentsPage.vue'),
+    meta: { title: '用户协议与隐私协议', layout: 'simple', requiresAuth: false }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/NotFound.vue'),
@@ -159,6 +166,7 @@ router.beforeEach((to) => {
 
   const userStore = useUserStore()
   const billingStore = useBillingStore()
+  const examStore = useExamStore()
   const requiresAuth = to.meta.requiresAuth !== false
 
   if (requiresAuth && !userStore.isAuthenticated) {
@@ -167,6 +175,10 @@ router.beforeEach((to) => {
 
   if (to.path === '/login' && userStore.isAuthenticated) {
     return { path: '/' }
+  }
+
+  if (to.name === 'ExamRoom' && (!examStore.examId || !examStore.currentQuestion)) {
+    return { path: '/exam/prepare' }
   }
 
   if (to.meta.requiresAdmin && !userStore.isAdmin) {

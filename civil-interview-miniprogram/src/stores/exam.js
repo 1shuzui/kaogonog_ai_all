@@ -24,15 +24,7 @@ function buildZeroScoreResult() {
 }
 
 async function evaluateEmptyAnswer(questionId, examId) {
-  try {
-    return normalizeResult(await evaluateAnswer({
-      questionId,
-      transcript: '',
-      examId
-    }))
-  } catch {
-    return buildZeroScoreResult()
-  }
+  return buildZeroScoreResult()
 }
 
 export const useExamStore = defineStore('exam', {

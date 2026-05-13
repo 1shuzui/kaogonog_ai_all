@@ -20,6 +20,15 @@ export async function getMockUserInfo() {
       monthlyExpireAt: 0,
       activatedAt: 0,
       orderHistory: []
+    },
+    terms: {
+      hasAgreed: false,
+      agreedVersion: '',
+      latestVersion: '2026-05-12',
+      updatedAt: '2026-05-12',
+      effectiveAt: '2026-05-12',
+      agreedAt: '',
+      needsUpdate: true
     }
   }
 }

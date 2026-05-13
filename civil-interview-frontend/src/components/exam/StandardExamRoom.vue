@@ -229,6 +229,7 @@ async function onFinish() {
   }
   countdown.stop()
   recorder.destroyStream()
+  examStore.exitExam()
   router.push(`/result/${examId}`)
 }
 

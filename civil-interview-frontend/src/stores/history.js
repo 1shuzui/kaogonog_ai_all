@@ -29,7 +29,7 @@ export const useHistoryStore = defineStore('history', {
         const res = await getHistoryList({ ...this.pagination, ...params })
         this.records = res.list || res.data || []
         this.pagination.total = res.total || 0
-        if (params.page) this.pagination.current = params.page
+        if (params.page || params.current) this.pagination.current = Number(params.page || params.current)
       } finally {
         this.loading = false
       }

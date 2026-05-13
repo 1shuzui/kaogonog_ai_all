@@ -40,8 +40,8 @@ const BILLING_COPY_MAP = {
   'Monthly': '包月套餐',
   'Structured interview': '结构化面试',
   'analysis': '综合分析',
-  'Hourly access activated in local demo mode': '已在本地演示模式下开通按时套餐',
-  'Monthly access activated in local demo mode': '已在本地演示模式下开通包月套餐'
+  'Hourly access activated in local demo mode': '按时套餐已开通',
+  'Monthly access activated in local demo mode': '包月套餐已开通'
 }
 
 export const BILLING_PLANS = [
@@ -123,8 +123,8 @@ export function getPlanTitle(planType) {
 }
 
 export function getPlanActivationSummary(planType) {
-  if (planType === BILLING_PLAN_KEYS.HOURLY) return '已在本地演示模式下开通按时套餐'
-  if (planType === BILLING_PLAN_KEYS.MONTHLY) return '已在本地演示模式下开通包月套餐'
+  if (planType === BILLING_PLAN_KEYS.HOURLY) return '按时套餐已开通'
+  if (planType === BILLING_PLAN_KEYS.MONTHLY) return '包月套餐已开通'
   return '当前为免费试用模式'
 }
 

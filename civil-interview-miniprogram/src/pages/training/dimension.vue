@@ -1,10 +1,14 @@
 <template>
   <view class="page">
-    <view v-if="readonlyMode" class="card">
+    <view v-if="readonlyMode" class="card access-card">
       <view class="section-head">
-        <text class="section-title">界面预览</text>
+        <text class="section-title">专项训练未开通</text>
       </view>
-      <text class="muted">当前仅展示页面结构，相关内容暂不展示。</text>
+      <text class="access-card__desc">开通套餐后可以按题型生成训练题；也可以先体验 1 道试用题，确认录音、转写和评分流程。</text>
+      <view class="access-card__actions">
+        <button class="secondary-button" @tap="startTrial">试用 1 题</button>
+        <button class="primary-button" @tap="goPricing">开通套餐</button>
+      </view>
     </view>
 
     <view class="dimension-hero card">
@@ -22,7 +26,7 @@
       <StatGrid :items="progressItems" />
     </view>
 
-    <button class="primary-button" :disabled="readonlyMode" :loading="trainingStore.generating" @tap="generate">生成训练题</button>
+    <button v-if="!readonlyMode" class="primary-button" :loading="trainingStore.generating" @tap="generate">生成训练题</button>
 
     <view v-if="!readonlyMode && trainingStore.generatedQuestions.length" class="generated-list">
       <view class="section-head generated-list__head">
@@ -45,16 +49,27 @@ import QuestionCard from '../../components/QuestionCard.vue'
 import StatGrid from '../../components/StatGrid.vue'
 import { useBillingStore } from '../../stores/billing'
 import { useExamStore } from '../../stores/exam'
+import { useSubscriptionStore } from '../../stores/subscription'
 import { useTrainingStore } from '../../stores/training'
+import { useUserStore } from '../../stores/user'
 import { getTrainingCategory } from '../../utils/constants'
 import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
 
 const billingStore = useBillingStore()
+const subscriptionStore = useSubscriptionStore()
 const trainingStore = useTrainingStore()
 const examStore = useExamStore()
+const userStore = useUserStore()
 const categoryKey = ref('analysis')
 const category = computed(() => getTrainingCategory(categoryKey.value))
-const readonlyMode = computed(() => !billingStore.isPaid)
+const hasFullAccess = computed(() => (
+  userStore.isAdmin
+  || billingStore.isPaid
+  || subscriptionStore.status.hasActivePlan
+  || userStore.userInfo?.billing?.isPaid === true
+  || userStore.userInfo?.permissions?.canAccessPremiumModules === true
+))
+const readonlyMode = computed(() => !hasFullAccess.value)
 const progress = computed(() => trainingStore.getDimensionProgress(categoryKey.value))
 const progressItems = computed(() => [
   { label: '练习次数', value: progress.value.attempts || 0 },
@@ -68,10 +83,24 @@ const progressItems = computed(() => [
 onLoad((query) => {
   if (!requireLogin()) return
   categoryKey.value = query?.key || 'analysis'
+  refreshAccessState().catch(() => null)
 })
+
+async function refreshAccessState() {
+  if (!userStore.isAuthenticated) return
+  await Promise.allSettled([
+    userStore.loadUserInfo(),
+    subscriptionStore.refresh({ skipErrorHandler: true })
+  ])
+}
 
 async function generate() {
   if (readonlyMode.value) return
+  await refreshAccessState().catch(() => null)
+  if (readonlyMode.value) {
+    toast('请先开通套餐后使用专项训练')
+    return
+  }
   showLoading('生成训练题')
   try {
     const questions = await trainingStore.generate(category.value.requestDimension, 3)
@@ -87,7 +116,12 @@ async function startQuestion(question) {
   if (readonlyMode.value) return
   showLoading('创建考场')
   try {
-    await examStore.startFromQuestions([question], `training:${categoryKey.value}`)
+    const prefs = userStore.preferences || {}
+    await examStore.startFromQuestions([{
+      ...question,
+      prepTime: Number(prefs.defaultPrepTime || question?.prepTime || 90),
+      answerTime: Number(prefs.defaultAnswerTime || question?.answerTime || 180)
+    }], `training:${categoryKey.value}`)
     uni.navigateTo({ url: '/pages/exam/room' })
   } catch (error) {
     toast(error?.message || '无法开始练习')
@@ -95,9 +129,36 @@ async function startQuestion(question) {
     hideLoading()
   }
 }
+
+function goPricing() {
+  uni.navigateTo({ url: '/pages/pricing/index' })
+}
+
+function startTrial() {
+  uni.navigateTo({ url: '/pages/exam/prepare?trial=1' })
+}
 </script>
 
 <style scoped>
+.access-card {
+  border-color: #bfd7ef;
+  background: #f4f9fe;
+}
+
+.access-card__desc {
+  display: block;
+  color: #5f6f83;
+  font-size: 24rpx;
+  line-height: 1.6;
+}
+
+.access-card__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+  margin-top: 22rpx;
+}
+
 .dimension-hero {
   display: grid;
   grid-template-columns: 100rpx minmax(0, 1fr);

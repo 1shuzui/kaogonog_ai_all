@@ -26,6 +26,11 @@
         <text>已同意版本</text>
         <text>{{ termsStatus.agreedVersion || '-' }}</text>
       </view>
+      <view class="detail-row">
+        <text>更新日期</text>
+        <text>{{ termsStatus.updatedAt || '-' }}</text>
+      </view>
+      <button class="secondary-button form-button" @tap="goLegalDocuments">查看协议正文</button>
       <button
         v-if="termsStatus.needsUpdate"
         class="secondary-button form-button"
@@ -54,6 +59,14 @@
       <text v-if="deviceRisk.warning" class="warning-text">{{ deviceRisk.warning }}</text>
       <button class="secondary-button form-button" :loading="deviceLoading" @tap="checkDevice">重新检测</button>
     </view>
+
+    <view class="card">
+      <view class="section-head">
+        <text class="section-title">本地数据</text>
+      </view>
+      <text class="warning-text">清除收藏、训练进度、题库筛选、套餐本地缓存和设备标识，不会删除服务器账号数据。</text>
+      <button class="secondary-button danger-button form-button" @tap="confirmClearLocalData">清除本地数据</button>
+    </view>
   </view>
 </template>
 
@@ -61,9 +74,16 @@
 import { reactive, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { agreeTerms, getDeviceRisk, getTermsStatus, updatePassword } from '../../api/user'
+import {
+  BILLING_STORAGE_KEY,
+  PREFERENCES_STORAGE_KEY,
+  PROVINCE_STORAGE_KEY,
+  TRAINING_PROGRESS_STORAGE_KEY,
+} from '../../utils/constants'
 import { requireLogin, toast } from '../../utils/navigation'
 
 const DEVICE_ID_KEY = 'civil_mini_device_id'
+const SUPPORT_FEEDBACK_STORAGE_KEY = 'civil_support_feedback_records'
 const passwordLoading = ref(false)
 const termsLoading = ref(false)
 const deviceLoading = ref(false)
@@ -178,6 +198,38 @@ async function submitPassword() {
   } finally {
     passwordLoading.value = false
   }
+}
+
+function clearLocalData() {
+  [
+    BILLING_STORAGE_KEY,
+    PREFERENCES_STORAGE_KEY,
+    PROVINCE_STORAGE_KEY,
+    TRAINING_PROGRESS_STORAGE_KEY,
+    SUPPORT_FEEDBACK_STORAGE_KEY,
+    DEVICE_ID_KEY
+  ].forEach((key) => {
+    try {
+      uni.removeStorageSync(key)
+    } catch {}
+  })
+  toast('本地缓存已清除', 'success')
+}
+
+function confirmClearLocalData() {
+  uni.showModal({
+    title: '确认清除本地数据？',
+    content: '这不会删除服务器账号数据，但会清除本机缓存。为避免误退出登录，本次会保留登录态。',
+    confirmText: '确认清除',
+    confirmColor: '#cf1322',
+    success(res) {
+      if (res.confirm) clearLocalData()
+    }
+  })
+}
+
+function goLegalDocuments() {
+  uni.navigateTo({ url: '/pages/legal/index' })
 }
 </script>
 

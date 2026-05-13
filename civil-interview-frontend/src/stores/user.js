@@ -125,6 +125,15 @@ export const useUserStore = defineStore('user', {
       province: 'national',
       role: 'user',
       isAdmin: false,
+      terms: {
+        hasAgreed: false,
+        agreedVersion: '',
+        latestVersion: '',
+        updatedAt: '',
+        effectiveAt: '',
+        agreedAt: '',
+        needsUpdate: false
+      },
       permissions: {
         canManageQuestionBank: false,
         canAccessPremiumModules: false
@@ -190,6 +199,15 @@ export const useUserStore = defineStore('user', {
         province: 'national',
         role: 'user',
         isAdmin: false,
+        terms: {
+          hasAgreed: false,
+          agreedVersion: '',
+          latestVersion: '',
+          updatedAt: '',
+          effectiveAt: '',
+          agreedAt: '',
+          needsUpdate: false
+        },
         permissions: {
           canManageQuestionBank: false,
           canAccessPremiumModules: false
@@ -225,6 +243,16 @@ export const useUserStore = defineStore('user', {
         province: info?.province || 'national',
         role: info?.role || 'user',
         isAdmin,
+        billing: info?.billing || {},
+        terms: info?.terms || {
+          hasAgreed: false,
+          agreedVersion: '',
+          latestVersion: '',
+          updatedAt: '',
+          effectiveAt: '',
+          agreedAt: '',
+          needsUpdate: false
+        },
         permissions: {
           canManageQuestionBank: isAdmin || !!info?.permissions?.canManageQuestionBank,
           canAccessPremiumModules: isAdmin || !!info?.permissions?.canAccessPremiumModules

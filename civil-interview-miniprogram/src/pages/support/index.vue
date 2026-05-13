@@ -1,0 +1,414 @@
+<template>
+  <view class="page">
+    <view class="card hero-card">
+      <view>
+        <text class="page-title">{{ userStore.isAdmin ? '客服反馈后台' : '客服反馈中心' }}</text>
+        <text class="page-desc">反馈记录已与后端同步，管理员可查看全站反馈。</text>
+      </view>
+      <button class="primary-button hero-card__button" @tap="openForm">提交反馈</button>
+    </view>
+
+    <view class="stats-row">
+      <view class="card stat-item">
+        <text class="stat-item__label">总反馈</text>
+        <text class="stat-item__value">{{ stats.total || 0 }}</text>
+      </view>
+      <view class="card stat-item">
+        <text class="stat-item__label">待处理</text>
+        <text class="stat-item__value">{{ stats.pending || 0 }}</text>
+      </view>
+      <view class="card stat-item">
+        <text class="stat-item__label">今日新增</text>
+        <text class="stat-item__value">{{ stats.today || 0 }}</text>
+      </view>
+    </view>
+
+    <view class="card filter-card">
+      <picker :range="feedbackTypeNames" :value="typeIndex" @change="onTypeChange">
+        <view class="filter-row">
+          <text>问题类型</text>
+          <text class="filter-row__value">{{ filters.type || '全部类型' }}</text>
+        </view>
+      </picker>
+      <picker :range="statusNames" :value="statusIndex" @change="onStatusChange">
+        <view class="filter-row">
+          <text>处理状态</text>
+          <text class="filter-row__value">{{ statusLabel(filters.status) }}</text>
+        </view>
+      </picker>
+      <picker :range="provinceNames" :value="provinceIndex" @change="onProvinceChange">
+        <view class="filter-row">
+          <text>省份</text>
+          <text class="filter-row__value">{{ filters.province || '全部省份' }}</text>
+        </view>
+      </picker>
+      <input v-model="filters.keyword" class="field field--mt" placeholder="搜索题号、描述、联系方式" confirm-type="search" @confirm="fetchRecords" />
+      <button class="secondary-button field--mt" :loading="loading" @tap="fetchRecords">筛选</button>
+      <button v-if="userStore.isAdmin" class="secondary-button field--mt" @tap="toggleScope">
+        {{ filters.scope === 'all' ? '切换为仅看我提交的' : '切换为查看全部记录' }}
+      </button>
+    </view>
+
+    <view v-if="records.length">
+      <view v-for="record in records" :key="record.id" class="card record-item">
+        <view class="record-item__top">
+          <text class="record-item__type">{{ record.type }}</text>
+          <text class="record-item__status" :class="`record-item__status--${record.status}`">{{ statusLabel(record.status) }}</text>
+        </view>
+        <text class="record-item__summary">{{ record.summary }}</text>
+        <text class="record-item__meta">省份：{{ record.province || '-' }} ｜ 题号：{{ record.questionId || '-' }}</text>
+        <text class="record-item__meta">提交人：{{ record.username || '-' }} ｜ 时间：{{ formatTime(record.createdAt) }}</text>
+        <text v-if="record.contact" class="record-item__meta">联系方式：{{ record.contact }}</text>
+        <text v-if="record.handledAt" class="record-item__meta">处理时间：{{ formatTime(record.handledAt) }}</text>
+
+        <view v-if="userStore.isAdmin" class="action-row">
+          <button class="secondary-button" @tap="toggleStatus(record)">
+            {{ record.status === 'handled' ? '改回待处理' : '标记已处理' }}
+          </button>
+          <button class="secondary-button danger-button" @tap="deleteRecord(record.id)">删除</button>
+        </view>
+      </view>
+    </view>
+    <view v-else class="card">
+      <EmptyState title="暂无反馈" desc="提交后会在这里显示处理状态。" />
+    </view>
+
+    <view v-if="formVisible" class="modal-mask" @tap="closeForm">
+      <view class="modal-card" @tap.stop>
+        <text class="modal-card__title">提交客服反馈</text>
+        <picker :range="feedbackTypeNames.slice(1)" :value="formTypeIndex" @change="onFormTypeChange">
+          <view class="filter-row">
+            <text>问题类型</text>
+            <text class="filter-row__value">{{ form.type }}</text>
+          </view>
+        </picker>
+        <input v-model="form.questionId" class="field field--mt" placeholder="题号 / 页面线索" />
+        <textarea v-model="form.summary" class="field field--mt textarea" placeholder="请描述问题现象、出现步骤、你的预期结果。" />
+        <input v-model="form.contact" class="field field--mt" placeholder="联系方式（可选）" />
+        <view class="action-row field--mt">
+          <button class="secondary-button" @tap="closeForm">取消</button>
+          <button class="primary-button" :loading="submitLoading" @tap="submitFeedback">提交</button>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script setup>
+import { computed, reactive, ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
+import EmptyState from '../../components/EmptyState.vue'
+import { createSupportFeedback, deleteSupportFeedback, getSupportFeedback, updateSupportFeedback } from '../../api/support'
+import { useUserStore } from '../../stores/user'
+import { PROVINCES } from '../../utils/constants'
+import { requireLogin, toast } from '../../utils/navigation'
+
+const FEEDBACK_TYPES = [
+  '全部类型',
+  '题库内容问题',
+  '题目标签/分类问题',
+  '支付或权益问题',
+  '录音/视频异常',
+  '评分结果疑问',
+  '页面显示问题',
+  '其他建议'
+]
+const STATUS_OPTIONS = [
+  { value: '', label: '全部状态' },
+  { value: 'pending', label: '待处理' },
+  { value: 'handled', label: '已处理' }
+]
+
+const userStore = useUserStore()
+const loading = ref(false)
+const submitLoading = ref(false)
+const formVisible = ref(false)
+const records = ref([])
+const stats = reactive({
+  total: 0,
+  pending: 0,
+  handled: 0,
+  today: 0,
+  mine: 0
+})
+
+const filters = reactive({
+  type: '',
+  status: '',
+  province: '',
+  keyword: '',
+  scope: 'mine'
+})
+const form = reactive({
+  type: FEEDBACK_TYPES[1],
+  questionId: '',
+  summary: '',
+  contact: ''
+})
+
+const feedbackTypeNames = FEEDBACK_TYPES
+const statusNames = STATUS_OPTIONS.map((item) => item.label)
+const provinceNames = computed(() => ['全部省份', ...(userStore.provinces.length ? userStore.provinces : PROVINCES).map((item) => item.name)])
+const typeIndex = computed(() => Math.max(0, FEEDBACK_TYPES.findIndex((item) => item === (filters.type || '全部类型'))))
+const statusIndex = computed(() => Math.max(0, STATUS_OPTIONS.findIndex((item) => item.value === filters.status)))
+const provinceIndex = computed(() => Math.max(0, provinceNames.value.findIndex((item) => item === (filters.province || '全部省份'))))
+const formTypeIndex = computed(() => Math.max(0, FEEDBACK_TYPES.slice(1).findIndex((item) => item === form.type)))
+
+onShow(async () => {
+  if (!requireLogin()) return
+  await userStore.loadUserInfo().catch(() => null)
+  await userStore.loadProvinces().catch(() => null)
+  if (userStore.isAdmin) filters.scope = 'all'
+  await fetchRecords()
+})
+
+function statusLabel(value = '') {
+  return STATUS_OPTIONS.find((item) => item.value === value)?.label || '全部状态'
+}
+
+function onTypeChange(event) {
+  const value = FEEDBACK_TYPES[Number(event.detail.value)] || '全部类型'
+  filters.type = value === '全部类型' ? '' : value
+}
+
+function onStatusChange(event) {
+  filters.status = STATUS_OPTIONS[Number(event.detail.value)]?.value || ''
+}
+
+function onProvinceChange(event) {
+  const value = provinceNames.value[Number(event.detail.value)] || '全部省份'
+  filters.province = value === '全部省份' ? '' : value
+}
+
+function onFormTypeChange(event) {
+  form.type = FEEDBACK_TYPES.slice(1)[Number(event.detail.value)] || FEEDBACK_TYPES[1]
+}
+
+function openForm() {
+  formVisible.value = true
+}
+
+function closeForm() {
+  formVisible.value = false
+}
+
+function toggleScope() {
+  filters.scope = filters.scope === 'all' ? 'mine' : 'all'
+  fetchRecords()
+}
+
+async function fetchRecords() {
+  loading.value = true
+  try {
+    const response = await getSupportFeedback({
+      current: 1,
+      pageSize: 200,
+      type: filters.type || undefined,
+      status: filters.status || undefined,
+      province: filters.province || undefined,
+      keyword: filters.keyword || undefined,
+      scope: userStore.isAdmin ? filters.scope : 'mine'
+    })
+    records.value = response.list || []
+    Object.assign(stats, response.summary || {})
+  } catch (error) {
+    toast(error?.message || '反馈记录加载失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function submitFeedback() {
+  if (!form.summary.trim()) {
+    toast('请先填写问题描述')
+    return
+  }
+  submitLoading.value = true
+  try {
+    await createSupportFeedback({
+      type: form.type,
+      questionId: form.questionId.trim(),
+      summary: form.summary.trim(),
+      contact: form.contact.trim(),
+      routePath: '/pages/support/index',
+      province: userStore.selectedProvinceName
+    })
+    formVisible.value = false
+    form.questionId = ''
+    form.summary = ''
+    form.contact = ''
+    await fetchRecords()
+    toast('反馈已提交', 'success')
+  } catch (error) {
+    toast(error?.message || '反馈提交失败')
+  } finally {
+    submitLoading.value = false
+  }
+}
+
+async function toggleStatus(record) {
+  const nextStatus = record.status === 'handled' ? 'pending' : 'handled'
+  try {
+    await updateSupportFeedback(record.id, { status: nextStatus })
+    await fetchRecords()
+    toast(nextStatus === 'handled' ? '已标记为已处理' : '已改回待处理', 'success')
+  } catch (error) {
+    toast(error?.message || '状态更新失败')
+  }
+}
+
+async function deleteRecord(recordId) {
+  uni.showModal({
+    title: '确认删除这条反馈？',
+    content: '删除后将无法恢复。',
+    confirmText: '删除',
+    confirmColor: '#cf1322',
+    success: async (res) => {
+      if (!res.confirm) return
+      try {
+        await deleteSupportFeedback(recordId)
+        await fetchRecords()
+        toast('反馈已删除', 'success')
+      } catch (error) {
+        toast(error?.message || '反馈删除失败')
+      }
+    }
+  })
+}
+
+function formatTime(value = '') {
+  const date = value ? new Date(value) : null
+  if (!date || Number.isNaN(date.getTime())) return ''
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+}
+</script>
+
+<style scoped>
+.hero-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180rpx;
+  gap: 16rpx;
+  align-items: start;
+}
+
+.hero-card__button {
+  min-height: 76rpx;
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16rpx;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-item__label,
+.stat-item__value {
+  display: block;
+}
+
+.stat-item__label {
+  color: #6f7c8f;
+  font-size: 22rpx;
+}
+
+.stat-item__value {
+  margin-top: 10rpx;
+  color: #1b5faa;
+  font-size: 34rpx;
+  font-weight: 900;
+}
+
+.filter-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid #eef2f6;
+  color: #2a3648;
+  font-size: 26rpx;
+}
+
+.filter-row__value {
+  color: #1b5faa;
+  font-weight: 700;
+}
+
+.field--mt {
+  margin-top: 16rpx;
+}
+
+.record-item__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.record-item__type,
+.record-item__status,
+.record-item__summary,
+.record-item__meta,
+.modal-card__title {
+  display: block;
+}
+
+.record-item__type {
+  color: #1b5faa;
+  font-size: 25rpx;
+  font-weight: 800;
+}
+
+.record-item__status {
+  color: #6f7c8f;
+  font-size: 23rpx;
+  font-weight: 700;
+}
+
+.record-item__status--handled {
+  color: #389e0d;
+}
+
+.record-item__summary {
+  margin-top: 10rpx;
+  color: #1a1a2e;
+  font-size: 28rpx;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.record-item__meta {
+  margin-top: 8rpx;
+  color: #6f7c8f;
+  font-size: 23rpx;
+}
+
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 24rpx;
+  background: rgba(0, 0, 0, 0.32);
+}
+
+.modal-card {
+  width: 100%;
+  padding: 28rpx;
+  border-radius: 22rpx;
+  background: #ffffff;
+}
+
+.modal-card__title {
+  margin-bottom: 10rpx;
+  color: #1a1a2e;
+  font-size: 32rpx;
+  font-weight: 900;
+}
+
+.textarea {
+  min-height: 220rpx;
+}
+</style>

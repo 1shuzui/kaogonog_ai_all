@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.core.logging import RequestLoggingMiddleware, configure_logging
+from app.db.schema import ensure_runtime_schema
 from app.db.session import engine, Base
 from app.api.v1 import api_router
 
@@ -39,6 +40,7 @@ app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 @app.on_event("startup")
 async def startup():
     Base.metadata.create_all(bind=engine)
+    ensure_runtime_schema(engine)
     logger.info(
         "Database tables ready",
         extra={

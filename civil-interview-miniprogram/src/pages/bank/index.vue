@@ -95,7 +95,7 @@ onShow(async () => {
 })
 
 function fetchFirstPage() {
-  bankStore.fetchQuestions({ page: 1, province: bankStore.filters.province || '' })
+  bankStore.fetchQuestions({ page: 1, current: 1 })
 }
 
 function onProvinceChange(event) {
@@ -126,9 +126,7 @@ function applySearch() {
 
 async function loadMore() {
   const nextPage = bankStore.pagination.current + 1
-  const previous = [...bankStore.questions]
-  await bankStore.fetchQuestions({ page: nextPage })
-  bankStore.questions = [...previous, ...bankStore.questions]
+  await bankStore.fetchMore({ page: nextPage, current: nextPage })
 }
 
 function openDetail(question) {

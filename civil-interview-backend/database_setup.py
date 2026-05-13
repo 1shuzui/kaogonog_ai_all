@@ -64,6 +64,7 @@ TABLE_STATEMENTS = [
         email VARCHAR(255) NULL DEFAULT '',
         avatar VARCHAR(255) NULL DEFAULT '',
         province VARCHAR(50) NOT NULL DEFAULT 'national',
+        role VARCHAR(32) NOT NULL DEFAULT 'user',
         disabled BOOLEAN NOT NULL DEFAULT FALSE,
         preferences JSON NULL,
         agreed_terms_version VARCHAR(20) DEFAULT '',
@@ -289,6 +290,7 @@ def _add_column_if_missing(cur, database: str, table: str, column: str, ddl: str
 
 def ensure_schema_updates(conn, database: str) -> None:
     with conn.cursor() as cur:
+        _add_column_if_missing(cur, database, "users", "role", "role VARCHAR(32) NOT NULL DEFAULT 'user' AFTER province")
         _add_column_if_missing(cur, database, "users", "agreed_terms_version", "agreed_terms_version VARCHAR(20) DEFAULT ''")
         _add_column_if_missing(cur, database, "users", "agreed_terms_at", "agreed_terms_at DATETIME NULL")
         _add_column_if_missing(cur, database, "users", "last_login_device", "last_login_device VARCHAR(200) DEFAULT ''")
@@ -334,12 +336,12 @@ def seed_default_user(conn):
     from passlib.context import CryptContext
     pwd_context = CryptContext(schemes=["pbkdf2_sha256", "bcrypt"], deprecated="auto")
     sql = """
-    INSERT INTO users (username, hashed_password, full_name, email, province)
-    VALUES (%s, %s, %s, %s, %s)
-    ON DUPLICATE KEY UPDATE full_name = VALUES(full_name), email = VALUES(email)
+    INSERT INTO users (username, hashed_password, full_name, email, province, role)
+    VALUES (%s, %s, %s, %s, %s, %s)
+    ON DUPLICATE KEY UPDATE full_name = VALUES(full_name), email = VALUES(email), role = 'admin'
     """
     with conn.cursor() as cur:
-        cur.execute(sql, ("admin", pwd_context.hash("admin123"), "管理员", "admin@example.com", "national"))
+        cur.execute(sql, ("admin", pwd_context.hash("admin123"), "管理员", "admin@example.com", "national", "admin"))
         logger.info("Default user seeded", extra={"event": "database.seed.user", "username": "admin"})
 
 
@@ -421,18 +423,20 @@ def seed_from_db_json(conn):
     users = db_data.get("users", {})
     if users:
         user_sql = """
-        INSERT INTO users (username, hashed_password, full_name, email, province)
-        VALUES (%s, %s, %s, %s, %s)
-        ON DUPLICATE KEY UPDATE full_name = VALUES(full_name), email = VALUES(email)
+        INSERT INTO users (username, hashed_password, full_name, email, province, role)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        ON DUPLICATE KEY UPDATE full_name = VALUES(full_name), email = VALUES(email), role = VALUES(role)
         """
         with conn.cursor() as cur:
             for user in users.values():
+                username = user.get("username")
                 cur.execute(user_sql, (
-                    user.get("username"),
+                    username,
                     user.get("hashed_password", ""),
                     user.get("full_name", ""),
                     user.get("email", ""),
-                    user.get("province", "national")
+                    user.get("province", "national"),
+                    user.get("role") or ("admin" if str(username or "").lower() == "admin" else "user"),
                 ))
         logger.info("Legacy users migrated", extra={"event": "database.legacy_migration.users", "count": len(users)})
 

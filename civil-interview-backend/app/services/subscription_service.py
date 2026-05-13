@@ -55,6 +55,11 @@ def _sync_user_preferences_subscription(user: User, subscription: UserSubscripti
             "remainingSeconds": 0,
             "monthlyExpireAt": 0,
             "activatedAt": 0,
+            "remainingMinutes": DEFAULT_TRIAL_TOTAL_MINUTES,
+            "remainingDailyMinutes": DEFAULT_TRIAL_TOTAL_MINUTES,
+            "dailyLimitMinutes": DEFAULT_TRIAL_TOTAL_MINUTES,
+            "usedMinutes": 0,
+            "totalMinutes": DEFAULT_TRIAL_TOTAL_MINUTES,
             "orderHistory": [],
         }
         user.preferences = prefs
@@ -92,6 +97,11 @@ def _sync_user_preferences_subscription(user: User, subscription: UserSubscripti
         "remainingSeconds": remaining_minutes * 60 if can_use and subscription.plan_type == "hourly" else 0,
         "monthlyExpireAt": int(subscription.end_at.timestamp() * 1000) if can_use and subscription.plan_type == "monthly" and subscription.end_at else 0,
         "activatedAt": int(subscription.start_at.timestamp() * 1000) if subscription.start_at else 0,
+        "remainingMinutes": remaining_minutes,
+        "remainingDailyMinutes": remaining_daily_minutes,
+        "dailyLimitMinutes": daily_limit_minutes,
+        "usedMinutes": used_minutes,
+        "totalMinutes": total_minutes,
         "orderHistory": [],
     }
     user.preferences = prefs

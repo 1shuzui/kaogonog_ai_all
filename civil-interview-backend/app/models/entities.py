@@ -21,6 +21,7 @@ class User(Base):
     email = Column(String(128), default="")
     avatar = Column(String(256), default="")
     province = Column(String(32), default="national")
+    role = Column(String(32), nullable=False, default="user")
     disabled = Column(Boolean, default=False)
     preferences = Column(JSON, default=dict)
     agreed_terms_version = Column(String(20), default="")
@@ -159,3 +160,25 @@ class UsageRecord(Base):
 
     user = relationship("User", back_populates="usage_records")
     exam = relationship("Exam", back_populates="usage_records")
+
+
+class FeedbackTicket(Base):
+    __tablename__ = "feedback_tickets"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(64), nullable=False, index=True)
+    feedback_type = Column(String(64), nullable=False, default="其他建议", index=True)
+    question_id = Column(String(64), default="")
+    summary = Column(Text, nullable=False)
+    contact = Column(String(128), default="")
+    route_path = Column(String(200), default="")
+    province = Column(String(32), default="national", index=True)
+    status = Column(String(32), nullable=False, default="pending", index=True)
+    admin_note = Column(Text, default="")
+    handled_by = Column(String(64), default="")
+    handled_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )

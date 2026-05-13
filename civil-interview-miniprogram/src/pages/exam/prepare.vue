@@ -3,9 +3,18 @@
     <text class="page-title">模考准备</text>
     <text class="page-desc">小程序端支持麦克风录音和摄像头录像作答，提交后自动转写并评分。</text>
 
-    <view v-if="readonlyMode" class="card tips-card">
-      <text class="tips-card__title">界面预览</text>
-      <text class="tips-card__line">当前仅展示页面结构，相关内容暂不展示。</text>
+    <view v-if="readonlyMode" class="card access-card">
+      <text class="access-card__title">未开通正式训练</text>
+      <text class="access-card__desc">可以先体验 1 道试用题，或开通套餐后进入完整模考、自由练习和训练复盘。</text>
+      <view class="access-card__actions">
+        <button class="secondary-button" :disabled="loading || accessLoading" @tap="startTrialEntry">试用 1 题</button>
+        <button class="primary-button" :disabled="loading || accessLoading" @tap="goPricing">开通套餐</button>
+      </view>
+    </view>
+
+    <view v-if="asrUnavailable" class="card service-card">
+      <text class="service-card__title">语音转写服务未就绪</text>
+      <text class="service-card__desc">{{ asrStatusText }}</text>
     </view>
 
     <view class="card">
@@ -64,7 +73,15 @@
       <text class="tips-card__line">真机调试时，后端地址需使用手机可访问的域名或局域网 IP。</text>
     </view>
 
-    <button class="primary-button" :disabled="loading || accessLoading" :loading="loading || accessLoading" @tap="startPractice">进入考场</button>
+    <button
+      v-if="!readonlyMode"
+      class="primary-button"
+      :disabled="loading || accessLoading || asrUnavailable"
+      :loading="loading || accessLoading"
+      @tap="startPractice"
+    >
+      {{ asrUnavailable ? '语音服务未就绪' : '进入考场' }}
+    </button>
   </view>
 </template>
 
@@ -77,6 +94,7 @@ import { useQuestionBankStore } from '../../stores/questionBank'
 import { useSubscriptionStore } from '../../stores/subscription'
 import { useUserStore } from '../../stores/user'
 import { getQuestionById } from '../../api/questionBank'
+import { getAsrStatus } from '../../api/scoring'
 import { getTrialQuestion, getTrialStatus } from '../../api/trial'
 import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
 import { QUESTION_CATEGORIES } from '../../utils/constants'
@@ -95,6 +113,7 @@ const loading = ref(false)
 const accessLoading = ref(false)
 const trial = ref(false)
 const trialStatus = ref(null)
+const asrStatus = ref(null)
 const hasFullAccess = computed(() => {
   return billingStore.isPaid
     || subscriptionStore.status.hasActivePlan
@@ -103,6 +122,11 @@ const hasFullAccess = computed(() => {
     || userStore.userInfo?.permissions?.canAccessPremiumModules === true
 })
 const readonlyMode = computed(() => !trial.value && !hasFullAccess.value)
+const asrUnavailable = computed(() => asrStatus.value && asrStatus.value.ready === false)
+const asrStatusText = computed(() => {
+  if (!asrStatus.value) return ''
+  return asrStatus.value.message || '请稍后重试，或联系管理员检查后端 Whisper/ffmpeg 配置。'
+})
 const RANDOM_DIMENSION_KEY = 'random'
 const questionCategoryOptions = [
   { key: RANDOM_DIMENSION_KEY, name: '随机题型' },
@@ -119,6 +143,17 @@ const selectedCategoryName = computed(() => {
   return names.join('、') || '随机题型'
 })
 
+function applyUserPracticePreferencesToQuestions(questions = []) {
+  const prefs = userStore.preferences || {}
+  const prepTime = Number(prefs.defaultPrepTime || 0)
+  const answerTime = Number(prefs.defaultAnswerTime || 0)
+  return questions.map((question) => ({
+    ...question,
+    prepTime: prepTime || Number(question?.prepTime || 90),
+    answerTime: answerTime || Number(question?.answerTime || 180)
+  }))
+}
+
 onLoad((query) => {
   const requestedTrial = String(query?.trial || '') === '1'
   trial.value = requestedTrial && !hasFullAccess.value
@@ -127,6 +162,7 @@ onLoad((query) => {
 
 onShow(() => {
   refreshAccessState().catch(() => null)
+  refreshAsrStatus().catch(() => null)
 })
 
 async function refreshAccessState() {
@@ -148,6 +184,11 @@ async function refreshAccessState() {
   } finally {
     accessLoading.value = false
   }
+}
+
+async function refreshAsrStatus() {
+  if (!userStore.isAuthenticated) return
+  asrStatus.value = await getAsrStatus({ skipErrorHandler: true }).catch(() => null)
 }
 
 function decreaseCount() {
@@ -184,6 +225,11 @@ async function startPractice() {
   if (!requireLogin()) return
   if (loading.value) return
   await refreshAccessState().catch(() => null)
+  await refreshAsrStatus().catch(() => null)
+  if (asrUnavailable.value) {
+    toast('语音转写服务未就绪，请稍后重试')
+    return
+  }
   if (trial.value && trialStatus.value?.trialCompleted) {
     toast('试用已完成，请开通套餐后继续练习')
     return
@@ -229,7 +275,8 @@ async function startPractice() {
       return
     }
     const targetCount = trial.value ? 1 : mode.value === 'mock' ? DEFAULT_EXAM_QUESTION_COUNT : count.value
-    await examStore.startFromQuestions(questions.slice(0, targetCount), trial.value ? 'trial' : mode.value)
+    const preparedQuestions = applyUserPracticePreferencesToQuestions(questions.slice(0, targetCount))
+    await examStore.startFromQuestions(preparedQuestions, trial.value ? 'trial' : mode.value)
     uni.navigateTo({ url: '/pages/exam/room' })
   } catch (error) {
     toast(error?.message || '进入考场失败')
@@ -238,9 +285,59 @@ async function startPractice() {
     hideLoading()
   }
 }
+
+function startTrialEntry() {
+  if (!requireLogin()) return
+  trial.value = true
+  count.value = 1
+  startPractice()
+}
+
+function goPricing() {
+  uni.navigateTo({ url: '/pages/pricing/index' })
+}
 </script>
 
 <style scoped>
+.access-card {
+  border-color: #bfd7ef;
+  background: #f4f9fe;
+}
+
+.access-card__title,
+.access-card__desc,
+.service-card__title,
+.service-card__desc {
+  display: block;
+}
+
+.access-card__title,
+.service-card__title {
+  color: #1a1a2e;
+  font-size: 30rpx;
+  font-weight: 800;
+}
+
+.access-card__desc,
+.service-card__desc {
+  margin-top: 10rpx;
+  color: #5f6f83;
+  font-size: 24rpx;
+  line-height: 1.6;
+}
+
+.access-card__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+  margin-top: 22rpx;
+}
+
+.service-card {
+  border-color: #f2c46d;
+  background: #fff8eb;
+}
+
 .config-row {
   display: flex;
   align-items: center;

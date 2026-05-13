@@ -2,10 +2,12 @@
 import asyncio
 import base64
 import io
+import importlib.util
 import logging
 import mimetypes
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 from typing import Optional, Dict
@@ -128,6 +130,103 @@ def _should_normalize_media_for_asr(filename: str, media_bytes: bytes) -> bool:
     return suffix in VIDEO_EXTENSIONS or len(media_bytes) > DASHSCOPE_CHAT_AUDIO_SAFE_BYTES
 
 
+def _asr_provider_name() -> str:
+    return str(settings.asr_provider or "").strip().lower()
+
+
+def _local_whisper_enabled() -> bool:
+    return _asr_provider_name() in {"", "whisper", "local_whisper", "auto"}
+
+
+def _dependency_available(module_name: str) -> bool:
+    return importlib.util.find_spec(module_name) is not None
+
+
+def _pick_writable_directory(preferred: Path, fallback_name: str) -> Path:
+    for candidate in (preferred, Path(tempfile.gettempdir()) / fallback_name):
+        try:
+            candidate.mkdir(parents=True, exist_ok=True)
+            probe = candidate / ".write_test"
+            probe.write_text("ok", encoding="utf-8")
+            probe.unlink(missing_ok=True)
+            return candidate
+        except Exception:
+            continue
+    raise RuntimeError("No writable model cache directory is available")
+
+
+def _resolve_whisper_download_root() -> Optional[str]:
+    configured = str(os.getenv("WHISPER_CACHE_DIR") or os.getenv("WHISPER_MODEL_DIR") or "").strip()
+    if not configured:
+        return None
+    cache_dir = _pick_writable_directory(Path(configured).expanduser(), "civil_whisper_cache")
+    os.environ.setdefault("XDG_CACHE_HOME", str(cache_dir.parent))
+    return str(cache_dir)
+
+
+def get_asr_runtime_status() -> Dict:
+    """Return non-secret ASR readiness details for diagnostics."""
+    provider = _asr_provider_name() or "whisper"
+    remote_model = _resolve_asr_model()
+    remote_configured = bool(settings.llm_api_key and remote_model)
+    whisper_enabled = _local_whisper_enabled()
+    whisper_available = _dependency_available("whisper")
+    torch_available = _dependency_available("torch")
+    ffmpeg_path = shutil.which("ffmpeg") or ""
+    local_ready = whisper_enabled and whisper_available and torch_available and bool(ffmpeg_path)
+
+    if remote_configured:
+        mode = "remote_asr"
+        ready = True
+        message = "远程 ASR 已配置"
+    elif local_ready:
+        mode = "local_whisper"
+        ready = True
+        message = "本地 Whisper ASR 可用"
+    elif not whisper_enabled:
+        mode = "disabled"
+        ready = False
+        message = f"当前 ASR_PROVIDER={provider}，未启用 Whisper 本地转写"
+    else:
+        mode = "unavailable"
+        ready = False
+        missing = []
+        if not whisper_available:
+            missing.append("openai-whisper")
+        if not torch_available:
+            missing.append("torch")
+        if not ffmpeg_path:
+            missing.append("ffmpeg")
+        message = f"缺少真实 ASR 依赖：{', '.join(missing) or '未知依赖'}"
+
+    return {
+        "ready": ready,
+        "mode": mode,
+        "message": message,
+        "provider": provider,
+        "remote": {
+            "configured": remote_configured,
+            "provider": settings.llm_provider,
+            "model": remote_model,
+        },
+        "localWhisper": {
+            "enabled": whisper_enabled,
+            "available": local_ready,
+            "modelSize": str(settings.whisper_model_size or "base"),
+            "language": settings.whisper_language or "zh",
+            "device": settings.asr_device or "cpu",
+            "cpuThreads": int(settings.whisper_cpu_threads or 0),
+            "modelLoaded": _whisper_model is not None,
+            "dependencies": {
+                "openaiWhisper": whisper_available,
+                "torch": torch_available,
+                "ffmpeg": bool(ffmpeg_path),
+            },
+            "ffmpegPath": ffmpeg_path,
+        },
+    }
+
+
 def _normalize_media_for_asr(media_bytes: bytes, filename: str) -> tuple[bytes, str]:
     suffix = Path(filename or "").suffix.lower() or ".bin"
     if not _should_normalize_media_for_asr(filename, media_bytes):
@@ -212,11 +311,31 @@ def _get_local_whisper_model():
     if _whisper_model is not None:
         return _whisper_model
 
-    import whisper
+    try:
+        import whisper
+    except ImportError as exc:
+        raise RuntimeError("缺少 openai-whisper 依赖，请在后端运行环境安装 requirements.txt。") from exc
 
-    model_size = str(os.getenv("WHISPER_MODEL_SIZE", "tiny")).strip() or "tiny"
-    logger.info("Loading local Whisper fallback model: %s", model_size)
-    _whisper_model = whisper.load_model(model_size)
+    model_size = str(settings.whisper_model_size or os.getenv("WHISPER_MODEL_SIZE", "base")).strip() or "base"
+    cpu_threads = int(settings.whisper_cpu_threads or 0)
+    if cpu_threads > 0:
+        try:
+            import torch
+            torch.set_num_threads(cpu_threads)
+        except Exception:
+            logger.debug("Unable to set torch CPU threads", exc_info=True)
+    logger.info(
+        "Loading local Whisper fallback model",
+        extra={
+            "event": "asr.whisper.load",
+            "model_size": model_size,
+            "device": settings.asr_device,
+            "cpu_threads": cpu_threads,
+        },
+    )
+    download_root = _resolve_whisper_download_root()
+    device = str(settings.asr_device or "cpu").strip() or "cpu"
+    _whisper_model = whisper.load_model(model_size, device=device, download_root=download_root)
     return _whisper_model
 
 
@@ -228,7 +347,11 @@ def _transcribe_with_local_whisper(media_bytes: bytes, filename: str) -> str:
             source_path = source_file.name
             source_file.write(media_bytes)
         model = _get_local_whisper_model()
-        result = model.transcribe(source_path, language="zh", fp16=False)
+        result = model.transcribe(
+            source_path,
+            language=settings.whisper_language or "zh",
+            fp16=False,
+        )
         text = str((result or {}).get("text") or "").strip()
         return text
     finally:
@@ -272,16 +395,17 @@ async def transcribe_audio_file(audio_bytes: bytes, filename: str = "answer.webm
                 exc_info=True,
             )
 
-    try:
-        text = _transcribe_with_local_whisper(audio_bytes, filename)
-        if text.strip():
-            return text.strip()
-    except Exception:
-        logger.warning(
-            "Local Whisper fallback failed, falling back to placeholder",
-            extra={"event": "asr.local.failed"},
-            exc_info=True,
-        )
+    if _local_whisper_enabled():
+        try:
+            text = _transcribe_with_local_whisper(audio_bytes, filename)
+            if text.strip():
+                return text.strip()
+        except Exception:
+            logger.warning(
+                "Local Whisper fallback failed, falling back to placeholder",
+                extra={"event": "asr.local.failed", "provider": settings.asr_provider},
+                exc_info=True,
+            )
 
     return ASR_UNAVAILABLE_PLACEHOLDER
 

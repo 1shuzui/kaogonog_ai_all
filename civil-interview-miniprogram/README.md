@@ -13,11 +13,11 @@ npm run dev:mp-weixin
 
 将 `unpackage/dist/dev/mp-weixin` 导入微信开发者工具即可预览。
 
-默认小程序开发 API 地址为 `http://127.0.0.1:8050`。  
-微信开发者工具运行在 Windows 时，`127.0.0.1` 指向 Windows 本机；如果后端跑在 WSL、虚拟机、远程服务器或另一台电脑上，请改 `VITE_API_BASE_MP_WEIXIN` 为可访问地址，例如：
+默认小程序开发 API 地址为 `https://xzqianmianyuzhoukeji.com/api`。  
+如需临时切换到其他后端，请改 `VITE_API_BASE_MP_WEIXIN` 为可访问地址，例如：
 
 ```env
-VITE_API_BASE_MP_WEIXIN=http://192.168.1.23:8050
+VITE_API_BASE_MP_WEIXIN=https://xzqianmianyuzhoukeji.com/api
 ```
 
 开发构建（development）：

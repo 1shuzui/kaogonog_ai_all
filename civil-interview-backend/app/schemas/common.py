@@ -25,6 +25,26 @@ class RegisterRequest(BaseModel):
     password: str = Field(min_length=6)
     email: Optional[str] = None
     full_name: Optional[str] = Field(default=None, validation_alias=AliasChoices("full_name", "fullName"))
+    agreed_terms_version: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("agreed_terms_version", "agreedTermsVersion"),
+    )
+
+
+class PasswordResetRequest(BaseModel):
+    username: str
+    contact: Optional[str] = None
+
+
+class PasswordResetVerifyRequest(BaseModel):
+    username: str
+    code: str
+
+
+class PasswordResetConfirmRequest(BaseModel):
+    username: str
+    code: str
+    new_password: str = Field(min_length=6, validation_alias=AliasChoices("new_password", "newPassword"))
 
 
 # ===== User =====
@@ -50,6 +70,20 @@ class UserProvinceUpdate(BaseModel):
 
 class UserTermsAgreementRequest(BaseModel):
     version: str
+
+
+class SupportFeedbackCreateRequest(BaseModel):
+    type: str
+    questionId: Optional[str] = Field(default="", validation_alias=AliasChoices("questionId", "question_id"))
+    summary: str
+    contact: Optional[str] = ""
+    routePath: Optional[str] = Field(default="", validation_alias=AliasChoices("routePath", "route_path"))
+    province: Optional[str] = ""
+
+
+class SupportFeedbackUpdateRequest(BaseModel):
+    status: Optional[str] = None
+    adminNote: Optional[str] = Field(default="", validation_alias=AliasChoices("adminNote", "admin_note"))
 
 
 # ===== Question =====

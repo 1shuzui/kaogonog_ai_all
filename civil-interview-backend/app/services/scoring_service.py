@@ -128,7 +128,7 @@ async def transcribe(audio_bytes: bytes, filename: str = "answer.webm") -> dict:
         "Scoring transcription completed",
         extra={
             "event": "scoring.transcribe.completed",
-            "filename": filename,
+            "file_name": filename,
             "transcript_length": len(transcript or ""),
             "is_placeholder": _is_placeholder_transcript(transcript),
         },

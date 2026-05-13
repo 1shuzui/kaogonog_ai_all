@@ -31,6 +31,15 @@
       </div>
     </div>
 
+    <div class="card balance-card">
+      <div class="balance-card__main">
+        <span class="balance-card__label">当前权益余额</span>
+        <strong>{{ balanceTitle }}</strong>
+        <p>{{ balanceDescription }}</p>
+      </div>
+      <a-button type="primary" @click="$router.push('/pricing')">查看套餐</a-button>
+    </div>
+
     <!-- 功能菜单 -->
     <div class="profile-menu">
       <div class="card menu-item" @click="$router.push('/profile/analysis')">
@@ -126,6 +135,7 @@ import {
 import { useUserStore } from '@/stores/user'
 import { useHistoryStore } from '@/stores/history'
 import { useFavoritesStore } from '@/stores/favorites'
+import { useBillingStore } from '@/stores/billing'
 import SupportCenterPanel from '@/components/common/SupportCenterPanel.vue'
 import { message } from 'ant-design-vue'
 
@@ -133,6 +143,7 @@ const router = useRouter()
 const userStore = useUserStore()
 const historyStore = useHistoryStore()
 const favoritesStore = useFavoritesStore()
+const billingStore = useBillingStore()
 
 const preferences = reactive({
   defaultPrepTime: 90,
@@ -143,6 +154,22 @@ const preferences = reactive({
 const userInitial = computed(() => {
   const name = userStore.userInfo?.name || userStore.username || '考'
   return name.charAt(0).toUpperCase()
+})
+
+const balanceTitle = computed(() => {
+  if (userStore.isAdmin) return '管理员完整权限'
+  return billingStore.planStatusText
+})
+
+const balanceDescription = computed(() => {
+  if (userStore.isAdmin) return '管理员账号不扣减套餐余额，可访问全部训练与管理功能。'
+  const billing = userStore.userInfo?.billing || {}
+  const daily = Number(billing.remainingDailyMinutes || 0)
+  const total = Number(billing.remainingMinutes || 0)
+  if (daily > 0 || total > 0) {
+    return `剩余总时长 ${total} 分钟，今日可用 ${daily || total} 分钟。`
+  }
+  return billingStore.activePlanDescription
 })
 
 onMounted(async () => {
@@ -257,6 +284,38 @@ function handleLogout() {
   flex-direction: column;
   gap: 8px;
   margin-bottom: 16px;
+}
+
+.balance-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.balance-card__main {
+  min-width: 0;
+
+  strong {
+    display: block;
+    margin-top: 4px;
+    color: @text-primary;
+    font-size: @font-size-lg;
+  }
+
+  p {
+    margin: 4px 0 0;
+    color: @text-secondary;
+    font-size: @font-size-sm;
+  }
+}
+
+.balance-card__label {
+  color: @primary-color;
+  font-size: @font-size-xs;
+  font-weight: 700;
 }
 
 .menu-item {

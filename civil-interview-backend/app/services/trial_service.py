@@ -66,18 +66,40 @@ def _get_or_create_trial_subscription(db: Session, username: str) -> UserSubscri
 
 def _sync_preferences_trial(user: User, subscription: UserSubscription):
     prefs = dict(user.preferences) if isinstance(user.preferences, dict) else {}
+    total_minutes = int(subscription.total_minutes or DEFAULT_TRIAL_TOTAL_MINUTES)
+    used_minutes = int(subscription.used_minutes or 0)
+    daily_limit_minutes = int(subscription.daily_limit_minutes or DEFAULT_TRIAL_TOTAL_MINUTES)
+    daily_used_minutes = int(subscription.daily_used_minutes or 0)
+    remaining_minutes = max(total_minutes - used_minutes, 0)
+    remaining_daily_minutes = max(daily_limit_minutes - daily_used_minutes, 0)
     prefs["subscription"] = {
         "isTrialUser": bool(subscription.is_trial),
         "trialCompleted": bool(subscription.trial_completed),
+        "hasActivePlan": bool(subscription.status == "active" and remaining_minutes > 0 and not subscription.trial_completed),
         "planType": subscription.plan_type,
         "planName": subscription.plan_name,
         "status": subscription.status,
-        "totalMinutes": int(subscription.total_minutes or 0),
-        "usedMinutes": int(subscription.used_minutes or 0),
-        "dailyLimitMinutes": int(subscription.daily_limit_minutes or 0),
-        "dailyUsedMinutes": int(subscription.daily_used_minutes or 0),
+        "totalMinutes": total_minutes,
+        "usedMinutes": used_minutes,
+        "dailyLimitMinutes": daily_limit_minutes,
+        "dailyUsedMinutes": daily_used_minutes,
+        "remainingMinutes": remaining_minutes,
+        "remainingDailyMinutes": remaining_daily_minutes,
         "expiresAt": subscription.end_at.isoformat() if subscription.end_at else "",
+        "canUse": bool(subscription.status == "active" and remaining_minutes > 0 and not subscription.trial_completed),
         "packageCode": subscription.package_code,
+    }
+    prefs["billing"] = {
+        "planType": "trial",
+        "remainingSeconds": 0,
+        "monthlyExpireAt": 0,
+        "activatedAt": 0,
+        "remainingMinutes": remaining_minutes,
+        "remainingDailyMinutes": remaining_daily_minutes,
+        "dailyLimitMinutes": daily_limit_minutes,
+        "usedMinutes": used_minutes,
+        "totalMinutes": total_minutes,
+        "orderHistory": [],
     }
     user.preferences = prefs
 

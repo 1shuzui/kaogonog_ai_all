@@ -37,6 +37,11 @@ class AccessControlTestCase(unittest.TestCase):
                 "remainingSeconds": 0,
                 "monthlyExpireAt": 0,
                 "activatedAt": 0,
+                "remainingMinutes": 0,
+                "remainingDailyMinutes": 0,
+                "dailyLimitMinutes": 0,
+                "usedMinutes": 0,
+                "totalMinutes": 0,
                 "orderHistory": [],
             },
         )
@@ -87,6 +92,7 @@ class AccessControlTestCase(unittest.TestCase):
         self.assertTrue(context["billing"]["isPaid"])
         self.assertEqual(context["billing"]["planType"], BILLING_PLAN_HOURLY)
         self.assertEqual(context["billing"]["remainingSeconds"], 7200)
+        self.assertEqual(context["billing"]["remainingMinutes"], 120)
         self.assertTrue(context["permissions"]["canAccessPremiumModules"])
 
     def test_trial_user_only_can_start_trial_question(self):

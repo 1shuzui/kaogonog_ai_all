@@ -45,6 +45,11 @@ def normalize_billing_state(raw_state: dict | None = None) -> dict:
         "remainingSeconds": max(0, int(float(raw_state.get("remainingSeconds") or 0))),
         "monthlyExpireAt": max(0, int(float(raw_state.get("monthlyExpireAt") or 0))),
         "activatedAt": max(0, int(float(raw_state.get("activatedAt") or 0))),
+        "remainingMinutes": max(0, int(float(raw_state.get("remainingMinutes") or 0))),
+        "remainingDailyMinutes": max(0, int(float(raw_state.get("remainingDailyMinutes") or 0))),
+        "dailyLimitMinutes": max(0, int(float(raw_state.get("dailyLimitMinutes") or 0))),
+        "usedMinutes": max(0, int(float(raw_state.get("usedMinutes") or 0))),
+        "totalMinutes": max(0, int(float(raw_state.get("totalMinutes") or 0))),
         "orderHistory": order_history,
     }
 
@@ -88,6 +93,11 @@ def _billing_state_from_subscription(subscription_state: dict | None) -> dict:
             "remainingSeconds": remaining_minutes * 60 if plan_type == BILLING_PLAN_HOURLY else 0,
             "monthlyExpireAt": monthly_expire_at,
             "activatedAt": _parse_iso_ms(state.get("startAt") or state.get("createdAt")),
+            "remainingMinutes": remaining_minutes,
+            "remainingDailyMinutes": max(0, int(float(state.get("remainingDailyMinutes") or 0))),
+            "dailyLimitMinutes": max(0, int(float(state.get("dailyLimitMinutes") or 0))),
+            "usedMinutes": max(0, int(float(state.get("usedMinutes") or 0))),
+            "totalMinutes": max(0, int(float(state.get("totalMinutes") or 0))),
         }
     )
 
@@ -109,7 +119,8 @@ def build_access_context(user) -> dict:
     billing_state = normalize_billing_state(preferences.get("billing"))
     subscription_state = preferences.get("subscription") if isinstance(preferences.get("subscription"), dict) else {}
     subscription_billing_state = _billing_state_from_subscription(subscription_state)
-    is_admin = is_admin_username(getattr(user, "username", ""))
+    role = str(getattr(user, "role", "") or "").strip().lower()
+    is_admin = role == "admin" or is_admin_username(getattr(user, "username", ""))
     is_paid = is_admin or has_paid_access_from_billing(billing_state) or has_paid_access_from_subscription(subscription_state)
     if not has_paid_access_from_billing(billing_state) and has_paid_access_from_subscription(subscription_state):
         billing_state = subscription_billing_state

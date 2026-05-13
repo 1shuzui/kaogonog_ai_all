@@ -115,6 +115,10 @@ async function activate(plan) {
     })
 
     if (order.payParams?.mode === 'mock') {
+      if (import.meta.env.PROD) {
+        toast('服务器仍返回测试支付参数，请检查后端微信支付配置')
+        return
+      }
       await mockWechatPaymentCallback({
         orderNo: order.orderNo,
         status: 'paid',
