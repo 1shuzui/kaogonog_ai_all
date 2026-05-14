@@ -52,7 +52,7 @@ class Settings(BaseSettings):
     LLM_TIMEOUT_SECONDS: float = 60.0
     LLM_MAX_RETRIES: int = 3
     LLM_TEMPERATURE: float = 0.1
-    LLM_MAX_TOKENS: int = 2000
+    LLM_MAX_TOKENS: int = 4000
     LLM_FORCE_JSON_RESPONSE: bool = True
 
     # =========================

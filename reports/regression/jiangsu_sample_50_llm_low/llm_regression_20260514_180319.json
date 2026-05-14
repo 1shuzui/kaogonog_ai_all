@@ -1,0 +1,1164 @@
+{
+  "generated_at": "20260514_180319",
+  "question_ids": [
+    "JS-CZ-JT-20170923-02",
+    "JS-HA-HY-20191215-02",
+    "JS-HA-HY-20191215-03",
+    "JS-HA-HY-20230611-02",
+    "JS-HA-HY-20230611-03",
+    "JS-HA-SY-20191221-03",
+    "JS-HA-XY-20240512-02",
+    "JS-HA-XY-20240512-03",
+    "JS-JT-20220731-03",
+    "JS-JT-20230514-02",
+    "JS-JT-20230514-03",
+    "JS-LY-20250622-02",
+    "JS-LY-20250622-03",
+    "JS-LYG-DH-20190526-01",
+    "JS-LYG-KFQ-20230225-03",
+    "JS-NT-RG-20240518-03",
+    "JS-SHENGJI-TK-20230520-01",
+    "JS-SQ-SH20240622-01",
+    "JS-SQ-SY-20200808-03",
+    "JS-SQ-SY20250524-01",
+    "JS-SS-DSJ20240525-01",
+    "JS-SZ-20170513-01",
+    "JS-SZ-SS20240615-03",
+    "JS-TX-20201018-03",
+    "JS-TX-WS-20231119-03",
+    "JS-TZ-HL-20221030-01",
+    "JS-TZ-HL-20221030-02",
+    "JS-TZ-HL20240721-03",
+    "JS-TZ-HL20240921-02",
+    "JS-TZ-HL20240921-XW-02",
+    "JS-TZ-JJ-20230715-01",
+    "JS-TZ-TX-20230715-02",
+    "JS-TZ-XH-20220917-03",
+    "JS-WX-20171021-03",
+    "JS-WX-LX-20230729-01",
+    "JS-WX-LX-20230729-02",
+    "JS-WX-YX-20210605-02",
+    "JS-WX-YX-20210605-03",
+    "JS-YC-BH20240331-02",
+    "JS-YC-BH20240526-02",
+    "JS-YC-DF-20211204-01",
+    "JS-YC-DF-20211204-03",
+    "JS-YC-DT20240518-02",
+    "JS-YC-FN-20220731-02",
+    "JS-YC-JH20240706-03",
+    "JS-YC-XS20241222-01",
+    "JS-YZ-HJ20250329-02",
+    "JS-ZJ-DG-20240414-02",
+    "JS-ZJ-DG-20240414-03",
+    "JS-ZJ-JR-20170121-01"
+  ],
+  "persist": false,
+  "writeback": false,
+  "repeat": 1,
+  "summary": {
+    "total": 50,
+    "pass": 23,
+    "fail": 24,
+    "error": 3,
+    "skip": 0
+  },
+  "rows": [
+    {
+      "question_id": "JS-CZ-JT-20170923-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-CZ-JT-20170923-02/reference_low.txt",
+      "level": "low",
+      "expected_range": "3.6-7.5",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 8.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_analysis_low_2，句数=6，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        8.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-HA-HY-20191215-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-HA-HY-20191215-02/reference_low.txt",
+      "level": "low",
+      "expected_range": "3.9-7.9",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 8.1,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 1,
+      "notes": [
+        "通用校准将总分上限压至 8.1，避免中低质量答案被模型虚高。",
+        "基于高分答案程序化降档生成；策略=template_organization_low_3，句数=5，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        8.1
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-HA-HY-20191215-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-HA-HY-20191215-03/reference_low.txt",
+      "level": "low",
+      "expected_range": "2.8-7.5",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 7.8,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 3,
+      "notes": [
+        "第一阶段证据抽取结果无效，已回退到规则型证据整理。",
+        "通用校准将总分上限压至 7.8，避免中低质量答案被模型虚高。",
+        "模型总分 17.1 与维度汇总 7.8 不一致，已采用维度汇总。",
+        "基于高分答案程序化降档生成；策略=template_scene_low_3，句数=7，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        7.8
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-HA-HY-20230611-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-HA-HY-20230611-02/reference_low.txt",
+      "level": "low",
+      "expected_range": "3.4-8.1",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 1.5,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 3,
+      "notes": [
+        "deduction_items 中的理由 [未提及任何情况说明与利害阐述，缺乏淮阴区、强降雨、小麦抢收等关键信息] 未绑定有效证据，已移除。",
+        "deduction_items 中的理由 [未给出任何具体解决方案，仅描述沟通策略] 未绑定有效证据，已移除。",
+        "deduction_items 中的理由 [未达成任何沟通共识，缺乏收尾和行动共识] 未绑定有效证据，已移除。",
+        "基于高分答案程序化降档生成；策略=template_scene_low_3，句数=7，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        1.5
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-HA-HY-20230611-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-HA-HY-20230611-03/reference_low.txt",
+      "level": "low",
+      "expected_range": "5.3-12.5",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 1.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 1,
+      "notes": [
+        "第一阶段证据抽取结果无效，已回退到规则型证据整理。",
+        "基于高分答案程序化降档生成；策略=spread，句数=7，截断=90，关键词削弱=medium，口语化=否。"
+      ],
+      "attempt_scores": [
+        1.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-HA-SY-20191221-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-HA-SY-20191221-03/reference_low.txt",
+      "level": "low",
+      "expected_range": "1.2-6.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 6.2,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 2,
+      "notes": [
+        "通用校准将总分上限压至 6.2，避免中低质量答案被模型虚高。",
+        "模型总分 17.5 与维度汇总 6.2 不一致，已采用维度汇总。",
+        "基于高分答案程序化降档生成；策略=template_interpersonal_low_2，句数=2，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "attempt_scores": [
+        6.2
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-HA-XY-20240512-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-HA-XY-20240512-02/reference_low.txt",
+      "level": "low",
+      "expected_range": "5.9-13.1",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 5.5,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=dialogue_focus，句数=3，截断=90，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        5.5
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-HA-XY-20240512-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-HA-XY-20240512-03/reference_low.txt",
+      "level": "low",
+      "expected_range": "5.8-13.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 8.9,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "通用校准将总分上限压至 8.9，避免中低质量答案被模型虚高。",
+        "模型总分 12.0 与维度汇总 8.9 不一致，已采用维度汇总。",
+        "基于高分答案程序化降档生成；策略=markers，句数=5，截断=90，关键词削弱=medium，口语化=否。"
+      ],
+      "attempt_scores": [
+        8.9
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-JT-20220731-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-JT-20220731-03/reference_low.txt",
+      "level": "low",
+      "expected_range": "1.4-6.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 5.4,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_interpersonal_low_1，句数=3，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "attempt_scores": [
+        5.4
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-JT-20230514-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-JT-20230514-02/reference_low.txt",
+      "level": "low",
+      "expected_range": "6.4-13.6",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 3.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 1,
+      "notes": [
+        "deduction_items 中的理由 [其他维度（统筹筹备、行程组织、收尾服务、长效机制）无任何证据支撑，核心环节缺失] 未绑定有效证据，已移除。",
+        "基于高分答案程序化降档生成；策略=markers，句数=10，截断=90，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        3.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-JT-20230514-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-JT-20230514-03/reference_low.txt",
+      "level": "low",
+      "expected_range": "4.1-8.2",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 1.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        1.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-LY-20250622-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-LY-20250622-02/reference_low.txt",
+      "level": "low",
+      "expected_range": "7.8-13.6",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 10.9,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "通用校准将总分上限压至 10.9，避免中低质量答案被模型虚高。",
+        "模型总分 17.5 与维度汇总 10.9 不一致，已采用维度汇总。",
+        "基于高分答案程序化降档生成；策略=dialogue_focus，句数=4，截断=90，关键词削弱=heavy，口语化=否。"
+      ],
+      "attempt_scores": [
+        10.9
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-LY-20250622-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-LY-20250622-03/reference_low.txt",
+      "level": "low",
+      "expected_range": "7.9-13.1",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 11.1,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 在相关内容大门与核心景点之间增设中途停靠点位",
+        "通用校准将总分上限压至 11.1，避免中低质量答案被模型虚高。",
+        "模型总分 15.0 与维度汇总 11.1 不一致，已采用维度汇总。",
+        "基于高分答案程序化降档生成；策略=spread，句数=13，截断=90，关键词削弱=heavy，口语化=否。"
+      ],
+      "attempt_scores": [
+        11.1
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-LYG-DH-20190526-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-LYG-DH-20190526-01/reference_low.txt",
+      "level": "low",
+      "expected_range": "3.3-7.2",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 1.5,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_analysis_low_2，句数=6，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        1.5
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-LYG-KFQ-20230225-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-LYG-KFQ-20230225-03/reference_low.txt",
+      "level": "low",
+      "expected_range": "2.0-6.8",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 4.5,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_interpersonal_low_2，句数=2，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "attempt_scores": [
+        4.5
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-NT-RG-20240518-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-NT-RG-20240518-03/reference_low.txt",
+      "level": "low",
+      "expected_range": "3.1-7.8",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 0.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 1,
+      "notes": [
+        "deduction_items 中的理由 [未出现任何加分触发词] 未绑定有效证据，已移除。",
+        "基于高分答案程序化降档生成；策略=template_scene_low_3，句数=7，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        0.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-SHENGJI-TK-20230520-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-SHENGJI-TK-20230520-01/reference_low.txt",
+      "level": "low",
+      "expected_range": "3.4-7.3",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 7.7,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 2,
+      "notes": [
+        "通用校准将总分上限压至 7.7，避免中低质量答案被模型虚高。",
+        "模型总分 11.0 与维度汇总 7.7 不一致，已采用维度汇总。",
+        "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        7.7
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-SQ-SH20240622-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-SQ-SH20240622-01/reference_low.txt",
+      "level": "low",
+      "expected_range": "5.0-9.1",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 5.5,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        5.5
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-SQ-SY-20200808-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-SQ-SY-20200808-03/reference_low.txt",
+      "level": "low",
+      "expected_range": "4.2-11.4",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 7.4,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "通用校准将总分上限压至 7.4，避免中低质量答案被模型虚高。",
+        "模型总分 16.0 与维度汇总 7.4 不一致，已采用维度汇总。",
+        "基于高分答案程序化降档生成；策略=markers，句数=3，截断=90，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        7.4
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-SQ-SY20250524-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-SQ-SY20250524-01/reference_low.txt",
+      "level": "low",
+      "expected_range": "6.4-11.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 4.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        4.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-SS-DSJ20240525-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-SS-DSJ20240525-01/reference_low.txt",
+      "level": "low",
+      "expected_range": "4.4-8.6",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 3.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 1,
+      "notes": [
+        "第一阶段证据无法在原文中命中，已忽略: 这件事不能只喊口号",
+        "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        3.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-SZ-20170513-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-SZ-20170513-01/reference_low.txt",
+      "level": "low",
+      "expected_range": "4.1-8.2",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 8.2,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "第一阶段证据抽取结果无效，已回退到规则型证据整理。",
+        "通用校准将总分上限压至 8.2，避免中低质量答案被模型虚高。",
+        "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        8.2
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-SZ-SS20240615-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-SZ-SS20240615-03/reference_low.txt",
+      "level": "low",
+      "expected_range": "7.5-13.2",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 7.5,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=markers，句数=5，截断=90，关键词削弱=medium，口语化=否。"
+      ],
+      "attempt_scores": [
+        7.5
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-TX-20201018-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-TX-20201018-03/reference_low.txt",
+      "level": "low",
+      "expected_range": "3.0-7.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 7.4,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 2,
+      "notes": [
+        "通用校准将总分上限压至 7.4，避免中低质量答案被模型虚高。",
+        "模型总分 11.0 与维度汇总 7.4 不一致，已采用维度汇总。",
+        "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        7.4
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-TX-WS-20231119-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-TX-WS-20231119-03/reference_low.txt",
+      "level": "low",
+      "expected_range": "3.3-8.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 8.2,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 2,
+      "notes": [
+        "通用校准将总分上限压至 8.2，避免中低质量答案被模型虚高。",
+        "模型总分 13.0 与维度汇总 8.2 不一致，已采用维度汇总。",
+        "基于高分答案程序化降档生成；策略=template_scene_low_3，句数=7，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        8.2
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-TZ-HL-20221030-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-TZ-HL-20221030-01/reference_low.txt",
+      "level": "low",
+      "expected_range": "3.4-7.3",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 8.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_analysis_low_2，句数=6，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        8.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-TZ-HL-20221030-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-TZ-HL-20221030-02/reference_low.txt",
+      "level": "low",
+      "expected_range": "1.7-6.3",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 0.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_scene_low_3，句数=7，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        0.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-TZ-HL20240721-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-TZ-HL20240721-03/reference_low.txt",
+      "level": "low",
+      "expected_range": "2.0-6.9",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 6.7,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "通用校准将总分上限压至 6.7，避免中低质量答案被模型虚高。",
+        "模型总分 19.0 与维度汇总 6.7 不一致，已采用维度汇总。",
+        "基于高分答案程序化降档生成；策略=template_interpersonal_low_2，句数=2，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "attempt_scores": [
+        6.7
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-TZ-HL20240921-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-TZ-HL20240921-02/reference_low.txt",
+      "level": "low",
+      "expected_range": "7.3-12.3",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 10.6,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "通用校准将总分上限压至 10.6，避免中低质量答案被模型虚高。",
+        "模型总分 17.6 与维度汇总 10.6 不一致，已采用维度汇总。",
+        "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        10.6
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-TZ-HL20240921-XW-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-TZ-HL20240921-XW-02/reference_low.txt",
+      "level": "low",
+      "expected_range": "5.1-9.3",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 9.2,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "通用校准将总分上限压至 9.2，避免中低质量答案被模型虚高。",
+        "模型总分 14.0 与维度汇总 9.2 不一致，已采用维度汇总。",
+        "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        9.2
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-TZ-JJ-20230715-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-TZ-JJ-20230715-01/reference_low.txt",
+      "level": "low",
+      "expected_range": "4.1-8.2",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 8.2,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "通用校准将总分上限压至 8.2，避免中低质量答案被模型虚高。",
+        "模型总分 12.0 与维度汇总 8.2 不一致，已采用维度汇总。",
+        "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        8.2
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-TZ-TX-20230715-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_jiangsu_shiye/JS-TZ-TX-20230715-02/reference_low.txt",
+      "level": "low",
+      "expected_range": "5.4-12.6",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": null,
+      "actual_band": "执行失败",
+      "status": "ERROR",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=spread，句数=4，截断=90，关键词削弱=medium，口语化=否。"
+      ],
+      "attempt_scores": [],
+      "fallback_used": false,
+      "error": "检测到回退到确定性评分，本次不计入真实 LLM 回归。"
+    },
+    {
+      "question_id": "JS-TZ-XH-20220917-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-TZ-XH-20220917-03/reference_low.txt",
+      "level": "low",
+      "expected_range": "4.2-11.4",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 2.5,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=spread，句数=5，截断=90，关键词削弱=medium，口语化=否。"
+      ],
+      "attempt_scores": [
+        2.5
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-WX-20171021-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-WX-20171021-03/reference_low.txt",
+      "level": "low",
+      "expected_range": "5.2-12.4",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 6.5,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=hybrid，句数=4，截断=90，关键词削弱=medium，口语化=否。"
+      ],
+      "attempt_scores": [
+        6.5
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-WX-LX-20230729-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_jiangsu_shiye/JS-WX-LX-20230729-01/reference_low.txt",
+      "level": "low",
+      "expected_range": "4.1-8.2",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": null,
+      "actual_band": "执行失败",
+      "status": "ERROR",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [],
+      "fallback_used": false,
+      "error": "检测到回退到确定性评分，本次不计入真实 LLM 回归。"
+    },
+    {
+      "question_id": "JS-WX-LX-20230729-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-WX-LX-20230729-02/reference_low.txt",
+      "level": "low",
+      "expected_range": "6.1-13.3",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 9.2,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "通用校准将总分上限压至 9.2，避免中低质量答案被模型虚高。",
+        "基于高分答案程序化降档生成；策略=hybrid，句数=7，截断=90，关键词削弱=medium，口语化=否。"
+      ],
+      "attempt_scores": [
+        9.2
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-WX-YX-20210605-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-WX-YX-20210605-02/reference_low.txt",
+      "level": "low",
+      "expected_range": "1.8-6.4",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 6.9,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 2,
+      "notes": [
+        "通用校准将总分上限压至 6.9，避免中低质量答案被模型虚高。",
+        "模型总分 13.0 与维度汇总 6.9 不一致，已采用维度汇总。",
+        "基于高分答案程序化降档生成；策略=template_scene_low_3，句数=7，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        6.9
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-WX-YX-20210605-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-WX-YX-20210605-03/reference_low.txt",
+      "level": "low",
+      "expected_range": "4.6-11.8",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 7.8,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "通用校准将总分上限压至 7.8，避免中低质量答案被模型虚高。",
+        "模型总分 10.0 与维度汇总 7.8 不一致，已采用维度汇总。",
+        "基于高分答案程序化降档生成；策略=spread，句数=7，截断=90，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        7.8
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-YC-BH20240331-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-YC-BH20240331-02/reference_low.txt",
+      "level": "low",
+      "expected_range": "6.5-13.4",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 7.0,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=dialogue_focus，句数=4，截断=90，关键词削弱=heavy，口语化=否。"
+      ],
+      "attempt_scores": [
+        7.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-YC-BH20240526-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_jiangsu_shiye/JS-YC-BH20240526-02/reference_low.txt",
+      "level": "low",
+      "expected_range": "5.9-13.1",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": null,
+      "actual_band": "执行失败",
+      "status": "ERROR",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=markers，句数=4，截断=90，关键词削弱=medium，口语化=否。"
+      ],
+      "attempt_scores": [],
+      "fallback_used": false,
+      "error": "检测到回退到确定性评分，本次不计入真实 LLM 回归。"
+    },
+    {
+      "question_id": "JS-YC-DF-20211204-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-YC-DF-20211204-01/reference_low.txt",
+      "level": "low",
+      "expected_range": "4.8-12.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 7.9,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "通用校准将总分上限压至 7.9，避免中低质量答案被模型虚高。",
+        "模型总分 18.0 与维度汇总 7.9 不一致，已采用维度汇总。",
+        "基于高分答案程序化降档生成；策略=spread，句数=6，截断=90，关键词削弱=medium，口语化=否。"
+      ],
+      "attempt_scores": [
+        7.9
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-YC-DF-20211204-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-YC-DF-20211204-03/reference_low.txt",
+      "level": "low",
+      "expected_range": "1.5-6.2",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 6.5,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 2,
+      "notes": [
+        "通用校准将总分上限压至 6.5，避免中低质量答案被模型虚高。",
+        "模型总分 12.5 与维度汇总 6.5 不一致，已采用维度汇总。",
+        "基于高分答案程序化降档生成；策略=template_interpersonal_low_2，句数=2，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "attempt_scores": [
+        6.5
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-YC-DT20240518-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-YC-DT20240518-02/reference_low.txt",
+      "level": "low",
+      "expected_range": "7.2-14.4",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 10.3,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "通用校准将总分上限压至 10.3，避免中低质量答案被模型虚高。",
+        "模型总分 17.0 与维度汇总 10.3 不一致，已采用维度汇总。",
+        "基于高分答案程序化降档生成；策略=hybrid，句数=7，截断=120，关键词削弱=heavy，口语化=否。"
+      ],
+      "attempt_scores": [
+        10.3
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-YC-FN-20220731-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-YC-FN-20220731-02/reference_low.txt",
+      "level": "low",
+      "expected_range": "3.3-7.2",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 7.6,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 2,
+      "notes": [
+        "通用校准将总分上限压至 7.6，避免中低质量答案被模型虚高。",
+        "模型总分 10.0 与维度汇总 7.6 不一致，已采用维度汇总。",
+        "基于高分答案程序化降档生成；策略=template_analysis_low_2，句数=6，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        7.6
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-YC-JH20240706-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-YC-JH20240706-03/reference_low.txt",
+      "level": "low",
+      "expected_range": "2.4-7.8",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 4.0,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_interpersonal_low_2，句数=2，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "attempt_scores": [
+        4.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-YC-XS20241222-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-YC-XS20241222-01/reference_low.txt",
+      "level": "low",
+      "expected_range": "4.6-8.8",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 9.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        9.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-YZ-HJ20250329-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-YZ-HJ20250329-02/reference_low.txt",
+      "level": "low",
+      "expected_range": "2.3-7.3",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 6.0,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_interpersonal_low_2，句数=2，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "attempt_scores": [
+        6.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-ZJ-DG-20240414-02",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-ZJ-DG-20240414-02/reference_low.txt",
+      "level": "low",
+      "expected_range": "5.7-12.9",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 7.6,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=markers，句数=3，截断=90，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        7.6
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-ZJ-DG-20240414-03",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-ZJ-DG-20240414-03/reference_low.txt",
+      "level": "low",
+      "expected_range": "2.2-7.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 7.0,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=template_interpersonal_low_2，句数=2，截断=none，关键词削弱=heavy，口语化=是。"
+      ],
+      "attempt_scores": [
+        7.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-ZJ-JR-20170121-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-ZJ-JR-20170121-01/reference_low.txt",
+      "level": "low",
+      "expected_range": "3.7-7.7",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 7.9,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 2,
+      "notes": [
+        "通用校准将总分上限压至 7.9，避免中低质量答案被模型虚高。",
+        "模型总分 10.0 与维度汇总 7.9 不一致，已采用维度汇总。",
+        "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "attempt_scores": [
+        7.9
+      ],
+      "fallback_used": false,
+      "error": ""
+    }
+  ]
+}

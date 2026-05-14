@@ -7,13 +7,13 @@
       <a-upload-dragger
         :before-upload="handleFile"
         :show-upload-list="false"
-        accept=".xlsx,.xls,.json"
+        accept=".xlsx,.json"
       >
         <p class="ant-upload-drag-icon">
           <InboxOutlined />
         </p>
         <p class="ant-upload-text">点击或拖拽文件到此处</p>
-        <p class="ant-upload-hint">支持 .xlsx / .xls / .json 格式</p>
+        <p class="ant-upload-hint">支持 .xlsx / .json 格式</p>
       </a-upload-dragger>
 
       <a-alert
@@ -79,6 +79,7 @@ const router = useRouter()
 const bankStore = useQuestionBankStore()
 
 const fileName = ref('')
+const selectedFile = ref(null)
 const previewData = ref([])
 const importing = ref(false)
 
@@ -111,12 +112,16 @@ const fieldDocs = [
 
 async function handleFile(file) {
   fileName.value = file.name
+  selectedFile.value = file
   try {
     let data
-    if (file.name.endsWith('.json')) {
+    const lowerName = file.name.toLowerCase()
+    if (lowerName.endsWith('.json')) {
       data = await parseJsonFile(file)
-    } else {
+    } else if (lowerName.endsWith('.xlsx')) {
       data = await parseExcelFile(file)
+    } else {
+      throw new Error('仅支持 .xlsx / .json 格式')
     }
     previewData.value = data
     if (data.length === 0) {
@@ -133,17 +138,23 @@ async function handleFile(file) {
 function clearPreview() {
   previewData.value = []
   fileName.value = ''
+  selectedFile.value = null
 }
 
 async function confirmImport() {
+  if (!selectedFile.value) {
+    message.warning('请先选择文件')
+    return
+  }
   importing.value = true
   try {
-    // Mock 模式直接成功；真实环境需要将数据发送到后端
-    await bankStore.importFromFile(null)
-    message.success('导入成功')
+    const result = await bankStore.importFromFile(selectedFile.value)
+    const imported = Number(result?.imported ?? 0)
+    const failed = Number(result?.failed ?? 0)
+    message.success(`导入完成：成功 ${imported} 道，失败 ${failed} 道`)
     router.push('/bank')
   } catch (e) {
-    message.error('导入失败')
+    message.error(e?.message || '导入失败')
   } finally {
     importing.value = false
   }

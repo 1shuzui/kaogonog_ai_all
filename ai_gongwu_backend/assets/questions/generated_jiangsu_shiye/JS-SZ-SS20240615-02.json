@@ -1,0 +1,102 @@
+{
+  "id": "JS-SZ-SS20240615-02",
+  "type": "：专业知识题（财会基础、政府会计、事业单位财务类），适配苏州市属事业单位财务、会计、审计、资产管理岗，重点考查专业基础知识记忆、规范表述、岗位专业硬实力，贴合机关事业单位会计制度、政府会计准则执行要求",
+  "province": "江苏",
+  "fullScore": 32.0,
+  "question": "：财会专业基础问题，请简述会计核算的基本前提是什么。",
+  "dimensions": [
+    {
+      "name": "概念精准度",
+      "score": 14.5
+    },
+    {
+      "name": "岗位适配结合度",
+      "score": 11.6
+    },
+    {
+      "name": "逻辑条理",
+      "score": 4.4
+    },
+    {
+      "name": "专业素养",
+      "score": 1.5
+    }
+  ],
+  "coreKeywords": [],
+  "strongKeywords": [],
+  "weakKeywords": [],
+  "bonusKeywords": [],
+  "penaltyKeywords": [],
+  "scoringCriteria": [
+    "概念精准度（10分）：各项前提内涵解释准确，专业术语规范，概念解释偏差每项扣2分",
+    "岗位适配结合度（8分）：结合事业单位、市属单位财务工作简要阐释，完全不结合岗位实务扣4分",
+    "逻辑条理（3分）：分点清晰、表述连贯，混乱杂糅扣1至2分",
+    "专业素养（1分）：整体专业表述严谨规范即可得分；本题满分32分。"
+  ],
+  "deductionRules": [],
+  "sourceDocument": "2017-2025江苏事业单位真题题库.docx",
+  "referenceAnswer": "： 各位考官，会计核算前提也称为会计基本假设，是组织会计核算工作、进行会计确认计量与报告的基础前提与约束条件，是所有会计工作开展的基础，主要包含以下四项内容。 第一，会计主体。会计主体明确会计工作的空间范围，划定会计核算的特定单位与边界，明确区分本单位经济活动与其他单位、个人的经济活动。对苏州市属事业单位而言，单位本身为独立会计主体，单独核算收支、资产、负债，保证财务核算边界清晰。 第二，持续经营。该前提假定会计主体在可预见的未来，能够正常持续经营、稳定运转，不会破产清算或终止运营。以此为基础，才能合理开展固定资产折旧、无形资产摊销、长期费用分摊等常规账务处理，也是事业单位稳定开展年度预决算管理的重要前提。 第三，会计分期。在持续经营基础上，将主体持续的经营活动，人为划分为若干连续、相等的会计期间，分为年度、季度、月度。会计分期便于定期结算账目、编制财务报表、开展预决算对比、开展绩效评价，满足单位日常财务管理与上级监管要求。 第四，货币计量。以货币作为统一的主要计量单位，全面综合反映会计主体的经济业务活动、财务状况与收支成果。同时在我国境内行政事业单位以人民币为记账本位币，确保财务数据统一可比、规范归集，保障财务信息标准化、可核查。 综上，四项会计核算前提共同构成会计工作的基础框架，也是苏州市属事业单位日常财务核算、预算管理、内控建设必须遵守的基础规范，保障财务工作合法合规、数据真实准确。",
+  "tags": [
+    "苏州市属事业单位",
+    "财会专业面试",
+    "会计核算前提",
+    "会计基本假设",
+    "事业单位财务",
+    "会计基础真题"
+  ],
+  "scoreBands": [
+    {
+      "label": "低分/偏弱",
+      "min_score": 0,
+      "max_score": 17.6,
+      "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
+    },
+    {
+      "label": "基本合格",
+      "min_score": 17.7,
+      "max_score": 22.4,
+      "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
+    },
+    {
+      "label": "中高档",
+      "min_score": 22.5,
+      "max_score": 27.2,
+      "description": "内容较完整，逻辑较清晰，接近高分答案。"
+    },
+    {
+      "label": "高分标杆",
+      "min_score": 27.3,
+      "max_score": 32.0,
+      "description": "高分参考答案区间，用于回归验证。"
+    }
+  ],
+  "regressionCases": [
+    {
+      "label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_jiangsu_shiye/JS-SZ-SS20240615-02/reference_high.txt",
+      "expected_min": 29.0,
+      "expected_max": 32.0,
+      "llmExpectedMin": 29.0,
+      "llmExpectedMax": 32.0,
+      "notes": "来自原始题库文档的核心采分基准答案。"
+    },
+    {
+      "label": "程序化中档参考答案",
+      "sample_path": "assets/regression_samples/generated_jiangsu_shiye/JS-SZ-SS20240615-02/reference_mid.txt",
+      "expected_min": 11.6,
+      "expected_max": 16.3,
+      "llmExpectedMin": 8.0,
+      "llmExpectedMax": 17.6,
+      "notes": "基于高分答案程序化压缩生成；策略=markers，句数=9，截断=160，关键词削弱=none。"
+    },
+    {
+      "label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_jiangsu_shiye/JS-SZ-SS20240615-02/reference_low.txt",
+      "expected_min": 8.6,
+      "expected_max": 13.3,
+      "llmExpectedMin": 0.0,
+      "llmExpectedMax": 13.3,
+      "notes": "基于高分答案程序化降档生成；策略=hybrid，句数=3，截断=90，关键词削弱=medium，口语化=否。"
+    }
+  ]
+}

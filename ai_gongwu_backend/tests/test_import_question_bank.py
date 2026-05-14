@@ -12,6 +12,9 @@ from scripts.import_question_bank import (
     extract_sections,
     normalize_question_id,
     normalize_source_text,
+    parse_question_block,
+    parse_scored_items,
+    resolve_question_province,
 )
 
 
@@ -67,6 +70,60 @@ class ImportQuestionBankNormalizationTestCase(unittest.TestCase):
         self.assertIn("核心采分基准答案", sections)
         self.assertIn("得分标准", sections)
         self.assertIn("本题总分计算规则", sections)
+
+    def test_jiangsu_variants_parse_core_scoring_and_plain_score_items(self):
+        original_profile = activate_profile("hunan")
+        try:
+            activate_profile("jiangsu_shiye")
+            raw_text = """
+题号：JS-SAMPLE-20260101-01（综合分析+基层治理类，赋分24分）
+1. 题干：请结合基层工作，谈谈如何做好民情日记的传承与发展。
+2. 题型定位：综合分析题，适用省份：江苏。
+3. 核心观点：守正创新，闭环办理。
+4.核心采分
+基准答案各位考官，民情日记连接群众诉求和基层治理效能。要坚持群众路线，既传承走访入户的好作风，也用数字化手段推动诉求闭环办理。
+5. 多角度同义表述库：民情日记、群众路线、基层治理
+6. 加分点：闭环办理、数字赋能
+7. 得分标准：核心认知与政治站位8分，要求立场正确；传承内涵与破弊举措10分，要求举措具体；语言表达4分，要求逻辑清楚；创新思维2分。总分24分。
+8. 扣分标准：内容空泛扣4分。
+9. AI评分结构化数据：核心识别词：民情日记、群众路线；强关联识别词：闭环办理、数字赋能；题型信息：综合分析，适用省份：江苏，满分：24分。
+10. 全局统一表达仪态分：满分5分。
+11. 总分计算规则：本题得分=得分标准得分（24分）。
+12. 检索标签：江苏事业单位、基层治理
+            """.strip()
+
+            normalized = normalize_source_text(raw_text, "2017-2025江苏事业单位真题题库.extracted.txt")
+            parsed = parse_question_block(normalized, Path("2017-2025江苏事业单位真题题库.extracted.txt")).data
+
+            self.assertEqual(parsed["province"], "江苏")
+            self.assertEqual(parsed["fullScore"], 24.0)
+            self.assertTrue(parsed["referenceAnswer"].startswith("各位考官"))
+            self.assertEqual(
+                [item["name"] for item in parsed["dimensions"]],
+                ["核心认知与政治站位", "传承内涵与破弊举措", "语言表达", "创新思维"],
+            )
+        finally:
+            activate_profile(original_profile)
+
+    def test_jiangsu_profile_normalizes_city_area_to_province(self):
+        original_profile = activate_profile("hunan")
+        try:
+            activate_profile("jiangsu_shiye")
+
+            self.assertEqual(resolve_question_province("江苏泰州"), "江苏")
+            self.assertEqual(resolve_question_province("泰州"), "江苏")
+        finally:
+            activate_profile(original_profile)
+
+    def test_parse_scored_items_supports_old_jiangsu_band_only_fallback_source(self):
+        items = parse_scored_items(
+            "分项细则：政治站位服务理念6分、流程逻辑框架7分、"
+            "资源整合落地7分、语言表达感染力6分、亮点创新3分、综合印象2分。"
+        )
+
+        self.assertEqual(len(items), 6)
+        self.assertEqual(items[0], "政治站位服务理念（6分）：")
+        self.assertEqual(items[-1], "综合印象（2分）：")
 
     def test_detect_template_family_treats_anhui_new_types_as_existing_families(self):
         activate_profile("anhui")

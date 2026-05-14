@@ -837,7 +837,7 @@ def import_questions(db: Session, content: bytes, filename: str) -> dict:
                     failed += 1
             db.commit()
 
-        elif fname.endswith((".xlsx", ".xls")):
+        elif fname.endswith(".xlsx"):
             import io
             import openpyxl
             wb = openpyxl.load_workbook(io.BytesIO(content), read_only=True)
@@ -911,7 +911,7 @@ def import_questions(db: Session, content: bytes, filename: str) -> dict:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"导入失败: {e}")
 
-    return {"imported": imported, "failed": failed}
+    return {"imported": imported, "failed": failed, "filename": filename}
 
 
 async def generate_questions_by_position(

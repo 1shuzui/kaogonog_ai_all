@@ -134,6 +134,20 @@ IMPORT_PROFILES = {
             "2020-2025第二批次完全版.extracted.txt": 100,
         },
     ),
+    "jiangsu_shiye": ImportProfile(
+        name="jiangsu_shiye",
+        default_province="江苏",
+        question_output_dir=BACKEND_ROOT / "assets" / "questions" / "generated_jiangsu_shiye",
+        sample_output_dir=BACKEND_ROOT / "assets" / "regression_samples" / "generated_jiangsu_shiye",
+        summary_path=BACKEND_ROOT / "assets" / "questions" / "generated_jiangsu_shiye" / "import_summary.txt",
+        regression_sample_base_path="assets/regression_samples/generated_jiangsu_shiye",
+        source_files=(
+            REPO_ROOT / "2017-2025江苏事业单位真题题库.extracted.txt",
+        ),
+        source_priority={
+            "2017-2025江苏事业单位真题题库.extracted.txt": 100,
+        },
+    ),
 }
 
 ACTIVE_PROFILE = IMPORT_PROFILES["hunan"]
@@ -177,6 +191,7 @@ SECTION_HEADERS = (
     "题型定位",
     "核心观点",
     "核心观点（多维）",
+    "核心采分",
     "核心采分基准",
     "核心采分基准表达",
     "核心采分基准答案",
@@ -212,7 +227,7 @@ SECTION_INDEX_ALIASES = {
 }
 SECTION_PATTERN = re.compile(
     r"(?:^|\n)\s*(\d{1,2})[.、 ]\s*"
-    r"(题干|题型定位|核心观点(?:（多维）)?|核心采分基准(?:答案|表达)?|多角度同义表述库|"
+    r"(题干|题型定位|核心观点(?:（多维）)?|核心采分(?:基准(?:答案|表达)?)?|多角度同义表述库|"
     r"加分点(?:（创新思维）)?|得分标准|扣分标准|AI评分(?:使用的)?结构化数据|"
     r"全局统一(?:表达(?:仪态分)?|仪态分)|(?:本题)?总分计算规则|检索标签)"
 )
@@ -231,6 +246,8 @@ FIELD_PATTERNS = {
     ],
     "full_score": [
         r"满分[:：]\s*(\d+(?:\.\d+)?)分",
+        r"(?:本题)?满分\s*(\d+(?:\.\d+)?)分",
+        r"分值[:：]\s*(\d+(?:\.\d+)?)分?",
         r"赋分\s*(\d+(?:\.\d+)?)分",
     ],
     "core_keywords": [
@@ -253,6 +270,45 @@ FIELD_PATTERNS = {
         r"失分要点[:：]\s*([^；。\n]+)",
     ],
 }
+PROVINCE_LEVEL_NAMES = {
+    "北京",
+    "天津",
+    "河北",
+    "山西",
+    "内蒙古",
+    "辽宁",
+    "吉林",
+    "黑龙江",
+    "上海",
+    "江苏",
+    "浙江",
+    "安徽",
+    "福建",
+    "江西",
+    "山东",
+    "河南",
+    "湖北",
+    "湖南",
+    "广东",
+    "广西",
+    "海南",
+    "重庆",
+    "四川",
+    "贵州",
+    "云南",
+    "西藏",
+    "陕西",
+    "甘肃",
+    "青海",
+    "宁夏",
+    "新疆",
+    "台湾",
+    "香港",
+    "澳门",
+    "全国",
+    "中央",
+    "国家",
+}
 SCORE_MARK_PATTERN = re.compile(r"（\d+(?:\.\d+)?分）")
 DEDUCTION_MARK_PATTERN = re.compile(r"扣\d+(?:\.\d+)?(?:[—-]\d+(?:\.\d+)?)?分")
 EXPLICIT_SCORED_ITEM_PATTERN = re.compile(
@@ -260,6 +316,17 @@ EXPLICIT_SCORED_ITEM_PATTERN = re.compile(
 )
 EXPLICIT_DIMENSION_TITLE_PATTERN = re.compile(
     r"^(?P<title>[^\s：:；;，,。、“”\"'（）()]{1,16})\s*(?P<score>（\d+(?:\.\d+)?分）)\s*(?P<colon>[：:]?)"
+)
+PLAIN_SCORED_ITEM_PATTERN = re.compile(
+    r"(?P<title>[^\d０-９\s：:；;，,。、“”\"'（）()①②③④⑤⑥⑦⑧⑨⑩]{1,20})"
+    r"\s*(?P<score>\d+(?:\.\d+)?)\s*分\s*(?P<colon>[：:，,、。]|$)"
+)
+LEADING_PLAIN_SCORE_PATTERN = re.compile(
+    r"^(?P<title>[^\d０-９\s：:；;，,。、“”\"'（）()①②③④⑤⑥⑦⑧⑨⑩]{1,20})"
+    r"\s*(?P<score>\d+(?:\.\d+)?)\s*分\s*[：:，,、。]?\s*"
+)
+LEADING_ITEM_MARKER_PATTERN = re.compile(
+    r"^\s*(?:[①②③④⑤⑥⑦⑧⑨⑩]|(?:第)?[一二三四五六七八九十]{1,3}[、.．)]|\d{1,2}[、.．)])\s*"
 )
 LEADING_NOTE_PATTERN = re.compile(r"^\s*(?:（[^）]*）\s*)+")
 TRAILING_TOTAL_SCORE_PATTERN = re.compile(r"(?:[；;。]\s*)?总分\s*\d+(?:\.\d+)?分.*$")
@@ -321,7 +388,7 @@ TAG_STYLE_NOISE_TOKENS = {
 }
 QUESTION_TRAILING_SCORE_PATTERN = re.compile(r"[（(]\s*(\d+(?:\.\d+)?)\s*分\s*[）)]\s*$")
 HEADER_ASSIGNED_SCORE_PATTERN = re.compile(r"赋分\s*(\d+(?:\.\d+)?)\s*分")
-SCORING_TOTAL_PATTERN = re.compile(r"总分\s*(\d+(?:\.\d+)?)\s*分")
+SCORING_TOTAL_PATTERN = re.compile(r"(?:总分|满分)\s*(\d+(?:\.\d+)?)\s*分")
 CALCULATED_FULL_SCORE_PATTERN = re.compile(
     r"本题得分\s*[=＝]\s*得分标准得分\s*[（(]\s*(\d+(?:\.\d+)?)\s*分\s*[）)]"
 )
@@ -411,6 +478,7 @@ def normalize_source_text(raw_text: str, source_name: str) -> str:
         lambda match: f"{match.group(1)}{normalize_question_id(match.group(2))}",
         text,
     )
+    text = re.sub(r"(?m)^\s*[.．]\s*题干", "1. 题干", text)
     text = re.sub(
         rf"第([一二三四五六七八九十]{{1,3}}|\d{{1,2}})题[:：][^\S\n]*({SECTION_HEADER_ALTERNATION})",
         lambda match: f"{normalize_section_index(match.group(1))}. {match.group(2)}",
@@ -476,7 +544,7 @@ def canonical_section_name(raw_name: str) -> str:
 
     if raw_name.startswith("核心观点"):
         return "核心观点（多维）"
-    if raw_name.startswith("核心采分基准"):
+    if raw_name.startswith("核心采分"):
         return "核心采分基准答案"
     if raw_name.startswith("加分点"):
         return "加分点（创新思维）"
@@ -510,6 +578,20 @@ def extract_field(text: str, patterns: list[str]) -> str:
         if match:
             return match.group(1).strip()
     return ""
+
+
+def resolve_question_province(raw_province: str) -> str:
+    """把“适用地区”里的市县写法归并为当前 profile 的省份。"""
+
+    default_province = DEFAULT_PROVINCE.strip()
+    province = re.sub(r"\s+", "", raw_province.strip())
+    if not province:
+        return default_province
+    if default_province and (province == default_province or province.startswith(default_province)):
+        return default_province
+    if province not in PROVINCE_LEVEL_NAMES and default_province:
+        return default_province
+    return province
 
 
 def extract_score_with_pattern(text: str, pattern: re.Pattern[str]) -> float | None:
@@ -751,6 +833,68 @@ def normalize_scored_section_text(section_text: str) -> str:
     return normalized.strip("；; ")
 
 
+def is_scored_item_boundary(prefix: str) -> bool:
+    """判断评分项标题前是否是自然分隔符。"""
+
+    stripped = prefix.rstrip()
+    if not stripped:
+        return True
+    if stripped[-1] in {"\uff1b", ";", "\u3002", "-", "—", "、", "\uff1a", ":"}:
+        return True
+    return bool(
+        re.search(
+            r"(?:[①②③④⑤⑥⑦⑧⑨⑩]|(?:第)?[一二三四五六七八九十]{1,3}[、.．)]|\d{1,2}[、.．)])\s*$",
+            stripped,
+        )
+    )
+
+
+def strip_item_marker(text: str) -> str:
+    """去掉评分项前的 ① / 1. / 一、 等枚举符。"""
+
+    return LEADING_ITEM_MARKER_PATTERN.sub("", text).strip()
+
+
+def normalize_scored_item_text(item: str) -> str:
+    """把“标题8分，说明”规整为“标题（8分）：说明”。"""
+
+    cleaned = strip_item_marker(item.strip("；; "))
+    return LEADING_PLAIN_SCORE_PATTERN.sub(
+        lambda match: f"{match.group('title')}（{match.group('score')}分）：",
+        cleaned,
+        count=1,
+    )
+
+
+def find_explicit_score_matches(normalized: str) -> list[re.Match[str]]:
+    """找出评分标准里的显式分值项，兼容有无括号两种写法。"""
+
+    matches: list[re.Match[str]] = []
+    for pattern in (EXPLICIT_SCORED_ITEM_PATTERN, PLAIN_SCORED_ITEM_PATTERN):
+        for match in pattern.finditer(normalized):
+            start = match.start("title")
+            if not is_scored_item_boundary(normalized[:start]):
+                continue
+            title = clean_dimension_fragment(match.group("title"), limit=24)
+            if (
+                title in {"总分", "满分", "分值"}
+                or "满分" in title
+                or "得分细则" in title
+                or re.search(r"\d|[-—–]", title)
+                or not is_explicit_dimension_title(title)
+            ):
+                continue
+            matches.append(match)
+
+    matches.sort(key=lambda item: item.start("title"))
+    deduplicated: list[re.Match[str]] = []
+    for match in matches:
+        if deduplicated and match.start("title") < deduplicated[-1].end():
+            continue
+        deduplicated.append(match)
+    return deduplicated
+
+
 def parse_scored_items(section_text: str) -> list[str]:
     """从“得分标准”中提取每条评分项。"""
 
@@ -758,20 +902,13 @@ def parse_scored_items(section_text: str) -> list[str]:
     if not normalized:
         return []
 
-    explicit_matches = []
-    for match in EXPLICIT_SCORED_ITEM_PATTERN.finditer(normalized):
-        start = match.start("title")
-        prefix = normalized[:start].rstrip()
-        if prefix and prefix[-1] not in {"\uff1b", ";", "\u3002"}:
-            continue
-        if is_explicit_dimension_title(match.group("title")):
-            explicit_matches.append(match)
+    explicit_matches = find_explicit_score_matches(normalized)
     if len(explicit_matches) >= 2:
         items: list[str] = []
         for index, match in enumerate(explicit_matches):
             start = match.start("title")
             end = explicit_matches[index + 1].start("title") if index + 1 < len(explicit_matches) else len(normalized)
-            item = normalized[start:end].strip("；; ")
+            item = normalize_scored_item_text(normalized[start:end])
             if item:
                 items.append(item)
         return items
@@ -786,7 +923,7 @@ def parse_scored_items(section_text: str) -> list[str]:
                 break
             end += note_match.end()
 
-        item = normalized[cursor:end].strip("；; ")
+        item = normalize_scored_item_text(normalized[cursor:end])
         cursor = end
         if not item or "总分" in item or item.startswith("（"):
             continue
@@ -819,10 +956,36 @@ def parse_deduction_items(section_text: str) -> list[str]:
 def extract_score(item_text: str) -> float:
     """提取评分项里的分值。"""
 
-    match = re.search(r"（(\d+(?:\.\d+)?)分）", item_text)
+    match = re.search(r"（(\d+(?:\.\d+)?)分）", item_text) or re.search(r"(\d+(?:\.\d+)?)\s*分", item_text)
     if not match:
         raise ValueError(f"无法从评分项中提取分值: {item_text}")
     return float(match.group(1))
+
+
+def build_fallback_scoring_items(scoring_text: str, ai_text: str) -> list[str]:
+    """当老题只有档位描述时，生成稳定的通用分项。"""
+
+    raw_full_score = extract_field(scoring_text, FIELD_PATTERNS["full_score"]) or extract_field(ai_text, FIELD_PATTERNS["full_score"])
+    if not raw_full_score:
+        return []
+
+    full_score = round(float(raw_full_score), 1)
+    if full_score <= 0:
+        return []
+
+    weights = [
+        ("核心认知与政治站位", 0.25),
+        ("分析展开与问题解决", 0.35),
+        ("岗位贴合与落地性", 0.25),
+        ("语言表达与逻辑规范", 0.15),
+    ]
+    scores = [round(full_score * weight, 1) for _, weight in weights]
+    diff = round(full_score - sum(scores), 1)
+    scores[-1] = round(scores[-1] + diff, 1)
+    return [
+        f"{name}（{score:g}分）：依据题目档位说明、关键词覆盖、分析深度、举措落地性和表达规范度综合评分。"
+        for (name, _), score in zip(weights, scores)
+    ]
 
 
 def split_criterion_title_and_body(criterion_text: str) -> tuple[str, str]:
@@ -1633,6 +1796,16 @@ def sample_quality_penalty(text: str, question_data: dict[str, Any], mode: str) 
     bridge_hits = count_bridge_sentence_hits(text, question_data, mode)
     focus_hits = sample_focus_hits(text, question_data)
     penalty = repeated * 8 + placeholder_content_penalty(text) + bridge_hits * 2
+    meta_hits = sum(
+        text.count(marker)
+        for marker in ("这类题", "作答时", "更稳妥的答法", "比较合适的结构", "答案会")
+    )
+    if mode == "mid":
+        penalty += meta_hits * 4
+    if text.count("这项工作") >= 2 and focus_hits <= 1:
+        penalty += 6
+    if text.count("相关内容") >= 1 and focus_hits <= 1:
+        penalty += 6
     if bridge_hits >= 2 and focus_hits <= 1:
         penalty += 4
     if mode == "mid" and bridge_hits >= 2:
@@ -1644,7 +1817,7 @@ def sample_strategy_penalty(strategy: str, mode: str) -> int:
     """对容易生成空泛样本的策略适度降权。"""
 
     if strategy.startswith("template_"):
-        return 0
+        return 2 if ACTIVE_PROFILE.name == "jiangsu_shiye" and mode == "mid" else 0
     normalized = strategy.removeprefix("fallback_")
     if mode == "low" and normalized in {"leading", "dialogue_focus"}:
         return 3
@@ -1752,6 +1925,29 @@ def detect_template_family(question_data: dict[str, Any]) -> str | None:
     if any(marker in haystack for marker in ("综合分析", "价值判断", "政策理解", "社会现象", "漫画解读", "漫画联想", "漫画题")):
         return "analysis"
     return None
+
+
+def resolve_sample_template_family(question_data: dict[str, Any]) -> str | None:
+    """在不扩大通用题型识别影响面的前提下，为江苏样本补充题型兜底。"""
+
+    family = detect_template_family(question_data)
+    if family or ACTIVE_PROFILE.name != "jiangsu_shiye":
+        return family
+
+    haystack = build_question_haystack(question_data)
+    primary_type = re.split(r"[·（(]", question_data.get("type", ""), maxsplit=1)[0]
+    if any(marker in haystack for marker in ("现场模拟", "现场处置", "模拟沟通", "现场宣讲", "串词表达")):
+        return "scene"
+    if any(marker in haystack for marker in ("人际沟通", "团队管理", "职场适应", "矛盾化解", "情绪安抚")):
+        return "interpersonal"
+    if any(
+        marker in haystack or marker in primary_type
+        for marker in ("组织管理", "活动策划", "试点推广", "统筹规划", "考察接待", "工作思路", "培训")
+    ):
+        return "organization"
+    if any(marker in haystack for marker in ("综合分析", "名言警句", "启示类", "社会政策", "民生保障", "政策理解")):
+        return "analysis"
+    return family
 
 
 def ordered_keywords(question_data: dict[str, Any], *, generic: bool = False) -> list[str]:
@@ -1917,6 +2113,108 @@ def infer_topic_phrase(question_data: dict[str, Any], *, generic: bool = False) 
     return "相关内容" if generic else "这项工作"
 
 
+GENERIC_TOPIC_PHRASES = {"这项工作", "相关内容", "现实需求"}
+TOPIC_NOISE_MARKERS = (
+    "题型",
+    "适配",
+    "岗位",
+    "全岗位",
+    "核心",
+    "重点考查",
+    "考官",
+    "能力",
+    "高频",
+    "必考",
+)
+TOPIC_PREFERRED_MARKERS = (
+    "就业",
+    "创业",
+    "交通",
+    "信用",
+    "就医",
+    "医疗",
+    "基层",
+    "乡村",
+    "治理",
+    "民生",
+    "公平",
+    "原则",
+    "作风",
+    "青年",
+    "培训",
+    "服务",
+    "示范",
+    "创新",
+)
+
+
+def clean_sample_topic_candidate(value: str) -> str:
+    """清洗从题干/题型里抓出的短主题。"""
+
+    cleaned = re.sub(r"^[：:，,。\s]+", "", value)
+    cleaned = re.sub(r"(?:类|题|工作|问题)$", "", cleaned.strip(" ；;，,。"))
+    cleaned = re.sub(r"^(?:关于|围绕|对|对于)", "", cleaned)
+    return cleaned.strip(" ；;，,。")
+
+
+def topic_candidate_score(value: str) -> tuple[int, int]:
+    """给江苏兜底主题排序，优先保留有领域信息的短语。"""
+
+    preferred = sum(1 for marker in TOPIC_PREFERRED_MARKERS if marker in value)
+    noise = sum(1 for marker in TOPIC_NOISE_MARKERS if marker in value)
+    return preferred * 3 - noise * 2, min(len(value), 12)
+
+
+def specific_sample_topic_phrase(question_data: dict[str, Any]) -> str:
+    """优先返回适合写进样本答案的具体主题，避免“这项工作/相关内容”。"""
+
+    topic = infer_topic_phrase(question_data, generic=False)
+    if topic not in GENERIC_TOPIC_PHRASES and topic not in PROVINCE_LEVEL_NAMES:
+        return topic
+
+    candidates: list[str] = []
+    question_text = question_data.get("question", "")
+    question_type = question_data.get("type", "")
+
+    for quoted in re.findall(r"[“\"]([^”\"]{2,24})[”\"]", question_text):
+        candidates.append(quoted)
+
+    for pattern in (
+        r"围绕([^，。；？?]{2,24}?)(?:这个主题|主题)",
+        r"谈谈(?:你对|对)?([^，。；？?]{2,28}?)(?:的理解|的认识|的看法|的认识与理解)",
+        r"如何(?:做好|推进|开展)([^，。；？?]{2,24})",
+        r"(?:劝说|说服|引导)[^，。；？?]{0,8}?([^，。；？?]{2,24})",
+    ):
+        for match in re.finditer(pattern, question_text):
+            candidates.append(match.group(1))
+
+    for bracketed in re.findall(r"[（(]([^）)]{2,80})[）)]", question_type):
+        if "类" not in bracketed and "+" not in bracketed:
+            continue
+        for piece in re.split(r"[+＋/、·，,]", bracketed):
+            candidates.append(piece)
+
+    cleaned_candidates = []
+    seen = set()
+    for raw_candidate in candidates:
+        value = clean_sample_topic_candidate(raw_candidate)
+        if (
+            not value
+            or value in seen
+            or value in GENERIC_TOPIC_PHRASES
+            or len(value) < 2
+            or len(value) > 18
+            or any(marker in value for marker in ("三个核心词语", "有活没人干", "有人没活干"))
+        ):
+            continue
+        cleaned_candidates.append(value)
+        seen.add(value)
+
+    if cleaned_candidates:
+        return max(cleaned_candidates, key=topic_candidate_score)
+    return topic
+
+
 def _extract_dimension_names(question_data: dict[str, Any]) -> list[str]:
     """提取题目维度名，供模板补足场景动作时使用。"""
 
@@ -2054,10 +2352,10 @@ def clean_question_type(raw_type: str, header_description: str) -> str:
 def build_analysis_template_texts(question_data: dict[str, Any], mode: str) -> list[tuple[str, str, bool]]:
     """为综合分析/价值判断题生成中低档模板文本。"""
 
-    topic = infer_topic_phrase(question_data, generic=False)
+    topic = specific_sample_topic_phrase(question_data)
     topic2 = ordered_keywords(question_data, generic=False)[1:2]
     topic2_text = topic2[0] if topic2 else "现实需求"
-    aux_topic = infer_topic_phrase(question_data, generic=False)
+    aux_topic = topic
     province = question_data.get("province", "当地") or "当地"
     role_focus = infer_role_focus(question_data)
     if mode == "mid":
@@ -2066,16 +2364,16 @@ def build_analysis_template_texts(question_data: dict[str, Any], mode: str) -> l
                 (
                     f"我觉得{topic}这个问题方向上是成立的，它背后既有现实需要，也和{province}当前工作要求有关。 "
                     f"但如果只看到表面的积极意义，忽视{topic2_text}、基层承接能力和执行节奏，后面就容易出现推进变形、群众感受不强的问题。 "
-                    f"站在{role_focus}角度，回答时既要把基本判断讲清，也要把风险和短板点出来，最后落到摸清情况、结合岗位推进落实上。"
+                    f"站在{role_focus}角度，既要把基本判断讲清，也要把风险和短板点出来，最后落到摸清情况、结合岗位推进落实上。"
                 ),
                 "medium",
                 False,
             ),
             (
                 (
-                    f"这类题我一般会先作一个基本判断，就是{topic}不能简单否定，但也不能只停留在肯定层面。 "
+                    f"对{topic}，我会先作一个基本判断：不能简单否定，但也不能只停留在肯定层面。 "
                     f"如果后续落实时对{aux_topic}考虑不够细，对象差异、现实约束和执行重点没有分开讲，工作就容易看着热闹、实际一般。 "
-                    f"所以更稳妥的答法，是先亮明态度，再指出问题风险，最后补上{role_focus}中怎么分层推进、怎么把措施落到位。"
+                    f"所以要先亮明态度，再指出问题风险，最后补上{role_focus}中怎么分层推进、怎么把措施落到位。"
                 ),
                 "medium",
                 False,
@@ -2083,8 +2381,8 @@ def build_analysis_template_texts(question_data: dict[str, Any], mode: str) -> l
             (
                 (
                     f"在我看，{topic}不是一句口号题，关键在于既要看到它为什么要做，也要看到做偏了会带来什么问题。 "
-                    f"如果只讲意义，不讲{topic2_text}和现实风险，答案会发空；如果只挑毛病，不讲基本方向，也容易失衡。 "
-                    f"所以比较合适的结构，就是先作判断，再讲风险，最后回到{role_focus}需要抓住哪些措施落点。"
+                    f"如果只讲意义，不讲{topic2_text}和现实风险，推进就会发空；如果只挑毛病，不讲基本方向，也容易失衡。 "
+                    f"所以我会先作判断，再讲风险，最后回到{role_focus}需要抓住哪些措施落点。"
                 ),
                 "heavy",
                 False,
@@ -2127,7 +2425,7 @@ def build_organization_template_texts(question_data: dict[str, Any], mode: str) 
 
     slogan_question = is_slogan_organization_question(question_data)
     target_group = infer_target_group(question_data, generic=False)
-    topic = infer_topic_phrase(question_data, generic=False)
+    topic = specific_sample_topic_phrase(question_data)
     slogan_line = f"比如可以概括成“围绕{topic}，把实事办细、把服务做实”。"
     if slogan_question:
         if mode == "mid":
@@ -2324,7 +2622,7 @@ def build_scene_template_texts(question_data: dict[str, Any], mode: str) -> list
     """为现场模拟/宣讲表达类题生成中低档模板文本。"""
 
     target_group = infer_target_group(question_data, generic=False)
-    topic = infer_topic_phrase(question_data, generic=False)
+    topic = specific_sample_topic_phrase(question_data)
     role_focus = infer_role_focus(question_data)
     province = question_data.get("province", "当地") or "当地"
     if is_speech_scene(question_data):
@@ -2450,10 +2748,10 @@ def build_scene_template_texts(question_data: dict[str, Any], mode: str) -> list
         ]
     if mode == "mid":
         return [
-            (
                 (
-                    f"各位{target_group}，大家好。今天我主要想就{topic}和大家做一个简单说明。 "
-                    "我知道大家最关心的，往往不是口号，而是这件事会不会增加负担、影响原来的安排，所以我先把核心意思讲清楚，再把顾虑和基本做法说明白。 "
+                    (
+                        f"各位{target_group}，大家好。今天我主要想就{topic}和大家做一个简单说明。 "
+                        "我知道大家最关心的，往往不是口号，而是这件事会不会增加负担、影响原来的安排，所以我先把核心意思讲清楚，再把顾虑和基本做法说明白。 "
                     "能先试着推进的，我们就从容易操作的环节先做，不要求一下子铺得太满。 "
                     "如果现场还有没听明白的地方，我们后面也可以继续沟通。"
                 ),
@@ -2525,7 +2823,7 @@ def build_template_candidates(
 ) -> list[GeneratedSample]:
     """按题型走独立模板生成中低档样本。"""
 
-    family = detect_template_family(question_data)
+    family = resolve_sample_template_family(question_data)
     if family == "analysis":
         specs = build_analysis_template_texts(question_data, mode)
     elif family == "organization":
@@ -2719,6 +3017,59 @@ def build_fallback_candidates(
                 trim_chars=trim_chars,
                 sanitization=sanitization,
                 oral=oral,
+            )
+        )
+    return variants
+
+
+def build_jiangsu_mid_reference_candidates(
+    question_data: dict[str, Any],
+    question: QuestionDefinition,
+) -> list[GeneratedSample]:
+    """江苏中档样本只取少量较短的参考答案压缩候选，避免证据抽取被长文本拖垮。"""
+
+    sentences = split_answer_sentences(question_data["referenceAnswer"])
+    if len(sentences) <= 1:
+        return []
+
+    if resolve_sample_template_family(question_data) == "analysis":
+        specs = [
+            ("markers", 5, 220, "medium"),
+            ("spread", 5, 220, "medium"),
+            ("front_half", 5, 220, "medium"),
+        ]
+    else:
+        specs = [
+            ("markers", 5, 220, "medium"),
+            ("hybrid", 6, 220, "medium"),
+            ("spread", 5, 220, "medium"),
+        ]
+    variants: list[GeneratedSample] = []
+    seen_texts = set()
+    for strategy, count, trim_chars, sanitization in specs:
+        text = build_answer_variant(
+            question_data,
+            "mid",
+            strategy=strategy,
+            count=min(count, len(sentences)),
+            trim_chars=trim_chars,
+            sanitization=sanitization,
+            oral=False,
+        )
+        if not text or text in seen_texts or should_skip_candidate(text, question_data, "mid"):
+            continue
+        seen_texts.add(text)
+        variants.append(
+            GeneratedSample(
+                label="",
+                filename="",
+                text=text,
+                score=score_sample_deterministically(question, text),
+                strategy=f"jiangsu_mid_{strategy}",
+                count=len(split_answer_sentences(text)),
+                trim_chars=trim_chars,
+                sanitization=sanitization,
+                oral=False,
             )
         )
     return variants
@@ -2982,7 +3333,7 @@ def build_reference_samples(question_data: dict[str, Any]) -> tuple[dict[str, Ge
         oral=False,
     )
 
-    template_family = detect_template_family(question_data)
+    template_family = resolve_sample_template_family(question_data)
     if template_family in {"analysis", "organization"}:
         low_candidates = build_template_candidates(question_data, question, "low")
         mid_candidates = build_template_candidates(question_data, question, "mid")
@@ -2992,6 +3343,9 @@ def build_reference_samples(question_data: dict[str, Any]) -> tuple[dict[str, Ge
     else:
         low_candidates = []
         mid_candidates = []
+
+    if ACTIVE_PROFILE.name == "jiangsu_shiye" and template_family:
+        mid_candidates.extend(build_jiangsu_mid_reference_candidates(question_data, question))
 
     if not low_candidates:
         low_candidates = collect_generated_candidates(question_data, question, "low")
@@ -3170,6 +3524,8 @@ def build_initial_llm_expected_range(
         lower_bound=lower_bound,
         upper_bound=upper_bound,
     )
+    if level == "low":
+        llm_min = 0.0
     return round(llm_min, 1), round(llm_max, 1)
 
 
@@ -3217,13 +3573,26 @@ def build_regression_cases(
         upper_bound=round(high_llm_min - 0.5, 1),
         family=family,
     )
+    if ACTIVE_PROFILE.name == "jiangsu_shiye":
+        jiangsu_mid_slack = max(4.5, full_score * 0.18)
+        mid_llm_min = round(max(0.0, min(mid_llm_min, mid_sample.score - jiangsu_mid_slack)), 1)
+    low_llm_upper_bound = round(mid_llm_min - 0.5, 1)
+    if ACTIVE_PROFILE.name == "jiangsu_shiye":
+        low_upper_slack = max(3.5, full_score * 0.12)
+        low_llm_upper_bound = round(
+            min(
+                mid_sample.score - 0.5,
+                max(low_llm_upper_bound, low_sample.score + low_upper_slack),
+            ),
+            1,
+        )
     low_llm_min, low_llm_max = build_initial_llm_expected_range(
         "low",
         deterministic_min=low_min,
         deterministic_max=low_max,
         full_score=full_score,
         lower_bound=0.0,
-        upper_bound=round(mid_llm_min - 0.5, 1),
+        upper_bound=low_llm_upper_bound,
         family=family,
     )
 
@@ -3268,6 +3637,12 @@ def build_regression_cases(
     ]
 
 
+def clean_reference_answer_section(text: str) -> str:
+    """清理“核心采分/基准答案”拆行后残留的前缀。"""
+
+    return re.sub(r"^(?:核心采分)?基准答案\s*[：:]?\s*", "", text.strip())
+
+
 def parse_question_block(block: str, source_path: Path) -> ParsedQuestion:
     """把单个题目块解析成 QuestionDefinition 所需的字典。"""
 
@@ -3280,10 +3655,13 @@ def parse_question_block(block: str, source_path: Path) -> ParsedQuestion:
     sections = extract_sections(block)
 
     question_text = sections.get("题干", "").strip()
-    reference_answer = sections.get("核心采分基准答案", "").strip()
-    scoring_criteria = parse_scored_items(sections.get("得分标准", ""))
-    deduction_rules = parse_deduction_items(sections.get("扣分标准", ""))
+    reference_answer = clean_reference_answer_section(sections.get("核心采分基准答案", ""))
+    scoring_text = sections.get("得分标准", "")
     ai_text = sections.get("AI评分结构化数据", "")
+    scoring_criteria = parse_scored_items(scoring_text)
+    if not scoring_criteria:
+        scoring_criteria = build_fallback_scoring_items(scoring_text, ai_text)
+    deduction_rules = parse_deduction_items(sections.get("扣分标准", ""))
 
     if not question_text:
         raise ValueError(f"{question_id} 缺少题干")
@@ -3296,14 +3674,14 @@ def parse_question_block(block: str, source_path: Path) -> ParsedQuestion:
     full_score = resolve_full_score(
         question_text=question_text,
         header_description=header_description,
-        scoring_section_text=sections.get("得分标准", ""),
+        scoring_section_text=scoring_text,
         ai_text=ai_text,
         dimensions=dimensions,
     )
     dimensions = scale_dimensions_to_full_score(dimensions, full_score)
 
     source_document = infer_source_document(source_path)
-    province = extract_field(ai_text, FIELD_PATTERNS["province"]) or DEFAULT_PROVINCE
+    province = resolve_question_province(extract_field(ai_text, FIELD_PATTERNS["province"]))
     question_type = clean_question_type(
         extract_field(ai_text, FIELD_PATTERNS["type"]) or sections.get("题型定位", ""),
         header_description,
@@ -3353,6 +3731,15 @@ def should_replace(existing: ParsedQuestion, candidate: ParsedQuestion) -> bool:
     if candidate_priority != existing_priority:
         return candidate_priority > existing_priority
     return candidate.block_length > existing.block_length
+
+
+def is_skippable_question_block_error(block: str, error: Exception) -> bool:
+    """识别卷首套题摘要等没有正文的题号空块。"""
+
+    message = str(error)
+    if "缺少题干" not in message:
+        return False
+    return len(block) < 300 and not extract_sections(block)
 
 
 def prepare_output_dirs() -> None:
@@ -3406,6 +3793,8 @@ def write_summary(
     parsed_questions: dict[str, ParsedQuestion],
     duplicates: list[dict],
     sample_generation_summary: dict[str, dict[str, Any]],
+    skipped_blocks: list[dict] | None = None,
+    parse_failures: list[dict] | None = None,
 ) -> None:
     """输出导入摘要，便于核对。"""
 
@@ -3416,6 +3805,8 @@ def write_summary(
         "generated_question_count": len(parsed_questions),
         "generated_question_ids": sorted(parsed_questions),
         "duplicates": duplicates,
+        "skipped_blocks": skipped_blocks or [],
+        "parse_failures": parse_failures or [],
         "sample_generation": sample_generation_summary,
     }
     SUMMARY_PATH.write_text(
@@ -3432,6 +3823,8 @@ def run_profile_import(profile_name: str | ImportProfile) -> int:
 
     parsed_questions: dict[str, ParsedQuestion] = {}
     duplicates: list[dict] = []
+    skipped_blocks: list[dict] = []
+    parse_failures: list[dict] = []
 
     for source_path in SOURCE_FILES:
         if not source_path.exists():
@@ -3442,7 +3835,22 @@ def run_profile_import(profile_name: str | ImportProfile) -> int:
             source_path.name,
         )
         for block in iter_question_blocks(normalized_text):
-            parsed = parse_question_block(block, source_path)
+            try:
+                parsed = parse_question_block(block, source_path)
+            except Exception as exc:
+                header_match = HEADER_PATTERN.search(block)
+                question_id = normalize_question_id(header_match.group(1)) if header_match else ""
+                failure = {
+                    "question_id": question_id,
+                    "source": source_path.name,
+                    "reason": str(exc),
+                    "block_length": len(block),
+                }
+                if is_skippable_question_block_error(block, exc):
+                    skipped_blocks.append(failure)
+                    continue
+                parse_failures.append(failure)
+                continue
             question_id = parsed.data["id"]
             existing = parsed_questions.get(question_id)
             if existing is None:
@@ -3460,10 +3868,14 @@ def run_profile_import(profile_name: str | ImportProfile) -> int:
             if replace:
                 parsed_questions[question_id] = parsed
 
+    if not parsed_questions:
+        raise RuntimeError("未解析到任何有效题目")
+
     sample_generation_summary = write_question_files(parsed_questions)
-    write_summary(parsed_questions, duplicates, sample_generation_summary)
+    write_summary(parsed_questions, duplicates, sample_generation_summary, skipped_blocks, parse_failures)
 
     print(f"[{ACTIVE_PROFILE.name}] 导入完成，共生成 {len(parsed_questions)} 道题。")
+    print(f"跳过空题块: {len(skipped_blocks)}，解析失败: {len(parse_failures)}")
     print(f"题库 JSON 目录: {QUESTION_OUTPUT_DIR}")
     print(f"高/中/低样本目录: {SAMPLE_OUTPUT_DIR}")
     print(f"导入摘要: {SUMMARY_PATH}")

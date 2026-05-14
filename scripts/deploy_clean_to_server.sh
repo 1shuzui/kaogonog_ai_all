@@ -101,6 +101,11 @@ if [[ "${DEPLOY_BACKEND:-0}" == "1" ]]; then
     "$LOCAL_BACKEND_ARTIFACT/" \
     "$SERVER:$REMOTE_LATEST/backend/"
 
+  ssh "${SSH_OPTS[@]}" "$SERVER" "mkdir -p '$REMOTE_LATEST/ai_gongwu_backend/assets/questions'"
+  rsync -az --delete -e "$RSYNC_RSH" \
+    "$ROOT_DIR/ai_gongwu_backend/assets/questions/" \
+    "$SERVER:$REMOTE_LATEST/ai_gongwu_backend/assets/questions/"
+
   ssh "${SSH_OPTS[@]}" "$SERVER" "sudo systemctl restart civil-backend"
 fi
 
@@ -114,7 +119,6 @@ ssh "${SSH_OPTS[@]}" "$SERVER" "rm -rf \
   '$REMOTE_LATEST'/OPS_MANUAL.md \
   '$REMOTE_LATEST'/README_DEPLOY.md \
   '$REMOTE_LATEST'/操作手册_部署运维_MySQL_ONLY.md \
-  '$REMOTE_LATEST'/ai_gongwu_backend \
   '$REMOTE_LATEST'/config \
   '$REMOTE_LATEST'/data \
   '$REMOTE_LATEST'/frontend_h5 \
@@ -131,7 +135,7 @@ ssh "${SSH_OPTS[@]}" "$SERVER" "rm -rf \
 
 ssh "${SSH_OPTS[@]}" "$SERVER" "if grep -Eq '^DATABASE_URL=(mysql|mysql\\+)' '$REMOTE_LATEST/backend/.env'; then rm -f '$REMOTE_LATEST/backend/'*.db; fi"
 
-ssh "${SSH_OPTS[@]}" "$SERVER" "sudo nginx -t && for i in {1..20}; do curl -fsS http://127.0.0.1:8050/health >/dev/null 2>&1 && exit 0; sleep 1; done; curl -fsS http://127.0.0.1:8050/health >/dev/null"
+ssh "${SSH_OPTS[@]}" "$SERVER" "sudo nginx -t && for i in {1..90}; do curl -fsS http://127.0.0.1:8050/health >/dev/null 2>&1 && exit 0; sleep 1; done; curl -fsS http://127.0.0.1:8050/health >/dev/null"
 for i in {1..20}; do
   curl -fsS https://xzqianmianyuzhoukeji.com/api/health >/dev/null 2>&1 && break
   sleep 1

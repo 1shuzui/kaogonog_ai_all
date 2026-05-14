@@ -29,7 +29,7 @@ export async function parseExcelFile(file) {
             deducting: parseJsonField(row['扣分关键词'] || row['deductingKeywords'], []),
             bonus: parseJsonField(row['加分关键词'] || row['bonusKeywords'], [])
           }
-        }))
+        })).filter(item => item.stem)
 
         resolve(questions)
       } catch (err) {
@@ -50,7 +50,9 @@ export async function parseJsonFile(file) {
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target.result)
-        const questions = Array.isArray(data) ? data : (data.questions || [])
+        const questions = Array.isArray(data)
+          ? data
+          : (Array.isArray(data.questions) ? data.questions : (data?.stem || data?.question ? [data] : []))
         resolve(questions)
       } catch (err) {
         reject(new Error('JSON解析失败: ' + err.message))

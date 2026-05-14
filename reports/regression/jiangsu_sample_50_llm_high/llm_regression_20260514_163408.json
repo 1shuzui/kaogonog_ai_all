@@ -1,0 +1,1210 @@
+{
+  "generated_at": "20260514_163408",
+  "question_ids": [
+    "JS-CZ-JT-20170923-02",
+    "JS-HA-HY-20191215-02",
+    "JS-HA-HY-20191215-03",
+    "JS-HA-HY-20230611-02",
+    "JS-HA-HY-20230611-03",
+    "JS-HA-SY-20191221-03",
+    "JS-HA-XY-20240512-02",
+    "JS-HA-XY-20240512-03",
+    "JS-JT-20220731-03",
+    "JS-JT-20230514-02",
+    "JS-JT-20230514-03",
+    "JS-LY-20250622-02",
+    "JS-LY-20250622-03",
+    "JS-LYG-DH-20190526-01",
+    "JS-LYG-KFQ-20230225-03",
+    "JS-NT-RG-20240518-03",
+    "JS-SHENGJI-TK-20230520-01",
+    "JS-SQ-SH20240622-01",
+    "JS-SQ-SY-20200808-03",
+    "JS-SQ-SY20250524-01",
+    "JS-SS-DSJ20240525-01",
+    "JS-SZ-20170513-01",
+    "JS-SZ-SS20240615-03",
+    "JS-TX-20201018-03",
+    "JS-TX-WS-20231119-03",
+    "JS-TZ-HL-20221030-01",
+    "JS-TZ-HL-20221030-02",
+    "JS-TZ-HL20240721-03",
+    "JS-TZ-HL20240921-02",
+    "JS-TZ-HL20240921-XW-02",
+    "JS-TZ-JJ-20230715-01",
+    "JS-TZ-TX-20230715-02",
+    "JS-TZ-XH-20220917-03",
+    "JS-WX-20171021-03",
+    "JS-WX-LX-20230729-01",
+    "JS-WX-LX-20230729-02",
+    "JS-WX-YX-20210605-02",
+    "JS-WX-YX-20210605-03",
+    "JS-YC-BH20240331-02",
+    "JS-YC-BH20240526-02",
+    "JS-YC-DF-20211204-01",
+    "JS-YC-DF-20211204-03",
+    "JS-YC-DT20240518-02",
+    "JS-YC-FN-20220731-02",
+    "JS-YC-JH20240706-03",
+    "JS-YC-XS20241222-01",
+    "JS-YZ-HJ20250329-02",
+    "JS-ZJ-DG-20240414-02",
+    "JS-ZJ-DG-20240414-03",
+    "JS-ZJ-JR-20170121-01"
+  ],
+  "persist": false,
+  "writeback": false,
+  "repeat": 1,
+  "summary": {
+    "total": 50,
+    "pass": 40,
+    "fail": 0,
+    "error": 10,
+    "skip": 0
+  },
+  "rows": [
+    {
+      "question_id": "JS-CZ-JT-20170923-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-CZ-JT-20170923-02/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 我认为产生这种现象的根源主要有以下四个方面",
+        "参考答案相似度校准已将总分下限抬至 29.0。",
+        "模型总分 26.0 与维度汇总 29.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-HA-HY-20191215-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-HA-HY-20191215-02/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "第一阶段证据无法在原文中命中，已忽略: 第一，高位统筹……第二，全域精准发动……第三，规范闭环流程……第四，多维立体表彰……第五，长效赋能发展",
+        "参考答案相似度校准已将总分下限抬至 29.0。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-HA-HY-20191215-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-HA-HY-20191215-03/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 29.0。",
+        "模型总分 25.5 与维度汇总 29.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-HA-HY-20230611-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_jiangsu_shiye/JS-HA-HY-20230611-02/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": null,
+      "actual_band": "执行失败",
+      "status": "ERROR",
+      "validation_issue_count": 0,
+      "notes": [
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [],
+      "fallback_used": false,
+      "error": "检测到回退到确定性评分，本次不计入真实 LLM 回归。"
+    },
+    {
+      "question_id": "JS-HA-HY-20230611-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_jiangsu_shiye/JS-HA-HY-20230611-03/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": null,
+      "actual_band": "执行失败",
+      "status": "ERROR",
+      "validation_issue_count": 0,
+      "notes": [
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [],
+      "fallback_used": false,
+      "error": "检测到回退到确定性评分，本次不计入真实 LLM 回归。"
+    },
+    {
+      "question_id": "JS-HA-SY-20191221-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-HA-SY-20191221-03/reference_high.txt",
+      "level": "high",
+      "expected_range": "26.0-29.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 26.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 另一方面平和跟路人甲沟通",
+        "参考答案相似度校准已将总分下限抬至 26.0。",
+        "模型总分 21.0 与维度汇总 26.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        26.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-HA-XY-20240512-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-HA-XY-20240512-02/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 29.0。",
+        "模型总分 26.5 与维度汇总 29.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-HA-XY-20240512-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-HA-XY-20240512-03/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 7,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 但品牌推广必须以过硬的产品品质、完善的产业配套为基础",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 制定统一的养殖技术规范、质量安全标准",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 引进和培育龙虾预制菜、调味品、休闲食品加工企业",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 一是积极争取中央、省级涉农产业专项扶持资金、乡村振兴专项债",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 一是建议成立由县主要领导牵头的龙虾产业提质升级工作专班",
+        "参考答案相似度校准已将总分下限抬至 29.0。",
+        "模型总分 17.0 与维度汇总 29.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-JT-20220731-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-JT-20220731-03/reference_high.txt",
+      "level": "high",
+      "expected_range": "28.0-31.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 28.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 4,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 主动向领导请教新岗位的工作重点、核心要求",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 定期向领导汇报自己的工作进展、学习情况",
+        "参考答案相似度校准已将总分下限抬至 28.0。",
+        "模型总分 24.3 与维度汇总 28.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        28.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-JT-20230514-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-JT-20230514-02/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 向考察组赠送大桥建设成果汇编、经验手册等资料",
+        "参考答案相似度校准已将总分下限抬至 29.0。",
+        "模型总分 20.5 与维度汇总 29.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-JT-20230514-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_jiangsu_shiye/JS-JT-20230514-03/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": null,
+      "actual_band": "执行失败",
+      "status": "ERROR",
+      "validation_issue_count": 0,
+      "notes": [
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [],
+      "fallback_used": false,
+      "error": "检测到回退到确定性评分，本次不计入真实 LLM 回归。"
+    },
+    {
+      "question_id": "JS-LY-20250622-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_jiangsu_shiye/JS-LY-20250622-02/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": null,
+      "actual_band": "执行失败",
+      "status": "ERROR",
+      "validation_issue_count": 0,
+      "notes": [
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [],
+      "fallback_used": false,
+      "error": "检测到回退到确定性评分，本次不计入真实 LLM 回归。"
+    },
+    {
+      "question_id": "JS-LY-20250622-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_jiangsu_shiye/JS-LY-20250622-03/reference_high.txt",
+      "level": "high",
+      "expected_range": "28.0-31.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": null,
+      "actual_band": "执行失败",
+      "status": "ERROR",
+      "validation_issue_count": 0,
+      "notes": [
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [],
+      "fallback_used": false,
+      "error": "检测到回退到确定性评分，本次不计入真实 LLM 回归。"
+    },
+    {
+      "question_id": "JS-LYG-DH-20190526-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-LYG-DH-20190526-01/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 5,
+      "notes": [
+        "第一阶段证据抽取结果无效，已回退到规则型证据整理。",
+        "证据包为空，第二阶段评分将只能做极保守判断。",
+        "参考答案相似度校准已将总分下限抬至 29.0。",
+        "模型总分 0.0 与维度汇总 29.0 不一致，已采用维度汇总。",
+        "最终结果未保留到可核验的直接引语证据。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-LYG-KFQ-20230225-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-LYG-KFQ-20230225-03/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 30.3,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        30.3
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-NT-RG-20240518-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-NT-RG-20240518-03/reference_high.txt",
+      "level": "high",
+      "expected_range": "28.0-31.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 28.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 还可以主动申请参与基层调研、民生项目",
+        "参考答案相似度校准已将总分下限抬至 28.0。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        28.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-SHENGJI-TK-20230520-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-SHENGJI-TK-20230520-01/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 5,
+      "notes": [
+        "第一阶段证据无法在原文中命中，已忽略: 公共服务必须完成从‘管理本位’到‘服务本位’的理念转型",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 这也是江苏优化营商环境",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 习近平总书记强调",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 为江苏打造一流营商环境、推进政府治理体系和治理能力现代化、谱写",
+        "参考答案相似度校准已将总分下限抬至 29.0。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-SQ-SH20240622-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-SQ-SH20240622-01/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 29.0。",
+        "模型总分 26.0 与维度汇总 29.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-SQ-SY-20200808-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-SQ-SY-20200808-03/reference_high.txt",
+      "level": "high",
+      "expected_range": "28.0-31.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 28.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 4,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 联合县网信、公安部门",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 系统梳理此次舆情从发生、发展到平息的全过程",
+        "参考答案相似度校准已将总分下限抬至 28.0。",
+        "模型总分 22.0 与维度汇总 28.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        28.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-SQ-SY20250524-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-SQ-SY20250524-01/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 5,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 99%的抽检合格率与1.2万件群众投诉的鲜明反差",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 依托江苏12315、12345政务热线",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 由运营企业承担计量器具合格的举证责任",
+        "参考答案相似度校准已将总分下限抬至 29.0。",
+        "模型总分 26.0 与维度汇总 29.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-SS-DSJ20240525-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-SS-DSJ20240525-01/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 在岗位上实现个人价值与事业发展的同频共振",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-SZ-20170513-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-SZ-20170513-01/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 6,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 作为一名即将走上苏州市属事业单位岗位的年轻人",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 习近平总书记指出",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 对于苏州市属事业单位工作人员来说",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 比如提前10分钟到岗、每天下班前总结当天工作、每周学习一项新技能",
+        "参考答案相似度校准已将总分下限抬至 29.0。",
+        "模型总分 26.5 与维度汇总 29.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-SZ-SS20240615-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-SZ-SS20240615-03/reference_high.txt",
+      "level": "high",
+      "expected_range": "28.0-31.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 31.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 包含利息收入、捐赠收入、租金收入、零星合规收入等补充来源",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 以收付实现制为基础",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        31.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-TX-20201018-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-TX-20201018-03/reference_high.txt",
+      "level": "high",
+      "expected_range": "28.0-31.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 28.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 28.0。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        28.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-TX-WS-20231119-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-TX-WS-20231119-03/reference_high.txt",
+      "level": "high",
+      "expected_range": "28.0-31.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 28.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 28.0。",
+        "模型总分 24.0 与维度汇总 28.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        28.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-TZ-HL-20221030-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-TZ-HL-20221030-01/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 把吃苦耐劳、坚韧不拔、永不懈怠的精神",
+        "参考答案相似度校准已将总分下限抬至 29.0。",
+        "模型总分 25.3 与维度汇总 29.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-TZ-HL-20221030-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-TZ-HL-20221030-02/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 29.0。",
+        "模型总分 22.8 与维度汇总 29.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-TZ-HL20240721-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-TZ-HL20240721-03/reference_high.txt",
+      "level": "high",
+      "expected_range": "28.0-31.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 28.5,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        28.5
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-TZ-HL20240921-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-TZ-HL20240921-02/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 4,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 乡村散养犬、看家犬普遍存在",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 依托村广播、宣传栏、村民微信群、新时代文明实践站",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 结合网格员、村干部日常巡查",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 联合派出所、城管、村委多方力量",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        32.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-TZ-HL20240921-XW-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-TZ-HL20240921-XW-02/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 结合海陵本土的溱湖湿地、稻河古街、乡村农耕文化、红色文化等特色资源",
+        "参考答案相似度校准已将总分下限抬至 29.0。",
+        "模型总分 20.0 与维度汇总 29.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-TZ-JJ-20230715-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-TZ-JJ-20230715-01/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 5,
+      "notes": [
+        "第一阶段证据抽取结果无效，已回退到规则型证据整理。",
+        "证据包为空，第二阶段评分将只能做极保守判断。",
+        "参考答案相似度校准已将总分下限抬至 29.0。",
+        "模型总分 0.0 与维度汇总 29.0 不一致，已采用维度汇总。",
+        "最终结果未保留到可核验的直接引语证据。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-TZ-TX-20230715-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_jiangsu_shiye/JS-TZ-TX-20230715-02/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": null,
+      "actual_band": "执行失败",
+      "status": "ERROR",
+      "validation_issue_count": 0,
+      "notes": [
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [],
+      "fallback_used": false,
+      "error": "检测到回退到确定性评分，本次不计入真实 LLM 回归。"
+    },
+    {
+      "question_id": "JS-TZ-XH-20220917-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-TZ-XH-20220917-03/reference_high.txt",
+      "level": "high",
+      "expected_range": "28.0-31.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 28.2,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        28.2
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-WX-20171021-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-WX-20171021-03/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 5,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 以真诚的态度、务实的举措",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 以及反馈方式（如电话、短信、公众号留言等）",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 向群众提供我的办公电话和单位官方反馈方式",
+        "参考答案相似度校准已将总分下限抬至 29.0。",
+        "模型总分 25.0 与维度汇总 29.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-WX-LX-20230729-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-WX-LX-20230729-01/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 公共服务重短期突击、轻长效建设",
+        "参考答案相似度校准已将总分下限抬至 29.0。",
+        "模型总分 22.0 与维度汇总 29.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-WX-LX-20230729-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-WX-LX-20230729-02/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 5,
+      "notes": [
+        "第一阶段证据抽取结果无效，已回退到规则型证据整理。",
+        "证据包为空，第二阶段评分将只能做极保守判断。",
+        "参考答案相似度校准已将总分下限抬至 29.0。",
+        "模型总分 0.0 与维度汇总 29.0 不一致，已采用维度汇总。",
+        "最终结果未保留到可核验的直接引语证据。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-WX-YX-20210605-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-WX-YX-20210605-02/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 29.0。",
+        "模型总分 22.0 与维度汇总 29.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-WX-YX-20210605-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-WX-YX-20210605-03/reference_high.txt",
+      "level": "high",
+      "expected_range": "28.0-31.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 28.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 4,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 联系负责接送的车辆司机",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 多渠道全覆盖通知",
+        "参考答案相似度校准已将总分下限抬至 28.0。",
+        "模型总分 18.0 与维度汇总 28.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        28.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-YC-BH20240331-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-YC-BH20240331-02/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 4,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 破解信息不对称的行业顽疾",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 由维修商家承担服务合规、收费合理的举证责任",
+        "参考答案相似度校准已将总分下限抬至 29.0。",
+        "模型总分 24.0 与维度汇总 29.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-YC-BH20240526-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-YC-BH20240526-02/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 4,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 整合我县社保医保查询缴纳、证件办理预约、涉农补贴申领、不动产登记查询等高频事项",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 建立常态化运维管理机制",
+        "参考答案相似度校准已将总分下限抬至 29.0。",
+        "模型总分 20.0 与维度汇总 29.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-YC-DF-20211204-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-YC-DF-20211204-01/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 6,
+      "notes": [
+        "第一阶段证据维度 [站位与风险认知] 已归一到 [政治站位与风险认知]。",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 遏制违规行为扩散",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 实现涉案主体全锁定",
+        "参考答案相似度校准已将总分下限抬至 29.0。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-YC-DF-20211204-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-YC-DF-20211204-03/reference_high.txt",
+      "level": "high",
+      "expected_range": "28.0-31.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 31.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 窗口岗位真的不是大家想的那样“体面风光、手握特权”",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        31.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-YC-DT20240518-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_jiangsu_shiye/JS-YC-DT20240518-02/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": null,
+      "actual_band": "执行失败",
+      "status": "ERROR",
+      "validation_issue_count": 0,
+      "notes": [
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [],
+      "fallback_used": false,
+      "error": "检测到回退到确定性评分，本次不计入真实 LLM 回归。"
+    },
+    {
+      "question_id": "JS-YC-FN-20220731-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-YC-FN-20220731-02/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 30.1,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        30.1
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-YC-JH20240706-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-YC-JH20240706-03/reference_high.txt",
+      "level": "high",
+      "expected_range": "28.0-31.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 28.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 28.0。",
+        "模型总分 25.0 与维度汇总 28.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        28.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-YC-XS20241222-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-YC-XS20241222-01/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "参考答案相似度校准已将总分下限抬至 29.0。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-YZ-HJ20250329-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_jiangsu_shiye/JS-YZ-HJ20250329-02/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": null,
+      "actual_band": "执行失败",
+      "status": "ERROR",
+      "validation_issue_count": 0,
+      "notes": [
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [],
+      "fallback_used": false,
+      "error": "检测到回退到确定性评分，本次不计入真实 LLM 回归。"
+    },
+    {
+      "question_id": "JS-ZJ-DG-20240414-02",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_jiangsu_shiye/JS-ZJ-DG-20240414-02/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": null,
+      "actual_band": "执行失败",
+      "status": "ERROR",
+      "validation_issue_count": 0,
+      "notes": [
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [],
+      "fallback_used": false,
+      "error": "检测到回退到确定性评分，本次不计入真实 LLM 回归。"
+    },
+    {
+      "question_id": "JS-ZJ-DG-20240414-03",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_jiangsu_shiye/JS-ZJ-DG-20240414-03/reference_high.txt",
+      "level": "high",
+      "expected_range": "30.0-33.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": null,
+      "actual_band": "执行失败",
+      "status": "ERROR",
+      "validation_issue_count": 0,
+      "notes": [
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [],
+      "fallback_used": false,
+      "error": "检测到回退到确定性评分，本次不计入真实 LLM 回归。"
+    },
+    {
+      "question_id": "JS-ZJ-JR-20170121-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-ZJ-JR-20170121-01/reference_high.txt",
+      "level": "high",
+      "expected_range": "29.0-32.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "高分标杆",
+      "actual_score": 29.2,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "attempt_scores": [
+        29.2
+      ],
+      "fallback_used": false,
+      "error": ""
+    }
+  ]
+}

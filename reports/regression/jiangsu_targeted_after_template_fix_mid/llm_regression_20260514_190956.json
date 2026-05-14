@@ -1,0 +1,165 @@
+{
+  "generated_at": "20260514_190956",
+  "question_ids": [
+    "JS-HA-HY-20191215-03",
+    "JS-HA-HY-20230611-02",
+    "JS-JT-20230514-03",
+    "JS-LYG-KFQ-20230225-03",
+    "JS-NT-RG-20240518-03",
+    "JS-SQ-SH20240622-01"
+  ],
+  "persist": false,
+  "writeback": false,
+  "repeat": 1,
+  "summary": {
+    "total": 6,
+    "pass": 3,
+    "fail": 2,
+    "error": 1,
+    "skip": 0
+  },
+  "rows": [
+    {
+      "question_id": "JS-HA-HY-20191215-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-HA-HY-20191215-03/reference_mid.txt",
+      "level": "mid",
+      "expected_range": "13.4-19.8",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 17.4,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 6,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 这次评选全程有严格流程、专门评审组还有群众投票",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 不如把心思用在正道上",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 必须坚守公平公正底线、遵守廉洁自律各项规定",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 我可以帮你捋思路、提建议、打磨参评亮点",
+        "通用校准将总分上限压至 17.4，避免中低质量答案被模型虚高。",
+        "模型总分 28.4 与维度汇总 17.4 不一致，已采用维度汇总。",
+        "基于高分答案程序化压缩生成；策略=fallback_spread，句数=20，截断=none，关键词削弱=medium。"
+      ],
+      "attempt_scores": [
+        17.4
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-HA-HY-20230611-02",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-HA-HY-20230611-02/reference_mid.txt",
+      "level": "mid",
+      "expected_range": "12.0-18.4",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 0.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 3,
+      "notes": [
+        "第一阶段证据抽取结果无效，已回退到规则型证据整理。",
+        "证据包为空，第二阶段评分将只能做极保守判断。",
+        "最终结果未保留到可核验的直接引语证据。",
+        "基于高分答案程序化压缩生成；策略=fallback_spread，句数=11，截断=none，关键词削弱=medium。"
+      ],
+      "attempt_scores": [
+        0.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-JT-20230514-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "assets/regression_samples/generated_jiangsu_shiye/JS-JT-20230514-03/reference_mid.txt",
+      "level": "mid",
+      "expected_range": "14.0-20.0",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": null,
+      "actual_band": "执行失败",
+      "status": "ERROR",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化压缩生成；策略=fallback_front_half，句数=15，截断=320，关键词削弱=medium。"
+      ],
+      "attempt_scores": [],
+      "fallback_used": false,
+      "error": "检测到回退到确定性评分，本次不计入真实 LLM 回归。"
+    },
+    {
+      "question_id": "JS-LYG-KFQ-20230225-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-LYG-KFQ-20230225-03/reference_mid.txt",
+      "level": "mid",
+      "expected_range": "13.3-19.7",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 0.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 3,
+      "notes": [
+        "第一阶段证据抽取结果无效，已回退到规则型证据整理。",
+        "证据包为空，第二阶段评分将只能做极保守判断。",
+        "最终结果未保留到可核验的直接引语证据。",
+        "基于高分答案程序化压缩生成；策略=fallback_front_half，句数=22，截断=320，关键词削弱=medium。"
+      ],
+      "attempt_scores": [
+        0.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-NT-RG-20240518-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-NT-RG-20240518-03/reference_mid.txt",
+      "level": "mid",
+      "expected_range": "10.3-16.3",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 13.8,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 关系到上级的惠民政策能不能真正在如皋落地见效",
+        "通用校准将总分上限压至 13.8，避免中低质量答案被模型虚高。",
+        "模型总分 19.0 与维度汇总 13.8 不一致，已采用维度汇总。",
+        "基于高分答案程序化压缩生成；策略=fallback_hybrid，句数=16，截断=320，关键词削弱=light。"
+      ],
+      "attempt_scores": [
+        13.8
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-SQ-SH20240622-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-SQ-SH20240622-01/reference_mid.txt",
+      "level": "mid",
+      "expected_range": "14.5-20.5",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 18.0,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 部分岗位工作环境相对艰苦、技能要求高",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 部分群体缺乏专业技能、就业观念保守",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 让农村转移劳动力、返乡青年、高校毕业生等群体在泗洪实现就业创业",
+        "基于高分答案程序化压缩生成；策略=fallback_front_half，句数=16，截断=320，关键词削弱=medium。"
+      ],
+      "attempt_scores": [
+        18.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    }
+  ]
+}

@@ -1,0 +1,157 @@
+{
+  "generated_at": "20260514_195257",
+  "question_ids": [
+    "JS-HA-HY-20191215-03",
+    "JS-HA-HY-20230611-02",
+    "JS-JT-20230514-03",
+    "JS-LYG-KFQ-20230225-03",
+    "JS-NT-RG-20240518-03",
+    "JS-SQ-SH20240622-01"
+  ],
+  "persist": false,
+  "writeback": false,
+  "repeat": 1,
+  "summary": {
+    "total": 6,
+    "pass": 6,
+    "fail": 0,
+    "error": 0,
+    "skip": 0
+  },
+  "rows": [
+    {
+      "question_id": "JS-HA-HY-20191215-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-HA-HY-20191215-03/reference_mid.txt",
+      "level": "mid",
+      "expected_range": "6.2-15.4",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 13.0,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "通用校准将总分上限压至 13.0，避免中低质量答案被模型虚高。",
+        "模型总分 22.0 与维度汇总 13.0 不一致，已采用维度汇总。",
+        "基于高分答案程序化压缩生成；策略=jiangsu_mid_hybrid，句数=9，截断=220，关键词削弱=medium。"
+      ],
+      "attempt_scores": [
+        13.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-HA-HY-20230611-02",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-HA-HY-20230611-02/reference_mid.txt",
+      "level": "mid",
+      "expected_range": "7.2-16.4",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 13.9,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化压缩生成；策略=jiangsu_mid_hybrid，句数=9，截断=220，关键词削弱=medium。"
+      ],
+      "attempt_scores": [
+        13.9
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-JT-20230514-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-JT-20230514-03/reference_mid.txt",
+      "level": "mid",
+      "expected_range": "8.0-17.4",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 14.8,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "第一阶段证据无法在原文中命中，已忽略: 一是技术创新引领...二是模式创新引领...三是绿色发展引领",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 促进交通与物流、旅游、产业、数字经济深度融合",
+        "通用校准将总分上限压至 14.8，避免中低质量答案被模型虚高。",
+        "基于高分答案程序化压缩生成；策略=jiangsu_mid_markers，句数=7，截断=220，关键词削弱=medium。"
+      ],
+      "attempt_scores": [
+        14.8
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-LYG-KFQ-20230225-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-LYG-KFQ-20230225-03/reference_mid.txt",
+      "level": "mid",
+      "expected_range": "6.0-15.2",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 12.5,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化压缩生成；策略=jiangsu_mid_markers，句数=7，截断=220，关键词削弱=medium。"
+      ],
+      "attempt_scores": [
+        12.5
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-NT-RG-20240518-03",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-NT-RG-20240518-03/reference_mid.txt",
+      "level": "mid",
+      "expected_range": "4.7-13.7",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 11.2,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 暂时解决不了的也要把后续联系和跟进方式交代出来",
+        "通用校准将总分上限压至 11.2，避免中低质量答案被模型虚高。",
+        "模型总分 18.0 与维度汇总 11.2 不一致，已采用维度汇总。",
+        "基于高分答案程序化压缩生成；策略=jiangsu_mid_hybrid，句数=9，截断=220，关键词削弱=medium。"
+      ],
+      "attempt_scores": [
+        11.2
+      ],
+      "fallback_used": false,
+      "error": ""
+    },
+    {
+      "question_id": "JS-SQ-SH20240622-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_shiye/JS-SQ-SH20240622-01/reference_mid.txt",
+      "level": "mid",
+      "expected_range": "5.1-14.9",
+      "expectation_source": "llmExpected",
+      "expected_band": "低分/偏弱",
+      "actual_score": 10.0,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化压缩生成；策略=jiangsu_mid_markers，句数=7，截断=220，关键词削弱=medium。"
+      ],
+      "attempt_scores": [
+        10.0
+      ],
+      "fallback_used": false,
+      "error": ""
+    }
+  ]
+}
