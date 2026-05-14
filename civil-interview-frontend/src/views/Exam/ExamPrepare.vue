@@ -184,6 +184,8 @@ let countdownTimer = null
 let waitTimer = null
 let pendingQuestions = null
 const DEFAULT_EXAM_QUESTION_COUNT = 5
+const JIANGSU_MOCK_QUESTION_COUNT = 4
+const JIANGSU_MOCK_TIMING_MODE = 'jiangsu_5_15'
 const RANDOM_FETCH_BUFFER = 6
 const RANDOM_FETCH_ATTEMPTS = 3
 const RANDOM_DIMENSION_KEY = 'random'
@@ -209,6 +211,9 @@ const selectedSpecificDimensions = computed(() => (
 ))
 const selectedSpecificDimensionCount = computed(() => selectedSpecificDimensions.value.length)
 const selectedDimensionParam = computed(() => selectedSpecificDimensions.value.join(','))
+const mockQuestionCount = computed(() => (
+  userStore.selectedProvince === 'jiangsu' ? JIANGSU_MOCK_QUESTION_COUNT : DEFAULT_EXAM_QUESTION_COUNT
+))
 
 function handleDimensionFiltersChange(values = []) {
   const selected = Array.isArray(values) ? values.filter(Boolean) : []
@@ -224,6 +229,14 @@ function applyUserPracticePreferencesToQuestions(questions = []) {
     ...question,
     prepTime: prepTime || Number(question?.prepTime || 90),
     answerTime: answerTime || Number(question?.answerTime || 180)
+  }))
+}
+
+function applyMockTimingMode(questions = []) {
+  if (examMode.value !== 'mock' || userStore.selectedProvince !== 'jiangsu') return questions
+  return questions.slice(0, JIANGSU_MOCK_QUESTION_COUNT).map((question) => ({
+    ...question,
+    mockTimingMode: JIANGSU_MOCK_TIMING_MODE
   }))
 }
 
@@ -483,7 +496,7 @@ async function enterExam() {
   const targetQuestionCount = isTrialEntry.value
     ? 1
     : examMode.value === 'mock'
-      ? DEFAULT_EXAM_QUESTION_COUNT
+      ? mockQuestionCount.value
       : freeQuestionCount
 
   try {
@@ -536,7 +549,7 @@ async function enterExam() {
       return
     }
 
-    questions = applyUserPracticePreferencesToQuestions(questions)
+    questions = applyMockTimingMode(applyUserPracticePreferencesToQuestions(questions))
 
     recorder.destroyStream()
     examStore.setVideoEnabled(videoEnabled.value)

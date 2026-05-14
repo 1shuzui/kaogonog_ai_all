@@ -35,13 +35,27 @@
         <text>练习模式</text>
       </view>
       <view class="mode-grid">
-        <view class="mode-card" :class="{ 'mode-card--active': mode === 'free' }" @tap="mode = 'free'">
+        <view class="mode-card" :class="{ 'mode-card--active': mode === 'free' }" @tap.stop="selectFreeMode">
           <text class="mode-card__title">自由练习</text>
           <text class="mode-card__desc">适合单题拆解和即时复盘</text>
         </view>
-        <view class="mode-card" :class="{ 'mode-card--active': mode === 'mock' }" @tap="mode = 'mock'">
+        <view class="mode-card" :class="{ 'mode-card--active': mode === 'mock' }" @tap.stop="selectMockMode">
           <text class="mode-card__title">模拟面试</text>
           <text class="mode-card__desc">按准备和作答计时推进</text>
+        </view>
+      </view>
+
+      <view class="config-row media-row">
+        <text>录制方式</text>
+      </view>
+      <view class="mode-grid">
+        <view class="mode-card" :class="{ 'mode-card--active': mediaMode === 'audio' }" @tap.stop="selectAudioMode">
+          <text class="mode-card__title">仅录音</text>
+          <text class="mode-card__desc">不启用摄像头，真机调试更稳定</text>
+        </view>
+        <view class="mode-card" :class="{ 'mode-card--active': mediaMode === 'video' }" @tap.stop="selectVideoMode">
+          <text class="mode-card__title">录像+录音</text>
+          <text class="mode-card__desc">启用前置摄像头，同步记录视频</text>
         </view>
       </view>
 
@@ -76,8 +90,8 @@
     <button
       v-if="!readonlyMode"
       class="primary-button"
-      :disabled="loading || accessLoading || asrUnavailable"
-      :loading="loading || accessLoading"
+      :disabled="loading || asrUnavailable"
+      :loading="loading"
       @tap="startPractice"
     >
       {{ asrUnavailable ? '语音服务未就绪' : '进入考场' }}
@@ -105,9 +119,14 @@ const questionBankStore = useQuestionBankStore()
 const subscriptionStore = useSubscriptionStore()
 const userStore = useUserStore()
 const DEFAULT_EXAM_QUESTION_COUNT = 5
+const JIANGSU_MOCK_QUESTION_COUNT = 4
+const JIANGSU_MOCK_TIMING_MODE = 'jiangsu_5_15'
 const MAX_FREE_QUESTION_COUNT = 10
+const STATE_REFRESH_TIMEOUT_MS = 6000
+const ENTER_ROOM_TIMEOUT_MS = 10000
 const count = ref(DEFAULT_EXAM_QUESTION_COUNT)
 const mode = ref('free')
+const mediaMode = ref('audio')
 const selectedDimensions = ref(['random'])
 const loading = ref(false)
 const accessLoading = ref(false)
@@ -135,6 +154,9 @@ const questionCategoryOptions = [
 const showPracticeConfig = computed(() => mode.value === 'free')
 const selectedSpecificDimensions = computed(() => selectedDimensions.value.filter((item) => item && item !== RANDOM_DIMENSION_KEY))
 const selectedDimensionParam = computed(() => selectedSpecificDimensions.value.join(','))
+const mockQuestionCount = computed(() => (
+  userStore.selectedProvince === 'jiangsu' ? JIANGSU_MOCK_QUESTION_COUNT : DEFAULT_EXAM_QUESTION_COUNT
+))
 const selectedCategoryName = computed(() => {
   if (!selectedSpecificDimensions.value.length) return '随机题型'
   const names = selectedSpecificDimensions.value
@@ -154,31 +176,86 @@ function applyUserPracticePreferencesToQuestions(questions = []) {
   }))
 }
 
+function applyMockTimingMode(questions = []) {
+  if (mode.value !== 'mock' || userStore.selectedProvince !== 'jiangsu') return questions
+  return questions.slice(0, JIANGSU_MOCK_QUESTION_COUNT).map((question) => ({
+    ...question,
+    mockTimingMode: JIANGSU_MOCK_TIMING_MODE
+  }))
+}
+
 onLoad((query) => {
+  if (String(query?.mode || '') === 'mock') {
+    mode.value = 'mock'
+  } else if (String(query?.mode || '') === 'free') {
+    mode.value = 'free'
+  }
+  if (String(query?.media || '') === 'video') {
+    mediaMode.value = 'video'
+  } else if (String(query?.media || '') === 'audio') {
+    mediaMode.value = 'audio'
+  }
   const requestedTrial = String(query?.trial || '') === '1'
   trial.value = requestedTrial && !hasFullAccess.value
   if (trial.value) count.value = 1
 })
 
 onShow(() => {
+  loading.value = false
+  accessLoading.value = false
+  hideLoading()
   refreshAccessState().catch(() => null)
   refreshAsrStatus().catch(() => null)
 })
 
-async function refreshAccessState() {
+function withTimeout(promise, timeoutMs, fallback = null) {
+  return new Promise((resolve) => {
+    let settled = false
+    const timer = setTimeout(() => {
+      if (settled) return
+      settled = true
+      resolve(fallback)
+    }, timeoutMs)
+
+    Promise.resolve(promise)
+      .then((value) => {
+        if (settled) return
+        settled = true
+        clearTimeout(timer)
+        resolve(value)
+      })
+      .catch(() => {
+        if (settled) return
+        settled = true
+        clearTimeout(timer)
+        resolve(fallback)
+      })
+  })
+}
+
+async function refreshAccessState(options = {}) {
   if (!userStore.isAuthenticated) return false
+  const timeoutMs = Number(options.timeout || STATE_REFRESH_TIMEOUT_MS)
   accessLoading.value = true
   try {
-    await Promise.allSettled([
-      userStore.loadUserInfo(),
-      subscriptionStore.refresh({ skipErrorHandler: true })
-    ])
+    await withTimeout(
+      Promise.allSettled([
+        userStore.loadUserInfo(),
+        subscriptionStore.refresh({ skipErrorHandler: true })
+      ]),
+      timeoutMs,
+      null
+    )
     if (hasFullAccess.value && trial.value) {
       trial.value = false
       count.value = DEFAULT_EXAM_QUESTION_COUNT
     }
     if (trial.value) {
-      trialStatus.value = await getTrialStatus({ skipErrorHandler: true }).catch(() => null)
+      trialStatus.value = await withTimeout(
+        getTrialStatus({ skipErrorHandler: true }),
+        timeoutMs,
+        null
+      )
     }
     return hasFullAccess.value
   } finally {
@@ -186,9 +263,30 @@ async function refreshAccessState() {
   }
 }
 
-async function refreshAsrStatus() {
+async function refreshAsrStatus(options = {}) {
   if (!userStore.isAuthenticated) return
-  asrStatus.value = await getAsrStatus({ skipErrorHandler: true }).catch(() => null)
+  const timeoutMs = Number(options.timeout || STATE_REFRESH_TIMEOUT_MS)
+  asrStatus.value = await withTimeout(
+    getAsrStatus({ skipErrorHandler: true }),
+    timeoutMs,
+    null
+  )
+}
+
+function selectFreeMode() {
+  mode.value = 'free'
+}
+
+function selectMockMode() {
+  mode.value = 'mock'
+}
+
+function selectAudioMode() {
+  mediaMode.value = 'audio'
+}
+
+function selectVideoMode() {
+  mediaMode.value = 'video'
 }
 
 function decreaseCount() {
@@ -224,58 +322,73 @@ function toggleQuestionType(key) {
 async function startPractice() {
   if (!requireLogin()) return
   if (loading.value) return
-  await refreshAccessState().catch(() => null)
-  await refreshAsrStatus().catch(() => null)
-  if (asrUnavailable.value) {
-    toast('语音转写服务未就绪，请稍后重试')
-    return
-  }
-  if (trial.value && trialStatus.value?.trialCompleted) {
-    toast('试用已完成，请开通套餐后继续练习')
-    return
-  }
-  if (readonlyMode.value) {
-    toast('请先开通套餐后进入正式考场')
-    return
-  }
   loading.value = true
-  showLoading('抽取题目')
+  showLoading('检查考场')
   try {
+    await refreshAccessState({ timeout: STATE_REFRESH_TIMEOUT_MS }).catch(() => null)
+    await refreshAsrStatus({ timeout: STATE_REFRESH_TIMEOUT_MS }).catch(() => null)
+    if (asrUnavailable.value) {
+      toast('语音转写服务未就绪，请稍后重试')
+      return
+    }
+    if (trial.value && trialStatus.value?.trialCompleted) {
+      toast('试用已完成，请开通套餐后继续练习')
+      return
+    }
+    if (readonlyMode.value) {
+      toast('请先开通套餐后进入正式考场')
+      return
+    }
+
+    showLoading('抽取题目')
     let questions = []
     if (trial.value) {
       try {
-        const trialQuestion = await getTrialQuestion()
+        const trialQuestion = await withTimeout(getTrialQuestion(), ENTER_ROOM_TIMEOUT_MS, null)
         if (trialQuestion?.id) {
           questions = [trialQuestion]
         } else {
-          const fallbackQuestion = await getQuestionById('q001')
+          const fallbackQuestion = await withTimeout(getQuestionById('q001'), ENTER_ROOM_TIMEOUT_MS, null)
           questions = fallbackQuestion?.id ? [fallbackQuestion] : []
         }
       } catch {
-        const fallbackQuestion = await getQuestionById('q001')
+        const fallbackQuestion = await withTimeout(getQuestionById('q001'), ENTER_ROOM_TIMEOUT_MS, null)
         questions = fallbackQuestion?.id ? [fallbackQuestion] : []
       }
     } else {
       if (!userStore.isAdmin) {
-        const access = await subscriptionStore.check(mode.value === 'mock' ? 'mock' : 'practice', { skipErrorHandler: true }).catch(() => null)
+        const access = await withTimeout(
+          subscriptionStore.check(mode.value === 'mock' ? 'mock' : 'practice', { skipErrorHandler: true }),
+          ENTER_ROOM_TIMEOUT_MS,
+          { timeout: true }
+        )
+        if (access?.timeout) {
+          toast('套餐权限校验超时，请稍后重试')
+          return
+        }
         if (access && access.allowed === false) {
           toast(access.reason || '当前套餐额度不足')
           return
         }
       }
-      questions = await questionBankStore.fetchRandom({
-        province: userStore.selectedProvince,
-        count: mode.value === 'mock' ? DEFAULT_EXAM_QUESTION_COUNT : count.value,
-        dimension: mode.value === 'mock' ? '' : selectedDimensionParam.value
-      })
+      questions = await withTimeout(
+        questionBankStore.fetchRandom({
+          province: userStore.selectedProvince,
+          count: mode.value === 'mock' ? mockQuestionCount.value : count.value,
+          dimension: mode.value === 'mock' ? '' : selectedDimensionParam.value
+        }),
+        ENTER_ROOM_TIMEOUT_MS,
+        []
+      )
     }
 
     if (!questions.length) {
       toast(trial.value ? '试用题暂不可用，请稍后重试' : '当前筛选条件暂无题目')
       return
     }
-    const targetCount = trial.value ? 1 : mode.value === 'mock' ? DEFAULT_EXAM_QUESTION_COUNT : count.value
-    const preparedQuestions = applyUserPracticePreferencesToQuestions(questions.slice(0, targetCount))
+    const targetCount = trial.value ? 1 : mode.value === 'mock' ? mockQuestionCount.value : count.value
+    const preparedQuestions = applyMockTimingMode(applyUserPracticePreferencesToQuestions(questions.slice(0, targetCount)))
+    examStore.setMediaMode(mediaMode.value)
     await examStore.startFromQuestions(preparedQuestions, trial.value ? 'trial' : mode.value)
     uni.navigateTo({ url: '/pages/exam/room' })
   } catch (error) {
@@ -359,6 +472,10 @@ function goPricing() {
 .config-row--type {
   padding-bottom: 10rpx;
   align-items: flex-start;
+}
+
+.media-row {
+  margin-top: 18rpx;
 }
 
 .question-type-panel {

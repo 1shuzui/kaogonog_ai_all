@@ -4,6 +4,7 @@ import { evaluateAnswer, transcribeAudio } from '../api/scoring'
 import { normalizeResult } from '../utils/scoring'
 
 const EMPTY_TRANSCRIPT_TEXT = '未作答'
+const answerProcessingTasks = new Map()
 
 function buildZeroScoreResult() {
   return normalizeResult({
@@ -14,7 +15,7 @@ function buildZeroScoreResult() {
       { name: '综合分析', key: 'analysis', score: 0, maxScore: 20 },
       { name: '实务落地', key: 'practical', score: 0, maxScore: 20 },
       { name: '应急应变', key: 'emergency', score: 0, maxScore: 15 },
-      { name: '法治思维', key: 'legal', score: 0, maxScore: 15 },
+      { name: '行政思维', key: 'legal', score: 0, maxScore: 15 },
       { name: '逻辑结构', key: 'logic', score: 0, maxScore: 15 },
       { name: '语言表达', key: 'expression', score: 0, maxScore: 15 }
     ],
@@ -24,7 +25,16 @@ function buildZeroScoreResult() {
 }
 
 async function evaluateEmptyAnswer(questionId, examId) {
-  return buildZeroScoreResult()
+  if (!examId) return buildZeroScoreResult()
+  try {
+    return normalizeResult(await evaluateAnswer({
+      questionId,
+      transcript: '',
+      examId
+    }))
+  } catch {
+    return buildZeroScoreResult()
+  }
 }
 
 export const useExamStore = defineStore('exam', {
@@ -36,7 +46,8 @@ export const useExamStore = defineStore('exam', {
     latestResult: null,
     latestTranscript: '',
     loading: false,
-    source: ''
+    source: '',
+    mediaMode: 'audio'
   }),
 
   getters: {
@@ -66,6 +77,7 @@ export const useExamStore = defineStore('exam', {
       this.latestResult = null
       this.latestTranscript = ''
       this.source = source
+      answerProcessingTasks.clear()
       return response
     },
 
@@ -77,42 +89,109 @@ export const useExamStore = defineStore('exam', {
       this.loading = true
       try {
         let transcript = String(text || '').trim()
-        if (filePath) {
-          await uploadRecording(this.examId, question.id, filePath, { mediaType })
-          if (!transcript) {
-            const transcribeResult = await transcribeAudio(filePath, { mediaType })
-            transcript = String(transcribeResult?.transcript || '').trim()
-          }
-        }
+        const hasAnswerPayload = !!transcript || !!filePath
 
-        const result = transcript
-          ? normalizeResult(await evaluateAnswer({
+        if (!hasAnswerPayload) {
+          const result = await evaluateEmptyAnswer(question.id, this.examId)
+          const answer = {
+            examId: this.examId,
             questionId: question.id,
-            transcript,
-            examId: this.examId
-          }))
-          : await evaluateEmptyAnswer(question.id, this.examId)
-        const resolvedTranscript = transcript || EMPTY_TRANSCRIPT_TEXT
+            questionStem: question.stem,
+            questionIndex: this.currentIndex,
+            transcript: EMPTY_TRANSCRIPT_TEXT,
+            scoringResult: result,
+            submittedAt: new Date().toISOString(),
+            processingStatus: 'completed'
+          }
+          this.answers = [
+            ...this.answers.filter((item) => item.questionIndex !== this.currentIndex),
+            answer
+          ].sort((a, b) => a.questionIndex - b.questionIndex)
+          this.latestResult = result
+          this.latestTranscript = EMPTY_TRANSCRIPT_TEXT
+          return answer
+        }
 
         const answer = {
           examId: this.examId,
           questionId: question.id,
           questionStem: question.stem,
           questionIndex: this.currentIndex,
-          transcript: resolvedTranscript,
-          scoringResult: result,
-          submittedAt: new Date().toISOString()
+          filePath,
+          mediaType,
+          initialText: transcript,
+          transcript,
+          scoringResult: null,
+          submittedAt: new Date().toISOString(),
+          processingStatus: 'queued',
+          processingError: ''
         }
         this.answers = [
           ...this.answers.filter((item) => item.questionIndex !== this.currentIndex),
           answer
         ].sort((a, b) => a.questionIndex - b.questionIndex)
-        this.latestResult = result
-        this.latestTranscript = resolvedTranscript
+        this.latestResult = null
+        this.latestTranscript = transcript
+        this.queueAnswerProcessing(answer)
         return answer
       } finally {
         this.loading = false
       }
+    },
+
+    queueAnswerProcessing(answer) {
+      const taskKey = `${answer.examId}:${answer.questionIndex}`
+      const task = this.processAnswer(answer)
+        .catch((error) => {
+          answer.processingStatus = 'failed'
+          answer.processingError = error?.message || '评分失败'
+          return answer
+        })
+        .finally(() => {
+          answerProcessingTasks.delete(taskKey)
+        })
+      answerProcessingTasks.set(taskKey, task)
+      return task
+    },
+
+    async processAnswer(answer) {
+      let transcript = String(answer.initialText || answer.transcript || '').trim()
+      const mediaType = answer.mediaType || 'audio'
+      answer.processingStatus = answer.filePath ? 'uploading' : 'scoring'
+
+      if (answer.filePath) {
+        await uploadRecording(answer.examId, answer.questionId, answer.filePath, { mediaType })
+        if (!transcript) {
+          answer.processingStatus = 'transcribing'
+          const transcribeResult = await transcribeAudio(answer.filePath, { mediaType })
+          transcript = String(transcribeResult?.transcript || '').trim()
+        }
+      }
+
+      answer.processingStatus = 'scoring'
+      const result = transcript
+        ? normalizeResult(await evaluateAnswer({
+          questionId: answer.questionId,
+          transcript,
+          examId: answer.examId
+        }))
+        : await evaluateEmptyAnswer(answer.questionId, answer.examId)
+
+      answer.transcript = transcript || EMPTY_TRANSCRIPT_TEXT
+      answer.scoringResult = result
+      answer.processingStatus = 'completed'
+
+      if (this.examId === answer.examId && this.currentIndex === answer.questionIndex) {
+        this.latestResult = result
+        this.latestTranscript = answer.transcript
+      }
+
+      return answer
+    },
+
+    async waitForPendingProcessing() {
+      if (!answerProcessingTasks.size) return
+      await Promise.allSettled(Array.from(answerProcessingTasks.values()))
     },
 
     goNext() {
@@ -126,6 +205,7 @@ export const useExamStore = defineStore('exam', {
     },
 
     async finish() {
+      await this.waitForPendingProcessing()
       if (this.examId) {
         await completeExam(this.examId).catch(() => null)
       }
@@ -140,6 +220,12 @@ export const useExamStore = defineStore('exam', {
       this.latestTranscript = ''
       this.loading = false
       this.source = ''
+      this.mediaMode = 'audio'
+      answerProcessingTasks.clear()
+    },
+
+    setMediaMode(mode) {
+      this.mediaMode = mode === 'video' ? 'video' : 'audio'
     }
   }
 })

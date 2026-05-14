@@ -89,7 +89,7 @@ const subscriptionStore = useSubscriptionStore()
 const targetedStore = useTargetedStore()
 const examStore = useExamStore()
 const userStore = useUserStore()
-const selectedProvince = ref(targetedStore.selectedProvince || 'national')
+const selectedProvince = ref(targetedStore.selectedProvince || userStore.selectedProvince || 'national')
 const selectedPosition = ref(targetedStore.selectedPosition || 'general')
 const currentPositionSystems = computed(() => (
   selectedProvince.value === 'jiangsu' ? JIANGSU_TARGETED_POSITIONS : POSITION_SYSTEMS
@@ -154,7 +154,14 @@ async function generate() {
   showLoading('生成题目')
   try {
     const questions = await targetedStore.fetchGeneratedQuestions(5)
-    if (!questions.length) toast('暂未生成题目')
+    if (!questions.length) {
+      toast('暂未生成题目')
+      return
+    }
+    const fallbackCount = questions.filter((item) => item?.isProvinceFallback).length
+    if (fallbackCount) {
+      toast(`当前省份定向题不足，已补充 ${fallbackCount} 道国考题`)
+    }
   } catch (error) {
     toast(error?.message || '生成失败')
   } finally {

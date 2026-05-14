@@ -16,6 +16,12 @@ const DEFAULT_PREFERENCES = {
   enableVideo: true
 }
 
+function normalizeProvinceCode(code = '') {
+  const normalized = String(code || '').trim()
+  if (!normalized) return 'national'
+  return normalized === 'shaanxi' ? 'shanxi' : normalized
+}
+
 function normalizePreferences(preferences) {
   const merged = {
     ...DEFAULT_PREFERENCES,
@@ -71,9 +77,9 @@ function savePreferencesToStorage(preferences, username = '') {
 
 function loadProvinceForUser(username = '') {
   try {
-    return localStorage.getItem(buildScopedStorageKey(PROVINCE_STORAGE_KEY, username))
+    return normalizeProvinceCode(localStorage.getItem(buildScopedStorageKey(PROVINCE_STORAGE_KEY, username))
       || localStorage.getItem(PROVINCE_STORAGE_KEY)
-      || 'national'
+      || 'national')
   } catch {
     return 'national'
   }
@@ -81,7 +87,10 @@ function loadProvinceForUser(username = '') {
 
 function saveProvinceToStorage(code, username = '') {
   try {
-    localStorage.setItem(buildScopedStorageKey(PROVINCE_STORAGE_KEY, username), code || 'national')
+    localStorage.setItem(
+      buildScopedStorageKey(PROVINCE_STORAGE_KEY, username),
+      normalizeProvinceCode(code)
+    )
   } catch {
     // ignore local storage failures
   }
@@ -109,7 +118,7 @@ function saveProvinceConfirmedToStorage(confirmed, username = '') {
 }
 
 function isExplicitProvince(code = '') {
-  const normalized = String(code || '').trim()
+  const normalized = normalizeProvinceCode(code)
   return !!normalized && normalized !== 'national'
 }
 
@@ -240,7 +249,7 @@ export const useUserStore = defineStore('user', {
         id: activeUsername,
         name: info?.name || activeUsername,
         avatar: info?.avatar || '',
-        province: info?.province || 'national',
+        province: normalizeProvinceCode(info?.province || 'national'),
         role: info?.role || 'user',
         isAdmin,
         billing: info?.billing || {},
@@ -259,7 +268,7 @@ export const useUserStore = defineStore('user', {
         }
       }
       this.email = info?.email || ''
-      const backendProvince = this.userInfo.province || ''
+      const backendProvince = normalizeProvinceCode(this.userInfo.province || '')
       const backendProvinceIsExplicit = isExplicitProvince(backendProvince)
       this.selectedProvince = backendProvince || loadProvinceForUser(activeUsername)
       this.provinceConfirmed = loadProvinceConfirmedForUser(activeUsername) || backendProvinceIsExplicit
@@ -286,7 +295,7 @@ export const useUserStore = defineStore('user', {
     },
 
     setProvince(code) {
-      this.selectedProvince = code || 'national'
+      this.selectedProvince = normalizeProvinceCode(code)
       saveProvinceToStorage(this.selectedProvince, this.username)
       this.userInfo = {
         ...this.userInfo,

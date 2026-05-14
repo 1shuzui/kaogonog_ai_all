@@ -20,7 +20,7 @@
 
     <div class="exam-room__main">
       <div class="exam-room__question">
-        <QuestionMetaTags :question="examStore.currentQuestion" emphasis :max-keywords="5" />
+        <QuestionMetaTags :question="examStore.currentQuestion" emphasis basic-only />
         <div class="question-stem">
           <QuestionRichContent
             :text="examStore.currentQuestion.stem"
@@ -198,6 +198,10 @@ async function onSubmit() {
   try {
     const blob = await recorder.stopRecording()
     await examStore.submitAnswer(blob)
+    if (!examStore.isLastQuestion) {
+      message.success('本题已提交，后台评分中。')
+      onNext()
+    }
   } catch (error) {
     message.error(`提交失败: ${error.message || '未知错误'}`)
   }
@@ -219,6 +223,7 @@ async function onFinish() {
     return
   }
   try {
+    await examStore.evaluatePendingAnswers()
     await completeExam(examId)
   } catch (error) {
     logger.error('Exam history save failed', {
@@ -239,6 +244,7 @@ async function exitExam() {
   const examId = examStore.examId
   if (examId && examStore.answers.length > 0) {
     try {
+      await examStore.waitForPendingProcessing()
       await completeExam(examId)
       message.success('练习记录已保存')
     } catch (error) {

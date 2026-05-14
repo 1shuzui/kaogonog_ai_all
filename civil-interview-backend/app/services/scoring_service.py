@@ -36,7 +36,7 @@ DIM_MAPPING = {
     "analysis": "综合分析",
     "practical": "实务落地",
     "emergency": "应急应变",
-    "legal": "法治思维",
+    "legal": "行政思维",
     "logic": "逻辑结构",
     "expression": "语言表达",
 }
@@ -193,7 +193,7 @@ def _build_conservative_result(reason: str, effective_length: int) -> dict:
             "综合分析": 1.0,
             "实务落地": 1.0,
             "应急应变": 0.5,
-            "法治思维": 0.5,
+            "行政思维": 0.5,
             "逻辑结构": 1.0,
             "语言表达": 1.0,
         }
@@ -202,7 +202,7 @@ def _build_conservative_result(reason: str, effective_length: int) -> dict:
             "综合分析": 2.0,
             "实务落地": 2.0,
             "应急应变": 1.0,
-            "法治思维": 1.0,
+            "行政思维": 1.0,
             "逻辑结构": 2.0,
             "语言表达": 2.0,
         }
@@ -550,6 +550,19 @@ def _decorate_result(question: Question, transcript: str, result: dict, visual_o
     return payload
 
 
+def _normalize_dimension_display_names(result: dict) -> dict:
+    payload = dict(result or {})
+    dimensions = payload.get("dimensions")
+    if isinstance(dimensions, list):
+        payload["dimensions"] = [
+            {**item, "name": "行政思维" if item.get("name") == "法治思维" else item.get("name", "")}
+            if isinstance(item, dict)
+            else item
+            for item in dimensions
+        ]
+    return payload
+
+
 def _is_gibberish_answer(question: Question, transcript: str) -> bool:
     raw_text = str(transcript or "").strip()
     compact_text = _normalize_text(raw_text)
@@ -830,7 +843,7 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
             {"name": "综合分析", "score": 20},
             {"name": "实务落地", "score": 20},
             {"name": "应急应变", "score": 15},
-            {"name": "法治思维", "score": 15},
+            {"name": "行政思维", "score": 15},
             {"name": "逻辑结构", "score": 15},
             {"name": "语言表达", "score": 15},
         ],
@@ -1088,4 +1101,4 @@ def get_scoring_result(db: Session, exam_id: str, question_id: str) -> dict:
     ).first()
     if not ans or not ans.score_result:
         raise HTTPException(status_code=404, detail="评分结果未找到")
-    return ans.score_result
+    return _normalize_dimension_display_names(ans.score_result)

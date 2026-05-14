@@ -20,7 +20,7 @@ function buildZeroScoreResult() {
       { name: '综合分析', key: 'analysis', score: 0, maxScore: 20, lostReasons: [] },
       { name: '实务落地', key: 'practical', score: 0, maxScore: 20, lostReasons: [] },
       { name: '应急应变', key: 'emergency', score: 0, maxScore: 15, lostReasons: [] },
-      { name: '法治思维', key: 'legal', score: 0, maxScore: 15, lostReasons: [] },
+      { name: '行政思维', key: 'legal', score: 0, maxScore: 15, lostReasons: [] },
       { name: '逻辑结构', key: 'logic', score: 0, maxScore: 15, lostReasons: [] },
       { name: '语言表达', key: 'expression', score: 0, maxScore: 15, lostReasons: [] }
     ],
@@ -30,7 +30,16 @@ function buildZeroScoreResult() {
 }
 
 async function evaluateEmptyAnswer(questionId, examId) {
-  return buildZeroScoreResult()
+  if (!examId) return buildZeroScoreResult()
+  try {
+    return await evaluateAnswer({
+      questionId,
+      transcript: '',
+      examId
+    })
+  } catch {
+    return buildZeroScoreResult()
+  }
 }
 
 function assertQuestionScoringSupported(questionId) {
@@ -151,6 +160,7 @@ export const useExamStore = defineStore('exam', {
           this.scoringResult = result
           this.transcript = EMPTY_TRANSCRIPT_TEXT
           this.answers.push({
+            examId: this.examId,
             questionId,
             questionIndex,
             recordingBlob: null,
@@ -164,59 +174,25 @@ export const useExamStore = defineStore('exam', {
           return this.answers[this.answers.length - 1]
         }
 
-        if (this.mockMode) {
-          const answer = {
-            examId: this.examId,
-            questionId,
-            questionIndex,
-            recordingBlob: blob,
-            transcript: '',
-            scoringResult: null,
-            submittedAt: new Date().toISOString(),
-            processingStatus: 'queued',
-            processingError: ''
-          }
-
-          this.answers.push(answer)
-          this.transcript = ''
-          this.scoringResult = null
-          this.status = EXAM_STATUS.COMPLETED
-          this.submitStep = ''
-          this.queueMockAnswerProcessing(answer)
-          return answer
-        }
-
-        await uploadRecording(this.examId, questionId, blob)
-
-        this.submitStep = 'transcribing'
-        const { transcript } = await transcribeAudio(blob)
-        this.transcript = transcript
-
-        let result = null
-        if (!this.mockMode) {
-          assertQuestionScoringSupported(questionId)
-          this.submitStep = 'scoring'
-          result = await evaluateAnswer({
-            questionId,
-            transcript,
-            examId: this.examId
-          })
-        }
-
-        const resolvedTranscript = result?.transcript || transcript
-        this.scoringResult = result
         this.answers.push({
+          examId: this.examId,
           questionId,
           questionIndex,
           recordingBlob: blob,
-          transcript: resolvedTranscript,
-          scoringResult: result,
-          submittedAt: new Date().toISOString()
+          transcript: '',
+          scoringResult: null,
+          submittedAt: new Date().toISOString(),
+          processingStatus: 'queued',
+          processingError: ''
         })
-        this.transcript = resolvedTranscript
+        const queuedAnswer = this.answers[this.answers.length - 1]
+        this.transcript = ''
+        this.scoringResult = null
 
         this.status = EXAM_STATUS.COMPLETED
         this.submitStep = ''
+        this.queueMockAnswerProcessing(queuedAnswer)
+        return queuedAnswer
       } catch (err) {
         this.status = EXAM_STATUS.ANSWERING
         this.submitStep = ''

@@ -42,10 +42,17 @@ const props = defineProps({
   maxKeywords: {
     type: Number,
     default: 4
+  },
+  basicOnly: {
+    type: Boolean,
+    default: false
   }
 })
 
-const highlight = computed(() => buildQuestionHighlights(props.question, { maxKeywords: props.maxKeywords }))
+const highlight = computed(() => buildQuestionHighlights(props.question, {
+  maxKeywords: props.maxKeywords,
+  basicOnly: props.basicOnly
+}))
 const allTags = computed(() => highlight.value.tags || [])
 const keywordTags = computed(() => highlight.value.keywords || [])
 </script>

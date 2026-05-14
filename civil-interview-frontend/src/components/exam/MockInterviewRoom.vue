@@ -90,7 +90,7 @@
       <div class="mock-room__section-head mock-room__section-head--compact">
         <div>
           <span class="section-kicker">题本区</span>
-          <h3>共 {{ examStore.totalQuestions }} 题，总时长 {{ totalDurationMinutes }} 分钟</h3>
+          <h3>{{ timingSummary }}</h3>
         </div>
         <div class="question-progress">
           <span>已完成 {{ examStore.answers.length }}/{{ examStore.totalQuestions }}</span>
@@ -112,17 +112,13 @@
             <span class="question-card__index">第 {{ index + 1 }} 题</span>
             <span class="question-card__status">{{ questionStatusText(index) }}</span>
           </div>
-          <QuestionMetaTags :question="question" emphasis compact :max-keywords="4" />
+          <QuestionMetaTags :question="question" emphasis compact basic-only />
           <div class="question-card__stem">
             <QuestionRichContent
               :text="question.stem"
               compact
               :collapsed-height="156"
             />
-          </div>
-          <div class="question-card__meta">
-            <span>{{ getDimensionLabel(question.dimension) }}</span>
-            <span>建议 {{ formatQuestionMinutes(question) }} 分钟</span>
           </div>
         </article>
       </div>
@@ -178,7 +174,7 @@
         </div>
 
         <div class="candidate-panel__question">
-          <QuestionMetaTags :question="examStore.currentQuestion" emphasis :max-keywords="6" />
+          <QuestionMetaTags :question="examStore.currentQuestion" emphasis basic-only />
           <div class="candidate-panel__question-body">
             <QuestionRichContent
               :text="examStore.currentQuestion?.stem || ''"
@@ -293,7 +289,7 @@ import { completeExam } from '@/api/exam'
 import { useNetworkStatus } from '@/composables/useNetworkStatus'
 import { useMediaRecorder } from '@/composables/useMediaRecorder'
 import { useExamStore } from '@/stores/exam'
-import { DIMENSIONS, EXAM_STATUS, getQuestionTypeName } from '@/utils/constants'
+import { EXAM_STATUS } from '@/utils/constants'
 import AudioWaveform from '@/components/recording/AudioWaveform.vue'
 import VideoPreview from '@/components/recording/VideoPreview.vue'
 import QuestionMetaTags from '@/components/common/QuestionMetaTags.vue'
@@ -315,6 +311,7 @@ const judgeStageCanvasRef = ref(null)
 const judgeStageSceneSize = { width: 720, height: 404 }
 
 const mockStarted = ref(false)
+const readingPhaseActive = ref(false)
 const speechInProgress = ref(false)
 const totalRemainingSeconds = ref(0)
 const finishRequested = ref(false)
@@ -329,6 +326,9 @@ const judgeTimerPanelConfig = {
   sourceWidth: 124,
   sourceHeight: 58
 }
+const JIANGSU_MOCK_TIMING_MODE = 'jiangsu_5_15'
+const JIANGSU_READING_SECONDS = 5 * 60
+const JIANGSU_ANSWER_SECONDS = 15 * 60
 
 function loadJudgeStageSourceImage() {
   const src = judgeRoomReference
@@ -413,13 +413,32 @@ const candidateLabel = computed(() => {
   return `${normalized}号考生`
 })
 
-const totalDurationSeconds = computed(() => examStore.questionList.reduce((sum, question) => {
-  const answer = Math.max(60, Number(question?.answerTime) || 300)
-  return sum + answer
-}, 0))
+const isJiangsuMockTiming = computed(() => examStore.mockMode && examStore.questionList.some((question) => (
+  question?.mockTimingMode === JIANGSU_MOCK_TIMING_MODE
+)))
+const answerDurationSeconds = computed(() => {
+  if (isJiangsuMockTiming.value) return JIANGSU_ANSWER_SECONDS
+  return examStore.questionList.reduce((sum, question) => {
+    const answer = Math.max(60, Number(question?.answerTime) || 300)
+    return sum + answer
+  }, 0)
+})
+const totalDurationSeconds = computed(() => (
+  isJiangsuMockTiming.value
+    ? JIANGSU_READING_SECONDS + JIANGSU_ANSWER_SECONDS
+    : answerDurationSeconds.value
+))
 
 const totalDurationMinutes = computed(() => Math.max(1, Math.ceil(totalDurationSeconds.value / 60)))
+const timingSummary = computed(() => {
+  if (isJiangsuMockTiming.value) return `共 ${examStore.totalQuestions} 题，5 分钟阅读，15 分钟作答`
+  return `共 ${examStore.totalQuestions} 题，总时长 ${totalDurationMinutes.value} 分钟`
+})
 const formattedTotalRemaining = computed(() => formatClock(totalRemainingSeconds.value))
+const readingRemainingSeconds = computed(() => {
+  if (!isJiangsuMockTiming.value || !readingPhaseActive.value) return 0
+  return Math.max(0, totalRemainingSeconds.value - JIANGSU_ANSWER_SECONDS)
+})
 const nextPendingIndex = computed(() => Math.min(examStore.answers.length, Math.max(examStore.totalQuestions - 1, 0)))
 const allAnswered = computed(() => examStore.answers.length >= examStore.totalQuestions && examStore.totalQuestions > 0)
 const currentAnswer = computed(() => examStore.currentAnswer)
@@ -435,11 +454,14 @@ const isAnsweringActiveQuestion = computed(() => (
 
 const openingSpeechText = computed(() => (
   `${candidateLabel.value}，请就座。欢迎参加今天的面试，希望通过交流增进对你的了解。`
-  + `本次面试共有 ${examStore.totalQuestions} 道题目，时间为 ${totalDurationMinutes.value} 分钟。请开始作答。`
+  + (isJiangsuMockTiming.value
+    ? `本次面试共有 ${examStore.totalQuestions} 道题目，先阅读五分钟，再作答十五分钟。阅读结束后请开始作答。`
+    : `本次面试共有 ${examStore.totalQuestions} 道题目，时间为 ${totalDurationMinutes.value} 分钟。请开始作答。`)
 ))
 
 const examinerNotice = computed(() => {
   if (!mockStarted.value) return openingSpeechText.value
+  if (readingPhaseActive.value) return `现在是题本阅读时间，剩余 ${formatClock(readingRemainingSeconds.value)}，请先通读四道题。`
   if (allAnswered.value) return '本场题目已全部作答完成，请点击下方按钮结束面试并查看结果。'
   if (totalRemainingSeconds.value <= 60) return '距离本场面试结束不足 1 分钟，请注意统筹剩余时间。'
   if (isFutureQuestion(examStore.currentIndex)) {
@@ -456,6 +478,7 @@ const examinerNotice = computed(() => {
 
 const candidateStatusText = computed(() => {
   if (!mockStarted.value) return '等待开场'
+  if (readingPhaseActive.value) return '阅读题本中'
   if (examStore.status === EXAM_STATUS.ANSWERING) return '正在录制作答'
   if (examStore.status === EXAM_STATUS.SUBMITTING) return '答案提交中'
   if (allAnswered.value) return '作答完成'
@@ -479,6 +502,7 @@ const currentQuestionTag = computed(() => {
 
 const currentQuestionHint = computed(() => {
   if (!mockStarted.value) return '开场引导语播放完成后，点击开始作答即可进入真实考场节奏。'
+  if (readingPhaseActive.value) return '江苏模式为 5+15：当前仅阅读题本，阅读倒计时结束后再开始录制作答。'
   if (allAnswered.value) return '所有题目均已提交，可以结束本场模拟面试。'
   if (isFutureQuestion(examStore.currentIndex)) {
     return `你可以先浏览这道题，但系统只允许按顺序从第 ${nextPendingIndex.value + 1} 题开始作答。`
@@ -535,15 +559,6 @@ function formatClock(totalSeconds = 0) {
   const minutes = Math.floor(safe / 60)
   const seconds = safe % 60
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-}
-
-function getDimensionLabel(key) {
-  return getQuestionTypeName(key) || DIMENSIONS.find((item) => item.key === key)?.name || key || '结构化面试题'
-}
-
-function formatQuestionMinutes(question) {
-  const seconds = Math.max(60, Number(question?.answerTime || 300))
-  return Math.max(1, Math.ceil(seconds / 60))
 }
 
 function isAnsweredQuestion(index) {
@@ -641,6 +656,7 @@ function beginMockExam() {
   if (mockStarted.value) return
   stopSpeech()
   mockStarted.value = true
+  readingPhaseActive.value = isJiangsuMockTiming.value
   examStore.examStartTime = Date.now()
   examStore.goToQuestion(0)
   totalRemainingSeconds.value = totalDurationSeconds.value
@@ -652,6 +668,10 @@ function startTotalTimer() {
   totalTimer = setInterval(() => {
     const elapsed = Math.floor((Date.now() - examStore.examStartTime) / 1000)
     totalRemainingSeconds.value = Math.max(0, totalDurationSeconds.value - elapsed)
+    if (isJiangsuMockTiming.value && readingPhaseActive.value && elapsed >= JIANGSU_READING_SECONDS) {
+      readingPhaseActive.value = false
+      message.info('阅读时间结束，进入 15 分钟作答阶段。')
+    }
     if (totalRemainingSeconds.value <= 0) {
       stopTotalTimer()
       handleTimeUp()
@@ -667,6 +687,10 @@ function stopTotalTimer() {
 async function startCurrentAnswer() {
   if (!mockStarted.value) {
     beginMockExam()
+    return
+  }
+  if (readingPhaseActive.value) {
+    message.warning('当前仍在 5 分钟阅读阶段，请阅读结束后再开始作答。')
     return
   }
   if (isFutureQuestion(examStore.currentIndex)) {

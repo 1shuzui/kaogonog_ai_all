@@ -1,6 +1,6 @@
 // 评分维度定义
 export const DIMENSIONS = [
-  { key: 'legal', name: '法治思维', maxScore: 20 },
+  { key: 'legal', name: '行政思维', maxScore: 20 },
   { key: 'practical', name: '实务落地', maxScore: 20 },
   { key: 'logic', name: '逻辑结构', maxScore: 15 },
   { key: 'expression', name: '语言表达', maxScore: 15 },
@@ -99,7 +99,7 @@ export const PROVINCES = [
   { code: 'fujian', name: '福建' },
   { code: 'anhui', name: '安徽' },
   { code: 'liaoning', name: '辽宁' },
-  { code: 'shaanxi', name: '陕西' }
+  { code: 'shanxi', name: '陕西' }
 ]
 
 // 考试状态
@@ -134,7 +134,7 @@ export const MAX_ANSWER_TIME = 300     // 秒
 
 // 维度提升建议
 export const DIMENSION_TIPS = {
-  '法治思维': '多练习法律法规类题目，熟悉《宪法》《行政法》等基本法律条文，注意在答题中引用具体法条依据。',
+  '行政思维': '多练习依法行政、政策执行和公共管理类题目，注意在答题中体现规则意识、程序意识和治理效能。',
   '实务落地': '注重答题的可操作性，多使用"第一步...第二步..."的步骤化表达，结合实际工作场景提出具体措施。',
   '逻辑结构': '采用"总-分-总"或"是什么-为什么-怎么办"的框架，确保论点层次分明、前后呼应。',
   '语言表达': '注意语速适中、用词规范，避免口头禅，多使用政务规范用语，注意时间控制。',

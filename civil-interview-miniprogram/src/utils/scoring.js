@@ -18,7 +18,7 @@ export function normalizeDimensions(dimensions = []) {
     const score = Number(item?.score ?? item?.avg ?? 0) || 0
     const maxScore = Number(item?.maxScore ?? 100) || 100
     return {
-      name: item?.name || item?.key || '能力维度',
+      name: item?.name === '法治思维' ? '行政思维' : item?.name || item?.key || '能力维度',
       key: item?.key || item?.name || '',
       score,
       maxScore,

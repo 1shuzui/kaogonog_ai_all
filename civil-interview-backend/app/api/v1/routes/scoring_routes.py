@@ -54,7 +54,7 @@ def _build_zero_score_result() -> dict:
         {"name": "综合分析", "key": "analysis", "score": 0.0, "maxScore": 20, "lostReasons": []},
         {"name": "实务落地", "key": "practical", "score": 0.0, "maxScore": 20, "lostReasons": []},
         {"name": "应急应变", "key": "emergency", "score": 0.0, "maxScore": 15, "lostReasons": []},
-        {"name": "法治思维", "key": "legal", "score": 0.0, "maxScore": 15, "lostReasons": []},
+        {"name": "行政思维", "key": "legal", "score": 0.0, "maxScore": 15, "lostReasons": []},
         {"name": "逻辑结构", "key": "logic", "score": 0.0, "maxScore": 15, "lostReasons": []},
         {"name": "语言表达", "key": "expression", "score": 0.0, "maxScore": 15, "lostReasons": []},
     ]

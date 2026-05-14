@@ -90,15 +90,31 @@ function resolveQuestionType(question = {}) {
 
 export function buildQuestionHighlights(question = {}, options = {}) {
   const maxKeywords = Number(options.maxKeywords || 4)
+  const basicOnly = options.basicOnly === true
   const keywords = normalizeArray([
     ...normalizeKeywordItems(question?.keywords?.scoring),
     ...normalizeKeywordItems(question?.keywords?.bonus),
     ...normalizeArray(question?.tags)
   ]).slice(0, maxKeywords)
+  const provinceCode = question?.isProvinceFallback && question?.requestedProvince
+    ? question.requestedProvince
+    : question?.province
+
+  const basicTags = [
+    { key: 'type', label: resolveQuestionType(question), tone: 'type' },
+    provinceCode ? { key: 'province', label: getProvinceLabel(provinceCode), tone: 'province' } : null
+  ].filter(Boolean)
+
+  if (basicOnly) {
+    return {
+      tags: basicTags,
+      keywords: []
+    }
+  }
 
   const tags = [
-    { key: 'type', label: resolveQuestionType(question), tone: 'type' },
-    question?.province ? { key: 'province', label: getProvinceLabel(question.province), tone: 'province' } : null,
+    ...basicTags,
+    question?.isProvinceFallback ? { key: 'province-fallback', label: '国考补充', tone: 'warning' } : null,
     question?.questionSourceLabel ? { key: 'source', label: question.questionSourceLabel, tone: 'source' } : null,
     !isQuestionScoringSupported(question)
       ? { key: 'scoring-unsupported', label: '未接入评分', tone: 'warning' }

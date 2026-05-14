@@ -4,6 +4,7 @@
       <view class="question-card__tags">
         <text class="question-card__tag">{{ provinceName }}</text>
         <text class="question-card__tag question-card__tag--blue">{{ categoryName }}</text>
+        <text v-if="isProvinceFallback" class="question-card__tag question-card__tag--warning">国考补充</text>
       </view>
       <text class="question-card__points">{{ pointsCount }} 个采分点</text>
     </view>
@@ -27,7 +28,13 @@ const props = defineProps({
 
 const emit = defineEmits(['select'])
 
-const provinceName = computed(() => getProvinceName(props.question?.province || 'national'))
+const isProvinceFallback = computed(() => !!props.question?.isProvinceFallback)
+const provinceName = computed(() => {
+  const code = isProvinceFallback.value && props.question?.requestedProvince
+    ? props.question.requestedProvince
+    : (props.question?.province || 'national')
+  return getProvinceName(code)
+})
 const categoryName = computed(() => getCategoryName(props.question?.dimension || props.question?.type || ''))
 const pointsCount = computed(() => Array.isArray(props.question?.scoringPoints) ? props.question.scoringPoints.length : 0)
 const keywords = computed(() => {
@@ -68,6 +75,11 @@ const keywords = computed(() => {
 .question-card__tag--blue {
   background: #e8f4fd;
   color: #1b5faa;
+}
+
+.question-card__tag--warning {
+  background: #fff2e8;
+  color: #cf6d20;
 }
 
 .question-card__points {

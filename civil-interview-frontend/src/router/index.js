@@ -62,13 +62,13 @@ const routes = [
     path: '/bank/import',
     name: 'BankImport',
     component: () => import('@/views/QuestionBank/BankImport.vue'),
-    meta: { title: 'Import Questions', layout: 'default' }
+    meta: { title: 'Import Questions', layout: 'default', requiresAdmin: true }
   },
   {
     path: '/bank/edit/:id?',
     name: 'BankEditor',
     component: () => import('@/views/QuestionBank/BankEditor.vue'),
-    meta: { title: 'Question Editor', layout: 'default' }
+    meta: { title: 'Question Editor', layout: 'default', requiresAdmin: true }
   },
   {
     path: '/history',

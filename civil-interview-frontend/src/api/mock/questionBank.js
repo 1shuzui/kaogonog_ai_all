@@ -74,7 +74,7 @@ const mockQuestions = [
       { content: '阐述政务公开的重要意义', score: 5 },
       { content: '分析问题产生的原因', score: 5 },
       { content: '提出有针对性的解决措施', score: 5 },
-      { content: '体现法治思维和依法行政理念', score: 5 }
+      { content: '体现行政思维和依法行政理念', score: 5 }
     ],
     synonyms: ['信息公开', '阳光政务', '透明政府'],
     keywords: {

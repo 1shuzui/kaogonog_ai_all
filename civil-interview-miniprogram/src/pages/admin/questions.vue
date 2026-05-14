@@ -3,9 +3,9 @@
     <view class="page-head">
       <view>
         <text class="page-title">题库管理</text>
-        <text class="page-desc">管理员可维护手动题目，标准题库只读。</text>
+        <text class="page-desc">管理员可维护全部题目，包括标准题库。</text>
       </view>
-      <button class="primary-button page-head__button" @tap="goCreate">新增</button>
+      <button v-if="userStore.isAdmin" class="primary-button page-head__button" @tap="goCreate">新增</button>
     </view>
 
     <view v-if="!userStore.isAdmin" class="card">

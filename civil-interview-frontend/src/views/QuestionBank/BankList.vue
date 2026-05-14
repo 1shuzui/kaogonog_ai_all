@@ -1,8 +1,8 @@
 <template>
   <div class="bank-list page-container">
     <div class="bank-list__header">
-      <h2>题库管理</h2>
-      <div class="bank-list__actions">
+      <h2>{{ isAdmin ? '题库管理' : '题库' }}</h2>
+      <div v-if="isAdmin" class="bank-list__actions">
         <a-button type="primary" @click="$router.push('/bank/import')">
           <UploadOutlined /> 批量导入
         </a-button>
@@ -65,13 +65,15 @@
           <div class="bank-list__item-stem">
             <QuestionRichContent :text="q.stem" :collapsed-height="128" />
           </div>
-          <div class="bank-list__item-actions">
-            <a-button type="link" size="small" @click="$router.push(`/bank/edit/${q.id}`)">
-              编辑
-            </a-button>
-            <a-popconfirm title="确认删除？" @confirm="onDelete(q.id)">
-              <a-button type="link" danger size="small">删除</a-button>
-            </a-popconfirm>
+          <div v-if="isAdmin" class="bank-list__item-footer">
+            <div class="bank-list__item-actions">
+              <a-button type="link" size="small" @click="$router.push(`/bank/edit/${q.id}`)">
+                编辑
+              </a-button>
+              <a-popconfirm title="确认删除？" @confirm="onDelete(q.id)">
+                <a-button type="link" danger size="small">删除</a-button>
+              </a-popconfirm>
+            </div>
           </div>
         </div>
       </div>
@@ -106,7 +108,8 @@ import { JIANGSU_TARGETED_POSITIONS } from '@/utils/jiangsuJobs'
 
 const bankStore = useQuestionBankStore()
 const userStore = useUserStore()
-const provinceFilter = ref(userStore.selectedProvince || 'national')
+const isAdmin = computed(() => userStore.isAdmin)
+const provinceFilter = ref('all')
 const dimensionFilter = ref(undefined)
 const positionFilter = ref(undefined)
 const keyword = ref('')
@@ -120,8 +123,9 @@ const questionCategoryOptions = [
   { key: 'legal', name: '职业认知' }
 ]
 
-onMounted(() => {
-  provinceFilter.value = userStore.selectedProvince || 'national'
+onMounted(async () => {
+  await userStore.loadUserInfo().catch(() => null)
+  provinceFilter.value = 'all'
   bankStore.setFilters({ province: '', dimension: '', position: '', keyword: '' })
   bankStore.fetchQuestions({ page: 1 })
 })
@@ -180,6 +184,9 @@ async function onDelete(id) {
 .bank-list__item {
   margin-bottom: 12px;
   padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .bank-list__item-header {
@@ -197,18 +204,24 @@ async function onDelete(id) {
 }
 
 .bank-list__item-stem {
-  margin-top: 10px;
+  min-width: 0;
 }
 
 .bank-list__item-stem :deep(.question-rich-content__body) {
   color: @text-regular;
 }
 
+.bank-list__item-footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 32px;
+}
+
 .bank-list__item-actions {
-  margin-top: 8px;
   display: flex;
   gap: 8px;
-  justify-content: flex-end;
 }
 
 .bank-list__pagination {

@@ -89,6 +89,7 @@ import { useRouter } from 'vue-router'
 import { SearchOutlined, ThunderboltOutlined, RightOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { useTargetedStore } from '@/stores/targeted'
+import { useUserStore } from '@/stores/user'
 import { PROVINCES, POSITION_SYSTEMS } from '@/utils/constants'
 import { JIANGSU_TARGETED_POSITIONS } from '@/utils/jiangsuJobs'
 import QuestionMetaTags from '@/components/common/QuestionMetaTags.vue'
@@ -97,11 +98,12 @@ import { getScoringUnavailableMessage, isQuestionScoringSupported } from '@/util
 
 const router = useRouter()
 const targetedStore = useTargetedStore()
+const userStore = useUserStore()
 
 const provinces = PROVINCES
 const positionSystems = POSITION_SYSTEMS
 
-const selectedProvince = ref(targetedStore.selectedProvince || '')
+const selectedProvince = ref(targetedStore.selectedProvince || userStore.selectedProvince || 'national')
 const selectedPosition = ref(targetedStore.selectedPosition || '')
 
 const currentPositionSystems = computed(() => (
@@ -139,6 +141,10 @@ async function generateAndPractice() {
   if (!questions?.length) {
     message.warning('题库中暂无匹配题目，请调整省份或岗位系统。')
     return
+  }
+  const fallbackCount = questions.filter((item) => item?.isProvinceFallback).length
+  if (fallbackCount) {
+    message.warning(`当前省份定向题不足，已补充 ${fallbackCount} 道国考题。`)
   }
   router.push({ path: '/exam/prepare', query: { source: 'targeted' } })
 }

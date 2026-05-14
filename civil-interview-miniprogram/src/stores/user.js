@@ -43,6 +43,12 @@ function safeSetStorage(key, value) {
   }
 }
 
+function normalizeProvinceCode(code = '') {
+  const normalized = String(code || '').trim()
+  if (!normalized) return 'national'
+  return normalized === 'shaanxi' ? 'shanxi' : normalized
+}
+
 function normalizePreferences(preferences = {}) {
   const merged = {
     ...DEFAULT_PREFERENCES,
@@ -63,7 +69,7 @@ export const useUserStore = defineStore('user', {
       id: '',
       name: '',
       avatar: '',
-      province: readStorage(PROVINCE_STORAGE_KEY, 'national'),
+      province: normalizeProvinceCode(readStorage(PROVINCE_STORAGE_KEY, 'national')),
       role: 'user',
       isAdmin: false,
       billing: {
@@ -75,7 +81,7 @@ export const useUserStore = defineStore('user', {
         canAccessPremiumModules: false
       }
     },
-    selectedProvince: readStorage(PROVINCE_STORAGE_KEY, 'national'),
+    selectedProvince: normalizeProvinceCode(readStorage(PROVINCE_STORAGE_KEY, 'national')),
     provinces: PROVINCES,
     preferences: normalizePreferences(readJsonStorage(PREFERENCES_STORAGE_KEY, DEFAULT_PREFERENCES))
   }),
@@ -164,7 +170,7 @@ export const useUserStore = defineStore('user', {
         id: username,
         name: info?.name || username || '考生',
         avatar: info?.avatar || '',
-        province: info?.province || this.selectedProvince || 'national',
+        province: normalizeProvinceCode(info?.province || this.selectedProvince || 'national'),
         role: info?.role || 'user',
         isAdmin,
         billing,
@@ -180,7 +186,7 @@ export const useUserStore = defineStore('user', {
         })
       }
       if (info?.province) {
-        this.selectedProvince = info.province
+        this.selectedProvince = normalizeProvinceCode(info.province)
         this.userInfo = {
           ...this.userInfo,
           province: this.selectedProvince
@@ -223,7 +229,7 @@ export const useUserStore = defineStore('user', {
     },
 
     setProvince(code) {
-      this.selectedProvince = code || 'national'
+      this.selectedProvince = normalizeProvinceCode(code)
       this.userInfo = {
         ...this.userInfo,
         province: this.selectedProvince

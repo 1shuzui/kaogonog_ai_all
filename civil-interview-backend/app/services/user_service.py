@@ -15,13 +15,17 @@ from app.models.entities import User
 from app.schemas.common import AuthUser, UserProfileUpdate, UserPasswordUpdate
 
 PROVINCES = [
-    {"code": "national", "name": "国家公务员考试"},
+    {"code": "national", "name": "国考"},
     {"code": "beijing", "name": "北京"},
+    {"code": "shanghai", "name": "上海"},
     {"code": "guangdong", "name": "广东"},
+    {"code": "anhui", "name": "安徽"},
     {"code": "zhejiang", "name": "浙江"},
     {"code": "sichuan", "name": "四川"},
     {"code": "jiangsu", "name": "江苏"},
     {"code": "henan", "name": "河南"},
+    {"code": "hebei", "name": "河北"},
+    {"code": "fujian", "name": "福建"},
     {"code": "shandong", "name": "山东"},
     {"code": "hubei", "name": "湖北"},
     {"code": "hunan", "name": "湖南"},

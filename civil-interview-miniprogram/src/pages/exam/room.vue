@@ -8,10 +8,15 @@
 
       <scroll-view scroll-y class="question-panel">
         <view class="card">
+          <view class="question-tags">
+            <text class="question-tag">{{ provinceName }}</text>
+            <text class="question-tag question-tag--blue">{{ categoryName }}</text>
+          </view>
           <text class="question-stem">{{ question.stem }}</text>
-          <view v-if="points.length" class="points-mini">
-            <text v-for="(point, index) in points" :key="index" class="points-mini__item">
-              {{ index + 1 }}. {{ point.content || point.name }}
+          <view v-if="isJiangsuReading" class="reading-list">
+            <text class="reading-list__title">江苏 5+15 阅读题本</text>
+            <text v-for="(item, index) in examStore.questions" :key="item.id || index" class="reading-list__item">
+              {{ index + 1 }}. {{ item.stem }}
             </text>
           </view>
         </view>
@@ -19,7 +24,16 @@
         <view class="card">
           <view class="section-head">
             <text class="section-title">作答区</text>
-            <text class="muted">录音 / 摄像头</text>
+            <text class="muted">{{ useVideoMode ? '录像 / 录音' : '仅录音' }}</text>
+          </view>
+
+          <view class="media-toggle">
+            <view class="media-toggle__item" :class="{ 'media-toggle__item--active': !useVideoMode }" @tap="setMediaMode('audio')">
+              <text>仅录音</text>
+            </view>
+            <view class="media-toggle__item" :class="{ 'media-toggle__item--active': useVideoMode }" @tap="setMediaMode('video')">
+              <text>录像+录音</text>
+            </view>
           </view>
 
           <view class="text-answer-panel">
@@ -35,7 +49,7 @@
             />
           </view>
 
-          <view class="camera-panel">
+          <view v-if="useVideoMode" class="camera-panel">
             <!-- #ifdef MP-WEIXIN -->
             <camera
               class="camera-preview"
@@ -121,6 +135,7 @@ import { useExamStore } from '../../stores/exam'
 import { useSubscriptionStore } from '../../stores/subscription'
 import { useUserStore } from '../../stores/user'
 import { formatTime } from '../../utils/format'
+import { getCategoryName, getProvinceName } from '../../utils/constants'
 import { hideLoading, showLoading, toast } from '../../utils/navigation'
 
 const examStore = useExamStore()
@@ -141,14 +156,29 @@ const cameraAvailable = ref(false)
 const selectedMediaType = ref('')
 const questionStartedAt = ref(Date.now())
 const reportedQuestionKeys = new Set()
+const JIANGSU_MOCK_TIMING_MODE = 'jiangsu_5_15'
+const JIANGSU_READING_SECONDS = 5 * 60
+const JIANGSU_ANSWER_SECONDS = 15 * 60
 let timer = null
 let pendingRecordStopResolve = null
 
 const question = computed(() => examStore.currentQuestion)
-const points = computed(() => Array.isArray(question.value?.scoringPoints) ? question.value.scoringPoints.slice(0, 6) : [])
-const activeTimeLeft = computed(() => phase.value === 'preparing' ? prepLeft.value : answerLeft.value)
-const activeTimerLabel = computed(() => phase.value === 'preparing' ? '准备' : '作答')
+const useVideoMode = computed(() => examStore.mediaMode === 'video')
+const isJiangsuMockTiming = computed(() => examStore.source === 'mock' && examStore.questions.some((item) => (
+  item?.mockTimingMode === JIANGSU_MOCK_TIMING_MODE
+)))
+const isJiangsuReading = computed(() => isJiangsuMockTiming.value && phase.value === 'reading')
+const activeTimeLeft = computed(() => (
+  phase.value === 'preparing' || phase.value === 'reading' ? prepLeft.value : answerLeft.value
+))
+const activeTimerLabel = computed(() => {
+  if (phase.value === 'reading') return '阅读'
+  return phase.value === 'preparing' ? '准备' : '作答'
+})
+const provinceName = computed(() => getProvinceName(question.value?.province || 'national'))
+const categoryName = computed(() => getCategoryName(question.value?.dimension || question.value?.type || ''))
 const cameraStatusText = computed(() => {
+  if (!useVideoMode.value) return '已选择仅录音，不启用摄像头'
   if (cameraError.value) return cameraError.value
   if (videoRecording.value) return '摄像头录像中，请保持正对镜头'
   if (recordedVideoFile.value) return '录像已保存，可提交或重新录制'
@@ -161,6 +191,9 @@ const recordStatusText = computed(() => {
   return '请授权麦克风，可使用录音提交作答'
 })
 const currentMedia = computed(() => {
+  if (!useVideoMode.value && recordedFile.value) {
+    return { filePath: recordedFile.value, mediaType: 'audio' }
+  }
   if (selectedMediaType.value === 'video' && recordedVideoFile.value) {
     return { filePath: recordedVideoFile.value, mediaType: 'video' }
   }
@@ -179,7 +212,7 @@ onLoad(() => {
 })
 
 onReady(() => {
-  setupCamera()
+  if (useVideoMode.value) setupCamera()
 })
 
 onHide(() => {
@@ -217,6 +250,7 @@ function setupRecorder() {
 }
 
 function setupCamera() {
+  if (!useVideoMode.value) return
   if (typeof uni.createCameraContext !== 'function') {
     cameraAvailable.value = false
     cameraError.value = '当前环境不支持摄像头录像'
@@ -226,10 +260,25 @@ function setupCamera() {
   cameraAvailable.value = true
 }
 
+function setMediaMode(mode) {
+  if (videoRecording.value) {
+    toast('请先停止录像')
+    return
+  }
+  examStore.setMediaMode(mode)
+  if (mode === 'video') {
+    setupCamera()
+  } else {
+    cameraError.value = ''
+    recordedVideoFile.value = ''
+    if (selectedMediaType.value === 'video') selectedMediaType.value = ''
+  }
+}
+
 function startTimer() {
   clearInterval(timer)
   timer = setInterval(() => {
-    if (phase.value === 'preparing') {
+    if (phase.value === 'preparing' || phase.value === 'reading') {
       prepLeft.value -= 1
       if (prepLeft.value <= 0) phase.value = 'answering'
       return
@@ -239,10 +288,18 @@ function startTimer() {
 }
 
 function resetQuestionState() {
-  phase.value = 'preparing'
-  prepLeft.value = Number(question.value?.prepTime || userStore.preferences.defaultPrepTime || 90)
-  answerLeft.value = Number(question.value?.answerTime || userStore.preferences.defaultAnswerTime || 180)
+  phase.value = isJiangsuMockTiming.value ? 'reading' : 'preparing'
+  prepLeft.value = isJiangsuMockTiming.value
+    ? JIANGSU_READING_SECONDS
+    : Number(question.value?.prepTime || userStore.preferences.defaultPrepTime || 90)
+  answerLeft.value = isJiangsuMockTiming.value
+    ? JIANGSU_ANSWER_SECONDS
+    : Number(question.value?.answerTime || userStore.preferences.defaultAnswerTime || 180)
   questionStartedAt.value = Date.now()
+  resetAnswerInputState()
+}
+
+function resetAnswerInputState() {
   answerText.value = ''
   recording.value = false
   recordedFile.value = ''
@@ -253,9 +310,19 @@ function resetQuestionState() {
 
 function currentUsageSeconds() {
   const elapsed = Math.ceil((Date.now() - questionStartedAt.value) / 1000)
-  const maxSeconds = Number(question.value?.prepTime || userStore.preferences.defaultPrepTime || 90)
-    + Number(question.value?.answerTime || userStore.preferences.defaultAnswerTime || 180)
+  const maxSeconds = isJiangsuMockTiming.value
+    ? JIANGSU_READING_SECONDS + JIANGSU_ANSWER_SECONDS
+    : Number(question.value?.prepTime || userStore.preferences.defaultPrepTime || 90)
+      + Number(question.value?.answerTime || userStore.preferences.defaultAnswerTime || 180)
   return Math.max(1, Math.min(elapsed, maxSeconds || elapsed))
+}
+
+function canRecordNow() {
+  if (isJiangsuReading.value) {
+    toast('当前是 5 分钟阅读阶段，请阅读结束后再开始作答')
+    return false
+  }
+  return true
 }
 
 function usageType() {
@@ -282,6 +349,7 @@ async function syncUsageAndTrial(answer) {
 }
 
 function startRecord() {
+  if (!canRecordNow()) return
   if (videoRecording.value) {
     toast('请先停止录像')
     return
@@ -338,6 +406,11 @@ function handleVideoSaved(res, message = '录像已保存') {
 }
 
 function startVideoRecord() {
+  if (!canRecordNow()) return
+  if (!useVideoMode.value) {
+    toast('当前已选择仅录音')
+    return
+  }
   if (recording.value) {
     toast('请先停止录音')
     return
@@ -417,6 +490,10 @@ function onCameraError(error) {
 }
 
 async function submitAnswer() {
+  if (isJiangsuReading.value) {
+    toast('阅读阶段暂不能提交，请阅读结束后作答')
+    return
+  }
   if (recording.value) {
     await stopRecordAsync()
   }
@@ -426,7 +503,7 @@ async function submitAnswer() {
   const media = currentMedia.value
   const visibleAnswerText = answerText.value
 
-  showLoading('提交评分')
+  showLoading(examStore.isLastQuestion ? '生成结果' : '保存作答')
   try {
     const answer = await examStore.submitCurrentAnswer({
       text: visibleAnswerText,
@@ -445,21 +522,15 @@ async function submitAnswer() {
       return
     }
 
-    uni.showModal({
-      title: '本题已提交',
-      content: '是否进入下一题？',
-      confirmText: '下一题',
-      cancelText: '看结果',
-      success(res) {
-        if (res.confirm) {
-          if (examStore.goNext()) resetQuestionState()
-        } else {
-          uni.navigateTo({
-            url: `/pages/result/index?examId=${encodeURIComponent(examStore.examId)}&questionId=${encodeURIComponent(answer.questionId)}`
-          })
-        }
+    toast('本题已提交，后台评分中', 'success')
+    if (examStore.goNext()) {
+      if (isJiangsuMockTiming.value) {
+        resetAnswerInputState()
+        questionStartedAt.value = Date.now()
+      } else {
+        resetQuestionState()
       }
-    })
+    }
   } catch (error) {
     toast(error?.message || '评分失败')
   } finally {
@@ -537,14 +608,45 @@ function goBackHome() {
   line-height: 1.75;
 }
 
-.points-mini {
+.question-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-bottom: 16rpx;
+}
+
+.question-tag {
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
+  background: #fff2e8;
+  color: #8a4d17;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.question-tag--blue {
+  background: #e8f4fd;
+  color: #1b5faa;
+}
+
+.reading-list {
   margin-top: 22rpx;
   padding-top: 18rpx;
   border-top: 1rpx solid #eef2f6;
 }
 
-.points-mini__item {
+.reading-list__title,
+.reading-list__item {
   display: block;
+}
+
+.reading-list__title {
+  color: #1b5faa;
+  font-size: 25rpx;
+  font-weight: 800;
+}
+
+.reading-list__item {
   margin-top: 8rpx;
   color: #6f7c8f;
   font-size: 24rpx;
@@ -561,6 +663,30 @@ function goBackHome() {
 
 .text-answer-panel {
   margin-bottom: 22rpx;
+}
+
+.media-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12rpx;
+  margin-bottom: 20rpx;
+}
+
+.media-toggle__item {
+  padding: 18rpx 14rpx;
+  border: 1rpx solid #d9e3ef;
+  border-radius: 14rpx;
+  background: #ffffff;
+  color: #2a3648;
+  font-size: 25rpx;
+  font-weight: 800;
+  text-align: center;
+}
+
+.media-toggle__item--active {
+  border-color: #1b5faa;
+  background: #e8f4fd;
+  color: #1b5faa;
 }
 
 .camera-preview--fallback {
@@ -581,7 +707,7 @@ function goBackHome() {
 .camera-preview {
   display: block;
   width: 100%;
-  height: 360rpx;
+  height: 220rpx;
   background: #111827;
 }
 

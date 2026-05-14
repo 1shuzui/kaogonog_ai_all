@@ -28,6 +28,42 @@ _whisper_model = None
 # OpenAI-compatible client for the configured LLM provider
 _client: Optional[OpenAI] = None
 
+_TRADITIONAL_TO_SIMPLIFIED_TABLE = str.maketrans({
+    "臺": "台", "颱": "台", "灣": "湾", "國": "国", "務": "务", "員": "员",
+    "應": "应", "該": "该", "處": "处", "理": "理", "關": "关", "係": "系",
+    "群": "群", "眾": "众", "組": "组", "織": "织", "協": "协", "調": "调",
+    "溝": "沟", "通": "通", "問": "问", "題": "题", "體": "体", "現": "现",
+    "發": "发", "展": "展", "對": "对", "於": "于", "這": "这", "個": "个",
+    "會": "会", "認": "认", "識": "识", "為": "为", "並": "并", "與": "与",
+    "從": "从", "進": "进", "學": "学", "習": "习", "後": "后", "續": "续",
+    "總": "总", "結": "结", "點": "点", "標": "标", "準": "准", "數": "数",
+    "據": "据", "據": "据", "實": "实", "際": "际", "廣": "广", "東": "东",
+    "蘇": "苏", "鄉": "乡", "鎮": "镇", "層": "层", "級": "级", "崗": "岗",
+    "職": "职", "責": "责", "產": "产", "業": "业", "優": "优", "化": "化",
+    "營": "营", "環": "环", "境": "境", "監": "监", "管": "管", "執": "执",
+    "門": "门", "滿": "满", "辦": "办", "幹": "干", "貫": "贯", "徹": "彻",
+    "穩": "稳", "維": "维", "護": "护", "黨": "党", "園": "园", "區": "区",
+    "開": "开", "復": "复", "雜": "杂", "強": "强", "風": "风", "險": "险",
+    "預": "预", "約": "约", "專": "专", "曆": "历", "網": "网", "絡": "络",
+    "審": "审", "註": "注", "冊": "册", "傳": "传", "統": "统", "變": "变",
+    "難": "难", "簡": "简", "稱": "称", "郵": "邮", "電": "电", "聯": "联",
+    "繫": "系", "戶": "户", "顧": "顾", "訪": "访", "舉": "举", "報": "报",
+    "獎": "奖", "懲": "惩", "婦": "妇", "兒": "儿", "農": "农", "醫": "医",
+    "藥": "药", "衛": "卫", "費": "费", "財": "财", "稅": "税", "寬": "宽",
+    "嚴": "严", "龍": "龙",
+    "證": "证", "證": "证", "請": "请", "讓": "让", "聽": "听", "講": "讲",
+    "話": "话", "說": "说", "語": "语", "錄": "录", "音": "音", "視": "视",
+    "頻": "频", "線": "线", "檢": "检", "查": "查", "碼": "码", "設": "设",
+    "備": "备", "權": "权", "限": "限", "資": "资", "訊": "讯", "轉": "转",
+    "寫": "写", "測": "测", "評": "评", "訓": "训", "練": "练", "歷": "历",
+    "史": "史", "記": "记", "錄": "录", "錯": "错", "誤": "误", "導": "导",
+    "覽": "览", "頁": "页", "選": "选", "擇": "择", "篩": "筛", "庫": "库",
+    "隨": "随", "機": "机", "類": "类", "別": "别", "項": "项", "啟": "启",
+    "關": "关", "閉": "闭", "補": "补", "齊": "齐", "無": "无", "顯": "显",
+    "示": "示", "刪": "删", "除": "除", "編": "编", "輯": "辑", "標": "标",
+    "簽": "签", "讀": "读", "題": "题", "進": "进", "入": "入",
+})
+
 
 def get_client() -> Optional[OpenAI]:
     global _client
@@ -118,6 +154,19 @@ def _extract_text_from_message_content(content) -> str:
                 parts.append(str(text))
         return "".join(parts).strip()
     return str(content or "").strip()
+
+
+def _to_simplified_chinese(text: str) -> str:
+    normalized = str(text or "").strip()
+    if not normalized:
+        return ""
+
+    try:
+        from opencc import OpenCC
+
+        return OpenCC("t2s").convert(normalized).strip()
+    except Exception:
+        return normalized.translate(_TRADITIONAL_TO_SIMPLIFIED_TABLE)
 
 
 def _guess_audio_media_type(filename: str) -> str:
@@ -387,7 +436,7 @@ async def transcribe_audio_file(audio_bytes: bytes, filename: str = "answer.webm
                 if not text and isinstance(response, dict):
                     text = response.get("text")
             if isinstance(text, str) and text.strip():
-                return text.strip()
+                return _to_simplified_chinese(text)
         except Exception:
             logger.warning(
                 "ASR transcription failed, trying local Whisper fallback",
@@ -399,7 +448,7 @@ async def transcribe_audio_file(audio_bytes: bytes, filename: str = "answer.webm
         try:
             text = _transcribe_with_local_whisper(audio_bytes, filename)
             if text.strip():
-                return text.strip()
+                return _to_simplified_chinese(text)
         except Exception:
             logger.warning(
                 "Local Whisper fallback failed, falling back to placeholder",
@@ -414,11 +463,15 @@ async def transcribe_audio_file(audio_bytes: bytes, filename: str = "answer.webm
 PROVINCE_NAMES = {
     "national": "国家公务员考试",
     "beijing": "北京",
+    "shanghai": "上海",
     "guangdong": "广东",
+    "anhui": "安徽",
     "zhejiang": "浙江",
     "sichuan": "四川",
     "jiangsu": "江苏",
     "henan": "河南",
+    "hebei": "河北",
+    "fujian": "福建",
     "shandong": "山东",
     "hubei": "湖北",
     "hunan": "湖南",
@@ -430,7 +483,7 @@ DIMENSION_NAMES = {
     "analysis": "综合分析",
     "practical": "实务落地",
     "emergency": "应急应变",
-    "legal": "法治思维",
+    "legal": "行政思维",
     "logic": "逻辑结构",
     "expression": "语言表达",
 }

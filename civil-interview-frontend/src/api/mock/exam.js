@@ -17,7 +17,7 @@ function generateDimensionScores() {
 
 function generateLostReasons(dimensionKey) {
   const reasons = {
-    legal: ['未提及具体法律条款', '法治思维论述不够深入', '缺少法律依据的引用'],
+    legal: ['未提及具体政策依据', '行政思维论述不够深入', '缺少依法行政依据的引用'],
     practical: ['方案缺乏可操作性', '未考虑资源约束', '实施步骤不够具体'],
     logic: ['论述结构不够清晰', '论点之间缺乏逻辑衔接', '总分总结构不完整'],
     expression: ['语言不够简洁', '用词不够准确规范', '口头禅较多'],

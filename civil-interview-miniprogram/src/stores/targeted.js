@@ -22,6 +22,7 @@ export const useTargetedStore = defineStore('targeted', {
       this.selectedProvince = province
       this.selectedPosition = position
       this.focusData = null
+      this.generatedQuestions = []
     },
 
     async fetchFocusAnalysis() {

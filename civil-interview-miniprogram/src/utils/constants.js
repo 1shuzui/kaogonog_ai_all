@@ -27,7 +27,7 @@ export const PROVINCES = [
   { code: 'fujian', name: '福建' },
   { code: 'anhui', name: '安徽' },
   { code: 'liaoning', name: '辽宁' },
-  { code: 'shaanxi', name: '陕西' }
+  { code: 'shanxi', name: '陕西' }
 ]
 
 export const QUESTION_CATEGORIES = [
@@ -121,7 +121,7 @@ export const DIMENSION_FALLBACKS = [
   { name: '综合分析', key: 'analysis', score: 0, maxScore: 20 },
   { name: '实务落地', key: 'practical', score: 0, maxScore: 20 },
   { name: '应急应变', key: 'emergency', score: 0, maxScore: 15 },
-  { name: '法治思维', key: 'legal', score: 0, maxScore: 15 },
+  { name: '行政思维', key: 'legal', score: 0, maxScore: 15 },
   { name: '逻辑结构', key: 'logic', score: 0, maxScore: 15 },
   { name: '语言表达', key: 'expression', score: 0, maxScore: 15 }
 ]

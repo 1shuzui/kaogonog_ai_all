@@ -169,8 +169,12 @@ PROVINCE_ALIASES = {
     "国考": "national",
     "beijing": "beijing",
     "北京": "beijing",
+    "shanghai": "shanghai",
+    "上海": "shanghai",
     "guangdong": "guangdong",
     "广东": "guangdong",
+    "anhui": "anhui",
+    "安徽": "anhui",
     "zhejiang": "zhejiang",
     "浙江": "zhejiang",
     "sichuan": "sichuan",
@@ -179,6 +183,10 @@ PROVINCE_ALIASES = {
     "江苏": "jiangsu",
     "henan": "henan",
     "河南": "henan",
+    "hebei": "hebei",
+    "河北": "hebei",
+    "fujian": "fujian",
+    "福建": "fujian",
     "shandong": "shandong",
     "山东": "shandong",
     "hubei": "hubei",
@@ -187,6 +195,7 @@ PROVINCE_ALIASES = {
     "湖南": "hunan",
     "liaoning": "liaoning",
     "辽宁": "liaoning",
+    "shaanxi": "shanxi",
     "shanxi": "shanxi",
     "陕西": "shanxi",
 }
@@ -581,7 +590,7 @@ def _apply_position_filter(questions: list[Question], position: str) -> list[Que
 def _question_matches_province(question: Question, province: str) -> bool:
     if not province or province == "all":
         return True
-    return question.province in {province, "national"}
+    return question.province == province
 
 
 def _question_prefers_local_source(question: Question) -> bool:
@@ -590,12 +599,12 @@ def _question_prefers_local_source(question: Question) -> bool:
 
 
 def _choose_targeted_bank_questions(db: Session, province: str, position: str, count: int) -> list[dict]:
-    questions = [
+    exact_province_questions = [
         question for question in db.query(Question).all()
         if _question_matches_province(question, province)
     ]
-    exact = [question for question in questions if _question_matches_position(question, position)]
-    fallback = [question for question in questions if question not in exact]
+    exact = [question for question in exact_province_questions if _question_matches_position(question, position)]
+    fallback = [question for question in exact_province_questions if question not in exact]
 
     exact_local = [question for question in exact if _question_prefers_local_source(question)]
     exact_other = [question for question in exact if question not in exact_local]
@@ -611,10 +620,34 @@ def _choose_targeted_bank_questions(db: Session, province: str, position: str, c
     if len(picked) < count:
         picked.extend(fallback_other[: count - len(picked)])
 
+    if len(picked) < count and province and province not in {"all", "national"}:
+        national_questions = [
+            question for question in db.query(Question).all()
+            if question.province == "national" and question not in picked
+        ]
+        national_exact = [question for question in national_questions if _question_matches_position(question, position)]
+        national_fallback = [question for question in national_questions if question not in national_exact]
+        national_exact_local = [question for question in national_exact if _question_prefers_local_source(question)]
+        national_exact_other = [question for question in national_exact if question not in national_exact_local]
+        national_fallback_local = [question for question in national_fallback if _question_prefers_local_source(question)]
+        national_fallback_other = [question for question in national_fallback if question not in national_fallback_local]
+
+        for bucket in (national_exact_local, national_exact_other, national_fallback_local, national_fallback_other):
+            random.shuffle(bucket)
+
+        national_picked = national_exact_local + national_exact_other
+        if len(national_picked) < count - len(picked):
+            national_picked.extend(national_fallback_local[: count - len(picked) - len(national_picked)])
+        if len(national_picked) < count - len(picked):
+            national_picked.extend(national_fallback_other[: count - len(picked) - len(national_picked)])
+        picked.extend(national_picked[: count - len(picked)])
+
     return [
         {
             **_q_to_dict(question),
             "generationSource": "local_bank",
+            "requestedProvince": province,
+            "isProvinceFallback": bool(province and province not in {"all"} and question.province != province),
         }
         for question in picked[:count]
     ]
@@ -761,9 +794,6 @@ def update_question(db: Session, question_id: str, data: QuestionUpdate) -> dict
     q = db.query(Question).filter(Question.id == question_id).first()
     if not q:
         raise HTTPException(status_code=404, detail="题目未找到")
-    source = _question_meta_from_keywords(q.keywords).get("source", "")
-    if source in {"local_asset", "seed"}:
-        raise HTTPException(status_code=403, detail="标准题库为只读模式，不支持编辑")
     q.stem = data.stem
     q.dimension = data.dimension
     q.province = data.province
@@ -780,9 +810,6 @@ def delete_question(db: Session, question_id: str) -> dict:
     q = db.query(Question).filter(Question.id == question_id).first()
     if not q:
         raise HTTPException(status_code=404, detail="题目未找到")
-    source = _question_meta_from_keywords(q.keywords).get("source", "")
-    if source in {"local_asset", "seed"}:
-        raise HTTPException(status_code=403, detail="标准题库为只读模式，不支持删除")
     db.delete(q)
     db.commit()
     return {"success": True}

@@ -19,41 +19,54 @@ const PLANS = {
   }
 }
 
+function isPaidPlanType(planType) {
+  return planType === 'hourly' || planType === 'monthly'
+}
+
+function createDefaultState() {
+  return {
+    planType: 'trial',
+    activatedAt: 0,
+    isPaid: false,
+    planName: '',
+    status: '',
+    remainingSeconds: 0,
+    remainingMinutes: 0,
+    remainingDailyMinutes: 0,
+    dailyLimitMinutes: 0,
+    usedMinutes: 0,
+    totalMinutes: 0,
+    monthlyExpireAt: 0,
+    orderHistory: []
+  }
+}
+
+function normalizeState(raw = {}) {
+  const state = {
+    ...createDefaultState(),
+    ...(raw && typeof raw === 'object' ? raw : {})
+  }
+  const planType = String(state.planType || 'trial')
+  state.planType = PLANS[planType] ? planType : 'trial'
+  state.isPaid = state.isPaid === true || isPaidPlanType(state.planType)
+  state.activatedAt = Number(state.activatedAt || 0)
+  state.remainingSeconds = Math.max(0, Number(state.remainingSeconds || 0))
+  state.remainingMinutes = Math.max(0, Number(state.remainingMinutes || 0))
+  state.remainingDailyMinutes = Math.max(0, Number(state.remainingDailyMinutes || 0))
+  state.dailyLimitMinutes = Math.max(0, Number(state.dailyLimitMinutes || 0))
+  state.usedMinutes = Math.max(0, Number(state.usedMinutes || 0))
+  state.totalMinutes = Math.max(0, Number(state.totalMinutes || 0))
+  state.monthlyExpireAt = Math.max(0, Number(state.monthlyExpireAt || 0))
+  state.orderHistory = Array.isArray(state.orderHistory) ? state.orderHistory : []
+  return state
+}
+
 function loadState() {
   try {
     const raw = uni.getStorageSync(BILLING_STORAGE_KEY)
-    return {
-      planType: 'trial',
-      activatedAt: 0,
-      isPaid: false,
-      planName: '',
-      status: '',
-      remainingSeconds: 0,
-      remainingMinutes: 0,
-      remainingDailyMinutes: 0,
-      dailyLimitMinutes: 0,
-      usedMinutes: 0,
-      totalMinutes: 0,
-      monthlyExpireAt: 0,
-      orderHistory: [],
-      ...(raw ? JSON.parse(raw) : {})
-    }
+    return normalizeState(raw ? JSON.parse(raw) : {})
   } catch {
-    return {
-      planType: 'trial',
-      activatedAt: 0,
-      isPaid: false,
-      planName: '',
-      status: '',
-      remainingSeconds: 0,
-      remainingMinutes: 0,
-      remainingDailyMinutes: 0,
-      dailyLimitMinutes: 0,
-      usedMinutes: 0,
-      totalMinutes: 0,
-      monthlyExpireAt: 0,
-      orderHistory: []
-    }
+    return createDefaultState()
   }
 }
 
@@ -70,9 +83,6 @@ export const useBillingStore = defineStore('billing', {
         }
       }
       return PLANS[state.planType] || PLANS.trial
-    },
-    isPaid(state) {
-      return state.isPaid === true || state.planType === 'hourly' || state.planType === 'monthly'
     }
   },
 
