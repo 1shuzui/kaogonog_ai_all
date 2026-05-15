@@ -1,11 +1,9 @@
 import logging
-from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 
-from app.core.config import settings
+from app.core.config import settings, validate_production_settings
 from app.core.logging import RequestLoggingMiddleware, configure_logging
 from app.db.schema import ensure_runtime_schema
 from app.db.session import engine, Base
@@ -14,8 +12,6 @@ from app.api.v1 import api_router
 # ── logging ──────────────────────────────────────────────────────────────────
 configure_logging(settings)
 logger = logging.getLogger(__name__)
-UPLOAD_DIR = Path(__file__).resolve().parent / "uploads"
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # ── app factory ──────────────────────────────────────────────────────────────
@@ -34,11 +30,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(RequestLoggingMiddleware, access_log_enabled=settings.log_access_enabled)
-app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
+
+
+@app.middleware("http")
+async def security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    if settings.app_env.lower() == "production":
+        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+    return response
 
 # ── init DB + seed on first run ───────────────────────────────────────────────
 @app.on_event("startup")
 async def startup():
+    validate_production_settings()
     Base.metadata.create_all(bind=engine)
     ensure_runtime_schema(engine)
     logger.info(
@@ -96,4 +103,4 @@ def root():
 # ── run ───────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8050, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=8050, reload=True)

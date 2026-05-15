@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import bcrypt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -78,3 +78,22 @@ async def get_current_user(
         permissions=access_context["permissions"],
         billing=access_context["billing"],
     )
+
+
+async def get_current_user_from_request(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> AuthUser:
+    auth_header = str(request.headers.get("authorization") or "")
+    token = ""
+    if auth_header.lower().startswith("bearer "):
+        token = auth_header.split(" ", 1)[1].strip()
+    if not token:
+        token = str(request.query_params.get("access_token") or "").strip()
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return await get_current_user(token=token, db=db)

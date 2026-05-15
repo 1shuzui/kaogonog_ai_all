@@ -152,7 +152,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { useBillingStore } from '@/stores/billing'
 import { useUserStore } from '@/stores/user'
-import { createPaymentOrder, mockWechatPaymentCallback } from '@/api/payment'
+import { createPaymentOrder } from '@/api/payment'
 import { BILLING_PLANS, BILLING_PLAN_KEYS, PREMIUM_MODULES } from '@/utils/billing'
 
 const route = useRoute()
@@ -229,35 +229,18 @@ async function activatePlan(plan) {
   }
   purchasingPlanKey.value = plan.key
   try {
-    const order = await createPaymentOrder({
+    await createPaymentOrder({
       packageCode: plan.packageCode,
       payChannel: 'wechat',
       scene: 'pc_web'
     })
-
-    let callbackResult = null
-    if (order.payParams?.mode === 'mock') {
-      if (import.meta.env.PROD) {
-        message.warning('服务器仍返回测试支付参数，请在小程序端完成真实支付或检查后端微信支付配置')
-      } else {
-        callbackResult = await mockWechatPaymentCallback({
-          orderNo: order.orderNo,
-          status: 'paid',
-          amountTotal: Math.round(Number(order.amount || 0) * 100),
-          callbackPayload: {
-            source: 'pc_pricing_page',
-            packageCode: order.packageCode
-          }
-        })
-        await userStore.loadUserInfo().catch(() => null)
-        message.success(`已开通：${order.packageName || plan.title}`)
-      }
+  } catch (error) {
+    const detail = error?.normalizedMessage || error?.response?.data?.detail || ''
+    if (detail) {
+      message.info(detail)
     } else {
-      message.success('订单已创建，请在微信支付完成后等待回调同步')
+      message.info('PC 端暂不直接拉起微信支付，请打开小程序完成购买。')
     }
-
-    latestOrder.value = buildOrderView(order, plan, callbackResult)
-    successVisible.value = true
   } finally {
     purchasingPlanKey.value = ''
   }

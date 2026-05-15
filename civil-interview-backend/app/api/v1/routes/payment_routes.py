@@ -3,6 +3,7 @@ import json
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
+from app.core.rate_limit import check_rate_limit
 from app.core.security import get_current_user
 from app.db.session import get_db
 from app.schemas.common import AuthUser, PaymentCallbackRequest, PaymentOrderCreateRequest, PaymentRefundApplyRequest, PaymentRefundStatsRequest
@@ -19,7 +20,8 @@ router = APIRouter(prefix="/payment", tags=["payment"])
 
 
 @router.post("/orders")
-def payment_create_order(data: PaymentOrderCreateRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
+def payment_create_order(data: PaymentOrderCreateRequest, request: Request, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    check_rate_limit(request, "payment:create", limit=12, window_seconds=600, identity=current_user.username)
     return create_payment_order(db, current_user, data)
 
 
@@ -45,6 +47,7 @@ def payment_apply_refund(data: PaymentRefundApplyRequest, current_user: AuthUser
 
 @router.post("/callback/wechat")
 async def payment_wechat_callback(request: Request, db: Session = Depends(get_db)):
+    check_rate_limit(request, "payment:wechat_callback", limit=120, window_seconds=60)
     raw_body = await request.body()
     try:
         payload = json.loads(raw_body.decode("utf-8") or "{}")

@@ -28,6 +28,13 @@
         <text class="jiangsu-entry__title">2026 江苏事业单位统考</text>
         <text class="jiangsu-entry__desc">分岗精准刷题，岗位优先一眼看懂。</text>
       </view>
+      <view class="jiangsu-feature">
+        <text class="jiangsu-feature__label">创新点</text>
+        <view class="jiangsu-feature__copy">
+          <text class="jiangsu-feature__title">本土岗位贴合度</text>
+          <text class="jiangsu-feature__desc">围绕江苏省情、事业单位岗位系统和真实基层场景组织训练。</text>
+        </view>
+      </view>
       <view class="jiangsu-grid">
         <view
           v-for="job in jiangsuJobs"
@@ -59,7 +66,7 @@
       >
         <view class="record-card__main">
           <text class="record-card__title">{{ record.questionSummary || '模拟面试练习' }}</text>
-          <text class="record-card__meta">{{ formatDate(record.date) }} · {{ record.questionCount || 1 }} 题</text>
+          <text class="record-card__meta">{{ formatDate(record.completedAt || record.date) }} · {{ record.questionCount || 1 }} 题</text>
         </view>
         <ScoreRing :score="record.totalScore || 0" :max-score="record.maxScore || 100" size="small" />
       </view>
@@ -95,6 +102,11 @@ const userStore = useUserStore()
 const jiangsuJobs = JIANGSU_JOB_CATEGORIES
 
 const showJiangsuEntry = computed(() => userStore.selectedProvince === 'jiangsu')
+const hasFullAccess = computed(() => (
+  userStore.isAdmin
+  || userStore.userInfo?.billing?.isPaid === true
+  || userStore.userInfo?.permissions?.canAccessPremiumModules === true
+))
 const recentRecords = computed(() => (historyStore.records || []).slice(0, 3))
 const statItems = computed(() => [
   { label: '练习次数', value: historyStore.stats?.totalExams || 0 },
@@ -122,8 +134,9 @@ async function loadHome() {
   ])
 }
 
-function goPrepare() {
-  uni.navigateTo({ url: '/pages/exam/prepare' })
+async function goPrepare() {
+  await userStore.loadUserInfo().catch(() => null)
+  uni.navigateTo({ url: hasFullAccess.value ? '/pages/exam/prepare' : '/pages/exam/prepare?trial=1' })
 }
 
 function goPricing() {
@@ -221,6 +234,51 @@ function openResult(record) {
   flex-direction: column;
   gap: 14rpx;
   margin-top: 22rpx;
+}
+
+.jiangsu-feature {
+  display: grid;
+  grid-template-columns: 104rpx minmax(0, 1fr);
+  gap: 16rpx;
+  align-items: center;
+  margin-top: 20rpx;
+  padding: 18rpx;
+  border: 1rpx solid #d9e3ef;
+  border-radius: 14rpx;
+  background: #f5f9fe;
+}
+
+.jiangsu-feature__label,
+.jiangsu-feature__title,
+.jiangsu-feature__desc {
+  display: block;
+}
+
+.jiangsu-feature__label {
+  padding: 8rpx 12rpx;
+  border-radius: 999rpx;
+  background: #1b5faa;
+  color: #ffffff;
+  font-size: 22rpx;
+  font-weight: 800;
+  text-align: center;
+}
+
+.jiangsu-feature__copy {
+  min-width: 0;
+}
+
+.jiangsu-feature__title {
+  color: #1a1a2e;
+  font-size: 27rpx;
+  font-weight: 900;
+}
+
+.jiangsu-feature__desc {
+  margin-top: 6rpx;
+  color: #5f6f83;
+  font-size: 23rpx;
+  line-height: 1.5;
 }
 
 .jiangsu-card {

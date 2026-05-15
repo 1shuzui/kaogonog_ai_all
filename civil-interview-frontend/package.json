@@ -17,8 +17,7 @@
     "jspdf": "^4.2.1",
     "pinia": "^2.1.0",
     "vue": "^3.4.0",
-    "vue-router": "^4.2.0",
-    "xlsx": "^0.18.5"
+    "vue-router": "^4.2.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",

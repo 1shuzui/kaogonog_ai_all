@@ -39,7 +39,6 @@ build_backend_artifact() {
     "$backend_dir/data_loader.py" \
     "$backend_dir/keyword_matcher.py" \
     "$backend_dir/llm_scorer.py" \
-    "$backend_dir/mock_data.py" \
     "$backend_dir/post_process.py" \
     "$backend_dir/prompt_builder.py" \
     "$backend_dir/seed.py" \
@@ -106,6 +105,41 @@ if [[ "${DEPLOY_BACKEND:-0}" == "1" ]]; then
     "$ROOT_DIR/ai_gongwu_backend/assets/questions/" \
     "$SERVER:$REMOTE_LATEST/ai_gongwu_backend/assets/questions/"
 
+  ssh "${SSH_OPTS[@]}" "$SERVER" "python3 - <<'PY'
+from pathlib import Path
+import secrets
+
+env_path = Path('$REMOTE_LATEST/backend/.env')
+updates = {
+    'ALLOWED_ORIGINS': 'https://xzqianmianyuzhoukeji.com',
+    'PASSWORD_RESET_CODE_DEBUG_RESPONSE': 'false',
+    'PRODUCTION_REQUIRE_SECURE_CONFIG': 'true',
+}
+lines = env_path.read_text().splitlines() if env_path.exists() else []
+values = {}
+for line in lines:
+    if '=' in line and not line.lstrip().startswith('#'):
+        key, value = line.split('=', 1)
+        values[key] = value
+if values.get('SECRET_KEY', '').strip() in {'', 'civil-demo-secret'}:
+    updates['SECRET_KEY'] = secrets.token_urlsafe(48)
+seen = set()
+next_lines = []
+for line in lines:
+    key = line.split('=', 1)[0] if '=' in line and not line.lstrip().startswith('#') else ''
+    if key in updates:
+        next_lines.append(f'{key}={updates[key]}')
+        seen.add(key)
+    else:
+        next_lines.append(line)
+for key, value in updates.items():
+    if key not in seen:
+        next_lines.append(f'{key}={value}')
+env_path.write_text('\\n'.join(next_lines) + '\\n')
+PY"
+
+  ssh "${SSH_OPTS[@]}" "$SERVER" "sudo mkdir -p /etc/systemd/system/civil-backend.service.d && printf '%s\n' '[Service]' 'ExecStart=' 'ExecStart=/home/ubuntu/civil/latest/backend/.venv/bin/python -m uvicorn main:app --host 127.0.0.1 --port 8050' | sudo tee /etc/systemd/system/civil-backend.service.d/override.conf >/dev/null && sudo systemctl daemon-reload"
+  ssh "${SSH_OPTS[@]}" "$SERVER" "sudo ufw allow 22/tcp >/dev/null && sudo ufw allow 80/tcp >/dev/null && sudo ufw allow 443/tcp >/dev/null && (sudo ufw delete allow 8050/tcp >/dev/null 2>&1 || true) && sudo ufw deny 8050/tcp >/dev/null && sudo ufw --force enable >/dev/null"
   ssh "${SSH_OPTS[@]}" "$SERVER" "sudo systemctl restart civil-backend"
 fi
 
@@ -136,6 +170,11 @@ ssh "${SSH_OPTS[@]}" "$SERVER" "rm -rf \
 ssh "${SSH_OPTS[@]}" "$SERVER" "if grep -Eq '^DATABASE_URL=(mysql|mysql\\+)' '$REMOTE_LATEST/backend/.env'; then rm -f '$REMOTE_LATEST/backend/'*.db; fi"
 
 ssh "${SSH_OPTS[@]}" "$SERVER" "sudo nginx -t && for i in {1..90}; do curl -fsS http://127.0.0.1:8050/health >/dev/null 2>&1 && exit 0; sleep 1; done; curl -fsS http://127.0.0.1:8050/health >/dev/null"
+ssh "${SSH_OPTS[@]}" "$SERVER" "ss -ltn | grep -q '127.0.0.1:8050' && ! ss -ltn | grep -Eq '0\\.0\\.0\\.0:8050|\\[::\\]:8050'"
+if timeout 3 bash -c '</dev/tcp/150.158.87.179/8050' 2>/dev/null; then
+  echo "Public 8050 is reachable; expected it to be blocked." >&2
+  exit 1
+fi
 for i in {1..20}; do
   curl -fsS https://xzqianmianyuzhoukeji.com/api/health >/dev/null 2>&1 && break
   sleep 1

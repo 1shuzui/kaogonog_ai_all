@@ -89,7 +89,7 @@ class Settings:
     secret_key: str = _env("SECRET_KEY", default="civil-demo-secret")
     algorithm: str = "HS256"
     access_token_expire_minutes: int = _env_int("ACCESS_TOKEN_EXPIRE_MINUTES", default=10080)
-    allowed_origins: str = _env("ALLOWED_ORIGINS", default="*")
+    allowed_origins: str = _env("ALLOWED_ORIGINS", default="https://xzqianmianyuzhoukeji.com")
     database_url: str = _env(
         "DATABASE_URL",
         default=_build_mysql_database_url() or "sqlite:///./civil_interview.db",
@@ -116,7 +116,7 @@ class Settings:
     whisper_language: str = _env("WHISPER_LANGUAGE", default="zh")
 
     password_reset_code_ttl_minutes: int = _env_int("PASSWORD_RESET_CODE_TTL_MINUTES", default=10)
-    password_reset_code_debug_response: bool = _env_bool("PASSWORD_RESET_CODE_DEBUG_RESPONSE", default=True)
+    password_reset_code_debug_response: bool = _env_bool("PASSWORD_RESET_CODE_DEBUG_RESPONSE", default=False)
     sms_provider: str = _env("SMS_PROVIDER", default="")
     sms_access_key_id: str = _env("SMS_ACCESS_KEY_ID", default="")
     sms_access_key_secret: str = _env("SMS_ACCESS_KEY_SECRET", default="")
@@ -124,16 +124,15 @@ class Settings:
     sms_template_code: str = _env("SMS_TEMPLATE_CODE", default="")
 
     wechat_pay_enabled: bool = _env_bool("WECHAT_PAY_ENABLED", default=False)
-    wechat_pay_mock_mode: bool = _env_bool("WECHAT_PAY_MOCK_MODE", default=True)
     wechat_pay_scene: str = _env("WECHAT_PAY_SCENE", default="mini_program")
     wechat_pay_appid: str = _env("WECHAT_PAY_APPID", "WECHAT_MINIPROGRAM_APPID", default="wxa31c6e32dfa4b178")
     wechat_pay_mchid: str = _env("WECHAT_PAY_MCHID", default="1744784195")
     wechat_pay_notify_url: str = _env("WECHAT_PAY_NOTIFY_URL", default="https://xzqianmianyuzhoukeji.com/api/payment/callback/wechat")
     wechat_pay_refund_notify_url: str = _env("WECHAT_PAY_REFUND_NOTIFY_URL", default="")
-    wechat_pay_api_v3_key: str = _env("WECHAT_PAY_API_V3_KEY", default="MOCK_API_V3_KEY_REPLACE_ME")
-    wechat_pay_serial_no: str = _env("WECHAT_PAY_SERIAL_NO", default="MOCK_SERIAL_NO_REPLACE_ME")
-    wechat_pay_private_key_path: str = _env("WECHAT_PAY_PRIVATE_KEY_PATH", default="certs/mock_apiclient_key.pem")
-    wechat_pay_platform_cert_path: str = _env("WECHAT_PAY_PLATFORM_CERT_PATH", default="certs/mock_wechatpay_platform.pem")
+    wechat_pay_api_v3_key: str = _env("WECHAT_PAY_API_V3_KEY", default="")
+    wechat_pay_serial_no: str = _env("WECHAT_PAY_SERIAL_NO", default="")
+    wechat_pay_private_key_path: str = _env("WECHAT_PAY_PRIVATE_KEY_PATH", default="")
+    wechat_pay_platform_cert_path: str = _env("WECHAT_PAY_PLATFORM_CERT_PATH", default="")
     wechat_pay_platform_serial_no: str = _env("WECHAT_PAY_PLATFORM_SERIAL_NO", default="")
     wechat_pay_public_key_path: str = _env("WECHAT_PAY_PUBLIC_KEY_PATH", default="")
     wechat_pay_public_key_id: str = _env("WECHAT_PAY_PUBLIC_KEY_ID", default="")
@@ -141,9 +140,18 @@ class Settings:
     wechat_pay_request_timeout: int = _env_int("WECHAT_PAY_REQUEST_TIMEOUT", default=10)
     wechat_miniprogram_app_secret: str = _env("WECHAT_MINIPROGRAM_APP_SECRET", "WECHAT_PAY_APP_SECRET", default="")
     wechat_miniprogram_api_base: str = _env("WECHAT_MINIPROGRAM_API_BASE", default="https://api.weixin.qq.com")
+    wechat_web_appid: str = _env("WECHAT_WEB_APPID", default="")
+    wechat_web_app_secret: str = _env("WECHAT_WEB_APP_SECRET", default="")
+    wechat_web_redirect_uri: str = _env("WECHAT_WEB_REDIRECT_URI", default="")
     wechat_pay_strict_appid_check: bool = _env_bool("WECHAT_PAY_STRICT_APPID_CHECK", default=True)
     wechat_pay_shipping_upload_enabled: bool = _env_bool("WECHAT_PAY_SHIPPING_UPLOAD_ENABLED", default=False)
     wechat_pay_shipping_item_desc: str = _env("WECHAT_PAY_SHIPPING_ITEM_DESC", default="公考面试AI测评服务")
+
+    media_storage_root: Path = Path(_env("MEDIA_STORAGE_ROOT", default=str(BACKEND_ROOT / "storage" / "media")))
+    media_upload_max_bytes: int = _env_int("MEDIA_UPLOAD_MAX_BYTES", default=200 * 1024 * 1024)
+    media_ffmpeg_path: str = _env("MEDIA_FFMPEG_PATH", default="ffmpeg")
+    media_lossless_optimize_enabled: bool = _env_bool("MEDIA_LOSSLESS_OPTIMIZE_ENABLED", default=True)
+    production_require_secure_config: bool = _env_bool("PRODUCTION_REQUIRE_SECURE_CONFIG", default=True)
 
     app_env: str = _env("APP_ENV", default="production")
     log_level: str = _env("LOG_LEVEL", default="INFO")
@@ -156,3 +164,31 @@ class Settings:
 
 
 settings = Settings()
+
+
+def validate_production_settings() -> None:
+    if settings.app_env.lower() != "production" or not settings.production_require_secure_config:
+        return
+
+    errors: list[str] = []
+    if not settings.secret_key or settings.secret_key == "civil-demo-secret":
+        errors.append("SECRET_KEY")
+    if settings.allowed_origins.strip() == "*":
+        errors.append("ALLOWED_ORIGINS")
+    if settings.password_reset_code_debug_response:
+        errors.append("PASSWORD_RESET_CODE_DEBUG_RESPONSE=false")
+    if settings.wechat_pay_enabled:
+        for key, value in {
+            "WECHAT_PAY_API_V3_KEY": settings.wechat_pay_api_v3_key,
+            "WECHAT_PAY_SERIAL_NO": settings.wechat_pay_serial_no,
+            "WECHAT_PAY_PRIVATE_KEY_PATH": settings.wechat_pay_private_key_path,
+            "WECHAT_PAY_APPID": settings.wechat_pay_appid,
+            "WECHAT_PAY_MCHID": settings.wechat_pay_mchid,
+        }.items():
+            if not value or str(value).startswith("MOCK_"):
+                errors.append(key)
+        if not (settings.wechat_pay_public_key_path or settings.wechat_pay_platform_cert_path):
+            errors.append("WECHAT_PAY_PUBLIC_KEY_PATH or WECHAT_PAY_PLATFORM_CERT_PATH")
+
+    if errors:
+        raise RuntimeError(f"Production security configuration is incomplete: {', '.join(sorted(set(errors)))}")

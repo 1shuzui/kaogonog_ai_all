@@ -135,7 +135,7 @@ const trialStatus = ref(null)
 const asrStatus = ref(null)
 const hasFullAccess = computed(() => {
   return billingStore.isPaid
-    || subscriptionStore.status.hasActivePlan
+    || subscriptionStore.hasPremiumAccess
     || userStore.isAdmin
     || userStore.userInfo?.billing?.isPaid === true
     || userStore.userInfo?.permissions?.canAccessPremiumModules === true

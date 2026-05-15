@@ -28,6 +28,9 @@ class User(Base):
     agreed_terms_at = Column(DateTime, nullable=True)
     last_login_device = Column(String(200), default="")
     login_device_history = Column(JSON, default=list)
+    wechat_mini_openid = Column(String(128), unique=True, nullable=True, index=True)
+    wechat_unionid = Column(String(128), nullable=True, index=True)
+    wechat_web_openid = Column(String(128), unique=True, nullable=True, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     payment_orders = relationship("PaymentOrder", back_populates="user", cascade="all, delete-orphan")

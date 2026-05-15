@@ -13,6 +13,7 @@ from app.core.ai import call_llm_api_async, transcribe_audio_file
 from app.core.config import settings
 from app.core.video_analysis import analyze_video_behavior
 from app.models.entities import Question, Exam, ExamAnswer
+from app.services.media_storage import resolve_media_path
 
 # Import two-stage scoring utilities (same directory as before)
 import sys, os
@@ -467,22 +468,16 @@ def _media_record_for_exam(db: Session, exam_id: Optional[str], question_id: str
         ExamAnswer.exam_id == exam_id,
         ExamAnswer.question_id == question_id,
     ).first()
-    if not answer or not isinstance(answer.score_result, dict):
+    if not answer:
         return {}
-    media_record = answer.score_result.get("mediaRecord")
+    media_record = answer.media_record if isinstance(answer.media_record, dict) else {}
+    if not media_record and isinstance(answer.score_result, dict):
+        media_record = answer.score_result.get("mediaRecord")
     return media_record if isinstance(media_record, dict) else {}
 
 
 def _video_media_path(media_record: dict) -> Path | None:
-    stored_filename = str(media_record.get("storedFilename") or "").strip()
-    if not stored_filename:
-        file_url = str(media_record.get("fileUrl") or "").strip()
-        stored_filename = Path(file_url).name if file_url else ""
-    if not stored_filename:
-        return None
-    uploads_dir = Path(__file__).resolve().parents[2] / "uploads"
-    candidate = uploads_dir / stored_filename
-    return candidate if candidate.exists() else None
+    return resolve_media_path(media_record)
 
 
 def _visual_observation_for_media(db: Session, exam_id: Optional[str], question_id: str) -> str:
@@ -1081,9 +1076,13 @@ def _persist_result(db: Session, exam_id: Optional[str], question_id: str, trans
         ans = ExamAnswer(exam_id=exam_id, question_id=question_id)
         db.add(ans)
     existing_result = ans.score_result if isinstance(ans.score_result, dict) else {}
-    media_record = existing_result.get("mediaRecord") if isinstance(existing_result, dict) else None
+    media_record = ans.media_record if isinstance(ans.media_record, dict) else None
+    if not media_record and isinstance(existing_result, dict):
+        media_record = existing_result.get("mediaRecord")
     if media_record and "mediaRecord" not in result:
         result = {**result, "mediaRecord": media_record}
+    if media_record and not ans.media_record:
+        ans.media_record = media_record
     visual_observation = existing_result.get("visualObservation") if isinstance(existing_result, dict) else None
     if visual_observation and "visualObservation" not in result:
         result = {**result, "visualObservation": visual_observation}

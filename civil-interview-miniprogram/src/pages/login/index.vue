@@ -50,6 +50,10 @@
         {{ mode === 'login' ? '登录' : '注册' }}
       </button>
 
+      <button v-if="mode === 'login'" class="secondary-button wechat-login-button" :loading="wechatLoading" @tap="loginByWechat">
+        微信快捷登录
+      </button>
+
       <button v-if="mode === 'login'" class="link-button forgot-button" @tap="openResetPanel">
         忘记密码
       </button>
@@ -100,6 +104,7 @@ import { toast } from '../../utils/navigation'
 const userStore = useUserStore()
 const mode = ref('login')
 const loading = ref(false)
+const wechatLoading = ref(false)
 const resetVisible = ref(false)
 const resetLoading = ref(false)
 const resetRequesting = ref(false)
@@ -188,6 +193,36 @@ async function submit() {
     toast(error?.message || '操作失败')
   } finally {
     loading.value = false
+  }
+}
+
+function getWechatLoginCode() {
+  return new Promise((resolve, reject) => {
+    uni.login({
+      provider: 'weixin',
+      success(res) {
+        if (res.code) resolve(res.code)
+        else reject(new Error('微信登录未返回 code'))
+      },
+      fail(error) {
+        reject(new Error(error?.errMsg || '微信登录失败'))
+      }
+    })
+  })
+}
+
+async function loginByWechat() {
+  if (wechatLoading.value) return
+  wechatLoading.value = true
+  try {
+    const code = await getWechatLoginCode()
+    await userStore.loginWithWechat(code, '2026-05-12')
+    toast('登录成功', 'success')
+    uni.switchTab({ url: '/pages/home/index' })
+  } catch (error) {
+    toast(error?.message || '微信登录失败')
+  } finally {
+    wechatLoading.value = false
   }
 }
 
@@ -331,6 +366,10 @@ function goLegalDocuments() {
 
 .forgot-button {
   margin-top: 14rpx;
+}
+
+.wechat-login-button {
+  margin-top: 18rpx;
 }
 
 .agreement-box {

@@ -42,4 +42,4 @@ def history_stats(current_user: AuthUser = Depends(get_current_user), db: Sessio
 
 @router.get("/{exam_id}")
 def history_detail(exam_id: str, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
-    return get_history_detail(db, exam_id)
+    return get_history_detail(db, exam_id, current_user.username, is_admin=current_user.isAdmin)

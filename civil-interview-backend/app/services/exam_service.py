@@ -1,7 +1,6 @@
 """Exam service: start, upload, complete"""
 import uuid
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import List
 
 from fastapi import HTTPException
@@ -9,14 +8,25 @@ from sqlalchemy.orm import Session
 
 from app.models.entities import Exam, ExamAnswer, HistoryRecord, Question
 from app.schemas.common import ExamStartRequest
-
-UPLOAD_DIR = Path(__file__).resolve().parents[2] / "uploads"
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+from app.services.media_storage import (
+    media_download_url,
+    media_playback_url,
+    save_media_upload,
+)
 
 
 def _sanitize_upload_name(raw_name: str) -> str:
     safe_name = "".join(ch for ch in str(raw_name or "") if ch.isalnum() or ch in {"-", "_", "."})
     return safe_name or "recording.webm"
+
+
+def assert_exam_access(db: Session, exam_id: str, username: str, is_admin: bool = False) -> Exam:
+    exam = db.query(Exam).filter(Exam.id == exam_id).first()
+    if not exam:
+        raise HTTPException(status_code=404, detail="考试未找到")
+    if not is_admin and exam.user_id != username:
+        raise HTTPException(status_code=403, detail="无权访问该考试记录")
+    return exam
 
 
 def _iso_utc(value: datetime | None) -> str:
@@ -63,12 +73,12 @@ def upload_recording(
     question_id: str,
     filename: str,
     content: bytes,
+    username: str,
+    is_admin: bool = False,
     media_type: str = "",
     source: str = "live_recording",
 ) -> dict:
-    exam = db.query(Exam).filter(Exam.id == exam_id).first()
-    if not exam:
-        raise HTTPException(status_code=404, detail="考试未找到")
+    assert_exam_access(db, exam_id, username, is_admin=is_admin)
 
     answer = db.query(ExamAnswer).filter(
         ExamAnswer.exam_id == exam_id,
@@ -78,20 +88,15 @@ def upload_recording(
         answer = ExamAnswer(exam_id=exam_id, question_id=question_id)
         db.add(answer)
 
-    original_name = _sanitize_upload_name(filename)
-    extension = Path(original_name).suffix or ".webm"
-    stored_name = f"{exam_id}_{question_id}_{uuid.uuid4().hex[:8]}{extension}"
-    stored_path = UPLOAD_DIR / stored_name
-    stored_path.write_bytes(content)
-
     media_record = {
-        "fileUrl": f"/uploads/{stored_name}",
-        "storedFilename": stored_name,
-        "originalFilename": original_name,
-        "mediaType": media_type or "application/octet-stream",
+        **save_media_upload(content, filename, media_type=media_type, source=source),
+        "playbackUrl": media_playback_url(exam_id, question_id),
+        "downloadUrl": media_download_url(exam_id, question_id),
+        "uploadedBy": username,
         "source": source or "live_recording",
         "uploadedAt": _iso_utc(datetime.now(timezone.utc)),
     }
+    answer.media_record = media_record
     existing_result = answer.score_result if isinstance(answer.score_result, dict) else {}
     if "totalScore" not in existing_result:
         answer.score_result = {**existing_result, "mediaRecord": media_record}
@@ -148,3 +153,24 @@ def complete_exam(db: Session, exam_id: str) -> dict:
         "finalScore": avg,
         "completedAt": _iso_utc(exam.end_time),
     }
+
+
+def complete_exam_for_user(db: Session, exam_id: str, username: str, is_admin: bool = False) -> dict:
+    assert_exam_access(db, exam_id, username, is_admin=is_admin)
+    return complete_exam(db, exam_id)
+
+
+def get_exam_media_record(db: Session, exam_id: str, question_id: str, username: str, is_admin: bool = False) -> dict:
+    assert_exam_access(db, exam_id, username, is_admin=is_admin)
+    answer = db.query(ExamAnswer).filter(
+        ExamAnswer.exam_id == exam_id,
+        ExamAnswer.question_id == question_id,
+    ).first()
+    if not answer:
+        raise HTTPException(status_code=404, detail="媒体记录未找到")
+    media_record = answer.media_record if isinstance(answer.media_record, dict) else {}
+    if not media_record and isinstance(answer.score_result, dict):
+        media_record = answer.score_result.get("mediaRecord") if isinstance(answer.score_result.get("mediaRecord"), dict) else {}
+    if not media_record:
+        raise HTTPException(status_code=404, detail="媒体记录未找到")
+    return media_record

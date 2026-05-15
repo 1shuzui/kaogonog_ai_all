@@ -49,6 +49,18 @@
                 登录
               </a-button>
             </a-form-item>
+            <a-button
+              block
+              size="large"
+              :disabled="!wechatWebLogin.configured"
+              @click="handleWechatWebLogin"
+            >
+              <template #icon><WechatOutlined /></template>
+              {{ wechatWebLogin.configured ? '微信扫码登录' : '微信扫码登录待配置' }}
+            </a-button>
+            <div v-if="!wechatWebLogin.configured" class="wechat-login-note">
+              {{ wechatWebLogin.message }}
+            </div>
           </a-form>
         </a-tab-pane>
 
@@ -151,13 +163,14 @@
 </template>
 
 <script setup>
-import { ref, reactive, h } from 'vue'
+import { ref, reactive, h, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { UserOutlined, LockOutlined } from '@ant-design/icons-vue'
+import { UserOutlined, LockOutlined, WechatOutlined } from '@ant-design/icons-vue'
 import { useUserStore } from '@/stores/user'
 import {
   confirmPasswordReset,
+  getWechatWebLoginUrl,
   requestPasswordReset,
   verifyPasswordReset
 } from '@/api/auth'
@@ -171,6 +184,11 @@ const resetModalVisible = ref(false)
 const resetLoading = ref(false)
 const resetRequesting = ref(false)
 const resetTip = ref('')
+const wechatWebLogin = reactive({
+  configured: false,
+  loginUrl: '',
+  message: 'PC 微信扫码登录未启用：缺少微信开放平台网站应用资料。'
+})
 const loginFormRef = ref(null)
 const registerFormRef = ref(null)
 
@@ -229,6 +247,25 @@ function normalizeRedirectTarget(value) {
     return '/'
   }
   return raw || '/'
+}
+
+async function loadWechatWebLoginConfig() {
+  try {
+    const config = await getWechatWebLoginUrl()
+    wechatWebLogin.configured = !!config?.configured
+    wechatWebLogin.loginUrl = config?.loginUrl || ''
+    wechatWebLogin.message = config?.message || wechatWebLogin.message
+  } catch {
+    wechatWebLogin.configured = false
+  }
+}
+
+function handleWechatWebLogin() {
+  if (!wechatWebLogin.configured || !wechatWebLogin.loginUrl) {
+    message.info(wechatWebLogin.message)
+    return
+  }
+  window.location.href = wechatWebLogin.loginUrl
 }
 
 async function handleLogin() {
@@ -340,6 +377,10 @@ async function handlePasswordResetConfirm() {
     resetLoading.value = false
   }
 }
+
+onMounted(() => {
+  loadWechatWebLoginConfig()
+})
 </script>
 
 <style scoped>
@@ -391,5 +432,12 @@ async function handlePasswordResetConfirm() {
   display: flex;
   justify-content: flex-end;
   margin: -8px 0 10px;
+}
+
+.wechat-login-note {
+  margin-top: 8px;
+  color: @text-secondary;
+  font-size: @font-size-xs;
+  line-height: 1.6;
 }
 </style>

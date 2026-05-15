@@ -10,6 +10,19 @@
         <ScoreRing :score="result.totalScore" :max-score="result.maxScore" size="medium" :color="grade.color" />
       </view>
 
+      <view class="card local-fit-card">
+        <view class="section-head">
+          <text class="section-title">本土岗位贴合度</text>
+        </view>
+        <view class="local-fit-card__tags">
+          <text class="local-fit-card__tag">{{ localFitProvinceName }}</text>
+          <text class="local-fit-card__tag">岗位场景识别</text>
+        </view>
+        <text class="local-fit-card__desc">
+          本次复盘会重点关注作答是否回应本地治理场景、岗位职责和群众服务细节，帮助你把通用答法落到具体岗位语境里。
+        </text>
+      </view>
+
       <view v-if="questionStem" class="card">
         <view class="section-head">
           <text class="section-title">题目</text>
@@ -59,7 +72,7 @@ import { getHistoryDetail } from '../../api/history'
 import { getScoringResult } from '../../api/scoring'
 import { useExamStore } from '../../stores/exam'
 import { useTrainingStore } from '../../stores/training'
-import { getGrade } from '../../utils/constants'
+import { getGrade, getProvinceName } from '../../utils/constants'
 import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
 import { normalizeResult } from '../../utils/scoring'
 
@@ -68,9 +81,11 @@ const trainingStore = useTrainingStore()
 const result = ref(null)
 const transcript = ref('')
 const questionStem = ref('')
+const questionProvince = ref('national')
 const progressRecorded = ref(false)
 
 const grade = computed(() => getGrade(result.value?.totalScore || 0, result.value?.maxScore || 100))
+const localFitProvinceName = computed(() => getProvinceName(questionProvince.value || 'national'))
 
 onLoad(async (query) => {
   if (!requireLogin()) return
@@ -86,6 +101,7 @@ async function loadResult(query) {
     result.value = normalizeResult(answer.scoringResult)
     transcript.value = answer.transcript || ''
     questionStem.value = answer.questionStem || ''
+    questionProvince.value = answer.province || examStore.currentQuestion?.province || questionProvince.value
     recordTrainingProgress()
     return
   }
@@ -94,12 +110,14 @@ async function loadResult(query) {
   try {
     if (examId && questionId) {
       result.value = normalizeResult(await getScoringResult(examId, questionId))
+      await hydrateResultContext(examId, questionId)
       recordTrainingProgress()
       return
     }
 
     if (examId) {
       const detail = await getHistoryDetail(examId)
+      applyHistoryDetailContext(detail, questionId)
       const firstAnswer = Array.isArray(detail?.answers) ? detail.answers[0] : null
       if (firstAnswer?.scoringResult) {
         result.value = normalizeResult(firstAnswer.scoringResult)
@@ -117,6 +135,25 @@ async function loadResult(query) {
   } finally {
     hideLoading()
   }
+}
+
+async function hydrateResultContext(examId, questionId) {
+  try {
+    const detail = await getHistoryDetail(examId)
+    applyHistoryDetailContext(detail, questionId)
+  } catch {
+    // Scoring results can exist briefly before history detail is ready.
+  }
+}
+
+function applyHistoryDetailContext(detail = {}, questionId = '') {
+  questionProvince.value = detail?.province || questionProvince.value || 'national'
+  const answers = Array.isArray(detail?.answers) ? detail.answers : []
+  const matchedAnswer = answers.find((item) => item.questionId === questionId) || answers[0]
+  if (!matchedAnswer) return
+  questionProvince.value = matchedAnswer.province || detail?.province || questionProvince.value || 'national'
+  if (!transcript.value) transcript.value = matchedAnswer.transcript || ''
+  if (!questionStem.value) questionStem.value = matchedAnswer.questionStem || detail?.questionSummary || ''
 }
 
 function recordTrainingProgress() {
@@ -178,6 +215,30 @@ function home() {
   font-size: 27rpx;
   line-height: 1.75;
   white-space: pre-wrap;
+}
+
+.local-fit-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.local-fit-card__tag {
+  display: block;
+  padding: 8rpx 14rpx;
+  border-radius: 999rpx;
+  background: #e8f4fd;
+  color: #1b5faa;
+  font-size: 23rpx;
+  font-weight: 800;
+}
+
+.local-fit-card__desc {
+  display: block;
+  margin-top: 14rpx;
+  color: #2a3648;
+  font-size: 26rpx;
+  line-height: 1.7;
 }
 
 .result-actions {

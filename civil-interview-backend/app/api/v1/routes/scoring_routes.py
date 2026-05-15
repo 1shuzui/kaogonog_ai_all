@@ -1,14 +1,17 @@
 import re
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from sqlalchemy.orm import Session
 
+from app.core.rate_limit import check_rate_limit
 from app.core.security import get_current_user
 from app.db.session import get_db
 from app.models.entities import ExamAnswer, Question
 from app.schemas.common import AuthUser, EvaluateRequest
 from app.core.ai import get_asr_runtime_status
+from app.services.exam_service import assert_exam_access
+from app.services.media_storage import validate_media_upload
 from app.services.scoring_service import transcribe, evaluate_answer, get_scoring_result
 
 router = APIRouter(prefix="/scoring", tags=["scoring"])
@@ -87,8 +90,10 @@ def _persist_result(db: Session, exam_id: str | None, question_id: str, transcri
 
 
 @router.post("/transcribe")
-async def scoring_transcribe(audio: UploadFile = File(...), current_user: AuthUser = Depends(get_current_user)):
+async def scoring_transcribe(request: Request, audio: UploadFile = File(...), current_user: AuthUser = Depends(get_current_user)):
+    check_rate_limit(request, "scoring:transcribe", limit=30, window_seconds=600, identity=current_user.username)
     audio_bytes = await audio.read()
+    validate_media_upload(audio_bytes, audio.filename or "answer.webm", audio.content_type or "", source="transcribe")
     return await transcribe(audio_bytes, filename=audio.filename or "answer.webm")
 
 
@@ -98,9 +103,12 @@ def scoring_asr_status(current_user: AuthUser = Depends(get_current_user)):
 
 
 @router.post("/evaluate")
-async def scoring_evaluate(data: EvaluateRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
+async def scoring_evaluate(data: EvaluateRequest, request: Request, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    check_rate_limit(request, "scoring:evaluate", limit=40, window_seconds=600, identity=current_user.username)
     if not db.query(Question.id).filter(Question.id == data.questionId).first():
         raise HTTPException(status_code=404, detail="Question not found")
+    if data.examId:
+        assert_exam_access(db, data.examId, current_user.username, is_admin=current_user.isAdmin)
 
     transcript = str(data.transcript or "").strip()
     if _is_low_value_transcript(transcript):
@@ -111,4 +119,5 @@ async def scoring_evaluate(data: EvaluateRequest, current_user: AuthUser = Depen
 
 @router.get("/result/{exam_id}/{question_id}")
 def scoring_result(exam_id: str, question_id: str, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    assert_exam_access(db, exam_id, current_user.username, is_admin=current_user.isAdmin)
     return get_scoring_result(db, exam_id, question_id)

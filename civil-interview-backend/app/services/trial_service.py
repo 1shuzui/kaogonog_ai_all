@@ -3,10 +3,12 @@ from datetime import date
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from app.core.access import TRIAL_QUESTION_ID
 from app.models.entities import Question, User, UserSubscription
 from app.schemas.common import AuthUser
 
 DEFAULT_TRIAL_TOTAL_MINUTES = 180
+TRIAL_PROVINCE = "national"
 
 
 def _question_meta(question: Question) -> dict:
@@ -16,7 +18,14 @@ def _question_meta(question: Question) -> dict:
 
 
 def _pick_trial_question(db: Session) -> Question | None:
-    questions = db.query(Question).all()
+    fixed_question = db.query(Question).filter(
+        Question.id == TRIAL_QUESTION_ID,
+        Question.province == TRIAL_PROVINCE,
+    ).first()
+    if fixed_question:
+        return fixed_question
+
+    questions = db.query(Question).filter(Question.province == TRIAL_PROVINCE).all()
     tagged = []
     for question in questions:
         meta = _question_meta(question)
@@ -27,7 +36,12 @@ def _pick_trial_question(db: Session) -> Question | None:
     if tagged:
         tagged.sort(key=lambda item: item.id)
         return tagged[0]
-    return db.query(Question).order_by(Question.created_at.asc(), Question.id.asc()).first()
+    return (
+        db.query(Question)
+        .filter(Question.province == TRIAL_PROVINCE)
+        .order_by(Question.created_at.asc(), Question.id.asc())
+        .first()
+    )
 
 
 def _get_user(db: Session, current_user: AuthUser) -> User:

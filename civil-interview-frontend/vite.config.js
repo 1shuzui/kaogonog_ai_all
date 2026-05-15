@@ -40,10 +40,6 @@ export default defineConfig({
         target: devApiTarget,
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
-      },
-      '/uploads': {
-        target: devApiTarget,
-        changeOrigin: true
       }
     }
   },
@@ -53,7 +49,6 @@ export default defineConfig({
         manualChunks: {
           'ant-design-vue': ['ant-design-vue', '@ant-design/icons-vue'],
           'echarts': ['echarts/core', 'echarts/charts', 'echarts/components', 'echarts/renderers'],
-          xlsx: ['xlsx'],
           vendor: ['vue', 'vue-router', 'pinia', 'axios']
         }
       }

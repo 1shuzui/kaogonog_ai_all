@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.models.entities import Exam, ExamAnswer, HistoryRecord, Question
+from app.services.media_storage import media_download_url, media_playback_url
 
 DIM_DEFS = [
     {"name": "行政思维", "maxScore": 20},
@@ -219,7 +220,10 @@ def _build_exam_summary(exam: Exam, answers: list[ExamAnswer], question_lookup: 
 
 def _answer_to_dict(ans: ExamAnswer, question: Question | None) -> dict:
     score_result = _normalize_score_result(ans.score_result)
-    media_record = score_result.get("mediaRecord", {}) if isinstance(score_result, dict) else {}
+    media_record = ans.media_record if isinstance(ans.media_record, dict) else {}
+    if not media_record and isinstance(score_result, dict):
+        media_record = score_result.get("mediaRecord", {}) if isinstance(score_result.get("mediaRecord"), dict) else {}
+    playback_url = media_playback_url(ans.exam_id, ans.question_id) if media_record else ""
     return {
         "questionId": ans.question_id,
         "questionStem": question.stem if question else "",
@@ -229,7 +233,8 @@ def _answer_to_dict(ans: ExamAnswer, question: Question | None) -> dict:
         "answerTime": question.answer_time if question else 180,
         "transcript": ans.transcript or "",
         "scoringResult": score_result,
-        "mediaUrl": media_record.get("fileUrl", ""),
+        "mediaUrl": playback_url,
+        "mediaDownloadUrl": media_download_url(ans.exam_id, ans.question_id) if media_record else "",
         "mediaType": media_record.get("mediaType", ""),
         "mediaFilename": media_record.get("originalFilename", ""),
         "mediaSource": media_record.get("source", ""),
@@ -306,11 +311,20 @@ def get_history_list(
     }
 
 
-def get_history_detail(db: Session, exam_id: str) -> dict:
+def _ensure_history_access(exam: Exam | None, record: HistoryRecord | None, username: str, is_admin: bool = False) -> None:
+    if is_admin:
+        return
+    owner = exam.user_id if exam else record.username if record else ""
+    if owner != username:
+        raise HTTPException(status_code=403, detail="无权访问该历史记录")
+
+
+def get_history_detail(db: Session, exam_id: str, username: str, is_admin: bool = False) -> dict:
     r = db.query(HistoryRecord).filter(HistoryRecord.exam_id == exam_id).first()
     exam = db.query(Exam).filter(Exam.id == exam_id).first()
     if not exam and not r:
         raise HTTPException(status_code=404, detail="历史记录未找到")
+    _ensure_history_access(exam, r, username, is_admin=is_admin)
     if not exam:
         detail = _record_to_dict(r)
         detail.update({

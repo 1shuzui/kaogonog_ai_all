@@ -71,8 +71,14 @@ TABLE_STATEMENTS = [
         agreed_terms_at DATETIME NULL,
         last_login_device VARCHAR(200) DEFAULT '',
         login_device_history JSON NULL,
+        wechat_mini_openid VARCHAR(128) NULL,
+        wechat_unionid VARCHAR(128) NULL,
+        wechat_web_openid VARCHAR(128) NULL,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY idx_users_wechat_mini_openid (wechat_mini_openid),
+        UNIQUE KEY idx_users_wechat_web_openid (wechat_web_openid),
+        INDEX idx_users_wechat_unionid (wechat_unionid)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     """,
     """
@@ -288,6 +294,23 @@ def _add_column_if_missing(cur, database: str, table: str, column: str, ddl: str
         cur.execute(f"ALTER TABLE `{table}` ADD COLUMN {ddl}")
 
 
+def _index_exists(cur, database: str, table: str, index_name: str) -> bool:
+    cur.execute(
+        """
+        SELECT COUNT(*) AS cnt
+        FROM information_schema.STATISTICS
+        WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND INDEX_NAME = %s
+        """,
+        (database, table, index_name),
+    )
+    return cur.fetchone()["cnt"] > 0
+
+
+def _add_index_if_missing(cur, database: str, table: str, index_name: str, ddl: str) -> None:
+    if not _index_exists(cur, database, table, index_name):
+        cur.execute(f"ALTER TABLE `{table}` ADD {ddl}")
+
+
 def ensure_schema_updates(conn, database: str) -> None:
     with conn.cursor() as cur:
         _add_column_if_missing(cur, database, "users", "role", "role VARCHAR(32) NOT NULL DEFAULT 'user' AFTER province")
@@ -295,7 +318,14 @@ def ensure_schema_updates(conn, database: str) -> None:
         _add_column_if_missing(cur, database, "users", "agreed_terms_at", "agreed_terms_at DATETIME NULL")
         _add_column_if_missing(cur, database, "users", "last_login_device", "last_login_device VARCHAR(200) DEFAULT ''")
         _add_column_if_missing(cur, database, "users", "login_device_history", "login_device_history JSON NULL")
+        _add_column_if_missing(cur, database, "users", "wechat_mini_openid", "wechat_mini_openid VARCHAR(128) NULL")
+        _add_column_if_missing(cur, database, "users", "wechat_unionid", "wechat_unionid VARCHAR(128) NULL")
+        _add_column_if_missing(cur, database, "users", "wechat_web_openid", "wechat_web_openid VARCHAR(128) NULL")
+        _add_index_if_missing(cur, database, "users", "idx_users_wechat_mini_openid", "UNIQUE KEY idx_users_wechat_mini_openid (wechat_mini_openid)")
+        _add_index_if_missing(cur, database, "users", "idx_users_wechat_unionid", "INDEX idx_users_wechat_unionid (wechat_unionid)")
+        _add_index_if_missing(cur, database, "users", "idx_users_wechat_web_openid", "UNIQUE KEY idx_users_wechat_web_openid (wechat_web_openid)")
         _add_column_if_missing(cur, database, "exam_answers", "score_result", "score_result JSON NULL AFTER transcript")
+        _add_column_if_missing(cur, database, "exam_answers", "media_record", "media_record JSON NULL AFTER score_result")
         _add_column_if_missing(cur, database, "history_records", "total_score", "total_score FLOAT NOT NULL DEFAULT 0")
         _add_column_if_missing(cur, database, "history_records", "max_score", "max_score FLOAT NOT NULL DEFAULT 100")
         _add_column_if_missing(cur, database, "history_records", "grade", "grade VARCHAR(4) NOT NULL DEFAULT 'B'")
@@ -335,13 +365,35 @@ def check_tables(config: dict):
 def seed_default_user(conn):
     from passlib.context import CryptContext
     pwd_context = CryptContext(schemes=["pbkdf2_sha256", "bcrypt"], deprecated="auto")
+    initial_admin_password = os.getenv("ADMIN_INITIAL_PASSWORD", "")
+    if settings.app_env.lower() == "production" and not initial_admin_password:
+        logger.warning(
+            "Default admin seed skipped in production",
+            extra={"event": "database.seed.user.skipped", "reason": "missing_admin_initial_password"},
+        )
+        return
+
+    initial_admin_password = initial_admin_password or "DevAdmin123!"
+    if (
+        len(initial_admin_password) < 10
+        or not any(ch.islower() for ch in initial_admin_password)
+        or not any(ch.isupper() for ch in initial_admin_password)
+        or not any(ch.isdigit() for ch in initial_admin_password)
+        or not any(not ch.isalnum() for ch in initial_admin_password)
+    ):
+        raise RuntimeError("ADMIN_INITIAL_PASSWORD must be at least 10 characters and include uppercase, lowercase, digit, and symbol")
+
     sql = """
     INSERT INTO users (username, hashed_password, full_name, email, province, role)
     VALUES (%s, %s, %s, %s, %s, %s)
-    ON DUPLICATE KEY UPDATE full_name = VALUES(full_name), email = VALUES(email), role = 'admin'
+    ON DUPLICATE KEY UPDATE
+        hashed_password = VALUES(hashed_password),
+        full_name = VALUES(full_name),
+        email = VALUES(email),
+        role = VALUES(role)
     """
     with conn.cursor() as cur:
-        cur.execute(sql, ("admin", pwd_context.hash("admin123"), "管理员", "admin@example.com", "national", "admin"))
+        cur.execute(sql, ("admin", pwd_context.hash(initial_admin_password), "管理员", "admin@example.com", "national", "admin"))
         logger.info("Default user seeded", extra={"event": "database.seed.user", "username": "admin"})
 
 
@@ -436,7 +488,7 @@ def seed_from_db_json(conn):
                     user.get("full_name", ""),
                     user.get("email", ""),
                     user.get("province", "national"),
-                    user.get("role") or ("admin" if str(username or "").lower() == "admin" else "user"),
+                    "admin" if str(user.get("role") or "").lower() == "admin" else "user",
                 ))
         logger.info("Legacy users migrated", extra={"event": "database.legacy_migration.users", "count": len(users)})
 

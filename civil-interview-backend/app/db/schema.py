@@ -27,9 +27,40 @@ def ensure_runtime_schema(engine) -> None:
                 conn.execute(text("ALTER TABLE users ADD COLUMN `role` VARCHAR(32) NOT NULL DEFAULT 'user'"))
         logger.info("Runtime schema patched", extra={"event": "database.schema.patched", "table": "users", "column": "role"})
 
+    wechat_columns = {
+        "wechat_mini_openid": "VARCHAR(128)",
+        "wechat_unionid": "VARCHAR(128)",
+        "wechat_web_openid": "VARCHAR(128)",
+    }
+    for column, column_type in wechat_columns.items():
+        if columns and column not in columns:
+            with engine.begin() as conn:
+                if engine.dialect.name == "mysql":
+                    conn.execute(text(f"ALTER TABLE users ADD COLUMN `{column}` {column_type} NULL"))
+                    if column in {"wechat_mini_openid", "wechat_web_openid"}:
+                        conn.execute(text(f"CREATE UNIQUE INDEX `idx_users_{column}` ON users (`{column}`)"))
+                    else:
+                        conn.execute(text(f"CREATE INDEX `idx_users_{column}` ON users (`{column}`)"))
+                else:
+                    conn.execute(text(f"ALTER TABLE users ADD COLUMN {column} {column_type} NULL"))
+                    unique = "UNIQUE " if column in {"wechat_mini_openid", "wechat_web_openid"} else ""
+                    conn.execute(text(f"CREATE {unique}INDEX IF NOT EXISTS idx_users_{column} ON users({column})"))
+            columns.add(column)
+            logger.info("Runtime schema patched", extra={"event": "database.schema.patched", "table": "users", "column": column})
+
+    answer_columns = _column_names(engine, "exam_answers")
+    if answer_columns and "media_record" not in answer_columns:
+        with engine.begin() as conn:
+            if engine.dialect.name == "mysql":
+                conn.execute(text("ALTER TABLE exam_answers ADD COLUMN `media_record` JSON NULL"))
+            else:
+                conn.execute(text("ALTER TABLE exam_answers ADD COLUMN media_record JSON"))
+        logger.info(
+            "Runtime schema patched",
+            extra={"event": "database.schema.patched", "table": "exam_answers", "column": "media_record"},
+        )
+
     with engine.begin() as conn:
-        if columns:
-            conn.execute(text("UPDATE users SET `role` = 'admin' WHERE LOWER(username) = 'admin' AND (`role` IS NULL OR `role` <> 'admin')"))
         inspector = inspect(engine)
         if "feedback_tickets" not in inspector.get_table_names():
             if engine.dialect.name == "mysql":

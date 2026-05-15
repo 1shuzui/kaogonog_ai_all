@@ -40,7 +40,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { createPaymentOrder, getPaymentOrder, mockWechatPaymentCallback } from '../../api/payment'
+import { createPaymentOrder, getPaymentOrder } from '../../api/payment'
 import { useBillingStore } from '../../stores/billing'
 import { useUserStore } from '../../stores/user'
 import { toast } from '../../utils/navigation'
@@ -113,25 +113,6 @@ async function activate(plan) {
       code,
       idempotencyKey: createIdempotencyKey(plan)
     })
-
-    if (order.payParams?.mode === 'mock') {
-      if (import.meta.env.PROD) {
-        toast('服务器仍返回测试支付参数，请检查后端微信支付配置')
-        return
-      }
-      await mockWechatPaymentCallback({
-        orderNo: order.orderNo,
-        status: 'paid',
-        amountTotal: Math.round(Number(order.amount || 0) * 100),
-        callbackPayload: {
-          source: 'mini_program_pricing_page',
-          packageCode: order.packageCode
-        }
-      })
-      await userStore.loadUserInfo()
-      toast('开通成功', 'success')
-      return
-    }
 
     await requestWechatPayment(order.payParams?.miniProgramPay || {})
     const paidOrder = await waitOrderPaid(order.orderNo)

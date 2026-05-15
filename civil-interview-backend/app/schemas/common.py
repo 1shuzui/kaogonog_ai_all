@@ -31,6 +31,21 @@ class RegisterRequest(BaseModel):
     )
 
 
+class WechatMiniLoginRequest(BaseModel):
+    code: str
+    agreed_terms_version: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("agreed_terms_version", "agreedTermsVersion"),
+    )
+
+
+class WechatWebLoginConfigResponse(BaseModel):
+    configured: bool
+    loginUrl: str = ""
+    message: str = ""
+    requiredEnv: List[str] = Field(default_factory=list)
+
+
 class PasswordResetRequest(BaseModel):
     username: str
     contact: Optional[str] = None
@@ -125,7 +140,7 @@ class PaymentOrderCreateRequest(BaseModel):
 
 
 class PaymentCallbackRequest(BaseModel):
-    mode: str = "mock"
+    mode: Optional[str] = None
     eventType: Optional[str] = Field(default=None, validation_alias=AliasChoices("eventType", "event_type"))
     resource: Optional[Dict] = None
     summary: Optional[str] = None
@@ -135,7 +150,6 @@ class PaymentCallbackRequest(BaseModel):
     paidAt: Optional[str] = Field(default=None, validation_alias=AliasChoices("paidAt", "paid_at"))
     amountTotal: Optional[int] = Field(default=None, validation_alias=AliasChoices("amountTotal", "amount_total"))
     callbackPayload: Dict = Field(default_factory=dict, validation_alias=AliasChoices("callbackPayload", "callback_payload"))
-    resourcePlain: Optional[Dict] = Field(default=None, validation_alias=AliasChoices("resourcePlain", "resource_plain"))
 
 
 class PaymentRefundStatsRequest(BaseModel):

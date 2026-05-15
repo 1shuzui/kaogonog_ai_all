@@ -52,14 +52,22 @@
     <view v-if="records.length">
       <view v-for="record in records" :key="record.id" class="card record-item">
         <view class="record-item__top">
-          <text class="record-item__type">{{ record.type }}</text>
+          <view class="record-item__heading">
+            <text class="record-item__type">{{ record.type }}</text>
+            <text class="record-item__created">提交于 {{ formatTime(record.createdAt) }}</text>
+          </view>
           <text class="record-item__status" :class="`record-item__status--${record.status}`">{{ statusLabel(record.status) }}</text>
         </view>
         <text class="record-item__summary">{{ record.summary }}</text>
+        <view class="record-item__status-panel" :class="`record-item__status-panel--${record.status}`">
+          <text class="record-item__status-title">{{ feedbackStatusTitle(record) }}</text>
+          <text class="record-item__status-desc">{{ feedbackStatusDesc(record) }}</text>
+          <text v-if="record.handledAt" class="record-item__status-desc">处理时间：{{ formatTime(record.handledAt) }}</text>
+          <text v-if="record.adminNote" class="record-item__status-desc">处理说明：{{ record.adminNote }}</text>
+        </view>
         <text class="record-item__meta">省份：{{ record.province || '-' }} ｜ 题号：{{ record.questionId || '-' }}</text>
-        <text class="record-item__meta">提交人：{{ record.username || '-' }} ｜ 时间：{{ formatTime(record.createdAt) }}</text>
+        <text class="record-item__meta">提交人：{{ record.username || '-' }}</text>
         <text v-if="record.contact" class="record-item__meta">联系方式：{{ record.contact }}</text>
-        <text v-if="record.handledAt" class="record-item__meta">处理时间：{{ formatTime(record.handledAt) }}</text>
 
         <view v-if="userStore.isAdmin" class="action-row">
           <button class="secondary-button" @tap="toggleStatus(record)">
@@ -164,6 +172,17 @@ onShow(async () => {
 
 function statusLabel(value = '') {
   return STATUS_OPTIONS.find((item) => item.value === value)?.label || '全部状态'
+}
+
+function feedbackStatusTitle(record = {}) {
+  return record.status === 'handled' ? '管理员已处理' : '已提交，等待管理员处理'
+}
+
+function feedbackStatusDesc(record = {}) {
+  if (record.status === 'handled') {
+    return record.adminNote ? '请查看下方处理说明。' : '这条反馈已完成处理，如仍有问题可以继续补充提交。'
+  }
+  return '管理员处理后，处理状态和说明会在这里同步显示。'
 }
 
 function onTypeChange(event) {
@@ -341,32 +360,59 @@ function formatTime(value = '') {
 }
 
 .record-item__top {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 16rpx;
+  align-items: start;
 }
 
 .record-item__type,
+.record-item__created,
 .record-item__status,
 .record-item__summary,
 .record-item__meta,
+.record-item__status-title,
+.record-item__status-desc,
 .modal-card__title {
   display: block;
 }
 
+.record-item__heading {
+  min-width: 0;
+}
+
 .record-item__type {
+  overflow: hidden;
   color: #1b5faa;
   font-size: 25rpx;
   font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.record-item__created {
+  margin-top: 6rpx;
+  color: #8a97a8;
+  font-size: 22rpx;
 }
 
 .record-item__status {
-  color: #6f7c8f;
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
+  background: #fff7e6;
+  color: #d48806;
   font-size: 23rpx;
   font-weight: 700;
+  white-space: nowrap;
+}
+
+.record-item__status--pending {
+  background: #fff7e6;
+  color: #d48806;
 }
 
 .record-item__status--handled {
+  background: #f0f8ed;
   color: #389e0d;
 }
 
@@ -376,6 +422,32 @@ function formatTime(value = '') {
   font-size: 28rpx;
   line-height: 1.7;
   white-space: pre-wrap;
+}
+
+.record-item__status-panel {
+  margin-top: 14rpx;
+  padding: 16rpx;
+  border: 1rpx solid #edf2f7;
+  border-radius: 14rpx;
+  background: #f7f9fc;
+}
+
+.record-item__status-panel--handled {
+  border-color: #d7efcf;
+  background: #f5fbf2;
+}
+
+.record-item__status-title {
+  color: #1f2b3d;
+  font-size: 25rpx;
+  font-weight: 800;
+}
+
+.record-item__status-desc {
+  margin-top: 6rpx;
+  color: #5f6f83;
+  font-size: 23rpx;
+  line-height: 1.6;
 }
 
 .record-item__meta {

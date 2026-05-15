@@ -35,14 +35,3 @@ export function applyRefund(data) {
     data
   })
 }
-
-export function mockWechatPaymentCallback(data) {
-  return request({
-    url: '/payment/callback/wechat',
-    method: 'POST',
-    data: {
-      mode: 'mock',
-      ...data
-    }
-  })
-}

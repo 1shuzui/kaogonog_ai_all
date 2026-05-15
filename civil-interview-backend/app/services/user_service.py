@@ -13,6 +13,7 @@ from app.data.legal_documents import (
 )
 from app.models.entities import User
 from app.schemas.common import AuthUser, UserProfileUpdate, UserPasswordUpdate
+from app.services.auth_service import _ensure_admin_password_strength
 
 PROVINCES = [
     {"code": "national", "name": "国考"},
@@ -102,6 +103,7 @@ def change_password(db: Session, current_user: AuthUser, data: UserPasswordUpdat
     user = _get_user_or_404(db, current_user.username)
     if not verify_password(data.old_password, user.hashed_password):
         raise HTTPException(status_code=400, detail="原密码错误")
+    _ensure_admin_password_strength(user, data.new_password)
     user.hashed_password = get_password_hash(data.new_password)
     db.commit()
     return {"success": True, "message": "密码修改成功"}

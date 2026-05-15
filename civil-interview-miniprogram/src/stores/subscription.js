@@ -22,6 +22,12 @@ function normalizeStatus(payload = {}) {
   }
 }
 
+function hasPremiumPlan(status = {}) {
+  if (status.isTrialUser) return false
+  if (!['hourly', 'monthly'].includes(status.planType)) return false
+  return status.hasActivePlan === true || status.canUse === true
+}
+
 export const useSubscriptionStore = defineStore('subscription', {
   state: () => ({
     status: normalizeStatus(),
@@ -32,6 +38,9 @@ export const useSubscriptionStore = defineStore('subscription', {
   getters: {
     isActive(state) {
       return state.status.hasActivePlan || state.status.canUse
+    },
+    hasPremiumAccess(state) {
+      return hasPremiumPlan(state.status)
     },
     remainingLabel(state) {
       const remaining = Math.max(0, Number(state.status.remainingMinutes || 0))
@@ -44,6 +53,7 @@ export const useSubscriptionStore = defineStore('subscription', {
   actions: {
     applyStatus(payload = {}) {
       this.status = normalizeStatus(payload)
+      const premium = hasPremiumPlan(this.status)
       const billingStore = useBillingStore()
       billingStore.applyBackendState({
         planType: this.status.planType,
@@ -56,9 +66,9 @@ export const useSubscriptionStore = defineStore('subscription', {
         usedMinutes: this.status.usedMinutes,
         totalMinutes: this.status.totalMinutes,
         monthlyExpireAt: this.status.expiresAt ? Date.parse(this.status.expiresAt) || 0 : 0,
-        isPaid: this.status.hasActivePlan
+        isPaid: premium
       }, {
-        canAccessPremiumModules: this.status.canUse || this.status.hasActivePlan
+        canAccessPremiumModules: premium
       })
       return this.status
     },

@@ -17,9 +17,10 @@ from app.core.access import (
 
 
 class DummyUser:
-    def __init__(self, username, preferences=None):
+    def __init__(self, username, preferences=None, role="user"):
         self.username = username
         self.preferences = preferences or {}
+        self.role = role
 
 
 class DummyAuthUser:
@@ -66,12 +67,18 @@ class AccessControlTestCase(unittest.TestCase):
             )
         )
 
-    def test_build_access_context_marks_admin_as_paid(self):
-        context = build_access_context(DummyUser("admin"))
+    def test_build_access_context_marks_role_admin_as_paid(self):
+        context = build_access_context(DummyUser("admin", role="admin"))
         self.assertEqual(context["role"], "admin")
         self.assertTrue(context["isAdmin"])
         self.assertTrue(context["billing"]["isPaid"])
         self.assertTrue(context["permissions"]["canManageQuestionBank"])
+
+    def test_build_access_context_does_not_promote_admin_username(self):
+        context = build_access_context(DummyUser("admin", role="user"))
+        self.assertEqual(context["role"], "user")
+        self.assertFalse(context["isAdmin"])
+        self.assertFalse(context["permissions"]["canManageQuestionBank"])
 
     def test_build_access_context_accepts_active_subscription_snapshot(self):
         context = build_access_context(

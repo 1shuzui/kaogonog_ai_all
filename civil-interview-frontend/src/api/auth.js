@@ -20,6 +20,12 @@ export async function register(form) {
   })
 }
 
+export async function getWechatWebLoginUrl() {
+  return http.get('/auth/wechat/web/url', {
+    skipErrorHandler: true
+  })
+}
+
 export async function requestPasswordReset(data) {
   return http.post('/password-reset/request', data, {
     skipErrorHandler: true

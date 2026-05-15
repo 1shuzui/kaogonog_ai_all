@@ -159,7 +159,7 @@ export const useUserStore = defineStore('user', {
       return !!state.token
     },
     isAdmin(state) {
-      return !!state.userInfo?.isAdmin || state.username === 'admin' || state.userInfo?.id === 'admin'
+      return !!state.userInfo?.isAdmin
     },
     roleLabel() {
       return this.isAdmin ? 'Admin' : 'User'
@@ -238,7 +238,7 @@ export const useUserStore = defineStore('user', {
       const billingStore = useBillingStore()
       const info = await getUserInfo()
       const activeUsername = info?.id || this.username
-      const isAdmin = !!info?.isAdmin || activeUsername === 'admin'
+      const isAdmin = !!info?.isAdmin
 
       if (activeUsername && activeUsername !== this.username) {
         this.username = activeUsername

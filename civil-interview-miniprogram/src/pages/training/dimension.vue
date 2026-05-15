@@ -65,7 +65,7 @@ const category = computed(() => getTrainingCategory(categoryKey.value))
 const hasFullAccess = computed(() => (
   userStore.isAdmin
   || billingStore.isPaid
-  || subscriptionStore.status.hasActivePlan
+  || subscriptionStore.hasPremiumAccess
   || userStore.userInfo?.billing?.isPaid === true
   || userStore.userInfo?.permissions?.canAccessPremiumModules === true
 ))

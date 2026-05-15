@@ -400,6 +400,11 @@ const scoringModeLabel = computed(() => {
 function normalizeMediaUrl(url) {
   const value = String(url || '').trim()
   if (!value) return ''
+  const token = localStorage.getItem('token') || ''
+  if (token && value.startsWith('/api/exam/') && !value.includes('access_token=')) {
+    const separator = value.includes('?') ? '&' : '?'
+    return `${value}${separator}access_token=${encodeURIComponent(token)}`
+  }
   if (value.startsWith('blob:') || value.startsWith('http://') || value.startsWith('https://') || value.startsWith('/')) {
     return value
   }

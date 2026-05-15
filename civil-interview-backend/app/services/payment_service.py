@@ -410,7 +410,7 @@ def _parse_paid_at(raw: str | None) -> datetime:
 
 def _assert_callback_amount(order: PaymentOrder, amount_total: int | None) -> None:
     if amount_total is None:
-        return
+        raise HTTPException(status_code=400, detail="微信支付回调缺少金额")
     expected_total = int(round(float(order.amount or 0) * 100))
     if expected_total != int(amount_total):
         raise HTTPException(status_code=400, detail="回调金额与订单金额不一致")
@@ -471,6 +471,8 @@ def _apply_transaction_to_order(db: Session, order: PaymentOrder, package: Subsc
 
 def handle_payment_callback(db: Session, data: PaymentCallbackRequest, headers: dict | None = None, raw_body: bytes | None = None) -> dict:
     parsed = wechat_pay_service.parse_callback(data, headers, raw_body)
+    if parsed.get("mode") != "wechat" or not parsed.get("verified") or parsed.get("verifyPending"):
+        raise HTTPException(status_code=401, detail="微信支付回调未通过真实验签，不能开通权益")
     order = db.query(PaymentOrder).filter(PaymentOrder.order_no == parsed["orderNo"]).first()
     if not order:
         raise HTTPException(status_code=404, detail="订单不存在")

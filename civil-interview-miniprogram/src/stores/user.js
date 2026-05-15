@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { login as loginApi, register as registerApi } from '../api/auth'
+import { login as loginApi, loginWithWechat as loginWithWechatApi, register as registerApi } from '../api/auth'
 import { getProvinces, getUserInfo, updatePreferences, updateUserProfile } from '../api/user'
 import { useBillingStore } from './billing'
 import {
@@ -91,11 +91,11 @@ export const useUserStore = defineStore('user', {
       return !!state.token
     },
     isAdmin(state) {
-      return !!state.userInfo?.isAdmin || state.username === 'admin' || state.userInfo?.id === 'admin'
+      return !!state.userInfo?.isAdmin
     },
     displayName(state) {
       const baseName = state.userInfo?.name || state.username || '考生'
-      const isAdmin = !!state.userInfo?.isAdmin || state.username === 'admin' || state.userInfo?.id === 'admin'
+      const isAdmin = !!state.userInfo?.isAdmin
       return isAdmin ? `${baseName}（管理员权限）` : baseName
     },
     selectedProvinceName(state) {
@@ -110,6 +110,16 @@ export const useUserStore = defineStore('user', {
       this.username = username
       uni.setStorageSync(TOKEN_STORAGE_KEY, response.access_token)
       uni.setStorageSync(USERNAME_STORAGE_KEY, username)
+      await this.loadUserInfo().catch(() => null)
+      return response
+    },
+
+    async loginWithWechat(code, agreedTermsVersion) {
+      const response = await loginWithWechatApi(code, agreedTermsVersion)
+      this.token = response.access_token
+      this.username = response.username || ''
+      uni.setStorageSync(TOKEN_STORAGE_KEY, response.access_token)
+      if (response.username) uni.setStorageSync(USERNAME_STORAGE_KEY, response.username)
       await this.loadUserInfo().catch(() => null)
       return response
     },
@@ -145,7 +155,7 @@ export const useUserStore = defineStore('user', {
       const billingStore = useBillingStore()
       const info = await getUserInfo({ skipErrorHandler: true })
       const username = info?.id || this.username
-      const isAdmin = !!info?.isAdmin || username === 'admin'
+      const isAdmin = !!info?.isAdmin
       const permissions = {
         canManageQuestionBank: isAdmin || !!info?.permissions?.canManageQuestionBank,
         canAccessPremiumModules: isAdmin || !!info?.permissions?.canAccessPremiumModules

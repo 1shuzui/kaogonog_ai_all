@@ -25,16 +25,26 @@ def seed():
     try:
         # ----- Default admin user -----
         if not db.query(User).filter(User.username == "admin").first():
-            admin = User(
-                username="admin",
-                hashed_password=get_password_hash("admin123"),
-                full_name="管理员",
-                email="admin@example.com",
-                province="national",
-                role="admin",
-            )
-            db.add(admin)
-            logger.info("Seed default admin created", extra={"event": "seed.admin.created", "username": "admin"})
+            initial_admin_password = os.getenv("ADMIN_INITIAL_PASSWORD", "")
+            if settings.app_env.lower() == "production" and not initial_admin_password:
+                logger.warning(
+                    "Seed default admin skipped in production",
+                    extra={"event": "seed.admin.skipped", "reason": "missing_admin_initial_password"},
+                )
+            else:
+                initial_admin_password = initial_admin_password or "DevAdmin123!"
+                if len(initial_admin_password) < 10:
+                    raise RuntimeError("ADMIN_INITIAL_PASSWORD must be at least 10 characters")
+                admin = User(
+                    username="admin",
+                    hashed_password=get_password_hash(initial_admin_password),
+                    full_name="管理员",
+                    email="admin@example.com",
+                    province="national",
+                    role="admin",
+                )
+                db.add(admin)
+                logger.info("Seed default admin created", extra={"event": "seed.admin.created", "username": "admin"})
         else:
             logger.info("Seed default admin skipped", extra={"event": "seed.admin.skipped", "username": "admin"})
 

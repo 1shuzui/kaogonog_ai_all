@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import base64
-import hashlib
 import json
 import logging
 from pathlib import Path
@@ -33,14 +32,14 @@ logger = logging.getLogger(__name__)
 
 class WechatPayService:
     def is_real_pay_enabled(self) -> bool:
-        return bool(settings.wechat_pay_enabled and not settings.wechat_pay_mock_mode)
+        return bool(settings.wechat_pay_enabled)
 
     def get_pay_payload(self, order: PaymentOrder, package: SubscriptionPackage, data: PaymentOrderCreateRequest) -> dict:
         scene = str(data.scene or settings.wechat_pay_scene or "mini_program")
         if scene != "mini_program":
-            return self._build_mock_payload(order, package, data, reason="PC 端当前仅创建订单；真实扣款请走小程序 JSAPI 支付")
+            raise HTTPException(status_code=400, detail="PC 端暂不直接拉起微信支付，请在小程序端完成购买")
         if not self.is_real_pay_enabled():
-            return self._build_mock_payload(order, package, data)
+            raise HTTPException(status_code=503, detail="微信支付未启用，请联系管理员检查商户配置")
         return self._build_real_mini_program_payload(order, package, data)
 
     def query_order(self, order: PaymentOrder) -> dict | None:
@@ -60,21 +59,7 @@ class WechatPayService:
 
     def request_refund(self, order: PaymentOrder, amount_total: int, amount_refund: int, reason: str = "", out_refund_no: str = "") -> dict:
         if not self.is_real_pay_enabled() or order.pay_channel != "wechat":
-            logger.info(
-                "Wechat Pay refund mocked",
-                extra={
-                    "event": "wechat_pay.refund.mocked",
-                    "order_no": order.order_no,
-                    "amount_refund": amount_refund,
-                },
-            )
-            return {
-                "mode": "mock",
-                "status": WECHAT_REFUND_SUCCESS,
-                "outRefundNo": out_refund_no or f"RF{order.order_no}",
-                "refundId": f"mock_refund_{order.order_no}",
-                "raw": {"mock": True},
-            }
+            raise HTTPException(status_code=503, detail="微信真实退款未启用，不能执行退款")
 
         if amount_refund <= 0:
             raise HTTPException(status_code=400, detail="退款金额必须大于 0")
@@ -120,14 +105,12 @@ class WechatPayService:
 
     def parse_callback(self, data: PaymentCallbackRequest, headers: dict | None = None, raw_body: bytes | None = None) -> dict:
         headers = headers or {}
-        mode = (data.mode or data.callbackPayload.get("mode") or "mock").lower()
-        if data.resource or data.eventType:
-            mode = "wechat"
-        if mode == "mock":
-            return self._parse_mock_callback(data, headers)
-        if mode == "wechat":
-            return self._parse_wechat_callback(data, headers, raw_body)
-        raise HTTPException(status_code=400, detail="不支持的微信支付回调模式")
+        mode = str(data.mode or data.callbackPayload.get("mode") or "wechat").lower()
+        if mode != "wechat":
+            raise HTTPException(status_code=400, detail="仅接受微信支付真实回调")
+        if data.callbackPayload.get("resourcePlain") or data.callbackPayload.get("resource_plain"):
+            raise HTTPException(status_code=400, detail="微信支付回调不能使用未验签明文资源")
+        return self._parse_wechat_callback(data, headers, raw_body)
 
     def upload_shipping_info(self, transaction: dict, order: PaymentOrder, package: SubscriptionPackage) -> dict:
         if not settings.wechat_pay_shipping_upload_enabled:
@@ -173,32 +156,8 @@ class WechatPayService:
             return {"skipped": False, "success": False, "request": body, "response": result}
         return {"skipped": False, "success": True, "request": body, "response": result}
 
-    def _parse_mock_callback(self, data: PaymentCallbackRequest, headers: dict) -> dict:
-        if not data.orderNo:
-            raise HTTPException(status_code=400, detail="mock 回调缺少 orderNo")
-        return {
-            "mode": "mock",
-            "verified": True,
-            "orderNo": data.orderNo,
-            "status": data.status or "paid",
-            "transactionId": data.thirdPartyOrderNo or f"mock_wx_txn_{data.orderNo}",
-            "paidAt": data.paidAt or datetime.now(timezone.utc).isoformat(),
-            "amountTotal": data.amountTotal,
-            "appid": settings.wechat_pay_appid,
-            "mchid": settings.wechat_pay_mchid,
-            "openid": data.callbackPayload.get("openid") or "",
-            "rawPayload": data.callbackPayload or {"mock": True},
-            "headers": self._pick_wechat_headers(headers),
-        }
-
     def _parse_wechat_callback(self, data: PaymentCallbackRequest, headers: dict, raw_body: bytes | None) -> dict:
         picked_headers = self._pick_wechat_headers(headers)
-        resource_plain = data.resourcePlain or data.callbackPayload.get("resourcePlain") or data.callbackPayload.get("resource_plain")
-        if resource_plain:
-            parsed = self._parse_wechat_transaction(resource_plain, mode="wechat", verified=False, headers=picked_headers)
-            parsed["verifyPending"] = True
-            return parsed
-
         if not data.resource:
             raise HTTPException(status_code=400, detail="微信支付回调缺少 resource")
         if not raw_body:
@@ -271,6 +230,9 @@ class WechatPayService:
         raise HTTPException(status_code=400, detail="小程序真实支付需要 openId 或 wx.login code")
 
     def exchange_code_for_openid(self, code: str) -> str:
+        return str(self.exchange_code_for_session(code).get("openid") or "")
+
+    def exchange_code_for_session(self, code: str) -> dict:
         self._require_miniprogram_secret()
         logger.info("Wechat mini program code exchange started", extra={"event": "wechat.openid.exchange.started"})
         response = requests.get(
@@ -293,7 +255,11 @@ class WechatPayService:
         if not openid:
             raise HTTPException(status_code=502, detail="微信登录换取 openid 响应缺少 openid")
         logger.info("Wechat mini program code exchange completed", extra={"event": "wechat.openid.exchange.completed"})
-        return openid
+        return {
+            "openid": openid,
+            "unionid": result.get("unionid") or "",
+            "sessionKey": result.get("session_key") or "",
+        }
 
     def _build_jsapi_order_body(self, order: PaymentOrder, package: SubscriptionPackage, openid: str) -> dict:
         self._require_real_pay_config()
@@ -408,6 +374,11 @@ class WechatPayService:
         signature = picked["wechatpaySignature"]
         if not all((timestamp, nonce, signature)):
             raise HTTPException(status_code=400, detail="微信支付回调缺少验签头")
+        try:
+            if abs(int(time.time()) - int(timestamp)) > 300:
+                raise HTTPException(status_code=401, detail="微信支付回调时间戳已过期")
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="微信支付回调时间戳无效") from exc
 
         public_key = self._load_wechatpay_verification_key(picked["wechatpaySerial"])
         message = f"{timestamp}\n{nonce}\n{raw_body.decode('utf-8')}\n".encode("utf-8")
@@ -564,9 +535,9 @@ class WechatPayService:
             return
         appid = payload.get("appid")
         mchid = payload.get("mchid")
-        if appid and appid != settings.wechat_pay_appid:
+        if not appid or appid != settings.wechat_pay_appid:
             raise HTTPException(status_code=400, detail="微信支付回调 appid 不匹配")
-        if mchid and mchid != settings.wechat_pay_mchid:
+        if not mchid or mchid != settings.wechat_pay_mchid:
             raise HTTPException(status_code=400, detail="微信支付回调 mchid 不匹配")
 
     def _validate_client_appid(self, appid: str | None) -> None:
@@ -607,57 +578,6 @@ class WechatPayService:
             "wechatpayNonce": lower_headers.get("wechatpay-nonce", ""),
             "wechatpaySignature": lower_headers.get("wechatpay-signature", ""),
             "wechatpaySerial": lower_headers.get("wechatpay-serial", ""),
-        }
-
-    def _build_mock_payload(self, order: PaymentOrder, package: SubscriptionPackage, data: PaymentOrderCreateRequest, reason: str = "待替换真实商户配置") -> dict:
-        timestamp = str(int(time.time()))
-        nonce_str = uuid.uuid4().hex
-        package_value = f"prepay_id=mock_{order.order_no}"
-        mock_prepay_id = f"mock_prepay_{order.order_no}"
-        pay_sign = hashlib.sha256(f"{order.order_no}|{timestamp}|{nonce_str}".encode("utf-8")).hexdigest()
-        return {
-            "mode": "mock",
-            "scene": "mini_program",
-            "message": "当前返回的是微信小程序支付 mock 数据，拿到真实商户资料后替换为真实下单结果。",
-            "mockConfig": {
-                "appid": settings.wechat_pay_appid,
-                "mchid": settings.wechat_pay_mchid,
-                "notifyUrl": settings.wechat_pay_notify_url,
-                "reason": reason,
-                "replaceFields": [
-                    "WECHAT_PAY_ENABLED",
-                    "WECHAT_PAY_MOCK_MODE",
-                    "WECHAT_PAY_APPID",
-                    "WECHAT_PAY_MCHID",
-                    "WECHAT_PAY_NOTIFY_URL",
-                    "WECHAT_PAY_API_V3_KEY",
-                    "WECHAT_PAY_SERIAL_NO",
-                    "WECHAT_PAY_PRIVATE_KEY_PATH",
-                    "WECHAT_PAY_PLATFORM_CERT_PATH",
-                    "WECHAT_MINIPROGRAM_APP_SECRET",
-                ],
-            },
-            "miniProgramPay": {
-                "appId": settings.wechat_pay_appid,
-                "timeStamp": timestamp,
-                "nonceStr": nonce_str,
-                "package": package_value,
-                "signType": "RSA",
-                "paySign": pay_sign,
-                "prepayId": mock_prepay_id,
-            },
-            "unifiedOrderRequestPreview": {
-                "appid": settings.wechat_pay_appid,
-                "mchid": settings.wechat_pay_mchid,
-                "description": package.package_name,
-                "out_trade_no": order.order_no,
-                "notify_url": settings.wechat_pay_notify_url,
-                "amount": {"total": int(round(float(order.amount or 0) * 100))},
-                "payer": {
-                    "openid": data.openId or "mock_openid_replace_me",
-                },
-                "attach": order.username,
-            },
         }
 
 

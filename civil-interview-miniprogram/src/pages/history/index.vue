@@ -39,7 +39,7 @@
       >
         <view class="history-card__main">
           <text class="history-card__title">{{ record.questionSummary || '模拟面试练习' }}</text>
-          <text class="history-card__meta">{{ formatDate(record.date) }} · {{ record.questionCount || 1 }} 题</text>
+          <text class="history-card__meta">{{ formatDate(record.completedAt || record.date) }} · {{ record.questionCount || 1 }} 题</text>
         </view>
         <ScoreRing :score="record.totalScore || 0" :max-score="record.maxScore || 100" size="small" />
       </view>

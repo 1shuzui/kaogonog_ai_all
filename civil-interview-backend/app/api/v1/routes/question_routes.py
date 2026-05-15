@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.access import (
@@ -7,6 +7,7 @@ from app.core.access import (
     ensure_question_read_access,
     ensure_random_question_access,
 )
+from app.core.rate_limit import check_rate_limit
 from app.core.security import get_current_user
 from app.db.session import get_db
 from app.schemas.common import AuthUser, QuestionCreate, QuestionUpdate
@@ -17,6 +18,7 @@ from app.services.question_service import (
 )
 
 router = APIRouter(prefix="/questions", tags=["questions"])
+MAX_IMPORT_BYTES = 20 * 1024 * 1024
 
 
 @router.get("")
@@ -65,10 +67,16 @@ def delete_q(question_id: str, db: Session = Depends(get_db), current_user: Auth
 
 
 @router.post("/import")
-async def import_qs(file: UploadFile = File(...), db: Session = Depends(get_db), current_user: AuthUser = Depends(get_current_user)):
+async def import_qs(request: Request, file: UploadFile = File(...), db: Session = Depends(get_db), current_user: AuthUser = Depends(get_current_user)):
     ensure_admin_access(current_user)
+    check_rate_limit(request, "questions:import", limit=10, window_seconds=600, identity=current_user.username)
+    filename = file.filename or ""
+    if not filename.lower().endswith((".json", ".xlsx")):
+        raise HTTPException(status_code=400, detail="仅支持 .json 或 .xlsx 题库导入")
     content = await file.read()
-    return import_questions(db, content, file.filename or "")
+    if len(content) > MAX_IMPORT_BYTES:
+        raise HTTPException(status_code=413, detail="题库文件过大，最大支持 20MB")
+    return import_questions(db, content, filename)
 
 
 @router.post("/generate")

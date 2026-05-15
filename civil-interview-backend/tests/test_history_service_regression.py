@@ -6,7 +6,9 @@ from sqlalchemy.orm import sessionmaker
 
 from app.db.session import Base
 from app.models.entities import Exam, ExamAnswer, HistoryRecord, Question
-from app.services.history_service import get_history_list, get_history_stats, get_history_trend
+from fastapi import HTTPException
+
+from app.services.history_service import get_history_detail, get_history_list, get_history_stats, get_history_trend
 
 
 class TestHistoryServiceRegression(unittest.TestCase):
@@ -67,14 +69,22 @@ class TestHistoryServiceRegression(unittest.TestCase):
         listing = get_history_list(self.db, "tester", current=1, page_size=10)
         stats = get_history_stats(self.db, "tester")
         trend = get_history_trend(self.db, "tester", days=30)
+        detail = get_history_detail(self.db, "exam_history_1", "tester")
 
         self.assertEqual(listing["total"], 1)
         self.assertEqual(listing["list"][0]["totalScore"], 82.5)
+        self.assertEqual(detail["examId"], "exam_history_1")
+        self.assertEqual(detail["answers"][0]["mediaUrl"], "/api/exam/exam_history_1/media/q_history_1/play")
         self.assertEqual(listing["list"][0]["status"], "completed")
         self.assertEqual(stats["totalExams"], 1)
         self.assertEqual(stats["avgScore"], 82.5)
         self.assertEqual(len(trend), 1)
         self.assertEqual(trend[0]["score"], 82.5)
+
+    def test_history_detail_rejects_other_users(self):
+        with self.assertRaises(HTTPException) as ctx:
+            get_history_detail(self.db, "exam_history_1", "intruder")
+        self.assertEqual(ctx.exception.status_code, 403)
 
 
 if __name__ == "__main__":

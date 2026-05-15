@@ -27,11 +27,12 @@
     </div>
 
     <!-- 预览表格 -->
-    <div class="card" style="margin-top: 12px; padding: 16px" v-if="previewData.length">
+    <div class="card" style="margin-top: 12px; padding: 16px" v-if="selectedFile">
       <h4 style="margin-bottom: 12px">
-        预览 (共 {{ previewData.length }} 道题目)
+        {{ previewData.length ? `预览 (共 ${previewData.length} 道题目)` : 'Excel 将上传到服务器端解析' }}
       </h4>
       <a-table
+        v-if="previewData.length"
         :dataSource="previewData"
         :columns="columns"
         :pagination="{ pageSize: 5 }"
@@ -43,7 +44,7 @@
       <div style="margin-top: 16px; text-align: right">
         <a-button style="margin-right: 8px" @click="clearPreview">取消</a-button>
         <a-button type="primary" :loading="importing" @click="confirmImport">
-          确认导入 {{ previewData.length }} 道题目
+          {{ previewData.length ? `确认导入 ${previewData.length} 道题目` : '上传并导入 Excel' }}
         </a-button>
       </div>
     </div>
@@ -70,7 +71,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { InboxOutlined } from '@ant-design/icons-vue'
-import { parseExcelFile, parseJsonFile } from '@/utils/excelParser'
+import { parseJsonFile } from '@/utils/excelParser'
 import { useQuestionBankStore } from '@/stores/questionBank'
 import { DIMENSIONS } from '@/utils/constants'
 import { message } from 'ant-design-vue'
@@ -118,16 +119,17 @@ async function handleFile(file) {
     const lowerName = file.name.toLowerCase()
     if (lowerName.endsWith('.json')) {
       data = await parseJsonFile(file)
+      previewData.value = data
+      if (data.length === 0) {
+        message.warning('未解析到有效题目')
+      } else {
+        message.success(`解析成功: ${data.length} 道题目`)
+      }
     } else if (lowerName.endsWith('.xlsx')) {
-      data = await parseExcelFile(file)
+      previewData.value = []
+      message.info('已选择 Excel 文件，确认后将上传服务器解析导入')
     } else {
       throw new Error('仅支持 .xlsx / .json 格式')
-    }
-    previewData.value = data
-    if (data.length === 0) {
-      message.warning('未解析到有效题目')
-    } else {
-      message.success(`解析成功: ${data.length} 道题目`)
     }
   } catch (e) {
     message.error(e.message || '文件解析失败')

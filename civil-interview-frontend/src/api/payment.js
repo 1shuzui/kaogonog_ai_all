@@ -12,13 +12,6 @@ export function getPaymentOrder(orderNo) {
   return http.get(`/payment/orders/${encodeURIComponent(orderNo)}`)
 }
 
-export function mockWechatPaymentCallback(data) {
-  return http.post('/payment/callback/wechat', {
-    mode: 'mock',
-    ...data
-  })
-}
-
 export function getRefundBalanceStats(data = {}) {
   return http.post('/payment/admin/refund-stats', data)
 }

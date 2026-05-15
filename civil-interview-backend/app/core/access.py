@@ -120,7 +120,7 @@ def build_access_context(user) -> dict:
     subscription_state = preferences.get("subscription") if isinstance(preferences.get("subscription"), dict) else {}
     subscription_billing_state = _billing_state_from_subscription(subscription_state)
     role = str(getattr(user, "role", "") or "").strip().lower()
-    is_admin = role == "admin" or is_admin_username(getattr(user, "username", ""))
+    is_admin = role == "admin"
     is_paid = is_admin or has_paid_access_from_billing(billing_state) or has_paid_access_from_subscription(subscription_state)
     if not has_paid_access_from_billing(billing_state) and has_paid_access_from_subscription(subscription_state):
         billing_state = subscription_billing_state
