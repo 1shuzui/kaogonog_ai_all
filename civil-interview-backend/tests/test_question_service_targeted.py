@@ -7,7 +7,14 @@ from sqlalchemy.orm import sessionmaker
 from app.db.session import Base
 from app.models.entities import Question
 from app.schemas.common import QuestionUpdate
-from app.services.question_service import _choose_targeted_bank_questions, _normalize_province, delete_question, update_question
+from app.services.question_service import (
+    _choose_targeted_bank_questions,
+    _choose_training_bank_questions,
+    _normalize_province,
+    delete_question,
+    list_questions,
+    update_question,
+)
 from app.services.user_service import get_provinces
 from app.core.ai import _to_simplified_chinese
 
@@ -70,6 +77,34 @@ class TargetedQuestionServiceTestCase(unittest.TestCase):
         self.assertTrue(result[2]["isProvinceFallback"])
         self.assertEqual(result[2]["requestedProvince"], "anhui")
 
+    def test_training_questions_prioritize_selected_province(self):
+        self.db.add_all([
+            Question(
+                id="q_anhui_emergency",
+                stem="安徽应急题",
+                dimension="emergency",
+                province="anhui",
+                keywords=build_keywords(),
+            ),
+            Question(
+                id="q_national_emergency",
+                stem="国考应急题",
+                dimension="emergency",
+                province="national",
+                keywords=build_keywords(),
+            ),
+        ])
+        self.db.commit()
+
+        with patch("app.services.question_service.random.shuffle", lambda items: None):
+            result = _choose_training_bank_questions(self.db, "analysis", 3, "anhui")
+
+        self.assertEqual([item["id"] for item in result], ["q_anhui_tax", "q_national_tax", "q_anhui_general"])
+        self.assertFalse(result[0]["isProvinceFallback"])
+        self.assertTrue(result[1]["isProvinceFallback"])
+        self.assertFalse(result[2]["isProvinceFallback"])
+        self.assertEqual(result[0]["requestedProvince"], "anhui")
+
     def test_province_alias_normalization_accepts_legacy_shaanxi_code(self):
         self.assertEqual(_normalize_province("shaanxi"), "shanxi")
         self.assertEqual(_normalize_province("陕西"), "shanxi")
@@ -99,10 +134,37 @@ class TargetedQuestionServiceTestCase(unittest.TestCase):
         updated = update_question(self.db, "q_anhui_tax", data)
         self.assertEqual(updated["stem"], "更新后的标准题库题干")
         self.assertEqual(updated["questionSource"], "local_asset")
+        self.assertEqual(updated["categoryReviewStatus"], "confirmed")
 
         result = delete_question(self.db, "q_anhui_tax")
         self.assertTrue(result["success"])
         self.assertIsNone(self.db.query(Question).filter(Question.id == "q_anhui_tax").first())
+
+    def test_question_dict_exposes_category_review_metadata(self):
+        result = list_questions(self.db, current=1, page_size=10)
+        first = next(item for item in result["list"] if item["id"] == "q_anhui_tax")
+
+        self.assertEqual(first["categoryReviewStatus"], "needs_review")
+        self.assertIsInstance(first["categoryConfidence"], float)
+        self.assertTrue(first["categoryCandidates"])
+        self.assertIn("categoryReviewReason", first)
+
+    def test_question_list_can_filter_category_review_status(self):
+        q = self.db.query(Question).filter(Question.id == "q_anhui_tax").first()
+        q.keywords = {
+            **q.keywords,
+            "_meta": {
+                **q.keywords["_meta"],
+                "categoryReviewStatus": "confirmed",
+            },
+        }
+        self.db.commit()
+
+        confirmed = list_questions(self.db, category_review="confirmed", current=1, page_size=10)
+        needs_review = list_questions(self.db, category_review="needs_review", current=1, page_size=10)
+
+        self.assertIn("q_anhui_tax", [item["id"] for item in confirmed["list"]])
+        self.assertNotIn("q_anhui_tax", [item["id"] for item in needs_review["list"]])
 
     def test_transcription_normalization_converts_common_traditional_text(self):
         text = _to_simplified_chinese("這個問題應該由相關部門協調處理，讓群眾滿意。")

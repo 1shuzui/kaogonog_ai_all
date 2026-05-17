@@ -110,6 +110,7 @@ class QuestionCreate(BaseModel):
     answerTime: int = 180
     scoringPoints: List[Dict] = []
     keywords: Dict = Field(default_factory=lambda: {"scoring": [], "deducting": [], "bonus": []})
+    categoryReviewStatus: Optional[str] = None
 
 class QuestionUpdate(QuestionCreate):
     pass
@@ -184,5 +185,6 @@ class GenerateQuestionsRequest(BaseModel):
 
 class TrainingGenerateRequest(BaseModel):
     dimension: str
+    province: str = "national"
     count: int = 3
     sourceMode: str = "local"

@@ -323,11 +323,15 @@ const currentScoringPoints = computed(() => {
     .filter((item) => item.content)
 })
 const currentQuestionAssignedScore = computed(() => currentScoringPoints.value.reduce((sum, item) => sum + item.score, 0))
-const improvementReference = computed(() => buildImprovementReference({
-  question: currentQuestion.value || {},
-  result: result.value || {},
-  transcript: currentAnswer.value?.transcript || transcript.value || ''
-}))
+const improvementReference = computed(() => {
+  const modelReference = normalizeModelImprovementSuggestion(result.value?.answerImprovementSuggestion)
+  if (modelReference) return modelReference
+  return buildImprovementReference({
+    question: currentQuestion.value || {},
+    result: result.value || {},
+    transcript: currentAnswer.value?.transcript || transcript.value || ''
+  })
+})
 
 function toFiniteNumber(value, fallback = 0) {
   const number = Number(value)
@@ -337,6 +341,44 @@ function toFiniteNumber(value, fallback = 0) {
 function formatScoreNumber(value) {
   const number = toFiniteNumber(value)
   return Number.isInteger(number) ? String(number) : number.toFixed(2).replace(/\.?0+$/, '')
+}
+
+function normalizeTextList(value) {
+  return Array.isArray(value) ? value.map((item) => String(item || '').trim()).filter(Boolean) : []
+}
+
+function normalizeModelImprovementSuggestion(value) {
+  if (!value || typeof value !== 'object') return null
+  const focusPoints = Array.isArray(value.focusPoints)
+    ? value.focusPoints.map((item, index) => ({
+        order: String(item?.order || index + 1),
+        title: String(item?.title || item?.name || '').trim(),
+        hint: String(item?.hint || item?.content || '').trim()
+      })).filter((item) => item.title || item.hint)
+    : []
+  const expressionUpgrades = Array.isArray(value.expressionUpgrades)
+    ? value.expressionUpgrades.map((item) => ({
+        before: String(item?.before || '').trim(),
+        after: String(item?.after || '').trim()
+      })).filter((item) => item.before || item.after)
+    : []
+
+  return {
+    available: true,
+    basis: value.source === 'model'
+      ? '由评分模型结合题干、采分点、关键词、作答文本和本次评分结果生成。'
+      : '模型建议不可用，已使用题库与评分结果生成基础建议。',
+    summary: String(value.summary || '').trim(),
+    teacherComment: String(value.teacherComment || '').trim(),
+    diagnosisItems: normalizeTextList(value.diagnosisItems),
+    focusPoints,
+    missingKeywords: normalizeTextList(value.missingKeywords),
+    weakDimensions: [],
+    expressionUpgrades,
+    sampleAnswer: String(value.sampleAnswer || '').trim(),
+    rewriteOpening: String(value.rewriteOpening || '').trim(),
+    rewriteClosing: String(value.rewriteClosing || '').trim()
+  }
 }
 
 function getAnswerAssignedScore(question) {
@@ -531,7 +573,7 @@ function toggleFavorite() {
     const item = favoritesStore.items.find((entry) => (
       entry.examId === activeExamId.value && entry.questionId === answer.questionId
     ))
-    if (item) favoritesStore.removeItem(item.id)
+    if (item) favoritesStore.removeItem(item.id, 'starred')
     return
   }
 

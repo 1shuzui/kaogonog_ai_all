@@ -16,6 +16,7 @@ from app.core.ai import call_llm_api_async, PROVINCE_NAMES, POSITION_NAMES, DIME
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 CURATED_QUESTION_DIR = REPO_ROOT / "ai_gongwu_backend" / "assets" / "questions"
+_CURATED_QUESTION_ASSETS_SYNCED = False
 QUESTION_SOURCE_LABELS = {
     "local_asset": "本地真题",
     "imported_file": "题库导入",
@@ -42,6 +43,17 @@ POSITION_ALIASES = {
     "jiangsu_e": ("E类", "医疗卫生岗", "医疗", "卫生", "医患沟通", "公共卫生"),
     "jiangsu_worker": ("工勤技能岗", "工勤", "技能保障", "服务规范"),
 }
+CATEGORY_REVIEW_CONFIRMED = "confirmed"
+CATEGORY_REVIEW_NEEDS_REVIEW = "needs_review"
+CATEGORY_REVIEW_STATUSES = {CATEGORY_REVIEW_CONFIRMED, CATEGORY_REVIEW_NEEDS_REVIEW}
+CATEGORY_SIGNAL_KEYWORDS = {
+    "analysis": ("社会现象", "怎么看", "理解", "影响", "原因", "政策", "观点", "分析", "认识"),
+    "practical": ("组织", "策划", "调研", "宣传", "活动", "接待", "落实", "推进", "整改", "群众工作"),
+    "emergency": ("应急", "突发", "危机", "舆情", "现场", "事故", "投诉", "处置", "紧急"),
+    "legal": ("法治", "法律", "执法", "依法", "条例", "违规", "监管", "程序", "制度"),
+    "logic": ("人际", "同事", "领导", "矛盾", "关系", "沟通", "协调", "误解", "冲突"),
+    "expression": ("现场模拟", "情景模拟", "请你劝", "发言", "演讲", "口才", "表达", "模拟"),
+}
 
 
 def _normalize_stem_key(text: str | None) -> str:
@@ -67,6 +79,96 @@ def _question_meta_from_keywords(keywords: dict | None) -> dict:
 
 def _question_source_label(source: str) -> str:
     return QUESTION_SOURCE_LABELS.get(source, source or "未知来源")
+
+
+def _normalize_category_review_status(value: str | None, default: str = CATEGORY_REVIEW_NEEDS_REVIEW) -> str:
+    normalized = str(value or "").strip()
+    return normalized if normalized in CATEGORY_REVIEW_STATUSES else default
+
+
+def _coerce_category_confidence(value, fallback: float) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return fallback
+
+
+def _category_review_analysis(stem: str, dimension: str, question_type: str = "") -> dict:
+    normalized_dimension = _normalize_dimension(dimension, question_type, stem)
+    text = f"{stem or ''} {question_type or ''} {dimension or ''}"
+    scores = {key: 0 for key in CATEGORY_SIGNAL_KEYWORDS}
+    for key, tokens in CATEGORY_SIGNAL_KEYWORDS.items():
+        scores[key] += sum(1 for token in tokens if token and token in text)
+    if normalized_dimension in scores:
+        scores[normalized_dimension] += 2
+
+    ranked = sorted(scores.items(), key=lambda item: item[1], reverse=True)
+    top_score = ranked[0][1] if ranked else 0
+    second_score = ranked[1][1] if len(ranked) > 1 else 0
+    confidence = 0.55
+    if top_score > 0:
+        confidence = min(0.96, 0.58 + top_score * 0.08 + max(0, top_score - second_score) * 0.08)
+    if ranked and ranked[0][0] != normalized_dimension:
+        confidence = min(confidence, 0.68)
+
+    candidates = [
+        {
+            "dimension": key,
+            "label": DIMENSION_NAMES.get(key, key),
+            "confidence": round(min(0.96, 0.45 + score * 0.10), 2),
+        }
+        for key, score in ranked[:3]
+        if score > 0
+    ]
+    if not candidates:
+        candidates = [{
+            "dimension": normalized_dimension,
+            "label": DIMENSION_NAMES.get(normalized_dimension, normalized_dimension),
+            "confidence": round(confidence, 2),
+        }]
+
+    reason = (
+        f"根据题干关键词初判为{DIMENSION_NAMES.get(normalized_dimension, normalized_dimension)}，"
+        "建议管理员复核后确认。"
+    )
+    return {
+        "categoryConfidence": round(confidence, 2),
+        "categoryCandidates": candidates,
+        "categoryReviewReason": reason,
+    }
+
+
+def _build_category_review_meta(
+    *,
+    stem: str,
+    dimension: str,
+    question_type: str = "",
+    source_kind: str = "",
+    status: str | None = None,
+) -> dict:
+    default_status = CATEGORY_REVIEW_CONFIRMED if source_kind == "manual" else CATEGORY_REVIEW_NEEDS_REVIEW
+    analysis = _category_review_analysis(stem, dimension, question_type)
+    return {
+        **analysis,
+        "categoryReviewStatus": _normalize_category_review_status(status, default_status),
+    }
+
+
+def _category_review_from_meta(q: Question, meta: dict | None = None) -> dict:
+    source_meta = meta if isinstance(meta, dict) else _question_meta_from_keywords(q.keywords)
+    analysis = _category_review_analysis(q.stem, q.dimension, str(source_meta.get("questionType") or ""))
+    return {
+        "categoryReviewStatus": _normalize_category_review_status(
+            source_meta.get("categoryReviewStatus"),
+            CATEGORY_REVIEW_NEEDS_REVIEW,
+        ),
+        "categoryConfidence": _coerce_category_confidence(
+            source_meta.get("categoryConfidence"),
+            analysis["categoryConfidence"],
+        ),
+        "categoryCandidates": source_meta.get("categoryCandidates") if isinstance(source_meta.get("categoryCandidates"), list) else analysis["categoryCandidates"],
+        "categoryReviewReason": source_meta.get("categoryReviewReason") or analysis["categoryReviewReason"],
+    }
 
 
 def _infer_position_tags(*values) -> list[str]:
@@ -115,10 +217,29 @@ def _build_question_meta(
         "penaltyKeywords": _split_keyword_list(item.get("penaltyKeywords")),
         "questionType": str(item.get("type") or "").strip(),
     }
+    stem = str(
+        item.get("stem")
+        or item.get("question")
+        or item.get("questionText")
+        or item.get("content")
+        or item.get("title")
+        or ""
+    ).strip()
+    dimension = str(item.get("dimension") or "").strip()
+    if stem:
+        meta.update(_build_category_review_meta(
+            stem=stem,
+            dimension=dimension,
+            question_type=meta.get("questionType", ""),
+            source_kind=source_kind,
+            status=item.get("categoryReviewStatus"),
+        ))
     return {key: value for key, value in meta.items() if value not in ("", [], None)}
 
 
 def _q_to_dict(q: Question) -> dict:
+    meta = _question_meta_from_keywords(q.keywords)
+    category_review = _category_review_from_meta(q, meta)
     payload = {
         "id": q.id,
         "stem": q.stem,
@@ -128,8 +249,8 @@ def _q_to_dict(q: Question) -> dict:
         "answerTime": q.answer_time,
         "scoringPoints": q.scoring_points or [],
         "keywords": q.keywords or {"scoring": [], "deducting": [], "bonus": []},
+        **category_review,
     }
-    meta = _question_meta_from_keywords(q.keywords)
     if meta:
         payload.update({
             "questionSource": meta.get("source", ""),
@@ -337,8 +458,9 @@ def _normalize_question_item(
         }
 
     source_question_id = str(item.get("id") or "").strip()
+    dimension = _normalize_dimension(item.get("dimension"), str(item.get("type") or ""), stem)
     meta = _build_question_meta(
-        item,
+        {**item, "stem": stem, "dimension": dimension},
         source_kind=source_kind,
         source_name=source_name,
         asset_path=asset_path,
@@ -348,7 +470,7 @@ def _normalize_question_item(
     return {
         "id": source_question_id,
         "stem": stem,
-        "dimension": _normalize_dimension(item.get("dimension"), str(item.get("type") or ""), stem),
+        "dimension": dimension,
         "province": _normalize_province(item.get("province")),
         "prepTime": int(item.get("prepTime") or 90),
         "answerTime": int(item.get("answerTime") or 180),
@@ -429,12 +551,24 @@ def _upsert_normalized_question(db: Session, item: dict, *, allow_update: bool =
 
 
 def sync_curated_question_assets(db: Session) -> dict:
+    global _CURATED_QUESTION_ASSETS_SYNCED
+    if _CURATED_QUESTION_ASSETS_SYNCED:
+        return {"synced": 0, "updated": 0, "skipped": True}
+
     if not CURATED_QUESTION_DIR.exists():
+        _CURATED_QUESTION_ASSETS_SYNCED = True
         return {"synced": 0, "updated": 0}
 
     synced = 0
     updated = 0
     changed = False
+    existing_rows = db.query(Question).all()
+    questions_by_id = {row.id: row for row in existing_rows}
+    questions_by_stem = {
+        _normalize_stem_key(row.stem): row
+        for row in existing_rows
+        if _normalize_stem_key(row.stem)
+    }
 
     for path in sorted(CURATED_QUESTION_DIR.rglob("*.json")):
         if path.name.lower() == "readme.md":
@@ -447,24 +581,31 @@ def sync_curated_question_assets(db: Session) -> dict:
             asset_path=str(path.relative_to(REPO_ROOT)),
         )
         for item in normalized_items:
+            preferred_id = _pick_question_id(item.get("id"))
             stem_key = _normalize_stem_key(item.get("stem"))
-            existing = next(
-                (
-                    row for row in db.query(Question).all()
-                    if row.id == _pick_question_id(item.get("id"))
-                    or _normalize_stem_key(row.stem) == stem_key
-                ),
-                None,
-            )
-            if existing:
+            question = questions_by_id.get(preferred_id) or questions_by_stem.get(stem_key)
+            if question:
                 updated += 1
             else:
                 synced += 1
-            _upsert_normalized_question(db, item)
+                question = Question(id=preferred_id)
+                db.add(question)
+
+            question.stem = item["stem"]
+            question.dimension = item.get("dimension", "analysis")
+            question.province = item.get("province", "national")
+            question.prep_time = item.get("prepTime", 90)
+            question.answer_time = item.get("answerTime", 180)
+            question.scoring_points = item.get("scoringPoints", [])
+            question.keywords = _normalize_keywords(item.get("keywords"))
+            questions_by_id[question.id] = question
+            if stem_key:
+                questions_by_stem[stem_key] = question
             changed = True
 
     if changed:
         db.commit()
+    _CURATED_QUESTION_ASSETS_SYNCED = True
     return {"synced": synced, "updated": updated}
 
 
@@ -492,6 +633,14 @@ def _persist_generated_questions(
             asset_path="",
             source_question_id=str(item.get("id") or "").strip(),
         )
+        dimension = str(item.get("dimension") or default_dimension).strip() or default_dimension
+        meta.update(_build_category_review_meta(
+            stem=stem,
+            dimension=dimension,
+            question_type=str(item.get("type") or ""),
+            source_kind=source_kind,
+            status=item.get("categoryReviewStatus"),
+        ))
         if position:
             meta["positionTags"] = _unique_preserve_order(
                 list(meta.get("positionTags", [])) + [position]
@@ -499,7 +648,7 @@ def _persist_generated_questions(
         question = Question(
             id=_pick_question_id(item.get("id")),
             stem=stem,
-            dimension=str(item.get("dimension") or default_dimension).strip() or default_dimension,
+            dimension=dimension,
             province=str(item.get("province") or province).strip() or province,
             prep_time=int(item.get("prepTime") or 90),
             answer_time=int(item.get("answerTime") or 180),
@@ -541,6 +690,14 @@ def _build_generated_question_payloads(
             asset_path="",
             source_question_id=str(item.get("id") or "").strip(),
         )
+        dimension = str(item.get("dimension") or default_dimension).strip() or default_dimension
+        meta.update(_build_category_review_meta(
+            stem=stem,
+            dimension=dimension,
+            question_type=str(item.get("type") or ""),
+            source_kind=source_kind,
+            status=item.get("categoryReviewStatus"),
+        ))
         if position:
             meta["positionTags"] = _unique_preserve_order(
                 list(meta.get("positionTags", [])) + [position]
@@ -548,7 +705,7 @@ def _build_generated_question_payloads(
         questions.append({
             "id": f"generated_{uuid.uuid4().hex[:8]}",
             "stem": stem,
-            "dimension": str(item.get("dimension") or default_dimension).strip() or default_dimension,
+            "dimension": dimension,
             "province": str(item.get("province") or province).strip() or province,
             "prepTime": int(item.get("prepTime") or 90),
             "answerTime": int(item.get("answerTime") or 180),
@@ -653,26 +810,79 @@ def _choose_targeted_bank_questions(db: Session, province: str, position: str, c
     ]
 
 
-def _choose_training_bank_questions(db: Session, dimension: str, count: int) -> list[dict]:
-    preferred = db.query(Question).filter(Question.dimension == dimension).all()
-    fallback = db.query(Question).all() if not preferred else []
-    pool = preferred or fallback
-    if not pool:
+def _choose_training_bank_questions(db: Session, dimension: str, count: int, province: str = "national") -> list[dict]:
+    requested_province = str(province or "national").strip() or "national"
+    all_questions = db.query(Question).all()
+    if not all_questions:
         return []
 
-    local_pool = [question for question in pool if _question_prefers_local_source(question)]
-    other_pool = [question for question in pool if question not in local_pool]
-    for bucket in (local_pool, other_pool):
-        random.shuffle(bucket)
+    def matching_dimension(question: Question) -> bool:
+        return not dimension or question.dimension == dimension
 
-    picked = (local_pool + other_pool)[: min(count, len(pool))]
+    def add_bucket(candidates: list[Question], picked: list[Question]) -> None:
+        local_pool = [question for question in candidates if _question_prefers_local_source(question)]
+        other_pool = [question for question in candidates if question not in local_pool]
+        for bucket in (local_pool, other_pool):
+            random.shuffle(bucket)
+        for question in local_pool + other_pool:
+            if len(picked) >= count:
+                return
+            if question not in picked:
+                picked.append(question)
+
+    picked: list[Question] = []
+    if requested_province == "all":
+        add_bucket([question for question in all_questions if matching_dimension(question)], picked)
+    else:
+        add_bucket(
+            [
+                question for question in all_questions
+                if question.province == requested_province and matching_dimension(question)
+            ],
+            picked,
+        )
+        if requested_province != "national":
+            add_bucket(
+                [
+                    question for question in all_questions
+                    if question.province == "national" and matching_dimension(question)
+                ],
+                picked,
+            )
+        add_bucket(
+            [
+                question for question in all_questions
+                if question.province == requested_province and not matching_dimension(question)
+            ],
+            picked,
+        )
+        if requested_province != "national":
+            add_bucket(
+                [
+                    question for question in all_questions
+                    if question.province == "national" and not matching_dimension(question)
+                ],
+                picked,
+            )
+
+    if len(picked) < count:
+        add_bucket([question for question in all_questions if question not in picked and matching_dimension(question)], picked)
+    if len(picked) < count:
+        add_bucket([question for question in all_questions if question not in picked], picked)
+
     return [
         {
             **_q_to_dict(question),
             "dimension": dimension or question.dimension,
             "generationSource": "local_bank",
+            "requestedProvince": requested_province,
+            "isProvinceFallback": bool(
+                requested_province
+                and requested_province not in {"all"}
+                and question.province != requested_province
+            ),
         }
-        for question in picked
+        for question in picked[:count]
     ]
 
 
@@ -724,6 +934,7 @@ def list_questions(
     dimension: str = "",
     province: str = "",
     position: str = "",
+    category_review: str = "",
     current: int = 1,
     page_size: int = 10,
 ) -> dict:
@@ -734,8 +945,15 @@ def list_questions(
         query = query.filter(Question.dimension == dimension)
     if province and province != "all":
         query = query.filter(Question.province == province)
-    if position:
-        rows = _apply_position_filter(query.all(), position)
+    normalized_review = _normalize_category_review_status(category_review, "") if category_review else ""
+    if position or normalized_review:
+        rows = query.all()
+        rows = _apply_position_filter(rows, position)
+        if normalized_review:
+            rows = [
+                question for question in rows
+                if _category_review_from_meta(question).get("categoryReviewStatus") == normalized_review
+            ]
         total = len(rows)
         start = (current - 1) * page_size
         rows = rows[start:start + page_size]
@@ -771,6 +989,12 @@ def get_question(db: Session, question_id: str) -> dict:
 
 
 def create_question(db: Session, data: QuestionCreate) -> dict:
+    category_meta = _build_category_review_meta(
+        stem=data.stem,
+        dimension=data.dimension,
+        source_kind="manual",
+        status=data.categoryReviewStatus or CATEGORY_REVIEW_CONFIRMED,
+    )
     q = Question(
         id=f"q_{uuid.uuid4().hex[:8]}",
         stem=data.stem,
@@ -781,7 +1005,7 @@ def create_question(db: Session, data: QuestionCreate) -> dict:
         scoring_points=data.scoringPoints,
         keywords=_normalize_keywords(
             data.keywords,
-            {"source": "manual", "sourceLabel": _question_source_label("manual")},
+            {"source": "manual", "sourceLabel": _question_source_label("manual"), **category_meta},
         ),
     )
     db.add(q)
@@ -800,7 +1024,15 @@ def update_question(db: Session, question_id: str, data: QuestionUpdate) -> dict
     q.prep_time = data.prepTime
     q.answer_time = data.answerTime
     q.scoring_points = data.scoringPoints
-    q.keywords = _normalize_keywords(data.keywords, _question_meta_from_keywords(q.keywords))
+    existing_meta = _question_meta_from_keywords(q.keywords)
+    category_meta = _build_category_review_meta(
+        stem=data.stem,
+        dimension=data.dimension,
+        question_type=str(existing_meta.get("questionType") or ""),
+        source_kind=str(existing_meta.get("source") or "manual"),
+        status=data.categoryReviewStatus or CATEGORY_REVIEW_CONFIRMED,
+    )
+    q.keywords = _normalize_keywords(data.keywords, {**existing_meta, **category_meta})
     db.commit()
     db.refresh(q)
     return _q_to_dict(q)
@@ -895,6 +1127,11 @@ def import_questions(db: Session, content: bytes, filename: str) -> dict:
                                 "source": "imported_file",
                                 "sourceLabel": _question_source_label("imported_file"),
                                 "originFile": filename,
+                                **_build_category_review_meta(
+                                    stem=stem,
+                                    dimension=_normalize_dimension(str(row[col["dimension"]]).strip() if "dimension" in col and row[col["dimension"]] else "analysis"),
+                                    source_kind="imported_file",
+                                ),
                             },
                         ),
                     }
@@ -963,16 +1200,19 @@ async def generate_training_questions(
     dimension: str,
     count: int = 3,
     source_mode: str = "local",
+    province: str = "national",
 ) -> List[dict]:
     count = min(count, 10)
     sync_curated_question_assets(db)
     normalized_mode = str(source_mode or "local").strip().lower()
+    requested_province = str(province or "national").strip() or "national"
 
     if normalized_mode == "local":
-        return _choose_training_bank_questions(db, dimension, count)
+        return _choose_training_bank_questions(db, dimension, count, requested_province)
 
     dim_name = DIMENSION_NAMES.get(dimension, dimension)
-    prompt = f"""请生成{count}道考察"{dim_name}"能力的公务员面试题目。
+    province_name = PROVINCE_NAMES.get(requested_province, requested_province)
+    prompt = f"""请生成{count}道考察"{dim_name}"能力的公务员面试题目，优先贴合"{province_name}"地区常见公职面试场景。
 每道题以JSON对象表示，放在一个JSON数组中返回。
 每道题包含字段：
 - stem: 题目内容(字符串)
@@ -983,7 +1223,7 @@ async def generate_training_questions(
     if result and isinstance(result, list):
         generated = _build_generated_question_payloads(
             result[:count],
-            province="national",
+            province=requested_province,
             default_dimension=dimension,
             default_scoring_points=[
                 {"content": f"对{dim_name}有清晰理解", "score": 7},
@@ -1006,5 +1246,5 @@ async def generate_training_questions(
             "generationSource": "fallback_bank",
             "generationFallbackReason": fallback_reason,
         }
-        for item in _choose_training_bank_questions(db, dimension, count)
+        for item in _choose_training_bank_questions(db, dimension, count, requested_province)
     ]

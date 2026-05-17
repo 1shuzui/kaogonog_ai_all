@@ -1,5 +1,7 @@
 <template>
   <view class="page">
+    <button class="support-back-button" @tap="goBack">返回</button>
+
     <view class="card hero-card">
       <view>
         <text class="page-title">{{ userStore.isAdmin ? '客服反馈后台' : '客服反馈中心' }}</text>
@@ -211,6 +213,15 @@ function closeForm() {
   formVisible.value = false
 }
 
+function goBack() {
+  const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : []
+  if (pages.length > 1) {
+    uni.navigateBack()
+    return
+  }
+  uni.switchTab({ url: '/pages/profile/index' })
+}
+
 function toggleScope() {
   filters.scope = filters.scope === 'all' ? 'mine' : 'all'
   fetchRecords()
@@ -303,6 +314,18 @@ function formatTime(value = '') {
 </script>
 
 <style scoped>
+.support-back-button {
+  width: 160rpx;
+  min-height: 64rpx;
+  margin-bottom: 18rpx;
+  border: 1rpx solid #cbd9ea;
+  border-radius: 999rpx;
+  background: #ffffff;
+  color: #1b5faa;
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
 .hero-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 180rpx;

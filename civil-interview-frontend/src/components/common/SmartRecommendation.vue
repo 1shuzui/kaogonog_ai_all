@@ -1,8 +1,13 @@
 <template>
   <div class="smart-rec card">
-    <h3 class="smart-rec__title">
-      <BulbOutlined /> 智能推荐练习
-    </h3>
+    <div class="smart-rec__header">
+      <h3 class="smart-rec__title">
+        <BulbOutlined /> 智能推荐练习
+      </h3>
+      <a-button size="small" :loading="loadingRec" @click="refreshRecommendations">
+        <ReloadOutlined /> 刷新
+      </a-button>
+    </div>
 
     <template v-if="weakDimensions.length">
       <a-spin :spinning="loadingRec">
@@ -50,7 +55,7 @@
 import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { BulbOutlined, CheckCircleOutlined } from '@ant-design/icons-vue'
+import { BulbOutlined, CheckCircleOutlined, ReloadOutlined } from '@ant-design/icons-vue'
 import { getQuestions } from '@/api/questionBank'
 import { DIMENSIONS } from '@/utils/constants'
 import { useDebounce } from '@/composables/useDebounce'
@@ -65,6 +70,8 @@ const props = defineProps({
 const router = useRouter()
 const loadingRec = ref(false)
 const recommendations = ref([])
+const refreshSeed = ref(0)
+const RECOMMENDATION_PRACTICED_KEY = 'civil_recommendation_practiced_questions'
 
 const dimMap = Object.fromEntries(DIMENSIONS.map(d => [d.key, d]))
 
@@ -84,6 +91,29 @@ function dimensionColor(key) {
   return colors[key] || '#8C8C8C'
 }
 
+function loadPracticedRecommendationIds() {
+  try {
+    const raw = localStorage.getItem(RECOMMENDATION_PRACTICED_KEY)
+    const parsed = raw ? JSON.parse(raw) : []
+    return new Set(Array.isArray(parsed) ? parsed.filter(Boolean) : [])
+  } catch {
+    return new Set()
+  }
+}
+
+function markRecommendationPracticed(questionId) {
+  if (!questionId) return
+  const ids = loadPracticedRecommendationIds()
+  ids.add(questionId)
+  localStorage.setItem(RECOMMENDATION_PRACTICED_KEY, JSON.stringify(Array.from(ids).slice(-300)))
+}
+
+function rotateList(items) {
+  if (!items.length) return items
+  const offset = refreshSeed.value % items.length
+  return [...items.slice(offset), ...items.slice(0, offset)]
+}
+
 async function fetchRecommendations() {
   if (!props.weakDimensions.length) {
     recommendations.value = []
@@ -92,10 +122,13 @@ async function fetchRecommendations() {
   loadingRec.value = true
   try {
     const results = []
+    const practicedIds = loadPracticedRecommendationIds()
     for (const dim of props.weakDimensions.slice(0, 3)) {
-      const res = await getQuestions({ dimension: dim, pageSize: 2 })
+      const page = (refreshSeed.value % 3) + 1
+      const res = await getQuestions({ dimension: dim, pageSize: 8, current: page })
       const list = res.list || res || []
-      for (const q of list) {
+      for (const q of rotateList(list)) {
+        if (practicedIds.has(q.id)) continue
         if (!isQuestionScoringSupported(q)) continue
         const difficulty = Math.min(5, Math.max(1, (q.scoringPoints?.length || 3)))
         results.push({
@@ -115,6 +148,11 @@ async function fetchRecommendations() {
   }
 }
 
+function refreshRecommendations() {
+  refreshSeed.value += 1
+  fetchRecommendations()
+}
+
 const { run: debouncedFetch } = useDebounce(fetchRecommendations, 500)
 
 function startPractice(item) {
@@ -123,6 +161,7 @@ function startPractice(item) {
     return
   }
 
+  markRecommendationPracticed(item.id)
   router.push({ path: '/exam/prepare', query: { questionId: item.id } })
 }
 
@@ -143,10 +182,18 @@ watch(() => props.weakDimensions, () => {
   padding: 16px;
 }
 
+.smart-rec__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
 .smart-rec__title {
   font-size: @font-size-lg;
   color: @text-primary;
-  margin-bottom: 16px;
+  margin: 0;
 }
 
 .smart-rec__item {

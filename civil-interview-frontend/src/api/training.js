@@ -7,7 +7,7 @@ export async function generateTrainingQuestions(data) {
         id: `train_${Date.now()}_1`,
         stem: '请谈谈你对基层治理法治化的理解，以及如何推进？',
         dimension: data.dimension,
-        province: 'national',
+        province: data.province || 'national',
         prepTime: 90,
         answerTime: 180,
         scoringPoints: [

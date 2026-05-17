@@ -103,7 +103,7 @@ async function generate() {
   }
   showLoading('生成训练题')
   try {
-    const questions = await trainingStore.generate(category.value.requestDimension, 3)
+    const questions = await trainingStore.generate(category.value.requestDimension, 3, userStore.selectedProvince || 'national')
     if (!questions.length) toast('暂未生成题目')
   } catch (error) {
     toast(error?.message || '生成失败')

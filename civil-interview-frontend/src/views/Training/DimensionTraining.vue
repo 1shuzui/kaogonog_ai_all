@@ -32,7 +32,7 @@
         :loading="generating"
         @click="generateQuestions"
       >
-        <ThunderboltOutlined /> AI生成{{ dimensionName }}题
+        <ThunderboltOutlined /> 生成{{ dimensionName }}题
       </a-button>
     </div>
 
@@ -72,6 +72,7 @@ import { LeftOutlined, ThunderboltOutlined, RightOutlined, BulbOutlined } from '
 import { message } from 'ant-design-vue'
 import { TRAINING_CATEGORY_TIPS, getTrainingCategory, mergeTrainingProgress } from '@/utils/constants'
 import { useTrainingStore } from '@/stores/training'
+import { useUserStore } from '@/stores/user'
 import { generateTrainingQuestions } from '@/api/training'
 import QuestionMetaTags from '@/components/common/QuestionMetaTags.vue'
 import { getScoringUnavailableMessage, isQuestionScoringSupported } from '@/utils/scoringSupport'
@@ -79,6 +80,7 @@ import { getScoringUnavailableMessage, isQuestionScoringSupported } from '@/util
 const route = useRoute()
 const router = useRouter()
 const trainingStore = useTrainingStore()
+const userStore = useUserStore()
 
 const categoryKey = computed(() => String(route.params.dimension || ''))
 const categoryInfo = computed(() => getTrainingCategory(categoryKey.value))
@@ -112,6 +114,7 @@ async function generateQuestions() {
   try {
     const generatedQuestions = await generateTrainingQuestions({
       dimension: categoryInfo.value.requestDimension,
+      province: userStore.selectedProvince || 'national',
       count: 3
     })
     questions.value = generatedQuestions.map((question) => ({

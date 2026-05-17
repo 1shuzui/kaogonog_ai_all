@@ -37,6 +37,85 @@
         <text class="plain-text">{{ result.aiComment }}</text>
       </view>
 
+      <view v-if="improvementSuggestion" class="card improvement-card">
+        <view class="section-head">
+          <text class="section-title">进步参考</text>
+          <text class="improvement-card__source">{{ suggestionSourceLabel }}</text>
+        </view>
+        <text class="improvement-card__summary">{{ improvementSuggestion.summary }}</text>
+
+        <view class="teacher-note">
+          <text class="teacher-note__label">老师批注</text>
+          <text class="teacher-note__text">{{ improvementSuggestion.teacherComment }}</text>
+        </view>
+
+        <view v-if="improvementSuggestion.diagnosisItems.length" class="suggestion-block">
+          <text class="suggestion-block__title">主要影响得分的地方</text>
+          <text
+            v-for="(item, index) in improvementSuggestion.diagnosisItems"
+            :key="`${index}-${item}`"
+            class="suggestion-line"
+          >
+            {{ item }}
+          </text>
+        </view>
+
+        <view v-if="improvementSuggestion.focusPoints.length" class="suggestion-block">
+          <text class="suggestion-block__title">下一步重点展开</text>
+          <view
+            v-for="point in improvementSuggestion.focusPoints"
+            :key="`${point.order}-${point.title}`"
+            class="focus-item"
+          >
+            <text class="focus-item__order">{{ point.order }}</text>
+            <view class="focus-item__copy">
+              <text class="focus-item__title">{{ point.title }}</text>
+              <text class="focus-item__hint">{{ point.hint }}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="suggestion-block">
+          <text class="suggestion-block__title">开头可以这样改</text>
+          <text class="rewrite-line">{{ improvementSuggestion.rewriteOpening }}</text>
+        </view>
+
+        <view v-if="improvementSuggestion.missingKeywords.length" class="suggestion-block">
+          <text class="suggestion-block__title">建议补充关键词</text>
+          <view class="keyword-row">
+            <text
+              v-for="keyword in improvementSuggestion.missingKeywords"
+              :key="keyword"
+              class="keyword-chip"
+            >
+              {{ keyword }}
+            </text>
+          </view>
+        </view>
+
+        <view v-if="improvementSuggestion.expressionUpgrades.length" class="suggestion-block">
+          <text class="suggestion-block__title">更像高分答案的说法</text>
+          <view
+            v-for="(item, index) in improvementSuggestion.expressionUpgrades"
+            :key="`${index}-${item.after}`"
+            class="upgrade-item"
+          >
+            <text class="upgrade-item__before">{{ item.before }}</text>
+            <text class="upgrade-item__after">{{ item.after }}</text>
+          </view>
+        </view>
+
+        <view class="suggestion-block">
+          <text class="suggestion-block__title">老师示范改写</text>
+          <text class="sample-answer">{{ improvementSuggestion.sampleAnswer }}</text>
+        </view>
+
+        <view class="suggestion-block">
+          <text class="suggestion-block__title">结尾可以这样收束</text>
+          <text class="rewrite-line">{{ improvementSuggestion.rewriteClosing }}</text>
+        </view>
+      </view>
+
       <view class="card">
         <view class="section-head">
           <text class="section-title">维度表现</text>
@@ -86,6 +165,10 @@ const progressRecorded = ref(false)
 
 const grade = computed(() => getGrade(result.value?.totalScore || 0, result.value?.maxScore || 100))
 const localFitProvinceName = computed(() => getProvinceName(questionProvince.value || 'national'))
+const improvementSuggestion = computed(() => result.value?.answerImprovementSuggestion || null)
+const suggestionSourceLabel = computed(() => (
+  improvementSuggestion.value?.source === 'model' ? '模型建议' : '基础建议'
+))
 
 onLoad(async (query) => {
   if (!requireLogin()) return
@@ -239,6 +322,165 @@ function home() {
   color: #2a3648;
   font-size: 26rpx;
   line-height: 1.7;
+}
+
+.improvement-card__source {
+  padding: 6rpx 12rpx;
+  border-radius: 999rpx;
+  background: #e8f4fd;
+  color: #1b5faa;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.improvement-card__summary,
+.teacher-note__label,
+.teacher-note__text,
+.suggestion-block__title,
+.suggestion-line,
+.rewrite-line,
+.sample-answer,
+.focus-item__title,
+.focus-item__hint,
+.upgrade-item__before,
+.upgrade-item__after {
+  display: block;
+}
+
+.improvement-card__summary {
+  color: #1f2b3d;
+  font-size: 28rpx;
+  font-weight: 800;
+  line-height: 1.6;
+}
+
+.teacher-note {
+  margin-top: 18rpx;
+  padding: 18rpx;
+  border-left: 6rpx solid #1b5faa;
+  border-radius: 12rpx;
+  background: #f4f8fd;
+}
+
+.teacher-note__label {
+  color: #1b5faa;
+  font-size: 23rpx;
+  font-weight: 800;
+}
+
+.teacher-note__text {
+  margin-top: 8rpx;
+  color: #2a3648;
+  font-size: 26rpx;
+  line-height: 1.7;
+}
+
+.suggestion-block {
+  margin-top: 22rpx;
+}
+
+.suggestion-block__title {
+  margin-bottom: 12rpx;
+  color: #1a1a2e;
+  font-size: 27rpx;
+  font-weight: 900;
+}
+
+.suggestion-line {
+  margin-top: 10rpx;
+  padding: 14rpx 16rpx;
+  border-radius: 12rpx;
+  background: #f7f9fc;
+  color: #2a3648;
+  font-size: 25rpx;
+  line-height: 1.6;
+}
+
+.focus-item {
+  display: flex;
+  gap: 14rpx;
+  margin-top: 12rpx;
+  padding: 16rpx;
+  border: 1rpx solid #e7eef7;
+  border-radius: 12rpx;
+}
+
+.focus-item__order {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  background: #1b5faa;
+  color: #ffffff;
+  font-size: 23rpx;
+  font-weight: 900;
+}
+
+.focus-item__copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.focus-item__title {
+  color: #1a1a2e;
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
+.focus-item__hint {
+  margin-top: 6rpx;
+  color: #5f6f83;
+  font-size: 24rpx;
+  line-height: 1.6;
+}
+
+.rewrite-line,
+.sample-answer {
+  padding: 16rpx;
+  border-radius: 12rpx;
+  background: #fffaf0;
+  color: #3f2b12;
+  font-size: 25rpx;
+  line-height: 1.7;
+}
+
+.keyword-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+
+.keyword-chip {
+  padding: 7rpx 14rpx;
+  border-radius: 999rpx;
+  background: #fff2e8;
+  color: #8a4d17;
+  font-size: 23rpx;
+  font-weight: 800;
+}
+
+.upgrade-item {
+  display: grid;
+  gap: 10rpx;
+  margin-top: 12rpx;
+  padding: 16rpx;
+  border-radius: 12rpx;
+  background: #f7f9fc;
+}
+
+.upgrade-item__before {
+  color: #8a97a8;
+  font-size: 24rpx;
+  line-height: 1.6;
+}
+
+.upgrade-item__after {
+  color: #1f2b3d;
+  font-size: 25rpx;
+  font-weight: 800;
+  line-height: 1.6;
 }
 
 .result-actions {

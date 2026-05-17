@@ -20,8 +20,8 @@
           <a-tag :color="dimensionColor(item.dimension)" size="small">
             {{ dimensionName(item.dimension) }}
           </a-tag>
-          <a-tag v-if="item.type === 'weak'" color="red" size="small">低分</a-tag>
-          <a-tag v-else color="gold" size="small">
+          <a-tag v-if="item.isWeak" color="red" size="small">低分</a-tag>
+          <a-tag v-if="item.isStarred" color="gold" size="small">
             <StarFilled /> 收藏
           </a-tag>
           <span class="fav-item__date">{{ formatDate(item.addedAt) }}</span>
@@ -46,7 +46,7 @@
             <a-button size="small" type="primary" @click="retryQuestion(item)">
               <RedoOutlined /> 重做
             </a-button>
-            <a-popconfirm title="确定删除？" @confirm="favoritesStore.removeItem(item.id)">
+            <a-popconfirm title="确定删除？" @confirm="removeFavoriteItem(item)">
               <a-button size="small" danger>
                 <DeleteOutlined />
               </a-button>
@@ -85,7 +85,7 @@ const activeTab = ref('all')
 const filteredItems = computed(() => {
   if (activeTab.value === 'weak') return favoritesStore.weakItems
   if (activeTab.value === 'starred') return favoritesStore.starredItems
-  return favoritesStore.items
+  return favoritesStore.items.filter((item) => item.isWeak || item.isStarred)
 })
 
 const emptyText = computed(() => {
@@ -120,6 +120,14 @@ async function retryQuestion(item) {
     // 如果获取失败，跳转到准备页面
     router.push('/exam/prepare')
   }
+}
+
+function removeFavoriteItem(item) {
+  if (activeTab.value === 'weak' || activeTab.value === 'starred') {
+    favoritesStore.removeItem(item.id, activeTab.value)
+    return
+  }
+  favoritesStore.removeItem(item.id)
 }
 </script>
 

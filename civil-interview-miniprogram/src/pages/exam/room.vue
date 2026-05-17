@@ -1,24 +1,69 @@
 <template>
   <view class="exam-room">
     <view v-if="question" class="exam-room__body">
-      <view class="room-header">
-        <text class="room-header__count">第 {{ examStore.questionNumber }} / {{ examStore.totalQuestions }} 题</text>
-        <text class="room-header__timer">{{ activeTimerLabel }} {{ formatTime(activeTimeLeft) }}</text>
+      <button class="exam-room__exit-fixed" @tap="goBackHome">退出</button>
+
+      <view class="mock-scene">
+        <image
+          class="mock-scene__image"
+          src="/static/exam/mock-interview-room-live-current.png"
+          mode="aspectFill"
+        />
+        <view class="mock-scene__shade"></view>
+
+        <view class="room-header room-header--floating">
+          <view>
+            <text class="room-header__count">当前作答第 {{ examStore.questionNumber }} / {{ examStore.totalQuestions }} 题</text>
+            <text class="room-header__sub">{{ provinceName }} · {{ categoryName }}</text>
+          </view>
+          <text class="room-header__timer">{{ activeTimerLabel }} {{ formatTime(activeTimeLeft) }}</text>
+        </view>
+
+        <view class="examiner-panel">
+          <text class="examiner-panel__kicker">AI 模拟考场</text>
+          <text class="examiner-panel__title">公务员结构化面试模拟现场</text>
+          <text class="examiner-panel__desc">{{ examinerNotice }}</text>
+        </view>
+
+        <view class="question-book">
+          <view class="question-book__head">
+            <text class="question-book__title">题本区</text>
+            <text class="question-book__meta">第 {{ questionBookIndex + 1 }} / {{ examStore.totalQuestions }} 题</text>
+          </view>
+          <swiper
+            class="question-book__swiper"
+            :current="questionBookIndex"
+            :indicator-dots="examStore.totalQuestions > 1"
+            indicator-color="rgba(255,255,255,0.35)"
+            indicator-active-color="#ffffff"
+            @change="onQuestionBookChange"
+          >
+            <swiper-item
+              v-for="(item, index) in examStore.questions"
+              :key="item.id || index"
+            >
+              <view
+                class="question-book__card"
+                :class="{ 'question-book__card--current': index === examStore.currentIndex }"
+              >
+                <view class="question-tags">
+                  <text class="question-tag">{{ provinceLabel(item) }}</text>
+                  <text class="question-tag question-tag--blue">{{ categoryLabel(item) }}</text>
+                  <text v-if="index === examStore.currentIndex" class="question-tag question-tag--active">当前作答</text>
+                </view>
+                <text class="question-book__stem">{{ item.stem }}</text>
+              </view>
+            </swiper-item>
+          </swiper>
+        </view>
       </view>
 
       <scroll-view scroll-y class="question-panel">
-        <view class="card">
-          <view class="question-tags">
-            <text class="question-tag">{{ provinceName }}</text>
-            <text class="question-tag question-tag--blue">{{ categoryName }}</text>
-          </view>
-          <text class="question-stem">{{ question.stem }}</text>
-          <view v-if="isJiangsuReading" class="reading-list">
-            <text class="reading-list__title">江苏 5+15 阅读题本</text>
-            <text v-for="(item, index) in examStore.questions" :key="item.id || index" class="reading-list__item">
-              {{ index + 1 }}. {{ item.stem }}
-            </text>
-          </view>
+        <view v-if="isJiangsuReading" class="card reading-list-card">
+          <text class="reading-list__title">江苏 5+15 阅读题本</text>
+          <text v-for="(item, index) in examStore.questions" :key="item.id || index" class="reading-list__item">
+            {{ index + 1 }}. {{ item.stem }}
+          </text>
         </view>
 
         <view class="card">
@@ -126,7 +171,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { onHide, onLoad, onReady } from '@dcloudio/uni-app'
 import EmptyState from '../../components/EmptyState.vue'
 import { completeTrial } from '../../api/trial'
@@ -155,6 +200,7 @@ const cameraError = ref('')
 const cameraAvailable = ref(false)
 const selectedMediaType = ref('')
 const questionStartedAt = ref(Date.now())
+const questionBookIndex = ref(0)
 const reportedQuestionKeys = new Set()
 const JIANGSU_MOCK_TIMING_MODE = 'jiangsu_5_15'
 const JIANGSU_READING_SECONDS = 5 * 60
@@ -177,6 +223,12 @@ const activeTimerLabel = computed(() => {
 })
 const provinceName = computed(() => getProvinceName(question.value?.province || 'national'))
 const categoryName = computed(() => getCategoryName(question.value?.dimension || question.value?.type || ''))
+const examinerNotice = computed(() => {
+  if (isJiangsuReading.value) return '现在是题本阅读时间，请先通读全部题目，阅读结束后再开始作答。'
+  if (phase.value === 'preparing') return '请利用准备时间梳理答题层次，作答开始后保持语速稳定。'
+  if (recording.value || videoRecording.value) return '当前正在记录作答，请正面看向考官区，按结构完成表达。'
+  return '请按顺序完成当前题目，答完后提交进入下一题。'
+})
 const cameraStatusText = computed(() => {
   if (!useVideoMode.value) return '已选择仅录音，不启用摄像头'
   if (cameraError.value) return cameraError.value
@@ -224,6 +276,23 @@ onBeforeUnmount(() => {
   if (recording.value) stopRecord()
   if (videoRecording.value) stopVideoRecord({ silent: true })
 })
+
+watch(() => examStore.currentIndex, (index) => {
+  questionBookIndex.value = Math.max(0, Number(index) || 0)
+})
+
+function provinceLabel(item = {}) {
+  return getProvinceName(item?.province || 'national')
+}
+
+function categoryLabel(item = {}) {
+  return getCategoryName(item?.dimension || item?.type || '')
+}
+
+function onQuestionBookChange(event) {
+  const current = Number(event?.detail?.current ?? 0)
+  questionBookIndex.value = Math.max(0, Math.min(current, Math.max(examStore.totalQuestions - 1, 0)))
+}
 
 function setupRecorder() {
   if (typeof uni.getRecorderManager !== 'function') return
@@ -296,6 +365,7 @@ function resetQuestionState() {
     ? JIANGSU_ANSWER_SECONDS
     : Number(question.value?.answerTime || userStore.preferences.defaultAnswerTime || 180)
   questionStartedAt.value = Date.now()
+  questionBookIndex.value = Math.max(0, examStore.currentIndex)
   resetAnswerInputState()
 }
 
@@ -561,7 +631,7 @@ function goBackHome() {
 <style scoped>
 .exam-room {
   min-height: 100vh;
-  background: #f0f5fa;
+  background: #0f2438;
 }
 
 .exam-room__body {
@@ -570,34 +640,191 @@ function goBackHome() {
   height: 100vh;
 }
 
+.exam-room__exit-fixed {
+  position: fixed;
+  top: calc(18rpx + env(safe-area-inset-top));
+  right: 24rpx;
+  z-index: 20;
+  width: 96rpx;
+  min-height: 58rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.52);
+  border-radius: 999rpx;
+  background: rgba(13, 31, 48, 0.74);
+  color: #ffffff;
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.mock-scene {
+  position: relative;
+  height: 620rpx;
+  overflow: hidden;
+  background: #0f2438;
+}
+
+.mock-scene__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.mock-scene__shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(4, 17, 30, 0.54) 0%, rgba(4, 17, 30, 0.1) 38%, rgba(4, 17, 30, 0.78) 100%),
+    linear-gradient(90deg, rgba(4, 17, 30, 0.62) 0%, rgba(4, 17, 30, 0.06) 52%, rgba(4, 17, 30, 0.46) 100%);
+}
+
 .room-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 22rpx 28rpx;
-  border-bottom: 1rpx solid #e8eef5;
-  background: #ffffff;
+  gap: 16rpx;
+  padding: calc(18rpx + env(safe-area-inset-top)) 140rpx 16rpx 28rpx;
+}
+
+.room-header--floating {
+  position: relative;
+  z-index: 2;
+  color: #ffffff;
 }
 
 .room-header__count {
-  color: #1a1a2e;
+  display: block;
+  color: #ffffff;
   font-size: 29rpx;
   font-weight: 800;
+}
+
+.room-header__sub {
+  display: block;
+  margin-top: 6rpx;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 22rpx;
 }
 
 .room-header__timer {
   padding: 8rpx 16rpx;
   border-radius: 999rpx;
-  background: #e8f4fd;
-  color: #1b5faa;
+  background: rgba(255, 255, 255, 0.92);
+  color: #16385a;
   font-size: 25rpx;
   font-weight: 700;
+  white-space: nowrap;
+}
+
+.examiner-panel {
+  position: relative;
+  z-index: 2;
+  width: 62%;
+  margin: 16rpx 0 0 28rpx;
+  padding: 18rpx 20rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.2);
+  border-radius: 16rpx;
+  background: rgba(13, 31, 48, 0.6);
+  backdrop-filter: blur(8rpx);
+}
+
+.examiner-panel__kicker,
+.examiner-panel__title,
+.examiner-panel__desc {
+  display: block;
+}
+
+.examiner-panel__kicker {
+  color: #8fd0ff;
+  font-size: 21rpx;
+  font-weight: 800;
+}
+
+.examiner-panel__title {
+  margin-top: 6rpx;
+  color: #ffffff;
+  font-size: 28rpx;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.examiner-panel__desc {
+  margin-top: 8rpx;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 23rpx;
+  line-height: 1.55;
+}
+
+.question-book {
+  position: absolute;
+  right: 24rpx;
+  bottom: 24rpx;
+  left: 24rpx;
+  z-index: 3;
+  padding: 18rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.22);
+  border-radius: 18rpx;
+  background: rgba(12, 30, 48, 0.78);
+  box-shadow: 0 18rpx 48rpx rgba(0, 0, 0, 0.28);
+}
+
+.question-book__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12rpx;
+}
+
+.question-book__title {
+  color: #ffffff;
+  font-size: 27rpx;
+  font-weight: 900;
+}
+
+.question-book__meta {
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 23rpx;
+  font-weight: 700;
+}
+
+.question-book__swiper {
+  height: 230rpx;
+}
+
+.question-book__card {
+  height: 194rpx;
+  padding: 18rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.14);
+  border-radius: 14rpx;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.question-book__card--current {
+  border-color: #8fd0ff;
+}
+
+.question-book__stem {
+  display: -webkit-box;
+  max-height: 132rpx;
+  overflow: hidden;
+  color: #1f2b3d;
+  font-size: 28rpx;
+  font-weight: 700;
+  line-height: 1.55;
+  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.question-tag--active {
+  background: #e6f7ff;
+  color: #0958a5;
 }
 
 .question-panel {
   flex: 1;
   min-height: 0;
   padding: 24rpx 28rpx;
+  background: #f0f5fa;
 }
 
 .question-stem {

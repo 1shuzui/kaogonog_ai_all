@@ -45,6 +45,8 @@ class QuestionImportTestCase(unittest.TestCase):
         self.assertEqual(question.scoring_points[0]["content"], "群众立场清晰")
         self.assertIn("群众沟通", question.keywords["scoring"])
         self.assertEqual(question.keywords["_meta"]["source"], "imported_file")
+        self.assertEqual(question.keywords["_meta"]["categoryReviewStatus"], "needs_review")
+        self.assertGreaterEqual(question.keywords["_meta"]["categoryConfidence"], 0)
 
     def test_import_questions_accepts_xlsx_payload(self):
         workbook = openpyxl.Workbook()
@@ -76,6 +78,7 @@ class QuestionImportTestCase(unittest.TestCase):
         self.assertIn("安全生产", question.keywords["scoring"])
         self.assertIn("空泛", question.keywords["deducting"])
         self.assertIn("分类整治", question.keywords["bonus"])
+        self.assertEqual(question.keywords["_meta"]["categoryReviewStatus"], "needs_review")
 
     def test_import_questions_rejects_xls_payload(self):
         with self.assertRaises(HTTPException) as context:

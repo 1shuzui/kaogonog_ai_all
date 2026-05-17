@@ -117,10 +117,12 @@ async def training_generate(data: TrainingGenerateRequest, current_user: AuthUse
         data.dimension,
         data.count,
         data.sourceMode,
+        data.province,
     )
     return {
         "questions": questions,
         "dimension": data.dimension,
         "dimensionName": DIMENSION_NAMES.get(data.dimension, data.dimension),
+        "province": data.province,
         "sourceMode": data.sourceMode,
     }

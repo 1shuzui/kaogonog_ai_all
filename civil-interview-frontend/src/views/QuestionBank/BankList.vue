@@ -37,6 +37,16 @@
             {{ item.name }}
           </a-select-option>
         </a-select>
+        <a-select
+          v-if="isAdmin"
+          v-model:value="categoryReviewFilter"
+          placeholder="分类复核"
+          allow-clear
+          style="width: 150px"
+        >
+          <a-select-option value="needs_review">分类待确认</a-select-option>
+          <a-select-option value="confirmed">分类已确认</a-select-option>
+        </a-select>
         <a-input-search
           v-model:value="keyword"
           placeholder="搜索题目"
@@ -58,6 +68,12 @@
         >
           <div class="bank-list__item-header">
             <QuestionMetaTags :question="q" emphasis :max-keywords="5" />
+            <a-tag v-if="isAdmin && q.categoryReviewStatus === 'needs_review'" color="orange">
+              分类待确认
+            </a-tag>
+            <a-tag v-else-if="isAdmin && q.categoryReviewStatus === 'confirmed'" color="green">
+              分类已确认
+            </a-tag>
             <span class="bank-list__item-points">
               {{ q.scoringPoints?.length || 0 }} 个采分点
             </span>
@@ -112,6 +128,7 @@ const isAdmin = computed(() => userStore.isAdmin)
 const provinceFilter = ref('all')
 const dimensionFilter = ref(undefined)
 const positionFilter = ref(undefined)
+const categoryReviewFilter = ref(undefined)
 const keyword = ref('')
 const showPositionFilter = computed(() => provinceFilter.value === 'jiangsu')
 const questionCategoryOptions = [
@@ -126,7 +143,7 @@ const questionCategoryOptions = [
 onMounted(async () => {
   await userStore.loadUserInfo().catch(() => null)
   provinceFilter.value = 'all'
-  bankStore.setFilters({ province: '', dimension: '', position: '', keyword: '' })
+  bankStore.setFilters({ province: '', dimension: '', position: '', categoryReview: '', keyword: '' })
   bankStore.fetchQuestions({ page: 1 })
 })
 
@@ -140,6 +157,7 @@ function onFilterChange() {
     province: provinceFilter.value === 'all' ? '' : provinceFilter.value || '',
     dimension: dimensionFilter.value || '',
     position: showPositionFilter.value ? positionFilter.value || '' : '',
+    categoryReview: categoryReviewFilter.value || '',
     keyword: keyword.value
   })
   bankStore.fetchQuestions()

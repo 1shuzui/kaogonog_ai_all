@@ -7,7 +7,10 @@
       <p class="waiting-room__hint">模拟面试即将开始，请做好准备</p>
       <div class="waiting-room__countdown">{{ waitCountdown }}</div>
       <p class="waiting-room__tip">提示：调整坐姿，保持自信微笑，深呼吸放松</p>
-      <a-button type="text" @click="skipWaiting">跳过等待</a-button>
+      <a-space class="waiting-room__actions">
+        <a-button danger @click="exitWaitingRoom">退出候考</a-button>
+        <a-button type="primary" @click="skipWaiting">跳过等待</a-button>
+      </a-space>
     </div>
 
     <!-- 正常设备检测流程 -->
@@ -589,6 +592,14 @@ async function skipWaiting() {
   await startMockExam(pendingQuestions)
 }
 
+function exitWaitingRoom() {
+  clearInterval(waitTimer)
+  pendingQuestions = []
+  waitingRoom.value = false
+  enteringExam.value = false
+  router.push('/')
+}
+
 async function startMockExam(questions) {
   waitingRoom.value = false
   await examStore.initExam(questions, true)
@@ -708,6 +719,10 @@ async function startMockExam(questions) {
   max-width: 300px;
   line-height: 1.6;
   margin-bottom: 16px;
+}
+
+.waiting-room__actions {
+  justify-content: center;
 }
 
 .permission-tips {

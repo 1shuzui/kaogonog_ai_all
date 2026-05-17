@@ -2,7 +2,9 @@
   <div class="support-desk page-container">
     <div class="support-desk__hero card">
       <div class="support-desk__hero-copy">
-        <a-button type="text" class="support-desk__back" @click="goBack">返回</a-button>
+        <a-button class="support-desk__back" @click="goBack">
+          <LeftOutlined /> 返回上一页
+        </a-button>
         <span class="support-desk__eyebrow">{{ userStore.isAdmin ? '反馈后台' : '客服反馈中心' }}</span>
         <h2>{{ userStore.isAdmin ? '全站反馈后台总览' : '提交问题并查看处理状态' }}</h2>
         <p>
@@ -180,6 +182,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { LeftOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { useUserStore } from '@/stores/user'
 import { PROVINCES } from '@/utils/constants'
@@ -393,7 +396,9 @@ function formatTime(value = '') {
 
 .support-desk__back {
   margin: -8px 0 8px -8px;
-  color: rgba(255, 255, 255, 0.88);
+  border-color: rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
 }
 
 .support-desk__eyebrow {

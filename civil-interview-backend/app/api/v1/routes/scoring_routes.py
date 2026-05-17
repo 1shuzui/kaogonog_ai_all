@@ -12,7 +12,12 @@ from app.schemas.common import AuthUser, EvaluateRequest
 from app.core.ai import get_asr_runtime_status
 from app.services.exam_service import assert_exam_access
 from app.services.media_storage import validate_media_upload
-from app.services.scoring_service import transcribe, evaluate_answer, get_scoring_result
+from app.services.scoring_service import (
+    build_fallback_answer_improvement_suggestion,
+    transcribe,
+    evaluate_answer,
+    get_scoring_result,
+)
 
 router = APIRouter(prefix="/scoring", tags=["scoring"])
 
@@ -68,6 +73,12 @@ def _build_zero_score_result() -> dict:
         "dimensions": dimensions,
         "aiComment": "系统判定本次作答仅包含语气词或无有效内容，按无效作答记 0 分。",
         "scoringMode": "screened_zero",
+        "answerImprovementSuggestion": build_fallback_answer_improvement_suggestion(
+            None,
+            {"dimensions": dimensions, "scoringMode": "screened_zero"},
+            "",
+            "本次作答未形成有效内容，请先完成完整作答后再查看细化建议。",
+        ),
     }
 
 

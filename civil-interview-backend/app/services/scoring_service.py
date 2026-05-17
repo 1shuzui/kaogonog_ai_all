@@ -42,6 +42,19 @@ DIM_MAPPING = {
     "expression": "语言表达",
 }
 
+ANSWER_IMPROVEMENT_FIELDS = (
+    "source",
+    "summary",
+    "teacherComment",
+    "diagnosisItems",
+    "focusPoints",
+    "missingKeywords",
+    "expressionUpgrades",
+    "sampleAnswer",
+    "rewriteOpening",
+    "rewriteClosing",
+)
+
 STRUCTURE_MARKERS = (
     "首先",
     "其次",
@@ -434,6 +447,256 @@ def _question_meta(question: Question) -> dict:
         "bonus_keywords": list(meta.get("bonusKeywords", [])),
         "penalty_keywords": penalty_keywords,
     }
+
+
+def _string_list(value, limit: int = 6) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    result: list[str] = []
+    for item in value:
+        text = str(item or "").strip()
+        if text:
+            result.append(text[:160])
+        if len(result) >= limit:
+            break
+    return result
+
+
+def build_fallback_answer_improvement_suggestion(
+    question: Question | None = None,
+    result: dict | None = None,
+    transcript: str = "",
+    reason: str = "",
+) -> dict:
+    meta = _question_meta(question) if question else {
+        "reference_answer": "",
+        "scoring_keywords": [],
+        "core_keywords": [],
+        "strong_keywords": [],
+    }
+    dimensions = result.get("dimensions", []) if isinstance(result, dict) else []
+    weak_dimensions = []
+    if isinstance(dimensions, list):
+        for item in dimensions:
+            if not isinstance(item, dict):
+                continue
+            score = float(item.get("score", 0) or 0)
+            max_score = float(item.get("maxScore", 0) or 0)
+            if max_score and score / max_score < 0.6:
+                weak_dimensions.append(str(item.get("name") or "答题内容"))
+    missing_keywords = _dedupe(
+        list(meta.get("core_keywords", []))
+        + list(meta.get("strong_keywords", []))
+        + list(meta.get("scoring_keywords", []))
+    )[:5]
+    stem = question.stem if question else "本题"
+    diagnosis = weak_dimensions[:3] or ["作答要点还不够集中，需要先补齐题干要求的核心层次"]
+    if not str(transcript or "").strip():
+        diagnosis = ["本题尚未形成有效作答文本，建议先完成完整表述后再复盘"]
+
+    return {
+        "source": "fallback",
+        "summary": reason or "根据评分结果和题库要点生成的基础改进建议。",
+        "teacherComment": "先把题干中的对象、矛盾和任务说清楚，再用分层措施回应问题。",
+        "diagnosisItems": diagnosis,
+        "focusPoints": [
+            {"order": "1", "title": "先扣题", "hint": f"开头点明对“{stem[:36]}”的判断和处理目标。"},
+            {"order": "2", "title": "补层次", "hint": "围绕原因分析、具体举措、后续闭环各展开一句到两句。"},
+            {"order": "3", "title": "落到岗位", "hint": "加入沟通、协调、依法依规、跟踪反馈等公职场景动作。"},
+        ],
+        "missingKeywords": missing_keywords,
+        "expressionUpgrades": [
+            {"before": "我会处理好这个问题。", "after": "我会先稳定现场、核实情况，再按职责边界协调资源推进解决。"},
+            {"before": "加强沟通。", "after": "主动向群众解释政策依据和办理流程，及时反馈阶段性进展。"},
+        ],
+        "sampleAnswer": meta.get("reference_answer") or "这道题可以按照“表明态度、分析原因、提出措施、总结提升”的结构展开，重点体现群众立场、依法履职和闭环落实。",
+        "rewriteOpening": "各位考官，我认为这道题的关键是既要回应现实问题，也要把工作责任落到可执行的步骤上。",
+        "rewriteClosing": "最后，我会做好复盘总结，把一次问题处置转化为改进流程、提升服务的机会。",
+    }
+
+
+def _normalize_focus_points(value, fallback: list[dict]) -> list[dict]:
+    if not isinstance(value, list):
+        return fallback
+    points: list[dict] = []
+    for index, item in enumerate(value, start=1):
+        if isinstance(item, dict):
+            title = str(item.get("title") or item.get("name") or "").strip()
+            hint = str(item.get("hint") or item.get("content") or item.get("description") or "").strip()
+            order = str(item.get("order") or index)
+        else:
+            title = str(item or "").strip()
+            hint = ""
+            order = str(index)
+        if title or hint:
+            points.append({"order": order, "title": title or f"重点{index}", "hint": hint})
+        if len(points) >= 4:
+            break
+    return points or fallback
+
+
+def _normalize_expression_upgrades(value, fallback: list[dict]) -> list[dict]:
+    if not isinstance(value, list):
+        return fallback
+    upgrades: list[dict] = []
+    for item in value:
+        if isinstance(item, dict):
+            before = str(item.get("before") or item.get("weak") or "").strip()
+            after = str(item.get("after") or item.get("upgrade") or item.get("suggestion") or "").strip()
+        else:
+            before = ""
+            after = str(item or "").strip()
+        if before or after:
+            upgrades.append({"before": before or "原表述可继续压实", "after": after})
+        if len(upgrades) >= 4:
+            break
+    return upgrades or fallback
+
+
+def _normalize_answer_improvement_suggestion(raw, fallback: dict) -> dict:
+    if not isinstance(raw, dict):
+        return fallback
+    normalized = {
+        "source": "model",
+        "summary": str(raw.get("summary") or fallback["summary"]).strip(),
+        "teacherComment": str(raw.get("teacherComment") or raw.get("teacher_comment") or fallback["teacherComment"]).strip(),
+        "diagnosisItems": _string_list(raw.get("diagnosisItems") or raw.get("diagnosis_items"), 6) or fallback["diagnosisItems"],
+        "focusPoints": _normalize_focus_points(raw.get("focusPoints") or raw.get("focus_points"), fallback["focusPoints"]),
+        "missingKeywords": _string_list(raw.get("missingKeywords") or raw.get("missing_keywords"), 8) or fallback["missingKeywords"],
+        "expressionUpgrades": _normalize_expression_upgrades(raw.get("expressionUpgrades") or raw.get("expression_upgrades"), fallback["expressionUpgrades"]),
+        "sampleAnswer": str(raw.get("sampleAnswer") or raw.get("sample_answer") or fallback["sampleAnswer"]).strip(),
+        "rewriteOpening": str(raw.get("rewriteOpening") or raw.get("rewrite_opening") or fallback["rewriteOpening"]).strip(),
+        "rewriteClosing": str(raw.get("rewriteClosing") or raw.get("rewrite_closing") or fallback["rewriteClosing"]).strip(),
+    }
+    return {key: normalized.get(key, fallback.get(key, "")) for key in ANSWER_IMPROVEMENT_FIELDS}
+
+
+def _build_answer_improvement_prompt(question: Question, transcript: str, result: dict, visual_observation: str = "") -> str:
+    meta = _question_meta(question)
+    scoring_points = question.scoring_points if isinstance(question.scoring_points, list) else []
+    point_lines = "\n".join(
+        f"- {item.get('content') or item.get('name') or item}"
+        for item in scoring_points[:8]
+    ) or "- 观点明确、措施可行、逻辑清晰"
+    dimension_lines = "\n".join(
+        f"- {item.get('name', '')}: {item.get('score', 0)}/{item.get('maxScore', 0)}"
+        for item in result.get("dimensions", [])
+        if isinstance(item, dict)
+    )
+    keyword_lines = "、".join(_dedupe(
+        meta["scoring_keywords"]
+        + meta["core_keywords"]
+        + meta["strong_keywords"]
+        + meta["bonus_keywords"]
+    )[:16]) or "无"
+    matched_keywords = result.get("matchedKeywords") if isinstance(result.get("matchedKeywords"), dict) else {}
+    missing_lines = "、".join(
+        item.get("word", "")
+        for item in matched_keywords.get("scoring", [])
+        if isinstance(item, dict) and not item.get("inTranscript")
+    ) or "无"
+    reference_answer = meta["reference_answer"] or "题库暂未提供完整参考答案。"
+    visual_block = visual_observation or "未提供视频动作与表情观察。"
+    return f"""你是一位公务员面试辅导老师。请基于评分结果生成可直接展示给考生的改进建议。
+
+【题目】
+{question.stem}
+
+【题型/分类】
+{DIM_MAPPING.get(question.dimension, question.dimension)}
+
+【采分点】
+{point_lines}
+
+【关键词】
+{keyword_lines}
+
+【当前缺失关键词】
+{missing_lines}
+
+【参考答案】
+{reference_answer}
+
+【评分维度】
+{dimension_lines}
+
+【视频观察】
+{visual_block}
+
+【考生作答】
+{transcript}
+
+只输出 JSON，不要 Markdown。字段必须包含：
+{{
+  "summary": "一句话指出最需要提升的方向",
+  "teacherComment": "老师批注，语气具体但克制",
+  "diagnosisItems": ["问题1", "问题2"],
+  "focusPoints": [{{"order": "1", "title": "重点", "hint": "怎么展开"}}],
+  "missingKeywords": ["建议补充的关键词"],
+  "expressionUpgrades": [{{"before": "偏弱说法", "after": "更好的说法"}}],
+  "sampleAnswer": "一段示范答案，控制在260字以内",
+  "rewriteOpening": "可替换的开头句",
+  "rewriteClosing": "可替换的结尾句"
+}}"""
+
+
+def _should_skip_model_improvement(result: dict, transcript: str) -> bool:
+    mode = str(result.get("scoringMode") or "").strip()
+    return mode == "screened_zero" or _effective_transcript_length(transcript) < 8
+
+
+async def _build_answer_improvement_suggestion(
+    question: Question,
+    transcript: str,
+    result: dict,
+    visual_observation: str = "",
+) -> dict:
+    fallback = build_fallback_answer_improvement_suggestion(
+        question,
+        result,
+        transcript,
+        reason="模型建议不可用，已返回题库规则生成的基础建议。",
+    )
+    if _should_skip_model_improvement(result, transcript):
+        return build_fallback_answer_improvement_suggestion(
+            question,
+            result,
+            transcript,
+            reason="本次作答未形成有效内容，请先完成完整作答后再查看细化建议。",
+        )
+    if not settings.llm_api_key:
+        return fallback
+    try:
+        raw = await call_llm_api_async(
+            _build_answer_improvement_prompt(question, transcript, result, visual_observation),
+            system_msg="你是公务员面试辅导老师，请只输出 JSON。",
+            temperature=0.2,
+            max_tokens=1800,
+        )
+        return _normalize_answer_improvement_suggestion(raw, fallback)
+    except Exception as exc:
+        logger.warning("Answer improvement suggestion failed: %s", exc)
+        return fallback
+
+
+async def _finalize_result(
+    db: Session,
+    exam_id: Optional[str],
+    question_id: str,
+    question: Question,
+    transcript: str,
+    result: dict,
+    visual_observation: str = "",
+) -> dict:
+    payload = dict(result or {})
+    if "answerImprovementSuggestion" not in payload:
+        payload["answerImprovementSuggestion"] = await _build_answer_improvement_suggestion(
+            question,
+            transcript,
+            payload,
+            visual_observation,
+        )
+    return _persist_result(db, exam_id, question_id, transcript, payload)
 
 
 def _build_keyword_payload(question: Question, transcript: str) -> dict:
@@ -872,7 +1135,7 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
                 "grade": result.get("grade"),
             },
         )
-        return _persist_result(db, exam_id, question_id, transcript, result)
+        return await _finalize_result(db, exam_id, question_id, question, transcript, result, visual_observation)
 
     if _is_gibberish_answer(question, transcript):
         result = _build_zero_score_result("系统判定本次作答主要为重复寒暄、数字或无意义表达，按无效作答记 0 分。")
@@ -898,7 +1161,7 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
                 "grade": result.get("grade"),
             },
         )
-        return _persist_result(db, exam_id, question_id, transcript, result)
+        return await _finalize_result(db, exam_id, question_id, question, transcript, result, visual_observation)
 
     if not settings.llm_api_key:
         result = _build_rule_based_result(
@@ -929,7 +1192,7 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
                 "grade": result.get("grade"),
             },
         )
-        return _persist_result(db, exam_id, question_id, transcript, result)
+        return await _finalize_result(db, exam_id, question_id, question, transcript, result, visual_observation)
 
     # Stage 1: Evidence extraction
     logger.info(
@@ -1017,7 +1280,7 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
                 "grade": result.get("grade"),
             },
         )
-        return _persist_result(db, exam_id, question_id, transcript, result)
+        return await _finalize_result(db, exam_id, question_id, question, transcript, result, visual_observation)
 
     frontend_dims = []
     for key, display_name in DIM_MAPPING.items():
@@ -1061,7 +1324,7 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
             "grade": result.get("grade"),
         },
     )
-    return _persist_result(db, exam_id, question_id, transcript, result)
+    return await _finalize_result(db, exam_id, question_id, question, transcript, result, visual_observation)
 
 
 def _persist_result(db: Session, exam_id: Optional[str], question_id: str, transcript: str, result: dict) -> dict:

@@ -29,6 +29,14 @@
         </a-col>
       </a-row>
 
+      <a-alert
+        v-if="form.categoryReviewStatus === 'needs_review'"
+        type="warning"
+        show-icon
+        style="margin-bottom: 16px"
+        :message="categoryReviewMessage"
+      />
+
       <a-row :gutter="12">
         <a-col :span="12">
           <a-form-item label="准备时间(秒)">
@@ -86,7 +94,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { computed, ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import { useQuestionBankStore } from '@/stores/questionBank'
@@ -115,6 +123,10 @@ const form = reactive({
   province: 'national',
   prepTime: 90,
   answerTime: 180,
+  categoryReviewStatus: 'confirmed',
+  categoryConfidence: 0,
+  categoryCandidates: [],
+  categoryReviewReason: '',
   scoringPoints: [{ content: '', score: 5 }],
   synonyms: [],
   keywords: {
@@ -134,6 +146,10 @@ onMounted(async () => {
         province: q.province,
         prepTime: q.prepTime,
         answerTime: q.answerTime,
+        categoryReviewStatus: q.categoryReviewStatus || 'confirmed',
+        categoryConfidence: q.categoryConfidence || 0,
+        categoryCandidates: q.categoryCandidates || [],
+        categoryReviewReason: q.categoryReviewReason || '',
         scoringPoints: q.scoringPoints?.length ? q.scoringPoints : [{ content: '', score: 5 }],
         synonyms: q.synonyms || [],
         keywords: {
@@ -161,10 +177,11 @@ async function onSave() {
   }
   saving.value = true
   try {
+    const payload = { ...form, categoryReviewStatus: 'confirmed' }
     if (isEdit) {
-      await bankStore.editQuestion(route.params.id, { ...form })
+      await bankStore.editQuestion(route.params.id, payload)
     } else {
-      await bankStore.addQuestion({ ...form })
+      await bankStore.addQuestion(payload)
     }
     message.success('保存成功')
     router.push('/bank')
@@ -174,6 +191,14 @@ async function onSave() {
     saving.value = false
   }
 }
+
+const categoryReviewMessage = computed(() => {
+  const candidates = Array.isArray(form.categoryCandidates)
+    ? form.categoryCandidates.map((item) => item.label || item.dimension).filter(Boolean).slice(0, 3)
+    : []
+  const suffix = candidates.length ? `候选分类：${candidates.join('、')}。` : ''
+  return `${form.categoryReviewReason || '系统认为该题分类需要管理员确认。'}${suffix}保存后将标记为已确认。`
+})
 </script>
 
 <style lang="less" scoped>
