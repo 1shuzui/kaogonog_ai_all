@@ -110,7 +110,6 @@
         >
           <div class="question-card__top">
             <span class="question-card__index">第 {{ index + 1 }} 题</span>
-            <span v-if="question.fullMockScore" class="question-card__score">{{ question.fullMockScore }} 分</span>
             <span class="question-card__status">{{ questionStatusText(index) }}</span>
           </div>
           <QuestionMetaTags :question="question" emphasis compact basic-only />

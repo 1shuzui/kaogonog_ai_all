@@ -55,7 +55,7 @@
         <text class="muted">{{ access?.mode || 'practice' }}</text>
       </view>
       <view class="access-row">
-        <button class="secondary-button" @tap="checkAccess('practice')">专项练习</button>
+        <button class="secondary-button" @tap="checkAccess('practice')">自由练习</button>
         <button class="secondary-button" @tap="checkAccess('mock')">模拟面试</button>
       </view>
       <text class="access-result" :class="{ 'access-result--ok': access?.allowed }">

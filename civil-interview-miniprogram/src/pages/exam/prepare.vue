@@ -5,7 +5,7 @@
 
     <view v-if="readonlyMode" class="card access-card">
       <text class="access-card__title">未开通正式训练</text>
-      <text class="access-card__desc">可以先体验 1 道试用题，或开通套餐后进入模拟面试、专项练习和训练复盘。</text>
+      <text class="access-card__desc">可以先体验 1 道试用题，或开通套餐后进入完整模考、自由练习和训练复盘。</text>
       <view class="access-card__actions">
         <button class="secondary-button" :disabled="loading || accessLoading" @tap="startTrialEntry">试用 1 题</button>
         <button class="primary-button" :disabled="loading || accessLoading" @tap="goPricing">开通套餐</button>
@@ -36,35 +36,13 @@
       </view>
       <view class="mode-grid">
         <view class="mode-card" :class="{ 'mode-card--active': mode === 'free' }" @tap.stop="selectFreeMode">
-          <text class="mode-card__title">专项练习</text>
+          <text class="mode-card__title">自由练习</text>
           <text class="mode-card__desc">适合单题拆解和即时复盘</text>
         </view>
         <view class="mode-card" :class="{ 'mode-card--active': mode === 'mock' }" @tap.stop="selectMockMode">
           <text class="mode-card__title">模拟面试</text>
-          <text class="mode-card__desc">整套真题顺序练习，保留每题分值</text>
+          <text class="mode-card__desc">按准备和作答计时推进</text>
         </view>
-      </view>
-
-      <view v-if="showFullMockConfig" class="full-mock-panel">
-        <view class="config-row config-row--type">
-          <text>真题套卷</text>
-          <text class="config-row__value">{{ selectedFullMockSuite?.questionCount || 0 }}题 / {{ selectedFullMockSuite?.totalScore || 0 }}分</text>
-        </view>
-        <scroll-view scroll-y class="full-mock-list">
-          <view
-            v-for="suite in fullMockSuites"
-            :key="suite.id"
-            class="full-mock-item"
-            :class="{ 'full-mock-item--active': selectedFullMockSuiteId === suite.id }"
-            @tap="selectFullMockSuite(suite.id)"
-          >
-            <text class="full-mock-item__title">{{ suite.title }}</text>
-            <text class="full-mock-item__meta">{{ suite.questionCount }}题 · 总分{{ suite.totalScore }} · {{ suite.sourceDocument || '真实题库' }}</text>
-          </view>
-          <view v-if="!fullMockSuites.length" class="full-mock-empty">
-            <text>{{ fullMockLoading ? '正在加载全真套题' : '当前省份暂无全真套题' }}</text>
-          </view>
-        </scroll-view>
       </view>
 
       <view class="config-row media-row">
@@ -129,7 +107,7 @@ import { useBillingStore } from '../../stores/billing'
 import { useQuestionBankStore } from '../../stores/questionBank'
 import { useSubscriptionStore } from '../../stores/subscription'
 import { useUserStore } from '../../stores/user'
-import { getFullMockSuites } from '../../api/exam'
+import { getQuestionById } from '../../api/questionBank'
 import { getAsrStatus } from '../../api/scoring'
 import { getTrialQuestion, getTrialStatus } from '../../api/trial'
 import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
@@ -141,6 +119,8 @@ const questionBankStore = useQuestionBankStore()
 const subscriptionStore = useSubscriptionStore()
 const userStore = useUserStore()
 const DEFAULT_EXAM_QUESTION_COUNT = 5
+const JIANGSU_MOCK_QUESTION_COUNT = 4
+const JIANGSU_MOCK_TIMING_MODE = 'jiangsu_5_15'
 const MAX_FREE_QUESTION_COUNT = 10
 const STATE_REFRESH_TIMEOUT_MS = 6000
 const ENTER_ROOM_TIMEOUT_MS = 10000
@@ -148,9 +128,6 @@ const count = ref(DEFAULT_EXAM_QUESTION_COUNT)
 const mode = ref('free')
 const mediaMode = ref('audio')
 const selectedDimensions = ref(['random'])
-const fullMockSuites = ref([])
-const selectedFullMockSuiteId = ref('')
-const fullMockLoading = ref(false)
 const loading = ref(false)
 const accessLoading = ref(false)
 const trial = ref(false)
@@ -175,9 +152,11 @@ const questionCategoryOptions = [
   ...QUESTION_CATEGORIES.filter((item) => item.key)
 ]
 const showPracticeConfig = computed(() => mode.value === 'free')
-const showFullMockConfig = computed(() => mode.value === 'mock')
 const selectedSpecificDimensions = computed(() => selectedDimensions.value.filter((item) => item && item !== RANDOM_DIMENSION_KEY))
 const selectedDimensionParam = computed(() => selectedSpecificDimensions.value.join(','))
+const mockQuestionCount = computed(() => (
+  userStore.selectedProvince === 'jiangsu' ? JIANGSU_MOCK_QUESTION_COUNT : DEFAULT_EXAM_QUESTION_COUNT
+))
 const selectedCategoryName = computed(() => {
   if (!selectedSpecificDimensions.value.length) return '随机题型'
   const names = selectedSpecificDimensions.value
@@ -185,9 +164,6 @@ const selectedCategoryName = computed(() => {
     .filter(Boolean)
   return names.join('、') || '随机题型'
 })
-const selectedFullMockSuite = computed(() => (
-  fullMockSuites.value.find((suite) => suite.id === selectedFullMockSuiteId.value) || null
-))
 
 function applyUserPracticePreferencesToQuestions(questions = []) {
   const prefs = userStore.preferences || {}
@@ -200,8 +176,16 @@ function applyUserPracticePreferencesToQuestions(questions = []) {
   }))
 }
 
+function applyMockTimingMode(questions = []) {
+  if (mode.value !== 'mock' || userStore.selectedProvince !== 'jiangsu') return questions
+  return questions.slice(0, JIANGSU_MOCK_QUESTION_COUNT).map((question) => ({
+    ...question,
+    mockTimingMode: JIANGSU_MOCK_TIMING_MODE
+  }))
+}
+
 onLoad((query) => {
-  if (['mock', 'full_mock'].includes(String(query?.mode || ''))) {
+  if (String(query?.mode || '') === 'mock') {
     mode.value = 'mock'
   } else if (String(query?.mode || '') === 'free') {
     mode.value = 'free'
@@ -222,7 +206,6 @@ onShow(() => {
   hideLoading()
   refreshAccessState().catch(() => null)
   refreshAsrStatus().catch(() => null)
-  loadFullMockSuites().catch(() => null)
 })
 
 function withTimeout(promise, timeoutMs, fallback = null) {
@@ -296,13 +279,6 @@ function selectFreeMode() {
 
 function selectMockMode() {
   mode.value = 'mock'
-  if (!fullMockSuites.value.length) {
-    loadFullMockSuites().catch(() => null)
-  }
-}
-
-function selectFullMockSuite(id) {
-  selectedFullMockSuiteId.value = id
 }
 
 function selectAudioMode() {
@@ -324,23 +300,6 @@ function increaseCount() {
 
 function isTypeSelected(key) {
   return selectedDimensions.value.includes(key)
-}
-
-async function loadFullMockSuites() {
-  if (fullMockLoading.value || !userStore.isAuthenticated) return
-  fullMockLoading.value = true
-  try {
-    const result = await getFullMockSuites({ province: userStore.selectedProvince || 'all' })
-    const list = Array.isArray(result?.list) ? result.list : []
-    fullMockSuites.value = list
-    if (!selectedFullMockSuiteId.value && list.length) {
-      selectedFullMockSuiteId.value = list[0].id
-    }
-  } catch {
-    fullMockSuites.value = []
-  } finally {
-    fullMockLoading.value = false
-  }
 }
 
 function toggleQuestionType(key) {
@@ -385,16 +344,21 @@ async function startPractice() {
     let questions = []
     if (trial.value) {
       try {
-        const trialQuestion = await getTrialQuestion()
-        questions = trialQuestion?.id ? [trialQuestion] : []
-      } catch (error) {
-        toast(error?.message || '固定试用题 q001 不存在')
-        return
+        const trialQuestion = await withTimeout(getTrialQuestion(), ENTER_ROOM_TIMEOUT_MS, null)
+        if (trialQuestion?.id) {
+          questions = [trialQuestion]
+        } else {
+          const fallbackQuestion = await withTimeout(getQuestionById('q001'), ENTER_ROOM_TIMEOUT_MS, null)
+          questions = fallbackQuestion?.id ? [fallbackQuestion] : []
+        }
+      } catch {
+        const fallbackQuestion = await withTimeout(getQuestionById('q001'), ENTER_ROOM_TIMEOUT_MS, null)
+        questions = fallbackQuestion?.id ? [fallbackQuestion] : []
       }
     } else {
       if (!userStore.isAdmin) {
         const access = await withTimeout(
-          subscriptionStore.check(mode.value === 'free' ? 'practice' : 'mock', { skipErrorHandler: true }),
+          subscriptionStore.check(mode.value === 'mock' ? 'mock' : 'practice', { skipErrorHandler: true }),
           ENTER_ROOM_TIMEOUT_MS,
           { timeout: true }
         )
@@ -407,25 +371,11 @@ async function startPractice() {
           return
         }
       }
-      if (mode.value === 'mock') {
-        if (!selectedFullMockSuiteId.value) {
-          await loadFullMockSuites()
-        }
-        if (!selectedFullMockSuiteId.value) {
-          toast('当前省份暂无可用模拟面试套题')
-          return
-        }
-        examStore.setMediaMode(mediaMode.value)
-        await examStore.startFromFullMockSuite(selectedFullMockSuiteId.value)
-        uni.navigateTo({ url: '/pages/exam/room' })
-        return
-      }
-
       questions = await withTimeout(
         questionBankStore.fetchRandom({
           province: userStore.selectedProvince,
-          count: count.value,
-          dimension: selectedDimensionParam.value
+          count: mode.value === 'mock' ? mockQuestionCount.value : count.value,
+          dimension: mode.value === 'mock' ? '' : selectedDimensionParam.value
         }),
         ENTER_ROOM_TIMEOUT_MS,
         []
@@ -436,8 +386,8 @@ async function startPractice() {
       toast(trial.value ? '试用题暂不可用，请稍后重试' : '当前筛选条件暂无题目')
       return
     }
-    const targetCount = trial.value ? 1 : count.value
-    const preparedQuestions = applyUserPracticePreferencesToQuestions(questions.slice(0, targetCount))
+    const targetCount = trial.value ? 1 : mode.value === 'mock' ? mockQuestionCount.value : count.value
+    const preparedQuestions = applyMockTimingMode(applyUserPracticePreferencesToQuestions(questions.slice(0, targetCount)))
     examStore.setMediaMode(mediaMode.value)
     await examStore.startFromQuestions(preparedQuestions, trial.value ? 'trial' : mode.value)
     uni.navigateTo({ url: '/pages/exam/room' })
@@ -530,56 +480,6 @@ function goPricing() {
 
 .question-type-panel {
   margin-top: 10rpx;
-}
-
-.full-mock-panel {
-  margin-top: 18rpx;
-  padding-top: 18rpx;
-  border-top: 1rpx solid #eef2f6;
-}
-
-.full-mock-list {
-  max-height: 360rpx;
-}
-
-.full-mock-item {
-  margin-bottom: 14rpx;
-  padding: 18rpx;
-  border: 1rpx solid #d9e3ef;
-  border-radius: 14rpx;
-  background: #ffffff;
-}
-
-.full-mock-item--active {
-  border-color: #1b5faa;
-  background: #e8f4fd;
-}
-
-.full-mock-item__title,
-.full-mock-item__meta,
-.full-mock-empty text {
-  display: block;
-}
-
-.full-mock-item__title {
-  color: #1a1a2e;
-  font-size: 26rpx;
-  font-weight: 800;
-  line-height: 1.35;
-}
-
-.full-mock-item__meta {
-  margin-top: 8rpx;
-  color: #6f7c8f;
-  font-size: 22rpx;
-  line-height: 1.45;
-}
-
-.full-mock-empty {
-  padding: 26rpx 0;
-  color: #8b98a8;
-  font-size: 24rpx;
-  text-align: center;
 }
 
 .type-chip-grid {

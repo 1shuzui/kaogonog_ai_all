@@ -84,12 +84,12 @@
         <a-radio-group v-model:value="examMode" style="width: 100%">
           <a-space direction="vertical" style="width: 100%">
             <a-radio value="free" class="mode-radio">
-              <span class="mode-label">专项练习</span>
+              <span class="mode-label">自由练习</span>
               <span class="mode-desc">随时暂停，自定义节奏</span>
             </a-radio>
             <a-radio value="mock" class="mode-radio">
               <span class="mode-label">模拟面试</span>
-              <span class="mode-desc">按真实套题顺序练完整场，保留每题赋分</span>
+              <span class="mode-desc">候考等待 → 连续作答 → 全程计时，贴近真实考场</span>
             </a-radio>
           </a-space>
         </a-radio-group>
@@ -125,30 +125,9 @@
             </a-select>
           </div>
         </div>
-        <div v-if="showFullMockConfig" class="full-mock-panel">
-          <div class="practice-config__item">
-            <span class="practice-config__label">选择套题</span>
-            <a-select
-              v-model:value="selectedFullMockSuiteId"
-              :loading="fullMockLoading"
-              placeholder="选择一套真题"
-              style="width: 100%"
-              @focus="loadFullMockSuites"
-            >
-              <a-select-option v-for="suite in fullMockSuites" :key="suite.id" :value="suite.id">
-                {{ suite.title }} · {{ suite.questionCount }}题 / {{ suite.totalScore }}分
-              </a-select-option>
-            </a-select>
-          </div>
-          <div v-if="selectedFullMockSuite" class="full-mock-summary">
-            <span>{{ selectedFullMockSuite.sourceDocument || '真实题库' }}</span>
-            <span>{{ selectedFullMockSuite.questionCount }} 道题</span>
-            <span>总分 {{ selectedFullMockSuite.totalScore }} 分</span>
-          </div>
-        </div>
       </div>
       <a-button type="primary" size="large" block :loading="enteringExam" :disabled="enteringExam || asrUnavailable" @click="enterExam" style="margin-top: 16px">
-        {{ asrUnavailable ? '语音服务未就绪' : examMode === 'mock' ? '开始模拟面试' : '开始专项练习' }}
+        {{ asrUnavailable ? '语音服务未就绪' : examMode === 'mock' ? '开始模拟面试' : '进入考场' }}
       </a-button>
     </div>
     </template>
@@ -163,7 +142,6 @@ import { usePermission } from '@/composables/usePermission'
 import { useMediaRecorder } from '@/composables/useMediaRecorder'
 import { useExamStore } from '@/stores/exam'
 import { useBillingStore } from '@/stores/billing'
-import { getFullMockSuites } from '@/api/exam'
 import { getRandomQuestions, getQuestionById } from '@/api/questionBank'
 import { getAsrStatus } from '@/api/scoring'
 import { useUserStore } from '@/stores/user'
@@ -190,14 +168,11 @@ const testBlobUrl = ref('')
 const testCountdown = ref(3)
 const allReady = ref(false)
 const videoEnabled = ref(true)
-const examMode = ref(normalizeExamMode(route.query.mode))
+const examMode = ref('free')
 const enteringExam = ref(false)
 const questionCount = ref(5)
 const dimensionFilters = ref(['random'])
 const asrStatus = ref(null)
-const fullMockSuites = ref([])
-const selectedFullMockSuiteId = ref('')
-const fullMockLoading = ref(false)
 
 // 候考室
 const waitingRoom = ref(false)
@@ -210,8 +185,10 @@ const waitCountdown = computed(() => {
 
 let countdownTimer = null
 let waitTimer = null
-let pendingFullMockSuiteId = ''
+let pendingQuestions = null
 const DEFAULT_EXAM_QUESTION_COUNT = 5
+const JIANGSU_MOCK_QUESTION_COUNT = 4
+const JIANGSU_MOCK_TIMING_MODE = 'jiangsu_5_15'
 const RANDOM_FETCH_BUFFER = 6
 const RANDOM_FETCH_ATTEMPTS = 3
 const RANDOM_DIMENSION_KEY = 'random'
@@ -227,7 +204,6 @@ const questionCategoryOptions = [
 
 const isTrialEntry = computed(() => String(route.query.trial || '') === '1' && !billingStore.isPaid)
 const showPracticeConfig = computed(() => examMode.value === 'free')
-const showFullMockConfig = computed(() => examMode.value === 'mock')
 const asrUnavailable = computed(() => asrStatus.value && asrStatus.value.ready === false)
 const asrStatusText = computed(() => {
   if (!asrStatus.value) return ''
@@ -238,13 +214,9 @@ const selectedSpecificDimensions = computed(() => (
 ))
 const selectedSpecificDimensionCount = computed(() => selectedSpecificDimensions.value.length)
 const selectedDimensionParam = computed(() => selectedSpecificDimensions.value.join(','))
-const selectedFullMockSuite = computed(() => (
-  fullMockSuites.value.find((suite) => suite.id === selectedFullMockSuiteId.value) || null
+const mockQuestionCount = computed(() => (
+  userStore.selectedProvince === 'jiangsu' ? JIANGSU_MOCK_QUESTION_COUNT : DEFAULT_EXAM_QUESTION_COUNT
 ))
-
-function normalizeExamMode(value = '') {
-  return ['mock', 'full_mock'].includes(String(value || '')) ? 'mock' : 'free'
-}
 
 function handleDimensionFiltersChange(values = []) {
   const selected = Array.isArray(values) ? values.filter(Boolean) : []
@@ -263,25 +235,16 @@ function applyUserPracticePreferencesToQuestions(questions = []) {
   }))
 }
 
-async function loadAsrStatus() {
-  asrStatus.value = await getAsrStatus({ skipErrorHandler: true }).catch(() => null)
+function applyMockTimingMode(questions = []) {
+  if (examMode.value !== 'mock' || userStore.selectedProvince !== 'jiangsu') return questions
+  return questions.slice(0, JIANGSU_MOCK_QUESTION_COUNT).map((question) => ({
+    ...question,
+    mockTimingMode: JIANGSU_MOCK_TIMING_MODE
+  }))
 }
 
-async function loadFullMockSuites() {
-  if (fullMockLoading.value || !userStore.isAuthenticated) return
-  fullMockLoading.value = true
-  try {
-    const result = await getFullMockSuites({ province: userStore.selectedProvince || 'all' })
-    const list = Array.isArray(result?.list) ? result.list : []
-    fullMockSuites.value = list
-    if (!selectedFullMockSuiteId.value && list.length) {
-      selectedFullMockSuiteId.value = list[0].id
-    }
-  } catch {
-    fullMockSuites.value = []
-  } finally {
-    fullMockLoading.value = false
-  }
+async function loadAsrStatus() {
+  asrStatus.value = await getAsrStatus({ skipErrorHandler: true }).catch(() => null)
 }
 
 function notifyUnsupportedQuestions(unsupportedCount, replaced = false) {
@@ -364,7 +327,6 @@ async function ensureScoringReadyQuestions(questions, options = {}) {
 
 onMounted(() => {
   loadAsrStatus().catch(() => null)
-  loadFullMockSuites().catch(() => null)
   doPermissionCheck()
 })
 
@@ -472,37 +434,21 @@ async function enterExam() {
   const source = String(route.query.source || '')
   const recommendedId = String(route.query.questionId || '')
   const freeQuestionCount = Math.max(1, Math.min(10, Number(questionCount.value) || DEFAULT_EXAM_QUESTION_COUNT))
-  const targetQuestionCount = isTrialEntry.value ? 1 : freeQuestionCount
+  const targetQuestionCount = isTrialEntry.value
+    ? 1
+    : examMode.value === 'mock'
+      ? mockQuestionCount.value
+      : freeQuestionCount
 
   try {
     if (isTrialEntry.value) {
       try {
         const trialQuestion = await getQuestionById(billingStore.trialQuestion.id)
         questions = trialQuestion ? [trialQuestion] : []
-      } catch (error) {
-        message.error(error?.normalizedMessage || error?.message || '固定试用题 q001 不存在')
-        return
+      } catch {
+        const fallbackQuestion = await getQuestionById('q001')
+        questions = fallbackQuestion ? [fallbackQuestion] : []
       }
-    } else if (examMode.value === 'mock') {
-      if (!selectedFullMockSuiteId.value) {
-        await loadFullMockSuites()
-      }
-      if (!selectedFullMockSuiteId.value) {
-        message.warning('当前省份暂无可用全真套题。')
-        return
-      }
-      pendingFullMockSuiteId = selectedFullMockSuiteId.value
-      waitingRoom.value = true
-      waitSeconds.value = 10
-      clearInterval(waitTimer)
-      waitTimer = setInterval(async () => {
-        waitSeconds.value -= 1
-        if (waitSeconds.value <= 0) {
-          clearInterval(waitTimer)
-          await startMockExam(pendingFullMockSuiteId)
-        }
-      }, 1000)
-      return
     } else if (source === 'targeted' && targetedStore.generatedQuestions.length) {
       questions = await ensureScoringReadyQuestions(targetedStore.generatedQuestions, {
         allowAutoSupplement: false
@@ -544,10 +490,31 @@ async function enterExam() {
       return
     }
 
-    questions = applyUserPracticePreferencesToQuestions(questions)
+    questions = applyMockTimingMode(applyUserPracticePreferencesToQuestions(questions))
 
     recorder.destroyStream()
     examStore.setVideoEnabled(videoEnabled.value)
+
+    if (examMode.value === 'mock') {
+      if (isTrialEntry.value) {
+        await examStore.initExam(questions, true)
+        router.push('/exam/room')
+        return
+      }
+
+      pendingQuestions = questions
+      waitingRoom.value = true
+      waitSeconds.value = 10
+      clearInterval(waitTimer)
+      waitTimer = setInterval(async () => {
+        waitSeconds.value -= 1
+        if (waitSeconds.value <= 0) {
+          clearInterval(waitTimer)
+          await startMockExam(pendingQuestions)
+        }
+      }, 1000)
+      return
+    }
 
     await examStore.initExam(questions, false)
     router.push('/exam/room')
@@ -560,23 +527,20 @@ async function enterExam() {
 
 async function skipWaiting() {
   clearInterval(waitTimer)
-  await startMockExam(pendingFullMockSuiteId)
+  await startMockExam(pendingQuestions)
 }
 
 function exitWaitingRoom() {
   clearInterval(waitTimer)
-  pendingFullMockSuiteId = ''
+  pendingQuestions = []
   waitingRoom.value = false
   enteringExam.value = false
   router.push('/')
 }
 
-async function startMockExam(suiteId) {
+async function startMockExam(questions) {
   waitingRoom.value = false
-  recorder.destroyStream()
-  examStore.setVideoEnabled(videoEnabled.value)
-  await examStore.initFullMockExam(suiteId)
-  pendingFullMockSuiteId = ''
+  await examStore.initExam(questions, true)
   router.push('/exam/room')
 }
 </script>
@@ -652,27 +616,6 @@ async function startMockExam(suiteId) {
   flex: 0 0 auto;
   color: @text-primary;
   font-weight: 600;
-}
-
-.full-mock-panel {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid @border-color;
-}
-
-.full-mock-summary {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
-  color: @text-secondary;
-  font-size: @font-size-sm;
-
-  span {
-    padding: 4px 8px;
-    border-radius: 6px;
-    background: #f4f7fb;
-  }
 }
 
 .waiting-room {

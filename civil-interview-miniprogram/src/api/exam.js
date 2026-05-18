@@ -8,26 +8,6 @@ export function startExam(questionIds = []) {
   })
 }
 
-export function getFullMockSuites(params = {}) {
-  return request({
-    url: '/exam/full-mock/suites',
-    data: params
-  })
-}
-
-export function getFullMockSuite(id) {
-  return request({
-    url: `/exam/full-mock/suites/${encodeURIComponent(id)}`
-  })
-}
-
-export function startFullMockSuite(id) {
-  return request({
-    url: `/exam/full-mock/suites/${encodeURIComponent(id)}/start`,
-    method: 'POST'
-  })
-}
-
 export function uploadRecording(examId, questionId, filePath, options = {}) {
   const mediaType = options.mediaType || 'audio'
   return uploadFile({

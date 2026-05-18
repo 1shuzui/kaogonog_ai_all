@@ -5,18 +5,6 @@ export async function startExam(questionIds) {
   return http.post('/exam/start', { questionIds })
 }
 
-export async function getFullMockSuites(params = {}) {
-  return http.get('/exam/full-mock/suites', { params })
-}
-
-export async function getFullMockSuite(id) {
-  return http.get(`/exam/full-mock/suites/${encodeURIComponent(id)}`)
-}
-
-export async function startFullMockSuite(id) {
-  return http.post(`/exam/full-mock/suites/${encodeURIComponent(id)}/start`)
-}
-
 export async function uploadRecording(examId, questionId, blob) {
   const formData = buildExamUploadFormData({
     questionId,

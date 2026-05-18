@@ -25,7 +25,6 @@
               <view class="question-tags">
                 <text class="question-tag">{{ provinceLabel(item) }}</text>
                 <text class="question-tag question-tag--blue">{{ categoryLabel(item) }}</text>
-                <text v-if="item.fullMockScore" class="question-tag question-tag--score">{{ item.fullMockScore }}分</text>
                 <text v-if="index === examStore.currentIndex" class="question-tag question-tag--active">当前作答</text>
               </view>
               <scroll-view scroll-y class="question-book__stem-scroll">
@@ -177,7 +176,7 @@ const questionBookScrollPadding = computed(() => (
     ? 'calc(430rpx + env(safe-area-inset-top))'
     : 'calc(338rpx + env(safe-area-inset-top))'
 ))
-const isMockLikeSource = computed(() => ['mock', 'full_mock'].includes(examStore.source))
+const isMockLikeSource = computed(() => examStore.source === 'mock')
 const isJiangsuMockTiming = computed(() => isMockLikeSource.value && examStore.questions.some((item) => (
   item?.mockTimingMode === JIANGSU_MOCK_TIMING_MODE
 )))

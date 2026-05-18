@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { startExam, startFullMockSuite, uploadRecording, completeExam } from '../api/exam'
+import { startExam, uploadRecording, completeExam } from '../api/exam'
 import { evaluateAnswer, transcribeAudio } from '../api/scoring'
 import { prepareMediaForUpload } from '../utils/mediaUpload'
 import { normalizeResult } from '../utils/scoring'
@@ -48,8 +48,7 @@ export const useExamStore = defineStore('exam', {
     latestTranscript: '',
     loading: false,
     source: '',
-    mediaMode: 'audio',
-    fullMockSuite: null
+    mediaMode: 'audio'
   }),
 
   getters: {
@@ -79,24 +78,6 @@ export const useExamStore = defineStore('exam', {
       this.latestResult = null
       this.latestTranscript = ''
       this.source = source
-      this.fullMockSuite = null
-      answerProcessingTasks.clear()
-      return response
-    },
-
-    async startFromFullMockSuite(suiteId) {
-      const response = await startFullMockSuite(suiteId)
-      const suite = response?.suite || {}
-      const list = Array.isArray(suite.questions) ? suite.questions.filter(Boolean) : []
-      if (!list.length) throw new Error('暂无可用套题')
-      this.examId = response.examId
-      this.questions = list
-      this.currentIndex = 0
-      this.answers = []
-      this.latestResult = null
-      this.latestTranscript = ''
-      this.source = 'full_mock'
-      this.fullMockSuite = suite
       answerProcessingTasks.clear()
       return response
     },
@@ -252,7 +233,6 @@ export const useExamStore = defineStore('exam', {
       this.loading = false
       this.source = ''
       this.mediaMode = 'audio'
-      this.fullMockSuite = null
       answerProcessingTasks.clear()
     },
 
