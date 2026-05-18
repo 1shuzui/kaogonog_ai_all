@@ -93,7 +93,7 @@
 
           <p class="result-page__improvement-summary">{{ improvementReference.summary }}</p>
 
-          <div class="result-page__teacher-note">
+          <div v-if="improvementReference.teacherComment" class="result-page__teacher-note">
             <span class="result-page__teacher-note-label">老师批注</span>
             <p>{{ improvementReference.teacherComment }}</p>
           </div>
@@ -126,7 +126,7 @@
             </div>
           </div>
 
-          <div class="result-page__improvement-block">
+          <div v-if="improvementReference.rewriteOpening" class="result-page__improvement-block">
             <h5>开头可以这样改</h5>
             <div class="result-page__rewrite-line">{{ improvementReference.rewriteOpening }}</div>
           </div>
@@ -178,12 +178,12 @@
             </div>
           </div>
 
-          <div class="result-page__improvement-block">
+          <div v-if="improvementReference.sampleAnswer" class="result-page__improvement-block">
             <h5>老师示范改写</h5>
             <div class="result-page__sample-answer">{{ improvementReference.sampleAnswer }}</div>
           </div>
 
-          <div class="result-page__improvement-block">
+          <div v-if="improvementReference.rewriteClosing" class="result-page__improvement-block">
             <h5>结尾可以这样收束</h5>
             <div class="result-page__rewrite-line">{{ improvementReference.rewriteClosing }}</div>
           </div>
@@ -324,12 +324,16 @@ const currentScoringPoints = computed(() => {
 })
 const currentQuestionAssignedScore = computed(() => currentScoringPoints.value.reduce((sum, item) => sum + item.score, 0))
 const improvementReference = computed(() => {
+  const rawTranscript = currentAnswer.value?.transcript || transcript.value || ''
+  if (isNoContentTranscript(rawTranscript, result.value)) return buildNoContentImprovementReference()
+
   const modelReference = normalizeModelImprovementSuggestion(result.value?.answerImprovementSuggestion)
   if (modelReference) return modelReference
+
   return buildImprovementReference({
     question: currentQuestion.value || {},
     result: result.value || {},
-    transcript: currentAnswer.value?.transcript || transcript.value || ''
+    transcript: rawTranscript
   })
 })
 
@@ -345,6 +349,34 @@ function formatScoreNumber(value) {
 
 function normalizeTextList(value) {
   return Array.isArray(value) ? value.map((item) => String(item || '').trim()).filter(Boolean) : []
+}
+
+function isNoContentTranscript(value, scoring = {}) {
+  const text = String(value || '').trim()
+  const mode = String(scoring?.scoringMode || '').trim()
+  return !text
+    || text === '未作答'
+    || ['screened_zero', 'empty_zero'].includes(mode)
+    || text.includes('未能识别出有效语音')
+    || text.includes('未配置真实语音转写服务')
+    || text.includes('无法生成可靠文字稿')
+}
+
+function buildNoContentImprovementReference() {
+  return {
+    available: true,
+    basis: '未识别到有效作答，本卡片仅提示下一步操作。',
+    summary: '本次没有可分析的作答内容，请先完成一段有效作答后再查看细化建议。',
+    teacherComment: '',
+    diagnosisItems: ['未形成可用于复盘的有效作答文本'],
+    focusPoints: [],
+    missingKeywords: [],
+    weakDimensions: [],
+    expressionUpgrades: [],
+    sampleAnswer: '',
+    rewriteOpening: '',
+    rewriteClosing: ''
+  }
 }
 
 function normalizeModelImprovementSuggestion(value) {
@@ -487,9 +519,19 @@ function ansScoreColor(answer) {
 
 const speechAnalysis = computed(() => {
   const answer = currentAnswer.value
-  if (!answer?.transcript) return null
-  const duration = answer.duration || 180
-  return analyzeSpeech(answer.transcript, duration)
+  const rawTranscript = answer?.transcript || transcript.value || ''
+  if (isNoContentTranscript(rawTranscript, answer?.scoringResult || result.value)) return null
+
+  const duration = Number(
+    answer?.duration
+    || answer?.durationSeconds
+    || answer?.recordingDuration
+    || answer?.mediaDuration
+    || 0
+  )
+  if (!Number.isFinite(duration) || duration <= 0) return null
+
+  return analyzeSpeech(rawTranscript, duration)
 })
 
 function revokeBlobUrls() {

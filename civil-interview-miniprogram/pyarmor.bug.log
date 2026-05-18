@@ -1,0 +1,12 @@
+[BUG]: no found input "/home/quyu/kaogong_ai/civil-interview-backend/main.py"
+
+## Command Line
+/home/quyu/.pyenv/versions/3.10.20/bin/pyarmor gen -O /tmp/tmp.XPGuIKKuVH -r /home/quyu/kaogong_ai/civil-interview-backend/main.py /home/quyu/kaogong_ai/civil-interview-backend/app /home/quyu/kaogong_ai/civil-interview-backend/database_setup.py /home/quyu/kaogong_ai/civil-interview-backend/data_loader.py /home/quyu/kaogong_ai/civil-interview-backend/keyword_matcher.py /home/quyu/kaogong_ai/civil-interview-backend/llm_scorer.py /home/quyu/kaogong_ai/civil-interview-backend/post_process.py /home/quyu/kaogong_ai/civil-interview-backend/prompt_builder.py /home/quyu/kaogong_ai/civil-interview-backend/seed.py /home/quyu/kaogong_ai/civil-interview-backend/two_stage_scoring.py
+
+## Environments
+Python 3.10.20
+Pyarmor 9.2.4 (trial), 000000, non-profits
+Platform linux.x86_64
+Native linux.x86_64
+Home /home/quyu/.pyarmor
+

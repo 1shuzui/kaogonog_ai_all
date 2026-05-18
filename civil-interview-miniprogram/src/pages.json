@@ -61,6 +61,12 @@
       }
     },
     {
+      "path": "pages/favorites/index",
+      "style": {
+        "navigationBarTitleText": "错题本 / 收藏夹"
+      }
+    },
+    {
       "path": "pages/billing/orders",
       "style": {
         "navigationBarTitleText": "订单记录"

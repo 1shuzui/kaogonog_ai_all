@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { login as loginApi, loginWithWechat as loginWithWechatApi, register as registerApi } from '../api/auth'
+import { bindWechatMiniProgram, login as loginApi, loginWithWechat as loginWithWechatApi, register as registerApi, setupWechatMiniProgramAccount } from '../api/auth'
 import { getProvinces, getUserInfo, updatePreferences, updateUserProfile } from '../api/user'
 import { useBillingStore } from './billing'
 import {
@@ -79,6 +79,16 @@ export const useUserStore = defineStore('user', {
       permissions: {
         canManageQuestionBank: false,
         canAccessPremiumModules: false
+      },
+      accountBindings: {
+        wechatMiniBound: false,
+        wechatUnionBound: false,
+        wechatWebBound: false
+      },
+      accountLogin: {
+        requiresPcAccountSetup: false,
+        pcLoginUsername: '',
+        wechatGeneratedUsername: ''
       }
     },
     selectedProvince: normalizeProvinceCode(readStorage(PROVINCE_STORAGE_KEY, 'national')),
@@ -145,6 +155,16 @@ export const useUserStore = defineStore('user', {
         permissions: {
           canManageQuestionBank: false,
           canAccessPremiumModules: false
+        },
+        accountBindings: {
+          wechatMiniBound: false,
+          wechatUnionBound: false,
+          wechatWebBound: false
+        },
+        accountLogin: {
+          requiresPcAccountSetup: false,
+          pcLoginUsername: '',
+          wechatGeneratedUsername: ''
         }
       }
       uni.removeStorageSync(TOKEN_STORAGE_KEY)
@@ -184,7 +204,17 @@ export const useUserStore = defineStore('user', {
         role: info?.role || 'user',
         isAdmin,
         billing,
-        permissions
+        permissions,
+        accountBindings: {
+          wechatMiniBound: info?.accountBindings?.wechatMiniBound === true,
+          wechatUnionBound: info?.accountBindings?.wechatUnionBound === true,
+          wechatWebBound: info?.accountBindings?.wechatWebBound === true
+        },
+        accountLogin: {
+          requiresPcAccountSetup: info?.accountLogin?.requiresPcAccountSetup === true,
+          pcLoginUsername: info?.accountLogin?.pcLoginUsername || '',
+          wechatGeneratedUsername: info?.accountLogin?.wechatGeneratedUsername || ''
+        }
       }
       try {
         billingStore.applyBackendState(billing, permissions)
@@ -211,6 +241,26 @@ export const useUserStore = defineStore('user', {
         safeSetStorage(PREFERENCES_STORAGE_KEY, JSON.stringify(this.preferences))
       }
       return this.userInfo
+    },
+
+    async bindWechat(code) {
+      const response = await bindWechatMiniProgram(code)
+      await this.loadUserInfo().catch(() => null)
+      return response
+    },
+
+    async setupWechatPcAccount(data) {
+      const response = await setupWechatMiniProgramAccount(data)
+      if (response?.access_token) {
+        this.token = response.access_token
+        safeSetStorage(TOKEN_STORAGE_KEY, response.access_token)
+      }
+      if (response?.username) {
+        this.username = response.username
+        safeSetStorage(USERNAME_STORAGE_KEY, response.username)
+      }
+      await this.loadUserInfo().catch(() => null)
+      return response
     },
 
     async validateSession() {

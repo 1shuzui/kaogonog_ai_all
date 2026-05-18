@@ -15,6 +15,43 @@
 
     <view class="card">
       <view class="section-head">
+        <text class="section-title">微信快捷登录</text>
+        <text class="muted">{{ wechatBound ? '已绑定' : '未绑定' }}</text>
+      </view>
+      <text class="warning-text">
+        绑定后，微信快捷登录会进入当前账号；PC 端继续使用本账号登录，即可同步练习记录、订单权益和个人设置。
+      </text>
+      <button
+        class="secondary-button form-button"
+        :loading="wechatBindLoading"
+        :disabled="wechatBound"
+        @tap="bindWechat"
+      >
+        {{ wechatBound ? '已绑定当前微信' : '绑定当前微信' }}
+      </button>
+    </view>
+
+    <view v-if="wechatBound" class="card">
+      <view class="section-head">
+        <text class="section-title">PC 登录账号</text>
+        <text class="muted">{{ pcLoginUsername ? '已设置' : '待设置' }}</text>
+      </view>
+      <text v-if="pcLoginUsername" class="warning-text warning-text--normal">
+        PC 端可使用账号“{{ pcLoginUsername }}”和你设置的密码登录，同步本小程序账号数据。
+      </text>
+      <template v-else>
+        <text class="warning-text">
+          当前微信快捷账号尚未设置 PC 登录账号。设置后，PC 端才能用账号密码进入同一账号并同步练习记录、收藏错题和订单权益。
+        </text>
+        <input v-model="pcAccountForm.username" class="field field--mt" placeholder="PC 登录账号，3-32 位字母/数字/下划线" />
+        <input v-model="pcAccountForm.password" class="field field--mt" password placeholder="PC 登录密码，至少 6 位" />
+        <input v-model="pcAccountForm.confirmPassword" class="field field--mt" password placeholder="确认密码" />
+        <button class="primary-button form-button" :loading="pcAccountLoading" @tap="submitPcAccount">创建 PC 登录账号</button>
+      </template>
+    </view>
+
+    <view class="card">
+      <view class="section-head">
         <text class="section-title">用户协议</text>
         <text class="muted">{{ termsStatus.hasAgreed ? '已同意' : '待确认' }}</text>
       </view>
@@ -71,7 +108,7 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { agreeTerms, getDeviceRisk, getTermsStatus, updatePassword } from '../../api/user'
 import {
@@ -81,15 +118,25 @@ import {
   TRAINING_PROGRESS_STORAGE_KEY,
 } from '../../utils/constants'
 import { requireLogin, toast } from '../../utils/navigation'
+import { useUserStore } from '../../stores/user'
 
 const DEVICE_ID_KEY = 'civil_mini_device_id'
 const SUPPORT_FEEDBACK_STORAGE_KEY = 'civil_support_feedback_records'
+const FAVORITES_STORAGE_KEY = 'civil_favorites'
+const userStore = useUserStore()
 const passwordLoading = ref(false)
 const termsLoading = ref(false)
 const deviceLoading = ref(false)
+const wechatBindLoading = ref(false)
+const pcAccountLoading = ref(false)
 const passwordForm = reactive({
   oldPassword: '',
   newPassword: '',
+  confirmPassword: ''
+})
+const pcAccountForm = reactive({
+  username: '',
+  password: '',
   confirmPassword: ''
 })
 const termsStatus = reactive({
@@ -113,12 +160,84 @@ const riskTextMap = {
   unknown: '未知'
 }
 const riskText = ref('未知')
+const wechatBound = computed(() => userStore.userInfo?.accountBindings?.wechatMiniBound === true)
+const pcLoginUsername = computed(() => userStore.userInfo?.accountLogin?.pcLoginUsername || '')
 
 onShow(() => {
   if (!requireLogin()) return
+  userStore.loadUserInfo().catch(() => null)
   loadTerms()
   checkDevice()
 })
+
+function getWechatLoginCode() {
+  return new Promise((resolve, reject) => {
+    uni.login({
+      provider: 'weixin',
+      success(res) {
+        if (res.code) resolve(res.code)
+        else reject(new Error('微信登录未返回 code'))
+      },
+      fail(error) {
+        reject(new Error(error?.errMsg || '微信登录失败'))
+      }
+    })
+  })
+}
+
+async function bindWechat() {
+  if (wechatBound.value || wechatBindLoading.value) return
+  wechatBindLoading.value = true
+  try {
+    const code = await getWechatLoginCode()
+    await userStore.bindWechat(code)
+    toast('微信快捷登录已绑定当前账号', 'success')
+  } catch (error) {
+    toast(error?.message || '微信绑定失败')
+  } finally {
+    wechatBindLoading.value = false
+  }
+}
+
+function validatePcAccountForm() {
+  const username = pcAccountForm.username.trim()
+  if (!/^[A-Za-z0-9_-]{3,32}$/.test(username)) {
+    toast('账号需为 3-32 位字母、数字、下划线或短横线')
+    return false
+  }
+  if (username.startsWith('wx_')) {
+    toast('账号不能使用 wx_ 开头')
+    return false
+  }
+  if (pcAccountForm.password.length < 6) {
+    toast('密码至少 6 位')
+    return false
+  }
+  if (pcAccountForm.password !== pcAccountForm.confirmPassword) {
+    toast('两次密码输入不一致')
+    return false
+  }
+  return true
+}
+
+async function submitPcAccount() {
+  if (pcAccountLoading.value) return
+  if (!validatePcAccountForm()) return
+  pcAccountLoading.value = true
+  try {
+    await userStore.setupWechatPcAccount({
+      username: pcAccountForm.username.trim(),
+      password: pcAccountForm.password
+    })
+    pcAccountForm.password = ''
+    pcAccountForm.confirmPassword = ''
+    toast('PC 登录账号已创建', 'success')
+  } catch (error) {
+    toast(error?.message || 'PC 登录账号创建失败')
+  } finally {
+    pcAccountLoading.value = false
+  }
+}
 
 function getDeviceId() {
   let deviceId = uni.getStorageSync(DEVICE_ID_KEY)
@@ -207,6 +326,7 @@ function clearLocalData() {
     PROVINCE_STORAGE_KEY,
     TRAINING_PROGRESS_STORAGE_KEY,
     SUPPORT_FEEDBACK_STORAGE_KEY,
+    FAVORITES_STORAGE_KEY,
     DEVICE_ID_KEY
   ].forEach((key) => {
     try {
@@ -285,5 +405,9 @@ function goLegalDocuments() {
   color: #cf1322;
   font-size: 24rpx;
   line-height: 1.6;
+}
+
+.warning-text--normal {
+  color: #5f6f84;
 }
 </style>

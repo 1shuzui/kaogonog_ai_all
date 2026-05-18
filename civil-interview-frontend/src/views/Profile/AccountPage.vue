@@ -17,6 +17,9 @@
         <a-form-item label="用户名">
           <a-input :value="userStore.username" disabled />
         </a-form-item>
+        <a-form-item v-if="pcLoginUsername && pcLoginUsername !== userStore.username" label="PC 登录账号">
+          <a-input :value="pcLoginUsername" disabled />
+        </a-form-item>
         <a-form-item label="账号角色">
           <a-input :value="userStore.isAdmin ? '管理员' : '普通用户'" disabled />
         </a-form-item>
@@ -66,6 +69,19 @@
       </div>
     </div>
 
+    <div class="card account-section">
+      <h3>微信快捷登录绑定</h3>
+      <p class="data-hint">
+        小程序端绑定当前微信后，微信快捷登录会进入本账号；PC 端使用本账号密码登录，即可同步题库、历史、权益和设置。
+      </p>
+      <a-tag :color="wechatMiniBound ? 'green' : 'default'">
+        {{ wechatMiniBound ? '小程序微信已绑定' : '小程序微信未绑定' }}
+      </a-tag>
+      <p class="data-hint account-section__hint">
+        {{ pcLoginUsername ? `PC 登录账号：${pcLoginUsername}` : '如需绑定或创建 PC 登录账号，请打开小程序「我的 - 账号安全」完成。' }}
+      </p>
+    </div>
+
     <!-- 数据管理 -->
     <div class="card account-section">
       <h3>数据管理</h3>
@@ -84,7 +100,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted } from 'vue'
+import { computed, reactive, ref, onMounted } from 'vue'
 import { LeftOutlined } from '@ant-design/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { message } from 'ant-design-vue'
@@ -110,6 +126,8 @@ const terms = reactive({
   agreedAt: '',
   needsUpdate: false
 })
+const wechatMiniBound = computed(() => userStore.userInfo?.accountBindings?.wechatMiniBound === true)
+const pcLoginUsername = computed(() => userStore.userInfo?.accountLogin?.pcLoginUsername || '')
 
 onMounted(async () => {
   await userStore.loadUserInfo()

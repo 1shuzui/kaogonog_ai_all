@@ -1,14 +1,23 @@
-import { http, USE_MOCK } from './index'
-import { getMockExamStart, getMockUploadResult } from './mock/exam'
+import { http } from './index'
 import { buildExamUploadFormData } from '@/utils/examSubmission'
 
 export async function startExam(questionIds) {
-  if (USE_MOCK) return getMockExamStart(questionIds)
   return http.post('/exam/start', { questionIds })
 }
 
+export async function getFullMockSuites(params = {}) {
+  return http.get('/exam/full-mock/suites', { params })
+}
+
+export async function getFullMockSuite(id) {
+  return http.get(`/exam/full-mock/suites/${encodeURIComponent(id)}`)
+}
+
+export async function startFullMockSuite(id) {
+  return http.post(`/exam/full-mock/suites/${encodeURIComponent(id)}/start`)
+}
+
 export async function uploadRecording(examId, questionId, blob) {
-  if (USE_MOCK) return getMockUploadResult()
   const formData = buildExamUploadFormData({
     questionId,
     blob,
@@ -21,6 +30,5 @@ export async function uploadRecording(examId, questionId, blob) {
 }
 
 export async function completeExam(examId) {
-  if (USE_MOCK) return { success: true }
   return http.post(`/exam/${examId}/complete`)
 }

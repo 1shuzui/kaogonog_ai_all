@@ -1,64 +1,76 @@
 <template>
   <view class="exam-room">
     <view v-if="question" class="exam-room__body">
-      <button class="exam-room__exit-fixed" @tap="goBackHome">退出</button>
-
-      <view class="mock-scene">
-        <image
-          class="mock-scene__image"
-          src="/static/exam/mock-interview-room-live-current.png"
-          mode="aspectFill"
-        />
-        <view class="mock-scene__shade"></view>
-
-        <view class="room-header room-header--floating">
-          <view>
-            <text class="room-header__count">当前作答第 {{ examStore.questionNumber }} / {{ examStore.totalQuestions }} 题</text>
-            <text class="room-header__sub">{{ provinceName }} · {{ categoryName }}</text>
-          </view>
-          <text class="room-header__timer">{{ activeTimerLabel }} {{ formatTime(activeTimeLeft) }}</text>
+      <view class="question-book" :class="{ 'question-book--long': questionBookLong }">
+        <view class="question-book__head">
+          <text class="question-book__title">题本区</text>
+          <text class="question-book__meta">第 {{ questionBookIndex + 1 }} / {{ examStore.totalQuestions }} 题</text>
         </view>
-
-        <view class="examiner-panel">
-          <text class="examiner-panel__kicker">AI 模拟考场</text>
-          <text class="examiner-panel__title">公务员结构化面试模拟现场</text>
-          <text class="examiner-panel__desc">{{ examinerNotice }}</text>
-        </view>
-
-        <view class="question-book">
-          <view class="question-book__head">
-            <text class="question-book__title">题本区</text>
-            <text class="question-book__meta">第 {{ questionBookIndex + 1 }} / {{ examStore.totalQuestions }} 题</text>
-          </view>
-          <swiper
-            class="question-book__swiper"
-            :current="questionBookIndex"
-            :indicator-dots="examStore.totalQuestions > 1"
-            indicator-color="rgba(255,255,255,0.35)"
-            indicator-active-color="#ffffff"
-            @change="onQuestionBookChange"
+        <swiper
+          class="question-book__swiper"
+          :current="questionBookIndex"
+          :indicator-dots="examStore.totalQuestions > 1"
+          indicator-color="rgba(27,95,170,0.22)"
+          indicator-active-color="#1b5faa"
+          @change="onQuestionBookChange"
+        >
+          <swiper-item
+            v-for="(item, index) in examStore.questions"
+            :key="item.id || index"
           >
-            <swiper-item
-              v-for="(item, index) in examStore.questions"
-              :key="item.id || index"
+            <view
+              class="question-book__card"
+              :class="{ 'question-book__card--current': index === examStore.currentIndex }"
             >
-              <view
-                class="question-book__card"
-                :class="{ 'question-book__card--current': index === examStore.currentIndex }"
-              >
-                <view class="question-tags">
-                  <text class="question-tag">{{ provinceLabel(item) }}</text>
-                  <text class="question-tag question-tag--blue">{{ categoryLabel(item) }}</text>
-                  <text v-if="index === examStore.currentIndex" class="question-tag question-tag--active">当前作答</text>
-                </view>
-                <text class="question-book__stem">{{ item.stem }}</text>
+              <view class="question-tags">
+                <text class="question-tag">{{ provinceLabel(item) }}</text>
+                <text class="question-tag question-tag--blue">{{ categoryLabel(item) }}</text>
+                <text v-if="item.fullMockScore" class="question-tag question-tag--score">{{ item.fullMockScore }}分</text>
+                <text v-if="index === examStore.currentIndex" class="question-tag question-tag--active">当前作答</text>
               </view>
-            </swiper-item>
-          </swiper>
+              <scroll-view scroll-y class="question-book__stem-scroll">
+                <text class="question-book__stem">{{ item.stem }}</text>
+              </scroll-view>
+            </view>
+          </swiper-item>
+        </swiper>
+      </view>
+
+      <view
+        v-if="useVideoMode"
+        class="floating-camera"
+        :class="cameraSizeClass"
+        @tap="handleCameraTap"
+      >
+        <camera
+          class="floating-camera__camera"
+          device-position="front"
+          flash="off"
+          mode="normal"
+          resolution="medium"
+          frame-size="medium"
+          @error="onCameraError"
+        />
+        <view class="floating-camera__mask">
+          <text class="floating-camera__status">{{ floatingCameraStatus }}</text>
+          <text class="floating-camera__size">{{ cameraSizeText }}</text>
         </view>
       </view>
 
-      <scroll-view scroll-y class="question-panel">
+      <scroll-view scroll-y class="exam-room__scroll" :style="{ paddingTop: questionBookScrollPadding }">
+        <view class="mock-scene">
+          <image
+            class="mock-scene__image"
+            src="/static/exam/mock-interview-room-live-current.jpg"
+            mode="aspectFill"
+          />
+          <view class="mock-scene__timer">
+            <text class="mock-scene__timer-label">{{ sceneTimerLabel }}</text>
+            <text class="mock-scene__timer-value">{{ formatTime(sceneTimeLeft) }}</text>
+          </view>
+        </view>
+
+        <view class="question-panel">
         <view v-if="isJiangsuReading" class="card reading-list-card">
           <text class="reading-list__title">江苏 5+15 阅读题本</text>
           <text v-for="(item, index) in examStore.questions" :key="item.id || index" class="reading-list__item">
@@ -69,90 +81,35 @@
         <view class="card">
           <view class="section-head">
             <text class="section-title">作答区</text>
-            <text class="muted">{{ useVideoMode ? '录像 / 录音' : '仅录音' }}</text>
-          </view>
-
-          <view class="media-toggle">
-            <view class="media-toggle__item" :class="{ 'media-toggle__item--active': !useVideoMode }" @tap="setMediaMode('audio')">
-              <text>仅录音</text>
-            </view>
-            <view class="media-toggle__item" :class="{ 'media-toggle__item--active': useVideoMode }" @tap="setMediaMode('video')">
-              <text>录像+录音</text>
-            </view>
-          </view>
-
-          <view class="text-answer-panel">
-            <view class="section-head section-head--compact">
-              <text class="section-title section-title--small">文字作答</text>
-              <text class="muted">{{ answerText.length }} 字</text>
-            </view>
-            <textarea
-              v-model="answerText"
-              class="textarea-field"
-              maxlength="-1"
-              placeholder="请输入文字作答内容"
-            />
-          </view>
-
-          <view v-if="useVideoMode" class="camera-panel">
-            <!-- #ifdef MP-WEIXIN -->
-            <camera
-              class="camera-preview"
-              mode="normal"
-              device-position="front"
-              flash="off"
-              @error="onCameraError"
-            />
-            <!-- #endif -->
-            <!-- #ifndef MP-WEIXIN -->
-            <view class="camera-preview camera-preview--fallback">
-              <text>当前运行环境不支持小程序摄像头组件</text>
-            </view>
-            <!-- #endif -->
-            <view class="record-panel__status camera-panel__status">
-              <text>{{ cameraStatusText }}</text>
-              <text v-if="recordedVideoFile" class="record-panel__ready">已录像</text>
-            </view>
-            <view class="record-actions">
-              <button
-                class="secondary-button"
-                :disabled="!cameraAvailable || videoRecording || recording || examStore.loading"
-                @tap="startVideoRecord"
-              >
-                开始录像
-              </button>
-              <button
-                class="secondary-button"
-                :disabled="!videoRecording || examStore.loading"
-                @tap="stopVideoRecord"
-              >
-                停止录像
-              </button>
-            </view>
+            <text class="muted">{{ useVideoMode ? '录像 + 录音' : '仅录音' }}</text>
           </view>
 
           <view class="record-panel">
             <view class="record-panel__status">
-              <text>{{ recordStatusText }}</text>
-              <text v-if="recordedFile" class="record-panel__ready">已录音</text>
+              <text>{{ captureStatusText }}</text>
+              <text v-if="captureReady" class="record-panel__ready">已记录</text>
+            </view>
+            <view v-if="useVideoMode" class="record-panel__camera-status">
+              {{ cameraStatusText }}
             </view>
             <view class="record-actions">
               <button
                 class="secondary-button"
-                :disabled="recording || videoRecording || examStore.loading"
-                @tap="startRecord"
+                :disabled="captureActive || examStore.loading"
+                @tap="startCapture"
               >
-                开始录音
+                {{ useVideoMode ? '开始录像+录音' : '开始录音' }}
               </button>
               <button
                 class="secondary-button"
-                :disabled="!recording || examStore.loading"
-                @tap="stopRecord"
+                :disabled="!captureActive || examStore.loading"
+                @tap="stopCapture"
               >
-                停止录音
+                {{ useVideoMode ? '停止录像+录音' : '停止录音' }}
               </button>
             </view>
           </view>
+        </view>
         </view>
       </scroll-view>
 
@@ -171,7 +128,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { onHide, onLoad, onReady } from '@dcloudio/uni-app'
 import EmptyState from '../../components/EmptyState.vue'
 import { completeTrial } from '../../api/trial'
@@ -189,7 +146,6 @@ const userStore = useUserStore()
 const phase = ref('preparing')
 const prepLeft = ref(userStore.preferences.defaultPrepTime)
 const answerLeft = ref(userStore.preferences.defaultAnswerTime)
-const answerText = ref('')
 const recording = ref(false)
 const recordedFile = ref('')
 const recorder = ref(null)
@@ -198,6 +154,7 @@ const recordedVideoFile = ref('')
 const cameraContext = ref(null)
 const cameraError = ref('')
 const cameraAvailable = ref(false)
+const cameraSize = ref('small')
 const selectedMediaType = ref('')
 const questionStartedAt = ref(Date.now())
 const questionBookIndex = ref(0)
@@ -207,40 +164,75 @@ const JIANGSU_READING_SECONDS = 5 * 60
 const JIANGSU_ANSWER_SECONDS = 15 * 60
 let timer = null
 let pendingRecordStopResolve = null
+let lastCameraTapAt = 0
 
 const question = computed(() => examStore.currentQuestion)
 const useVideoMode = computed(() => examStore.mediaMode === 'video')
-const isJiangsuMockTiming = computed(() => examStore.source === 'mock' && examStore.questions.some((item) => (
+const questionBookLong = computed(() => {
+  const item = examStore.questions[questionBookIndex.value] || question.value || {}
+  return String(item?.stem || '').length > 86
+})
+const questionBookScrollPadding = computed(() => (
+  questionBookLong.value
+    ? 'calc(430rpx + env(safe-area-inset-top))'
+    : 'calc(338rpx + env(safe-area-inset-top))'
+))
+const isMockLikeSource = computed(() => ['mock', 'full_mock'].includes(examStore.source))
+const isJiangsuMockTiming = computed(() => isMockLikeSource.value && examStore.questions.some((item) => (
   item?.mockTimingMode === JIANGSU_MOCK_TIMING_MODE
 )))
 const isJiangsuReading = computed(() => isJiangsuMockTiming.value && phase.value === 'reading')
-const activeTimeLeft = computed(() => (
-  phase.value === 'preparing' || phase.value === 'reading' ? prepLeft.value : answerLeft.value
-))
 const activeTimerLabel = computed(() => {
   if (phase.value === 'reading') return '阅读'
   return phase.value === 'preparing' ? '准备' : '作答'
 })
-const provinceName = computed(() => getProvinceName(question.value?.province || 'national'))
-const categoryName = computed(() => getCategoryName(question.value?.dimension || question.value?.type || ''))
-const examinerNotice = computed(() => {
-  if (isJiangsuReading.value) return '现在是题本阅读时间，请先通读全部题目，阅读结束后再开始作答。'
-  if (phase.value === 'preparing') return '请利用准备时间梳理答题层次，作答开始后保持语速稳定。'
-  if (recording.value || videoRecording.value) return '当前正在记录作答，请正面看向考官区，按结构完成表达。'
-  return '请按顺序完成当前题目，答完后提交进入下一题。'
+const sceneTimeLeft = computed(() => {
+  if (phase.value === 'preparing' || phase.value === 'reading') {
+    return Math.max(0, Number(prepLeft.value) || 0) + Math.max(0, Number(answerLeft.value) || 0)
+  }
+  return Math.max(0, Number(answerLeft.value) || 0)
 })
+const sceneTimerLabel = computed(() => (
+  isJiangsuMockTiming.value || isMockLikeSource.value ? '总倒计时' : activeTimerLabel.value
+))
 const cameraStatusText = computed(() => {
   if (!useVideoMode.value) return '已选择仅录音，不启用摄像头'
   if (cameraError.value) return cameraError.value
   if (videoRecording.value) return '摄像头录像中，请保持正对镜头'
   if (recordedVideoFile.value) return '录像已保存，可提交或重新录制'
-  if (!cameraAvailable.value) return '当前环境暂不支持录像，可使用录音或文字提交'
+  if (!cameraAvailable.value) return '当前环境暂不支持录像，请切换仅录音后继续'
   return '请授权摄像头，可使用录像提交作答'
 })
 const recordStatusText = computed(() => {
   if (recording.value) return '录音中，请保持语速稳定'
   if (recordedFile.value) return '录音已保存，可提交或重新录制'
   return '请授权麦克风，可使用录音提交作答'
+})
+const captureActive = computed(() => (
+  useVideoMode.value ? (recording.value || videoRecording.value) : recording.value
+))
+const captureReady = computed(() => (
+  useVideoMode.value ? Boolean(recordedVideoFile.value || recordedFile.value) : Boolean(recordedFile.value)
+))
+const captureStatusText = computed(() => {
+  if (!useVideoMode.value) return recordStatusText.value
+  if (recording.value && videoRecording.value) return '录像与录音同步记录中'
+  if (videoRecording.value) return '录像中，音频将随视频一并保存'
+  if (recording.value) return '录音中，正在等待摄像头录像'
+  if (recordedVideoFile.value) return '录像已保存，可提交或重新录制'
+  if (recordedFile.value) return '已保存录音，未获得录像文件'
+  return '请授权摄像头和麦克风，开始后同步记录'
+})
+const cameraSizeClass = computed(() => `floating-camera--${cameraSize.value}`)
+const cameraSizeText = computed(() => {
+  const labels = { small: '小窗', medium: '中窗', large: '大窗' }
+  return `${labels[cameraSize.value] || '小窗'} · 双击切换`
+})
+const floatingCameraStatus = computed(() => {
+  if (videoRecording.value) return '录像中'
+  if (cameraError.value) return '摄像头异常'
+  if (recordedVideoFile.value) return '已保存'
+  return '摄像头'
 })
 const currentMedia = computed(() => {
   if (!useVideoMode.value && recordedFile.value) {
@@ -264,21 +256,33 @@ onLoad(() => {
 })
 
 onReady(() => {
-  if (useVideoMode.value) setupCamera()
+  if (useVideoMode.value) {
+    setupCamera()
+  }
 })
 
 onHide(() => {
-  if (videoRecording.value) stopVideoRecord({ silent: true })
+  stopActiveCapture({ silent: true })
 })
 
 onBeforeUnmount(() => {
   clearInterval(timer)
-  if (recording.value) stopRecord()
-  if (videoRecording.value) stopVideoRecord({ silent: true })
+  stopActiveCapture({ silent: true })
 })
 
 watch(() => examStore.currentIndex, (index) => {
   questionBookIndex.value = Math.max(0, Number(index) || 0)
+})
+
+watch(useVideoMode, async (enabled) => {
+  if (enabled) {
+    await nextTick()
+    setupCamera()
+    return
+  }
+  cameraError.value = ''
+  recordedVideoFile.value = ''
+  if (selectedMediaType.value === 'video') selectedMediaType.value = recordedFile.value ? 'audio' : ''
 })
 
 function provinceLabel(item = {}) {
@@ -300,7 +304,7 @@ function setupRecorder() {
   recorder.value.onStop((res) => {
     recording.value = false
     recordedFile.value = res.tempFilePath || ''
-    if (recordedFile.value) {
+    if (recordedFile.value && (!useVideoMode.value || !recordedVideoFile.value)) {
       selectedMediaType.value = 'audio'
     }
     if (pendingRecordStopResolve) {
@@ -329,21 +333,6 @@ function setupCamera() {
   cameraAvailable.value = true
 }
 
-function setMediaMode(mode) {
-  if (videoRecording.value) {
-    toast('请先停止录像')
-    return
-  }
-  examStore.setMediaMode(mode)
-  if (mode === 'video') {
-    setupCamera()
-  } else {
-    cameraError.value = ''
-    recordedVideoFile.value = ''
-    if (selectedMediaType.value === 'video') selectedMediaType.value = ''
-  }
-}
-
 function startTimer() {
   clearInterval(timer)
   timer = setInterval(() => {
@@ -370,7 +359,6 @@ function resetQuestionState() {
 }
 
 function resetAnswerInputState() {
-  answerText.value = ''
   recording.value = false
   recordedFile.value = ''
   videoRecording.value = false
@@ -397,7 +385,7 @@ function canRecordNow() {
 
 function usageType() {
   if (examStore.source === 'trial') return 'trial'
-  if (examStore.source === 'mock') return 'mock'
+  if (isMockLikeSource.value) return 'mock'
   return 'practice'
 }
 
@@ -418,15 +406,13 @@ async function syncUsageAndTrial(answer) {
   }
 }
 
-function startRecord() {
-  if (!canRecordNow()) return
-  if (videoRecording.value) {
-    toast('请先停止录像')
-    return
-  }
+function startRecorderInternal() {
   if (!recorder.value) {
     toast('当前环境不支持录音')
-    return
+    return false
+  }
+  if (recording.value) {
+    return true
   }
   phase.value = 'answering'
   recordedFile.value = ''
@@ -439,9 +425,20 @@ function startRecord() {
       format: 'mp3'
     })
     recording.value = true
+    return true
   } catch {
     toast('无法启动录音')
+    return false
   }
+}
+
+function startRecord() {
+  if (useVideoMode.value) {
+    startVideoWithAudio()
+    return
+  }
+  if (!canRecordNow()) return
+  startRecorderInternal()
 }
 
 function stopRecord() {
@@ -481,10 +478,6 @@ function startVideoRecord() {
     toast('当前已选择仅录音')
     return
   }
-  if (recording.value) {
-    toast('请先停止录音')
-    return
-  }
   if (!cameraContext.value) {
     setupCamera()
   }
@@ -504,12 +497,14 @@ function startVideoRecord() {
       success() {
         videoRecording.value = true
         cameraAvailable.value = true
+        selectedMediaType.value = 'video'
       },
       fail(error) {
         videoRecording.value = false
         cameraAvailable.value = false
         const message = error?.errMsg || '无法启动摄像头录像'
         cameraError.value = message
+        if (recording.value) stopRecordAsync()
         toast(message)
       }
     })
@@ -518,6 +513,7 @@ function startVideoRecord() {
     cameraAvailable.value = false
     const message = error?.message || '无法启动摄像头录像'
     cameraError.value = message
+    if (recording.value) stopRecordAsync()
     toast(message)
   }
 }
@@ -559,6 +555,71 @@ function onCameraError(error) {
   cameraAvailable.value = false
 }
 
+function startVideoWithAudio() {
+  if (!canRecordNow()) return
+  if (!useVideoMode.value) {
+    startRecord()
+    return
+  }
+  if (recording.value || videoRecording.value) {
+    toast('当前正在记录作答')
+    return
+  }
+  recordedFile.value = ''
+  recordedVideoFile.value = ''
+  selectedMediaType.value = ''
+
+  if (!startRecorderInternal()) return
+  startVideoRecord()
+}
+
+async function stopVideoWithAudio() {
+  const videoPath = videoRecording.value ? await stopVideoRecord() : recordedVideoFile.value
+  const audioPath = recording.value ? await stopRecordAsync() : recordedFile.value
+  if (videoPath || recordedVideoFile.value) {
+    selectedMediaType.value = 'video'
+  } else if (audioPath || recordedFile.value) {
+    selectedMediaType.value = 'audio'
+  }
+}
+
+function stopActiveCapture(options = {}) {
+  if (videoRecording.value) stopVideoRecord({ silent: options.silent === true })
+  if (recording.value) stopRecord()
+}
+
+function startCapture() {
+  if (useVideoMode.value) {
+    startVideoWithAudio()
+    return
+  }
+  startRecord()
+}
+
+function stopCapture() {
+  if (useVideoMode.value) {
+    stopVideoWithAudio()
+    return
+  }
+  stopRecord()
+}
+
+function cycleCameraSize() {
+  const order = ['small', 'medium', 'large']
+  const currentIndex = order.indexOf(cameraSize.value)
+  cameraSize.value = order[(currentIndex + 1) % order.length] || 'small'
+}
+
+function handleCameraTap() {
+  const now = Date.now()
+  if (now - lastCameraTapAt < 320) {
+    cycleCameraSize()
+    lastCameraTapAt = 0
+    return
+  }
+  lastCameraTapAt = now
+}
+
 async function submitAnswer() {
   if (isJiangsuReading.value) {
     toast('阅读阶段暂不能提交，请阅读结束后作答')
@@ -571,14 +632,13 @@ async function submitAnswer() {
     await stopVideoRecord()
   }
   const media = currentMedia.value
-  const visibleAnswerText = answerText.value
 
   showLoading(examStore.isLastQuestion ? '生成结果' : '保存作答')
   try {
     const answer = await examStore.submitCurrentAnswer({
-      text: visibleAnswerText,
       filePath: media.filePath,
-      mediaType: media.mediaType || 'audio'
+      mediaType: media.mediaType || 'audio',
+      audioFilePath: recordedFile.value || ''
     })
     await syncUsageAndTrial(answer)
 
@@ -618,8 +678,7 @@ function goBackHome() {
     content: '当前作答进度可能不会保存，确认退出吗？',
     success(res) {
       if (res.confirm) {
-        if (recording.value) stopRecord()
-        if (videoRecording.value) stopVideoRecord({ silent: true })
+        stopActiveCapture({ silent: true })
         examStore.reset()
         uni.switchTab({ url: '/pages/home/index' })
       }
@@ -631,7 +690,7 @@ function goBackHome() {
 <style scoped>
 .exam-room {
   min-height: 100vh;
-  background: #0f2438;
+  background: #2b1b13;
 }
 
 .exam-room__body {
@@ -640,26 +699,18 @@ function goBackHome() {
   height: 100vh;
 }
 
-.exam-room__exit-fixed {
-  position: fixed;
-  top: calc(18rpx + env(safe-area-inset-top));
-  right: 24rpx;
-  z-index: 20;
-  width: 96rpx;
-  min-height: 58rpx;
-  border: 1rpx solid rgba(255, 255, 255, 0.52);
-  border-radius: 999rpx;
-  background: rgba(13, 31, 48, 0.74);
-  color: #ffffff;
-  font-size: 24rpx;
-  font-weight: 800;
+.exam-room__scroll {
+  flex: 1;
+  min-height: 0;
+  background:
+    linear-gradient(180deg, rgba(56, 34, 23, 0.96) 0%, rgba(38, 24, 18, 0.98) 42%, #f0e7d8 42%, #f5efe4 100%);
 }
 
 .mock-scene {
   position: relative;
-  height: 620rpx;
+  height: 330rpx;
   overflow: hidden;
-  background: #0f2438;
+  background: #2b1b13;
 }
 
 .mock-scene__image {
@@ -669,102 +720,64 @@ function goBackHome() {
   height: 100%;
 }
 
-.mock-scene__shade {
+.mock-scene__timer {
   position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(180deg, rgba(4, 17, 30, 0.54) 0%, rgba(4, 17, 30, 0.1) 38%, rgba(4, 17, 30, 0.78) 100%),
-    linear-gradient(90deg, rgba(4, 17, 30, 0.62) 0%, rgba(4, 17, 30, 0.06) 52%, rgba(4, 17, 30, 0.46) 100%);
-}
-
-.room-header {
+  top: 116rpx;
+  right: 18rpx;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 16rpx;
-  padding: calc(18rpx + env(safe-area-inset-top)) 140rpx 16rpx 28rpx;
+  justify-content: center;
+  width: 86rpx;
+  height: 42rpx;
+  border: 1rpx solid rgba(255, 42, 42, 0.38);
+  background: #170c0a;
+  box-shadow: 0 0 12rpx rgba(255, 24, 24, 0.28);
 }
 
-.room-header--floating {
-  position: relative;
-  z-index: 2;
-  color: #ffffff;
-}
-
-.room-header__count {
+.mock-scene__timer-label,
+.mock-scene__timer-value {
   display: block;
-  color: #ffffff;
-  font-size: 29rpx;
-  font-weight: 800;
+  line-height: 1;
 }
 
-.room-header__sub {
-  display: block;
-  margin-top: 6rpx;
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 22rpx;
-}
-
-.room-header__timer {
-  padding: 8rpx 16rpx;
-  border-radius: 999rpx;
-  background: rgba(255, 255, 255, 0.92);
-  color: #16385a;
-  font-size: 25rpx;
+.mock-scene__timer-label {
+  margin-bottom: 3rpx;
+  color: rgba(255, 118, 118, 0.76);
+  font-size: 13rpx;
   font-weight: 700;
-  white-space: nowrap;
 }
 
-.examiner-panel {
-  position: relative;
-  z-index: 2;
-  width: 62%;
-  margin: 16rpx 0 0 28rpx;
-  padding: 18rpx 20rpx;
-  border: 1rpx solid rgba(255, 255, 255, 0.2);
-  border-radius: 16rpx;
-  background: rgba(13, 31, 48, 0.6);
-  backdrop-filter: blur(8rpx);
-}
-
-.examiner-panel__kicker,
-.examiner-panel__title,
-.examiner-panel__desc {
-  display: block;
-}
-
-.examiner-panel__kicker {
-  color: #8fd0ff;
+.mock-scene__timer-value {
+  color: #ff3030;
   font-size: 21rpx;
-  font-weight: 800;
-}
-
-.examiner-panel__title {
-  margin-top: 6rpx;
-  color: #ffffff;
-  font-size: 28rpx;
   font-weight: 900;
-  line-height: 1.35;
-}
-
-.examiner-panel__desc {
-  margin-top: 8rpx;
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 23rpx;
-  line-height: 1.55;
+  font-family: DIN Alternate, Arial, sans-serif;
 }
 
 .question-book {
-  position: absolute;
+  position: fixed;
+  top: calc(18rpx + env(safe-area-inset-top));
   right: 24rpx;
-  bottom: 24rpx;
   left: 24rpx;
-  z-index: 3;
+  z-index: 30;
   padding: 18rpx;
-  border: 1rpx solid rgba(255, 255, 255, 0.22);
+  border: 1rpx solid rgba(128, 83, 52, 0.18);
   border-radius: 18rpx;
-  background: rgba(12, 30, 48, 0.78);
-  box-shadow: 0 18rpx 48rpx rgba(0, 0, 0, 0.28);
+  background: rgba(255, 250, 241, 0.97);
+  box-shadow: 0 18rpx 42rpx rgba(36, 19, 10, 0.24);
+}
+
+.question-book--long .question-book__swiper {
+  height: 322rpx;
+}
+
+.question-book--long .question-book__card {
+  height: 286rpx;
+}
+
+.question-book--long .question-book__stem-scroll {
+  max-height: 212rpx;
 }
 
 .question-book__head {
@@ -775,13 +788,13 @@ function goBackHome() {
 }
 
 .question-book__title {
-  color: #ffffff;
+  color: #1f2b3d;
   font-size: 27rpx;
   font-weight: 900;
 }
 
 .question-book__meta {
-  color: rgba(255, 255, 255, 0.74);
+  color: #6f7c8f;
   font-size: 23rpx;
   font-weight: 700;
 }
@@ -793,26 +806,26 @@ function goBackHome() {
 .question-book__card {
   height: 194rpx;
   padding: 18rpx;
-  border: 1rpx solid rgba(255, 255, 255, 0.14);
+  border: 1rpx solid rgba(128, 83, 52, 0.16);
   border-radius: 14rpx;
-  background: rgba(255, 255, 255, 0.95);
+  background: linear-gradient(180deg, #fffdf8 0%, #f5ead9 100%);
 }
 
 .question-book__card--current {
-  border-color: #8fd0ff;
+  border-color: #9d6539;
+}
+
+.question-book__stem-scroll {
+  max-height: 132rpx;
+  overflow: hidden;
 }
 
 .question-book__stem {
-  display: -webkit-box;
-  max-height: 132rpx;
-  overflow: hidden;
+  display: block;
   color: #1f2b3d;
   font-size: 28rpx;
   font-weight: 700;
   line-height: 1.55;
-  text-overflow: ellipsis;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
 }
 
 .question-tag--active {
@@ -821,18 +834,14 @@ function goBackHome() {
 }
 
 .question-panel {
-  flex: 1;
-  min-height: 0;
   padding: 24rpx 28rpx;
-  background: #f0f5fa;
+  background: #f5efe4;
 }
 
-.question-stem {
-  display: block;
-  color: #1f2b3d;
-  font-size: 31rpx;
-  font-weight: 650;
-  line-height: 1.75;
+.question-panel :deep(.card),
+.question-panel .card {
+  border-color: rgba(128, 83, 52, 0.16);
+  background: rgba(255, 252, 246, 0.98);
 }
 
 .question-tags {
@@ -854,6 +863,11 @@ function goBackHome() {
 .question-tag--blue {
   background: #e8f4fd;
   color: #1b5faa;
+}
+
+.question-tag--score {
+  background: #fff6d8;
+  color: #8a5a00;
 }
 
 .reading-list {
@@ -880,68 +894,6 @@ function goBackHome() {
   line-height: 1.5;
 }
 
-.section-head--compact {
-  margin-bottom: 14rpx;
-}
-
-.section-title--small {
-  font-size: 27rpx;
-}
-
-.text-answer-panel {
-  margin-bottom: 22rpx;
-}
-
-.media-toggle {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12rpx;
-  margin-bottom: 20rpx;
-}
-
-.media-toggle__item {
-  padding: 18rpx 14rpx;
-  border: 1rpx solid #d9e3ef;
-  border-radius: 14rpx;
-  background: #ffffff;
-  color: #2a3648;
-  font-size: 25rpx;
-  font-weight: 800;
-  text-align: center;
-}
-
-.media-toggle__item--active {
-  border-color: #1b5faa;
-  background: #e8f4fd;
-  color: #1b5faa;
-}
-
-.camera-preview--fallback {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: rgba(255, 255, 255, 0.76);
-  font-size: 25rpx;
-}
-
-.camera-panel {
-  overflow: hidden;
-  border: 1rpx solid #d9e3ef;
-  border-radius: 16rpx;
-  background: #f6f8fb;
-}
-
-.camera-preview {
-  display: block;
-  width: 100%;
-  height: 220rpx;
-  background: #111827;
-}
-
-.camera-panel__status {
-  padding: 18rpx 20rpx 0;
-}
-
 .record-panel {
   margin-top: 22rpx;
   padding-top: 22rpx;
@@ -960,6 +912,16 @@ function goBackHome() {
   font-weight: 700;
 }
 
+.record-panel__camera-status {
+  margin-top: 12rpx;
+  padding: 14rpx 16rpx;
+  border-radius: 12rpx;
+  background: #fff7e8;
+  color: #7a4520;
+  font-size: 23rpx;
+  line-height: 1.5;
+}
+
 .record-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -967,20 +929,73 @@ function goBackHome() {
   margin-top: 18rpx;
 }
 
-.camera-panel .record-actions {
-  padding: 0 20rpx 20rpx;
-}
-
 .room-actions {
   display: grid;
   grid-template-columns: 180rpx minmax(0, 1fr);
   gap: 16rpx;
   padding: 18rpx 28rpx calc(18rpx + env(safe-area-inset-bottom));
-  border-top: 1rpx solid #e8eef5;
-  background: #ffffff;
+  border-top: 1rpx solid rgba(128, 83, 52, 0.16);
+  background: #fffaf1;
 }
 
 .exam-room__empty {
   padding: 30rpx;
+}
+
+.floating-camera {
+  position: fixed;
+  right: 24rpx;
+  bottom: calc(142rpx + env(safe-area-inset-bottom));
+  z-index: 42;
+  overflow: hidden;
+  border: 4rpx solid rgba(255, 241, 218, 0.92);
+  border-radius: 18rpx;
+  background: #080808;
+  box-shadow: 0 16rpx 38rpx rgba(22, 12, 7, 0.38);
+}
+
+.floating-camera--small {
+  width: 148rpx;
+  height: 198rpx;
+}
+
+.floating-camera--medium {
+  width: 212rpx;
+  height: 284rpx;
+}
+
+.floating-camera--large {
+  width: 284rpx;
+  height: 378rpx;
+}
+
+.floating-camera__camera {
+  width: 100%;
+  height: 100%;
+}
+
+.floating-camera__mask {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 8rpx 10rpx;
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.72) 38%, rgba(0, 0, 0, 0.86) 100%);
+}
+
+.floating-camera__status,
+.floating-camera__size {
+  display: block;
+  color: #fff7e8;
+  font-size: 19rpx;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.floating-camera__size {
+  margin-top: 2rpx;
+  color: rgba(255, 247, 232, 0.68);
+  font-size: 17rpx;
+  font-weight: 600;
 }
 </style>

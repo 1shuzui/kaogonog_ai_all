@@ -75,6 +75,21 @@ function normalizeExpressionUpgrades(value) {
     .slice(0, 4)
 }
 
+function buildNoContentImprovementSuggestion() {
+  return {
+    source: 'fallback',
+    summary: '本次没有可分析的作答内容，请先完成一段有效作答后再查看细化建议。',
+    teacherComment: '',
+    diagnosisItems: ['未形成可用于复盘的有效作答文本'],
+    focusPoints: [],
+    missingKeywords: [],
+    expressionUpgrades: [],
+    sampleAnswer: '',
+    rewriteOpening: '',
+    rewriteClosing: ''
+  }
+}
+
 function buildFallbackImprovementSuggestion(totalScore = 0, maxScore = 100) {
   const ratio = maxScore ? totalScore / maxScore : 0
   const summary = ratio >= 0.75
@@ -101,6 +116,10 @@ function buildFallbackImprovementSuggestion(totalScore = 0, maxScore = 100) {
   }
 }
 
+function hasOwn(value, key) {
+  return Object.prototype.hasOwnProperty.call(value || {}, key)
+}
+
 export function normalizeImprovementSuggestion(value, totalScore = 0, maxScore = 100) {
   const fallback = buildFallbackImprovementSuggestion(totalScore, maxScore)
   if (!value || typeof value !== 'object') return fallback
@@ -111,31 +130,48 @@ export function normalizeImprovementSuggestion(value, totalScore = 0, maxScore =
   return {
     source: value.source === 'model' ? 'model' : 'fallback',
     summary: String(value.summary || fallback.summary).trim(),
-    teacherComment: String(value.teacherComment || value.teacher_comment || fallback.teacherComment).trim(),
-    diagnosisItems: diagnosisItems.length ? diagnosisItems : fallback.diagnosisItems,
-    focusPoints: focusPoints.length ? focusPoints : fallback.focusPoints,
-    missingKeywords: missingKeywords.length ? missingKeywords : fallback.missingKeywords,
-    expressionUpgrades: expressionUpgrades.length ? expressionUpgrades : fallback.expressionUpgrades,
-    sampleAnswer: String(value.sampleAnswer || value.sample_answer || fallback.sampleAnswer).trim(),
-    rewriteOpening: String(value.rewriteOpening || value.rewrite_opening || fallback.rewriteOpening).trim(),
-    rewriteClosing: String(value.rewriteClosing || value.rewrite_closing || fallback.rewriteClosing).trim()
+    teacherComment: hasOwn(value, 'teacherComment') || hasOwn(value, 'teacher_comment')
+      ? String(value.teacherComment || value.teacher_comment || '').trim()
+      : fallback.teacherComment,
+    diagnosisItems: hasOwn(value, 'diagnosisItems') || hasOwn(value, 'diagnosis_items') ? diagnosisItems : fallback.diagnosisItems,
+    focusPoints: hasOwn(value, 'focusPoints') || hasOwn(value, 'focus_points') ? focusPoints : fallback.focusPoints,
+    missingKeywords: hasOwn(value, 'missingKeywords') || hasOwn(value, 'missing_keywords') ? missingKeywords : fallback.missingKeywords,
+    expressionUpgrades: hasOwn(value, 'expressionUpgrades') || hasOwn(value, 'expression_upgrades') ? expressionUpgrades : fallback.expressionUpgrades,
+    sampleAnswer: hasOwn(value, 'sampleAnswer') || hasOwn(value, 'sample_answer')
+      ? String(value.sampleAnswer || value.sample_answer || '').trim()
+      : fallback.sampleAnswer,
+    rewriteOpening: hasOwn(value, 'rewriteOpening') || hasOwn(value, 'rewrite_opening')
+      ? String(value.rewriteOpening || value.rewrite_opening || '').trim()
+      : fallback.rewriteOpening,
+    rewriteClosing: hasOwn(value, 'rewriteClosing') || hasOwn(value, 'rewrite_closing')
+      ? String(value.rewriteClosing || value.rewrite_closing || '').trim()
+      : fallback.rewriteClosing
   }
+}
+
+function shouldUseNoContentSuggestion(result = {}) {
+  const mode = String(result?.scoringMode || '').trim()
+  const comment = String(result?.aiComment || result?.comment || '')
+  return ['screened_zero', 'empty_zero'].includes(mode)
+    || comment.includes('未获取到可靠语音转写结果')
+    || comment.includes('未提交有效作答内容')
 }
 
 export function normalizeResult(result = {}) {
   const totalScore = Number(result?.totalScore ?? result?.score ?? 0) || 0
   const maxScore = Number(result?.maxScore ?? 100) || 100
+  const suggestion = result?.answerImprovementSuggestion
+    ? normalizeImprovementSuggestion(result.answerImprovementSuggestion, totalScore, maxScore)
+    : shouldUseNoContentSuggestion(result)
+      ? buildNoContentImprovementSuggestion()
+      : normalizeImprovementSuggestion(null, totalScore, maxScore)
   return {
     ...result,
     totalScore,
     maxScore,
     dimensions: normalizeDimensions(result?.dimensions),
     aiComment: result?.aiComment || result?.comment || '暂无评语',
-    answerImprovementSuggestion: normalizeImprovementSuggestion(
-      result?.answerImprovementSuggestion,
-      totalScore,
-      maxScore
-    )
+    answerImprovementSuggestion: suggestion
   }
 }
 

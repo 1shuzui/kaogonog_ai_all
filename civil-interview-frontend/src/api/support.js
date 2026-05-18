@@ -13,6 +13,14 @@ export function createSupportFeedback(data) {
   })
 }
 
+export function uploadSupportFeedbackImage(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  return http.post('/support/feedback/attachments', formData, {
+    skipErrorHandler: true
+  })
+}
+
 export function updateSupportFeedback(feedbackId, data) {
   return http.patch(`/support/feedback/${feedbackId}`, data, {
     skipErrorHandler: true

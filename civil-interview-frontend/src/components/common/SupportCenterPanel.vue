@@ -49,6 +49,17 @@
           <span class="support-record__time">{{ formatTime(record.createdAt) }}</span>
         </div>
         <div class="support-record__summary">{{ record.summary }}</div>
+        <div v-if="record.attachments?.length" class="support-record__attachments">
+          <a-image
+            v-for="item in record.attachments"
+            :key="item.storageKey || item.url"
+            :src="resolveAttachmentUrl(item.url)"
+            :alt="item.filename || '反馈截图'"
+            :width="72"
+            :height="72"
+            class="support-record__attachment"
+          />
+        </div>
         <div class="support-record__meta">
           <span>页面：{{ record.routePath || '未记录' }}</span>
           <span v-if="record.contact">联系方式：{{ record.contact }}</span>
@@ -62,6 +73,7 @@
       title="提交客服反馈"
       width="720px"
       @ok="submitFeedback"
+      :confirm-loading="submitLoading || attachmentUploading"
       ok-text="提交反馈"
       cancel-text="取消"
     >
@@ -88,6 +100,22 @@
             placeholder="可填写微信、手机号或邮箱，方便管理员回访"
           />
         </a-form-item>
+        <a-form-item label="问题截图">
+          <a-upload
+            v-model:file-list="attachmentFiles"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            list-type="picture-card"
+            :before-upload="beforeAttachmentUpload"
+            :custom-request="uploadAttachment"
+            @remove="removeAttachment"
+          >
+            <div v-if="attachmentFiles.length < MAX_FEEDBACK_IMAGES" class="support-upload-trigger">
+              <PlusOutlined />
+              <span>上传截图</span>
+            </div>
+          </a-upload>
+          <div class="support-upload-hint">最多 8 张，单张不超过 5MB，支持 JPG、PNG、WEBP、GIF。</div>
+        </a-form-item>
       </a-form>
     </a-modal>
   </div>
@@ -96,21 +124,30 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { message } from 'ant-design-vue'
+import { PlusOutlined } from '@ant-design/icons-vue'
+import { message, Upload } from 'ant-design-vue'
 import { useUserStore } from '@/stores/user'
 import {
   FEEDBACK_STATUS_OPTIONS,
   FEEDBACK_TYPES,
   SUPPORT_CONTACT
 } from '@/utils/support'
-import { createSupportFeedback, getSupportFeedback } from '@/api/support'
+import { createSupportFeedback, getSupportFeedback, uploadSupportFeedbackImage } from '@/api/support'
 import { getProvinceLabel } from '@/utils/questionPresentation'
+
+const MAX_FEEDBACK_IMAGES = 8
+const MAX_FEEDBACK_IMAGE_BYTES = 5 * 1024 * 1024
+const ALLOWED_FEEDBACK_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
 const formVisible = ref(false)
+const submitLoading = ref(false)
+const attachmentUploading = ref(false)
+const attachmentFiles = ref([])
+const formAttachments = ref([])
 const records = ref([])
 const feedbackOptions = FEEDBACK_TYPES.map((item) => ({ value: item, label: item }))
 
@@ -138,6 +175,8 @@ function resetForm() {
   form.questionId = ''
   form.summary = ''
   form.contact = ''
+  formAttachments.value = []
+  attachmentFiles.value = []
 }
 
 function openForm() {
@@ -162,7 +201,12 @@ async function submitFeedback() {
     message.warning('请先填写问题描述')
     return
   }
+  if (attachmentUploading.value) {
+    message.warning('截图仍在上传，请稍后提交')
+    return
+  }
 
+  submitLoading.value = true
   try {
     await createSupportFeedback({
       type: form.type,
@@ -170,7 +214,8 @@ async function submitFeedback() {
       summary: form.summary.trim(),
       contact: form.contact.trim(),
       routePath: route.fullPath,
-      province: getProvinceLabel(userStore.selectedProvince)
+      province: getProvinceLabel(userStore.selectedProvince),
+      attachments: formAttachments.value
     })
     await loadRecords()
     formVisible.value = false
@@ -178,7 +223,56 @@ async function submitFeedback() {
     message.success('反馈已提交，管理员端可实时查看')
   } catch (error) {
     message.error(error?.normalizedMessage || error?.message || '反馈提交失败')
+  } finally {
+    submitLoading.value = false
   }
+}
+
+function beforeAttachmentUpload(file) {
+  if (attachmentFiles.value.length >= MAX_FEEDBACK_IMAGES) {
+    message.warning('反馈截图最多上传 8 张')
+    return Upload.LIST_IGNORE
+  }
+  if (!ALLOWED_FEEDBACK_IMAGE_TYPES.includes(file.type)) {
+    message.warning('仅支持 JPG、PNG、WEBP、GIF 图片')
+    return Upload.LIST_IGNORE
+  }
+  if (file.size > MAX_FEEDBACK_IMAGE_BYTES) {
+    message.warning('单张反馈图片不能超过 5MB')
+    return Upload.LIST_IGNORE
+  }
+  return true
+}
+
+async function uploadAttachment({ file, onSuccess, onError }) {
+  attachmentUploading.value = true
+  try {
+    const result = await uploadSupportFeedbackImage(file)
+    formAttachments.value = [...formAttachments.value, result]
+    attachmentFiles.value = attachmentFiles.value.map((item) => (
+      item.uid === file.uid
+        ? {
+          ...item,
+          status: 'done',
+          url: resolveAttachmentUrl(result.url),
+          response: result
+        }
+        : item
+    ))
+    onSuccess?.(result)
+  } catch (error) {
+    message.error(error?.normalizedMessage || error?.message || '截图上传失败')
+    onError?.(error)
+  } finally {
+    attachmentUploading.value = false
+  }
+}
+
+function removeAttachment(file) {
+  const storageKey = file?.response?.storageKey || file?.storageKey || ''
+  formAttachments.value = formAttachments.value.filter((item) => item.storageKey !== storageKey)
+  attachmentFiles.value = attachmentFiles.value.filter((item) => item.uid !== file.uid)
+  return true
 }
 
 function getStatusLabel(status) {
@@ -189,6 +283,16 @@ function formatTime(value = '') {
   const date = value ? new Date(value) : null
   if (!date || Number.isNaN(date.getTime())) return ''
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+}
+
+function resolveAttachmentUrl(url = '') {
+  const value = String(url || '')
+  if (!value || /^https?:\/\//i.test(value)) return value
+  const apiBase = import.meta.env.VITE_API_BASE || 'https://xzqianmianyuzhoukeji.com/api'
+  if (value.startsWith('/api/')) {
+    return `${apiBase.replace(/\/api\/?$/, '')}${value}`
+  }
+  return `${apiBase.replace(/\/+$/, '')}${value.startsWith('/') ? value : `/${value}`}`
 }
 
 async function loadRecords() {
@@ -332,6 +436,36 @@ async function loadRecords() {
   color: @text-regular;
   line-height: 1.8;
   white-space: pre-wrap;
+}
+
+.support-record__attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.support-record__attachment {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid rgba(27, 95, 170, 0.12);
+}
+
+.support-upload-trigger {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: @text-secondary;
+  font-size: @font-size-xs;
+}
+
+.support-upload-hint {
+  margin-top: 8px;
+  color: @text-secondary;
+  font-size: @font-size-xs;
 }
 
 @media (max-width: 768px) {

@@ -4,7 +4,6 @@ import router from '@/router'
 import { normalizeScoringErrorMessage } from '@/utils/scoringSupport'
 import { createRequestId, logger } from '@/utils/logger'
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
 const TOKEN_STORAGE_KEY = 'token'
 const USERNAME_STORAGE_KEY = 'username'
 
@@ -137,5 +136,5 @@ http.interceptors.response.use(
   }
 )
 
-export { http, USE_MOCK }
+export { http }
 export default http

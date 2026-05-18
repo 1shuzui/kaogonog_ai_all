@@ -1,4 +1,20 @@
-import { request } from './request'
+import { API_BASE, request, uploadFile } from './request'
+
+function resolveSupportAttachmentUrl(url = '') {
+  const value = String(url || '')
+  if (!value || /^https?:\/\//i.test(value)) return value
+  if (value.startsWith('/api/')) {
+    return `${API_BASE.replace(/\/api\/?$/, '')}${value}`
+  }
+  return `${API_BASE.replace(/\/+$/, '')}${value.startsWith('/') ? value : `/${value}`}`
+}
+
+export function normalizeSupportAttachment(item = {}) {
+  return {
+    ...item,
+    url: resolveSupportAttachmentUrl(item.url)
+  }
+}
 
 export function getSupportFeedback(params = {}, config = {}) {
   return request({
@@ -17,6 +33,17 @@ export function createSupportFeedback(data, config = {}) {
     skipErrorHandler: true,
     ...config
   })
+}
+
+export async function uploadSupportFeedbackImage(filePath, config = {}) {
+  const response = await uploadFile({
+    url: '/support/feedback/attachments',
+    filePath,
+    name: 'file',
+    skipErrorHandler: true,
+    ...config
+  })
+  return normalizeSupportAttachment(response)
 }
 
 export function updateSupportFeedback(feedbackId, data, config = {}) {

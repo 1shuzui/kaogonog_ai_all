@@ -56,6 +56,10 @@
         <text>历史记录</text>
         <text class="menu-item__arrow">›</text>
       </view>
+      <view class="menu-item card" @tap="goFavorites">
+        <text>错题本 / 收藏夹</text>
+        <text class="menu-item__arrow">›</text>
+      </view>
       <view class="menu-item card" @tap="goPricing">
         <text>套餐中心</text>
         <text class="menu-item__arrow">›</text>
@@ -102,6 +106,7 @@
 import { computed, reactive, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useBillingStore } from '../../stores/billing'
+import { useFavoritesStore } from '../../stores/favorites'
 import { useHistoryStore } from '../../stores/history'
 import { useUserStore } from '../../stores/user'
 import { PROVINCES } from '../../utils/constants'
@@ -111,6 +116,7 @@ import { requireLogin, toast } from '../../utils/navigation'
 const userStore = useUserStore()
 const historyStore = useHistoryStore()
 const billingStore = useBillingStore()
+const favoritesStore = useFavoritesStore()
 const preferences = reactive({
   defaultPrepTime: 90,
   defaultAnswerTime: 180,
@@ -146,7 +152,7 @@ const balanceDescription = computed(() => {
 const statItems = computed(() => [
   { label: '练习次数', value: historyStore.stats?.totalExams || 0 },
   { label: '最高分', value: historyStore.bestScore || 0 },
-  { label: '当前权益', value: safePlanTitle.value }
+  { label: '错题收藏', value: favoritesStore.count }
 ])
 
 onShow(() => {
@@ -264,6 +270,10 @@ async function savePreferences() {
 
 function goHistory() {
   uni.navigateTo({ url: '/pages/history/index' })
+}
+
+function goFavorites() {
+  uni.navigateTo({ url: '/pages/favorites/index' })
 }
 
 function goPricing() {

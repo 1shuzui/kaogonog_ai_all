@@ -32,18 +32,30 @@
       <template v-if="mode === 'register'">
         <view class="form-label">确认密码</view>
         <input v-model="form.confirmPassword" class="field" password placeholder="请再次输入密码" />
-        <view class="agreement-box">
-          <checkbox :checked="form.agreedTerms" @tap="toggleAgreement" />
-          <text class="agreement-box__text">
-            我已阅读并同意
-            <text class="agreement-box__link" @tap.stop="goLegalDocuments">《用户协议》与《隐私协议》</text>
-          </text>
-        </view>
       </template>
 
-      <view v-else class="agreement-tip">
-        登录即表示您已阅读并同意
-        <text class="agreement-box__link" @tap="goLegalDocuments">《用户协议》与《隐私协议》</text>
+      <view class="agreement-box">
+        <checkbox :checked="form.agreedTerms" @tap="toggleAgreement" />
+        <view class="agreement-box__content">
+          <text class="agreement-box__text">
+            我已自主阅读并同意
+            <text class="agreement-box__link" @tap.stop="goLegalDocuments">《用户协议》与《隐私政策》</text>
+          </text>
+          <text class="agreement-box__hint">未勾选前不会登录、注册或发起微信快捷登录。</text>
+        </view>
+      </view>
+
+      <view v-if="privacyAuthRequired" class="privacy-auth-panel">
+        <text class="privacy-auth-panel__text">
+          微信要求先确认{{ privacyContractName || '小程序隐私保护指引' }}，请阅读后点击下方按钮。
+        </text>
+        <button
+          class="secondary-button privacy-auth-panel__button"
+          open-type="agreePrivacyAuthorization"
+          @agreeprivacyauthorization="onAgreePrivacyAuthorization"
+        >
+          我已阅读并确认微信隐私授权
+        </button>
       </view>
 
       <button class="primary-button login-submit" :loading="loading" @tap="submit">
@@ -88,11 +100,36 @@
         <button class="secondary-button danger-button session-tools__button" @tap="clearLocalSession">清除本地登录态</button>
       </view>
     </view>
+
+    <view v-if="accountSetupVisible" class="account-setup-mask">
+      <view class="account-setup-panel">
+        <text class="account-setup-panel__title">创建 PC 登录账号</text>
+        <text class="account-setup-panel__desc">
+          微信快捷登录已完成。请设置一个自己记得住的账号和密码，之后 PC 端用这个账号密码登录，就能同步小程序里的练习记录、收藏错题和订单权益。
+        </text>
+        <view class="form-label">PC 登录账号</view>
+        <input v-model="accountSetupForm.username" class="field" placeholder="3-32 位字母/数字/下划线" />
+        <view class="form-label">PC 登录密码</view>
+        <input v-model="accountSetupForm.password" class="field" password placeholder="至少 6 位" />
+        <view class="form-label">确认密码</view>
+        <input v-model="accountSetupForm.confirmPassword" class="field" password placeholder="请再次输入密码" />
+        <button class="primary-button account-setup-panel__button" :loading="accountSetupLoading" @tap="submitAccountSetup">
+          创建账号并进入
+        </button>
+        <button class="link-button account-setup-panel__skip" @tap="skipAccountSetup">
+          暂时跳过
+        </button>
+        <text class="account-setup-panel__tip">
+          跳过后仍可继续使用小程序微信登录；但 PC 端暂时不能用账号密码进入同一账号，可稍后在“我的-账号安全”补设。
+        </text>
+      </view>
+    </view>
   </view>
 </template>
 
 <script setup>
 import { reactive, ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
 import {
   confirmPasswordReset,
   requestPasswordReset,
@@ -105,10 +142,15 @@ const userStore = useUserStore()
 const mode = ref('login')
 const loading = ref(false)
 const wechatLoading = ref(false)
+const accountSetupVisible = ref(false)
+const accountSetupLoading = ref(false)
 const resetVisible = ref(false)
 const resetLoading = ref(false)
 const resetRequesting = ref(false)
 const resetTip = ref('')
+const privacyAuthRequired = ref(false)
+const privacyAuthorizationReady = ref(false)
+const privacyContractName = ref('')
 const form = reactive({
   username: '',
   password: '',
@@ -120,6 +162,11 @@ const resetForm = reactive({
   contact: '',
   code: '',
   newPassword: '',
+  confirmPassword: ''
+})
+const accountSetupForm = reactive({
+  username: '',
+  password: '',
   confirmPassword: ''
 })
 
@@ -137,6 +184,39 @@ function openResetPanel() {
   resetForm.username = form.username.trim()
 }
 
+onLoad(() => {
+  loadWechatPrivacySetting()
+})
+
+function loadWechatPrivacySetting() {
+  if (typeof wx === 'undefined' || typeof wx.getPrivacySetting !== 'function') return
+  wx.getPrivacySetting({
+    success(res) {
+      privacyAuthRequired.value = !!res.needAuthorization
+      privacyContractName.value = res.privacyContractName || '小程序隐私保护指引'
+      if (!res.needAuthorization) {
+        privacyAuthorizationReady.value = true
+      }
+    },
+    fail() {
+      privacyAuthRequired.value = false
+      privacyAuthorizationReady.value = true
+    }
+  })
+}
+
+function validateTermsAgreement() {
+  if (!form.agreedTerms) {
+    toast('请先自主阅读并勾选同意用户协议与隐私政策')
+    return false
+  }
+  if (privacyAuthRequired.value && !privacyAuthorizationReady.value) {
+    toast('请先阅读并确认微信隐私授权')
+    return false
+  }
+  return true
+}
+
 function validate() {
   if (!form.username.trim()) {
     toast('请输入用户名')
@@ -144,6 +224,9 @@ function validate() {
   }
   if (!form.password) {
     toast('请输入密码')
+    return false
+  }
+  if (!validateTermsAgreement()) {
     return false
   }
   if (mode.value === 'register') {
@@ -157,10 +240,6 @@ function validate() {
     }
     if (form.password !== form.confirmPassword) {
       toast('两次密码输入不一致')
-      return false
-    }
-    if (!form.agreedTerms) {
-      toast('请先阅读并同意用户协议与隐私协议')
       return false
     }
   }
@@ -213,10 +292,19 @@ function getWechatLoginCode() {
 
 async function loginByWechat() {
   if (wechatLoading.value) return
+  if (!validateTermsAgreement()) return
   wechatLoading.value = true
   try {
     const code = await getWechatLoginCode()
-    await userStore.loginWithWechat(code, '2026-05-12')
+    const result = await userStore.loginWithWechat(code, '2026-05-12')
+    if (result?.requiresPcAccountSetup) {
+      accountSetupVisible.value = true
+      accountSetupForm.username = ''
+      accountSetupForm.password = ''
+      accountSetupForm.confirmPassword = ''
+      toast('微信已登录，请设置 PC 登录账号')
+      return
+    }
     toast('登录成功', 'success')
     uni.switchTab({ url: '/pages/home/index' })
   } catch (error) {
@@ -224,6 +312,61 @@ async function loginByWechat() {
   } finally {
     wechatLoading.value = false
   }
+}
+
+function validateAccountSetup() {
+  const username = accountSetupForm.username.trim()
+  if (!/^[A-Za-z0-9_-]{3,32}$/.test(username)) {
+    toast('账号需为 3-32 位字母、数字、下划线或短横线')
+    return false
+  }
+  if (username.startsWith('wx_')) {
+    toast('账号不能使用 wx_ 开头')
+    return false
+  }
+  if (accountSetupForm.password.length < 6) {
+    toast('密码至少 6 位')
+    return false
+  }
+  if (accountSetupForm.password !== accountSetupForm.confirmPassword) {
+    toast('两次密码输入不一致')
+    return false
+  }
+  return true
+}
+
+async function submitAccountSetup() {
+  if (accountSetupLoading.value) return
+  if (!validateAccountSetup()) return
+  accountSetupLoading.value = true
+  try {
+    await userStore.setupWechatPcAccount({
+      username: accountSetupForm.username.trim(),
+      password: accountSetupForm.password
+    })
+    accountSetupVisible.value = false
+    toast('PC 登录账号已创建', 'success')
+    uni.switchTab({ url: '/pages/home/index' })
+  } catch (error) {
+    toast(error?.message || '账号创建失败')
+  } finally {
+    accountSetupLoading.value = false
+  }
+}
+
+function skipAccountSetup() {
+  uni.showModal({
+    title: '暂时跳过？',
+    content: '跳过后可以继续用微信进入小程序，但 PC 端暂时不能用账号密码登录同一账号。之后可在“我的-账号安全”补设。',
+    confirmText: '先跳过',
+    cancelText: '继续设置',
+    success(res) {
+      if (res.confirm) {
+        accountSetupVisible.value = false
+        uni.switchTab({ url: '/pages/home/index' })
+      }
+    }
+  })
 }
 
 async function requestResetCode() {
@@ -290,6 +433,12 @@ async function confirmResetPassword() {
 
 function toggleAgreement() {
   form.agreedTerms = !form.agreedTerms
+}
+
+function onAgreePrivacyAuthorization() {
+  privacyAuthorizationReady.value = true
+  form.agreedTerms = true
+  toast('已确认隐私授权，可继续登录', 'success')
 }
 
 function goLegalDocuments() {
@@ -379,15 +528,50 @@ function goLegalDocuments() {
   margin-top: 18rpx;
 }
 
+.agreement-box__content {
+  flex: 1;
+  min-width: 0;
+}
+
 .agreement-box__text,
 .agreement-tip {
+  display: block;
   color: #6f7c8f;
   font-size: 24rpx;
   line-height: 1.7;
 }
 
+.agreement-box__hint {
+  display: block;
+  margin-top: 4rpx;
+  color: #9aa6b5;
+  font-size: 22rpx;
+  line-height: 1.55;
+}
+
 .agreement-box__link {
   color: #1b5faa;
+}
+
+.privacy-auth-panel {
+  margin-top: 16rpx;
+  padding: 18rpx;
+  border: 1rpx solid #d9e8f7;
+  border-radius: 14rpx;
+  background: #f4f9fe;
+}
+
+.privacy-auth-panel__text {
+  display: block;
+  color: #526579;
+  font-size: 23rpx;
+  line-height: 1.6;
+}
+
+.privacy-auth-panel__button {
+  margin-top: 14rpx;
+  min-height: 72rpx;
+  font-size: 24rpx;
 }
 
 .link-button {
@@ -441,5 +625,48 @@ function goLegalDocuments() {
 .session-tools__button {
   min-height: 76rpx;
   font-size: 25rpx;
+}
+
+.account-setup-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32rpx;
+  background: rgba(18, 32, 50, 0.42);
+}
+
+.account-setup-panel {
+  width: 100%;
+  padding: 36rpx 30rpx;
+  border-radius: 20rpx;
+  background: #ffffff;
+  box-shadow: 0 28rpx 70rpx rgba(20, 40, 70, 0.24);
+}
+
+.account-setup-panel__title {
+  display: block;
+  color: #1a1a2e;
+  font-size: 34rpx;
+  font-weight: 800;
+}
+
+.account-setup-panel__desc,
+.account-setup-panel__tip {
+  display: block;
+  margin-top: 14rpx;
+  color: #5f6f84;
+  font-size: 24rpx;
+  line-height: 1.65;
+}
+
+.account-setup-panel__button {
+  margin-top: 26rpx;
+}
+
+.account-setup-panel__skip {
+  margin-top: 12rpx;
 }
 </style>

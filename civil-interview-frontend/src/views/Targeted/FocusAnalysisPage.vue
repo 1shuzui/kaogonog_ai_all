@@ -63,10 +63,30 @@
             size="large"
             block
             :loading="targetedStore.generateLoading"
-            @click="startTargetedPractice"
+            @click="generateTargetedPractice"
           >
-            <ThunderboltOutlined /> 生成针对性题目并开始练习
+            <ThunderboltOutlined /> 生成针对性题目
           </a-button>
+        </div>
+
+        <div v-if="targetedStore.generatedQuestions.length" class="card focus-section generated-practice">
+          <div class="generated-practice__header">
+            <div>
+              <h3>已生成题目</h3>
+              <p>先查看题目，再点击开始练习进入设备检测和练习模式选择。</p>
+            </div>
+            <a-button type="primary" size="large" @click="startTargetedPractice">
+              <PlayCircleOutlined /> 开始练习
+            </a-button>
+          </div>
+          <div
+            v-for="(question, index) in targetedStore.generatedQuestions"
+            :key="question.id || index"
+            class="generated-practice__item"
+          >
+            <strong>{{ index + 1 }}</strong>
+            <span>{{ question.stem }}</span>
+          </div>
         </div>
       </template>
 
@@ -78,7 +98,8 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { LeftOutlined, AimOutlined, BarChartOutlined, FireOutlined, BulbOutlined, ThunderboltOutlined } from '@ant-design/icons-vue'
+import { LeftOutlined, AimOutlined, BarChartOutlined, FireOutlined, BulbOutlined, ThunderboltOutlined, PlayCircleOutlined } from '@ant-design/icons-vue'
+import { message } from 'ant-design-vue'
 import { useTargetedStore } from '@/stores/targeted'
 import { PROVINCES, POSITION_SYSTEMS } from '@/utils/constants'
 import { getJiangsuTargetedPosition } from '@/utils/jiangsuJobs'
@@ -117,11 +138,21 @@ onMounted(() => {
   }
 })
 
-async function startTargetedPractice() {
+async function generateTargetedPractice() {
   const questions = await targetedStore.fetchGeneratedQuestions(5)
   if (questions?.length) {
-    router.push({ path: '/exam/prepare', query: { source: 'targeted' } })
+    message.success('题目已生成，请在下方核对后开始练习。')
+  } else {
+    message.warning('题库中暂无匹配题目，请返回调整省份或岗位系统。')
   }
+}
+
+function startTargetedPractice() {
+  if (!targetedStore.generatedQuestions.length) {
+    message.warning('请先生成针对性题目。')
+    return
+  }
+  router.push({ path: '/exam/prepare', query: { source: 'targeted' } })
 }
 </script>
 
@@ -273,5 +304,54 @@ async function startTargetedPractice() {
 .focus-actions {
   margin-top: 8px;
   margin-bottom: 16px;
+}
+
+.generated-practice__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+
+  h3 {
+    margin-bottom: 4px;
+  }
+
+  p {
+    margin: 0;
+    color: @text-secondary;
+    font-size: @font-size-sm;
+  }
+}
+
+.generated-practice__item {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 10px;
+  padding: 12px 0;
+  border-top: 1px solid @divider-color;
+
+  strong {
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: @bg-light-blue;
+    color: @primary-color;
+  }
+
+  span {
+    color: @text-regular;
+    line-height: 1.75;
+  }
+}
+
+@media (max-width: 768px) {
+  .generated-practice__header {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }
 </style>

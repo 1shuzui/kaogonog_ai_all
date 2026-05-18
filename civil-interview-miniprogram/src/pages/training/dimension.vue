@@ -174,8 +174,9 @@ function startTrial() {
   height: 100rpx;
   border-radius: 20rpx;
   color: #1b5faa;
-  font-size: 38rpx;
+  font-size: 48rpx;
   font-weight: 900;
+  line-height: 1;
 }
 
 .dimension-hero__title,

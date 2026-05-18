@@ -45,7 +45,7 @@ export const TRAINING_CATEGORIES = [
     key: 'analysis',
     name: '综合分析',
     requestDimension: 'analysis',
-    icon: '析',
+    icon: '🔍',
     tone: '#e6f4ff',
     maxScore: 100,
     tip: '训练政策观点、社会现象和公共议题的辩证分析。'
@@ -54,7 +54,7 @@ export const TRAINING_CATEGORIES = [
     key: 'organization',
     name: '组织管理',
     requestDimension: 'practical',
-    icon: '组',
+    icon: '🗂️',
     tone: '#eaf7e6',
     maxScore: 100,
     tip: '训练活动策划、统筹推进、复盘总结和落地执行。'
@@ -63,7 +63,7 @@ export const TRAINING_CATEGORIES = [
     key: 'emergency',
     name: '应急应变',
     requestDimension: 'emergency',
-    icon: '急',
+    icon: '🚨',
     tone: '#fff1f0',
     maxScore: 100,
     tip: '训练稳控现场、快速研判、分类处置和复盘预防。'
@@ -72,7 +72,7 @@ export const TRAINING_CATEGORIES = [
     key: 'interpersonal',
     name: '人际沟通',
     requestDimension: 'practical',
-    icon: '沟',
+    icon: '🤝',
     tone: '#eef4ff',
     maxScore: 100,
     tip: '训练对象意识、情绪安抚、说服策略和关系修复。'
@@ -81,7 +81,7 @@ export const TRAINING_CATEGORIES = [
     key: 'simulation',
     name: '现场模拟',
     requestDimension: 'expression',
-    icon: '演',
+    icon: '🎭',
     tone: '#fff7e8',
     maxScore: 100,
     tip: '训练身份代入、语气分寸和场景化表达。'
@@ -90,7 +90,7 @@ export const TRAINING_CATEGORIES = [
     key: 'career',
     name: '职业认知',
     requestDimension: 'analysis',
-    icon: '岗',
+    icon: '🧭',
     tone: '#f5f0ff',
     maxScore: 100,
     tip: '训练报考动机、岗位理解、价值取向和服务意识。'

@@ -44,7 +44,7 @@
         </view>
         <text class="improvement-card__summary">{{ improvementSuggestion.summary }}</text>
 
-        <view class="teacher-note">
+        <view v-if="improvementSuggestion.teacherComment" class="teacher-note">
           <text class="teacher-note__label">老师批注</text>
           <text class="teacher-note__text">{{ improvementSuggestion.teacherComment }}</text>
         </view>
@@ -75,7 +75,7 @@
           </view>
         </view>
 
-        <view class="suggestion-block">
+        <view v-if="improvementSuggestion.rewriteOpening" class="suggestion-block">
           <text class="suggestion-block__title">开头可以这样改</text>
           <text class="rewrite-line">{{ improvementSuggestion.rewriteOpening }}</text>
         </view>
@@ -105,12 +105,12 @@
           </view>
         </view>
 
-        <view class="suggestion-block">
+        <view v-if="improvementSuggestion.sampleAnswer" class="suggestion-block">
           <text class="suggestion-block__title">老师示范改写</text>
           <text class="sample-answer">{{ improvementSuggestion.sampleAnswer }}</text>
         </view>
 
-        <view class="suggestion-block">
+        <view v-if="improvementSuggestion.rewriteClosing" class="suggestion-block">
           <text class="suggestion-block__title">结尾可以这样收束</text>
           <text class="rewrite-line">{{ improvementSuggestion.rewriteClosing }}</text>
         </view>
@@ -123,16 +123,46 @@
         <DimensionBars :dimensions="result.dimensions" />
       </view>
 
-      <view v-if="transcript" class="card">
+      <view v-if="displayTranscript" class="card">
         <view class="section-head">
           <text class="section-title">作答文本</text>
         </view>
-        <text class="plain-text">{{ transcript }}</text>
+        <text class="plain-text">{{ displayTranscript }}</text>
+      </view>
+
+      <view class="utility-actions card">
+        <button class="secondary-button" @tap="toggleStarred">
+          {{ isStarred ? '已收藏' : '收藏本题' }}
+        </button>
+        <button class="secondary-button" @tap="openShareCard">分享成绩卡</button>
       </view>
 
       <view class="result-actions">
         <button class="primary-button" @tap="again">再练一题</button>
         <button class="secondary-button" @tap="home">返回首页</button>
+      </view>
+
+      <view v-if="shareVisible" class="share-mask" @tap="closeShareCard">
+        <view class="share-panel" @tap.stop>
+          <view class="share-card">
+            <view class="share-card__header">
+              <text>公考面试AI智能测评</text>
+              <text>{{ shareDate }}</text>
+            </view>
+            <view class="share-card__score">{{ result.totalScore }}</view>
+            <text class="share-card__label">综合得分 / {{ result.maxScore }} 分</text>
+            <text class="share-card__grade" :style="{ color: grade.color }">{{ grade.label }}</text>
+            <view class="share-card__dims">
+              <view v-for="dim in shareDimensions" :key="dim.name" class="share-card__dim">
+                <text>{{ dim.name }}</text>
+                <text>{{ dim.score }}/{{ dim.maxScore }}</text>
+              </view>
+            </view>
+            <text class="share-card__slogan">每日一练，持续复盘</text>
+          </view>
+          <button class="primary-button" open-type="share">转发给微信好友</button>
+          <button class="secondary-button share-panel__close" @tap="closeShareCard">关闭</button>
+        </view>
       </view>
     </template>
     <view v-else class="card">
@@ -143,32 +173,119 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import DimensionBars from '../../components/DimensionBars.vue'
 import EmptyState from '../../components/EmptyState.vue'
 import ScoreRing from '../../components/ScoreRing.vue'
 import { getHistoryDetail } from '../../api/history'
 import { getScoringResult } from '../../api/scoring'
 import { useExamStore } from '../../stores/exam'
+import { useFavoritesStore } from '../../stores/favorites'
 import { useTrainingStore } from '../../stores/training'
 import { getGrade, getProvinceName } from '../../utils/constants'
 import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
 import { normalizeResult } from '../../utils/scoring'
 
 const examStore = useExamStore()
+const favoritesStore = useFavoritesStore()
 const trainingStore = useTrainingStore()
 const result = ref(null)
 const transcript = ref('')
 const questionStem = ref('')
 const questionProvince = ref('national')
 const progressRecorded = ref(false)
+const activeExamId = ref('')
+const activeQuestionId = ref('')
+const shareVisible = ref(false)
 
 const grade = computed(() => getGrade(result.value?.totalScore || 0, result.value?.maxScore || 100))
 const localFitProvinceName = computed(() => getProvinceName(questionProvince.value || 'national'))
-const improvementSuggestion = computed(() => result.value?.answerImprovementSuggestion || null)
+const improvementSuggestion = computed(() => {
+  if (isNoContentTranscript(transcript.value, result.value)) return buildNoContentImprovementSuggestion()
+  return normalizeImprovementSuggestion(result.value?.answerImprovementSuggestion)
+})
 const suggestionSourceLabel = computed(() => (
   improvementSuggestion.value?.source === 'model' ? '模型建议' : '基础建议'
 ))
+const displayTranscript = computed(() => (
+  isNoContentTranscript(transcript.value, result.value) ? '' : String(transcript.value || '').trim()
+))
+const isStarred = computed(() => favoritesStore.isFavorited(activeExamId.value, activeQuestionId.value))
+const shareDate = computed(() => new Date().toLocaleDateString('zh-CN'))
+const shareDimensions = computed(() => (
+  Array.isArray(result.value?.dimensions) ? result.value.dimensions.slice(0, 4) : []
+))
+const sharePath = computed(() => {
+  const params = []
+  if (activeExamId.value) params.push(`examId=${encodeURIComponent(activeExamId.value)}`)
+  if (activeQuestionId.value) params.push(`questionId=${encodeURIComponent(activeQuestionId.value)}`)
+  return `/pages/result/index${params.length ? `?${params.join('&')}` : ''}`
+})
+
+onShareAppMessage(() => ({
+  title: `我的面试测评得分 ${result.value?.totalScore || 0}/${result.value?.maxScore || 100}`,
+  path: sharePath.value
+}))
+
+function normalizeTextList(value) {
+  return Array.isArray(value) ? value.map((item) => String(item || '').trim()).filter(Boolean) : []
+}
+
+function isNoContentTranscript(value, scoring = {}) {
+  const text = String(value || '').trim()
+  const mode = String(scoring?.scoringMode || '').trim()
+  return !text
+    || text === '未作答'
+    || ['screened_zero', 'empty_zero'].includes(mode)
+    || text.includes('未能识别出有效语音')
+    || text.includes('未配置真实语音转写服务')
+    || text.includes('无法生成可靠文字稿')
+}
+
+function buildNoContentImprovementSuggestion() {
+  return {
+    source: 'fallback',
+    summary: '本次没有可分析的有效作答内容，请先完成一段录音或录像作答后再查看细化建议。',
+    teacherComment: '',
+    diagnosisItems: ['未形成可用于复盘的有效作答文本'],
+    focusPoints: [],
+    missingKeywords: [],
+    expressionUpgrades: [],
+    sampleAnswer: '',
+    rewriteOpening: '',
+    rewriteClosing: ''
+  }
+}
+
+function normalizeImprovementSuggestion(value) {
+  if (!value || typeof value !== 'object') return null
+  const focusPoints = Array.isArray(value.focusPoints)
+    ? value.focusPoints.map((item, index) => ({
+        order: String(item?.order || index + 1),
+        title: String(item?.title || item?.name || '').trim(),
+        hint: String(item?.hint || item?.content || '').trim()
+      })).filter((item) => item.title || item.hint)
+    : []
+  const expressionUpgrades = Array.isArray(value.expressionUpgrades)
+    ? value.expressionUpgrades.map((item) => ({
+        before: String(item?.before || '').trim(),
+        after: String(item?.after || '').trim()
+      })).filter((item) => item.before || item.after)
+    : []
+
+  return {
+    source: String(value.source || 'fallback'),
+    summary: String(value.summary || '').trim(),
+    teacherComment: String(value.teacherComment || '').trim(),
+    diagnosisItems: normalizeTextList(value.diagnosisItems),
+    focusPoints,
+    missingKeywords: normalizeTextList(value.missingKeywords),
+    expressionUpgrades,
+    sampleAnswer: String(value.sampleAnswer || '').trim(),
+    rewriteOpening: String(value.rewriteOpening || '').trim(),
+    rewriteClosing: String(value.rewriteClosing || '').trim()
+  }
+}
 
 onLoad(async (query) => {
   if (!requireLogin()) return
@@ -179,13 +296,16 @@ async function loadResult(query) {
   const examId = query.examId || examStore.examId
   const questionId = query.questionId || examStore.currentQuestion?.id
   const answer = examStore.answers.find((item) => item.questionId === questionId) || examStore.answers[examStore.answers.length - 1]
+  activeExamId.value = String(examId || answer?.examId || '')
+  activeQuestionId.value = String(questionId || answer?.questionId || '')
 
   if (answer?.scoringResult) {
     result.value = normalizeResult(answer.scoringResult)
     transcript.value = answer.transcript || ''
     questionStem.value = answer.questionStem || ''
     questionProvince.value = answer.province || examStore.currentQuestion?.province || questionProvince.value
-    recordTrainingProgress()
+    activeQuestionId.value = String(answer.questionId || activeQuestionId.value)
+    finalizeLoadedResult()
     return
   }
 
@@ -194,7 +314,7 @@ async function loadResult(query) {
     if (examId && questionId) {
       result.value = normalizeResult(await getScoringResult(examId, questionId))
       await hydrateResultContext(examId, questionId)
-      recordTrainingProgress()
+      finalizeLoadedResult()
       return
     }
 
@@ -206,12 +326,13 @@ async function loadResult(query) {
         result.value = normalizeResult(firstAnswer.scoringResult)
         transcript.value = firstAnswer.transcript || ''
         questionStem.value = firstAnswer.questionStem || detail.questionSummary || ''
-        recordTrainingProgress()
+        activeQuestionId.value = String(firstAnswer.questionId || activeQuestionId.value)
+        finalizeLoadedResult()
         return
       }
       result.value = normalizeResult(detail)
       questionStem.value = detail?.questionSummary || ''
-      recordTrainingProgress()
+      finalizeLoadedResult()
     }
   } catch (error) {
     toast(error?.message || '结果加载失败')
@@ -230,13 +351,20 @@ async function hydrateResultContext(examId, questionId) {
 }
 
 function applyHistoryDetailContext(detail = {}, questionId = '') {
+  activeExamId.value = String(detail?.examId || activeExamId.value || '')
   questionProvince.value = detail?.province || questionProvince.value || 'national'
   const answers = Array.isArray(detail?.answers) ? detail.answers : []
   const matchedAnswer = answers.find((item) => item.questionId === questionId) || answers[0]
   if (!matchedAnswer) return
+  activeQuestionId.value = String(matchedAnswer.questionId || activeQuestionId.value || '')
   questionProvince.value = matchedAnswer.province || detail?.province || questionProvince.value || 'national'
   if (!transcript.value) transcript.value = matchedAnswer.transcript || ''
   if (!questionStem.value) questionStem.value = matchedAnswer.questionStem || detail?.questionSummary || ''
+}
+
+function finalizeLoadedResult() {
+  recordTrainingProgress()
+  recordWeakFavorite()
 }
 
 function recordTrainingProgress() {
@@ -245,6 +373,59 @@ function recordTrainingProgress() {
   const key = source.replace('training:', '')
   trainingStore.recordResult(key, result.value.totalScore)
   progressRecorded.value = true
+}
+
+function recordWeakFavorite() {
+  if (!result.value || !activeExamId.value || !activeQuestionId.value) return
+  const score = Number(result.value.totalScore || 0)
+  const maxScore = Number(result.value.maxScore || 100)
+  if (!Number.isFinite(score) || !Number.isFinite(maxScore) || maxScore <= 0 || score / maxScore >= 0.6) return
+  favoritesStore.addItem({
+    examId: activeExamId.value,
+    questionId: activeQuestionId.value,
+    questionStem: questionStem.value || '题目内容暂缺',
+    dimension: result.value.dimensions?.[0]?.name || '',
+    score,
+    maxScore,
+    grade: grade.value.label,
+    date: new Date().toISOString(),
+    type: 'weak'
+  })
+}
+
+function toggleStarred() {
+  if (!result.value || !activeExamId.value || !activeQuestionId.value) {
+    toast('题目信息不完整，暂时无法收藏')
+    return
+  }
+  const item = favoritesStore.items.find((entry) => (
+    entry.examId === activeExamId.value && entry.questionId === activeQuestionId.value
+  ))
+  if (isStarred.value && item) {
+    favoritesStore.removeItem(item.id, 'starred')
+    toast('已取消收藏')
+    return
+  }
+  favoritesStore.addItem({
+    examId: activeExamId.value,
+    questionId: activeQuestionId.value,
+    questionStem: questionStem.value || '题目内容暂缺',
+    dimension: result.value.dimensions?.[0]?.name || '',
+    score: result.value.totalScore,
+    maxScore: result.value.maxScore,
+    grade: grade.value.label,
+    date: new Date().toISOString(),
+    type: 'starred'
+  })
+  toast('已收藏', 'success')
+}
+
+function openShareCard() {
+  shareVisible.value = true
+}
+
+function closeShareCard() {
+  shareVisible.value = false
 }
 
 function again() {
@@ -483,9 +664,108 @@ function home() {
   line-height: 1.6;
 }
 
+.utility-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16rpx;
+}
+
 .result-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16rpx;
+}
+
+.share-mask {
+  position: fixed;
+  z-index: 900;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 42rpx;
+  background: rgba(9, 24, 42, 0.54);
+}
+
+.share-panel {
+  width: 100%;
+  max-width: 640rpx;
+  padding: 24rpx;
+  border-radius: 18rpx;
+  background: #ffffff;
+}
+
+.share-card {
+  overflow: hidden;
+  padding: 28rpx;
+  border-radius: 18rpx;
+  background: linear-gradient(135deg, #15477a 0%, #1b5faa 58%, #5fa0e8 100%);
+  color: #ffffff;
+}
+
+.share-card__header,
+.share-card__dim {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.share-card__header {
+  opacity: 0.86;
+  font-size: 23rpx;
+}
+
+.share-card__score {
+  margin-top: 30rpx;
+  text-align: center;
+  font-size: 86rpx;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.share-card__label,
+.share-card__grade,
+.share-card__slogan {
+  display: block;
+  text-align: center;
+}
+
+.share-card__label {
+  margin-top: 8rpx;
+  opacity: 0.82;
+  font-size: 24rpx;
+}
+
+.share-card__grade {
+  margin-top: 8rpx;
+  font-size: 30rpx;
+  font-weight: 900;
+}
+
+.share-card__dims {
+  display: grid;
+  gap: 10rpx;
+  margin-top: 28rpx;
+}
+
+.share-card__dim {
+  padding: 12rpx 14rpx;
+  border-radius: 12rpx;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 23rpx;
+}
+
+.share-card__slogan {
+  margin-top: 24rpx;
+  opacity: 0.82;
+  font-size: 23rpx;
+}
+
+.share-panel .primary-button {
+  margin-top: 22rpx;
+}
+
+.share-panel__close {
+  margin-top: 12rpx;
 }
 </style>

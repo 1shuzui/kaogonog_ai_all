@@ -14,6 +14,14 @@ export function getPaymentOrder(orderNo) {
   })
 }
 
+export function confirmVirtualPaymentOrder(orderNo, data = {}) {
+  return request({
+    url: `/payment/orders/${encodeURIComponent(orderNo)}/virtual/confirm`,
+    method: 'POST',
+    data
+  })
+}
+
 export function getMyPaymentOrders() {
   return request({
     url: '/payment/orders/me'

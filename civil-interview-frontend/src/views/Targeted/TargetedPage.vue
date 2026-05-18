@@ -52,9 +52,9 @@
         block
         :disabled="!canProceed"
         :loading="targetedStore.generateLoading"
-        @click="generateAndPractice"
+        @click="generateTargetedQuestions"
       >
-        <ThunderboltOutlined /> 生成题目并开始练习
+        <ThunderboltOutlined /> 生成练习题目
       </a-button>
     </div>
 
@@ -62,7 +62,16 @@
     <div v-if="targetedStore.generatedQuestions.length" class="targeted-section">
       <div class="section-header">
         <h3>已生成题目</h3>
-        <a-button type="link" size="small" @click="generateAndPractice">重新生成</a-button>
+        <a-button type="link" size="small" @click="generateTargetedQuestions">重新生成</a-button>
+      </div>
+      <div class="generated-start card">
+        <div>
+          <strong>已为当前省份和岗位准备 {{ targetedStore.generatedQuestions.length }} 道练习题</strong>
+          <p>先核对题目，再开始练习；进入候考室后仍可选择专项练习或模拟面试。</p>
+        </div>
+        <a-button type="primary" size="large" @click="startGeneratedPractice">
+          <PlayCircleOutlined /> 开始练习
+        </a-button>
       </div>
       <div
         v-for="(q, idx) in targetedStore.generatedQuestions"
@@ -86,7 +95,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { SearchOutlined, ThunderboltOutlined, RightOutlined } from '@ant-design/icons-vue'
+import { SearchOutlined, ThunderboltOutlined, RightOutlined, PlayCircleOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { useTargetedStore } from '@/stores/targeted'
 import { useUserStore } from '@/stores/user'
@@ -135,7 +144,7 @@ function goToFocusAnalysis() {
   router.push('/targeted/focus')
 }
 
-async function generateAndPractice() {
+async function generateTargetedQuestions() {
   syncSelection()
   const questions = await targetedStore.fetchGeneratedQuestions(5)
   if (!questions?.length) {
@@ -145,6 +154,14 @@ async function generateAndPractice() {
   const fallbackCount = questions.filter((item) => item?.isProvinceFallback).length
   if (fallbackCount) {
     message.warning(`当前省份定向题不足，已补充 ${fallbackCount} 道国考题。`)
+  }
+  message.success('题目已生成，请在下方核对后开始练习。')
+}
+
+function startGeneratedPractice() {
+  if (!targetedStore.generatedQuestions.length) {
+    message.warning('请先生成练习题目。')
+    return
   }
   router.push({ path: '/exam/prepare', query: { source: 'targeted' } })
 }
@@ -247,6 +264,27 @@ function startSinglePractice(question) {
   }
 }
 
+.generated-start {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+
+  strong {
+    display: block;
+    color: @text-primary;
+    font-size: @font-size-base;
+  }
+
+  p {
+    margin: 4px 0 0;
+    color: @text-secondary;
+    font-size: @font-size-sm;
+  }
+}
+
 .question-item {
   display: flex;
   align-items: center;
@@ -257,6 +295,13 @@ function startSinglePractice(question) {
 
   &:hover {
     box-shadow: @shadow-popup;
+  }
+}
+
+@media (max-width: 768px) {
+  .generated-start {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 

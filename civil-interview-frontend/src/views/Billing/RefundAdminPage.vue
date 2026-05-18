@@ -69,6 +69,7 @@
         <template v-if="column.key === 'orderNo'">
           <div class="refund-admin__order-no">{{ record.orderNo }}</div>
           <div class="refund-admin__sub">{{ record.username }}</div>
+          <div class="refund-admin__sub">创建：{{ formatDateTime(record.createdAt) }}</div>
         </template>
         <template v-else-if="column.key === 'package'">
           <strong>{{ getPackageName(record) }}</strong>
@@ -81,6 +82,13 @@
         <template v-else-if="column.key === 'amount'">
           <div>支付 ¥{{ formatAmount(record.amount) }}</div>
           <div class="refund-admin__sub">可退 ¥{{ formatAmount(record.refundableAmount) }}</div>
+        </template>
+        <template v-else-if="column.key === 'time'">
+          <div>支付：{{ record.paidAt ? formatDateTime(record.paidAt) : '未支付' }}</div>
+          <div v-if="record.refundInfo?.refundedAt" class="refund-admin__sub">
+            退款：{{ formatDateTime(record.refundInfo.refundedAt) }}
+          </div>
+          <div v-else class="refund-admin__sub">创建：{{ formatDateTime(record.createdAt) }}</div>
         </template>
         <template v-else-if="column.key === 'status'">
           <a-tag :color="record.status === 'refunded' ? 'blue' : 'green'">
@@ -109,6 +117,8 @@
       <div v-if="activeRecord" class="refund-admin__modal">
         <p>订单号：{{ activeRecord.orderNo }}</p>
         <p>用户：{{ activeRecord.username }}</p>
+        <p>创建时间：{{ formatDateTime(activeRecord.createdAt) }}</p>
+        <p>支付时间：{{ activeRecord.paidAt ? formatDateTime(activeRecord.paidAt) : '未支付' }}</p>
         <p>最多可退：{{ activeRecord.refundableHours }} 小时，¥{{ formatAmount(activeRecord.refundableAmount) }}</p>
         <a-form layout="vertical">
           <a-form-item label="退款小时数">
@@ -161,6 +171,7 @@ const columns = [
   { title: '套餐', key: 'package' },
   { title: '使用情况', key: 'hours', width: 160 },
   { title: '金额', key: 'amount', width: 170 },
+  { title: '订单时间', key: 'time', width: 190 },
   { title: '状态', key: 'status', width: 110 },
   { title: '操作', key: 'actions', width: 100 }
 ]
@@ -219,6 +230,18 @@ function getPackageName(record) {
 
 function formatAmount(value) {
   return Number(value || 0).toFixed(2)
+}
+
+function formatDateTime(value) {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return String(value)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hour = String(date.getHours()).padStart(2, '0')
+  const minute = String(date.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hour}:${minute}`
 }
 </script>
 

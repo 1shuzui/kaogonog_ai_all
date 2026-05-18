@@ -12,9 +12,10 @@ export const HOURLY_PLAN_TOTAL_SECONDS = 3 * 60 * 60
 export const MONTHLY_PLAN_DURATION_MS = 30 * 24 * 60 * 60 * 1000
 
 export const PREMIUM_MODULES = [
-  '完整模拟面试',
-  '定向备考',
-  '专项训练'
+  '完整模拟面试与录音/录像评分',
+  '定向备考与岗位/省份题源',
+  '专项训练与薄弱维度推荐',
+  '历史报告、错题本与收藏夹'
 ]
 
 export const TRIAL_QUESTION = {
@@ -53,8 +54,9 @@ export const BILLING_PLANS = [
     description: '先体验 1 道引导题，完整走一遍面试流程后再决定是否开通。',
     features: [
       '可体验 1 道试用题',
-      '可查看完整记录与结果流程',
-      '适合首次熟悉系统'
+      '可完成录音或录像提交并查看一次评分流程',
+      '可查看结果页、维度条和基础复盘结构',
+      '适合首次检查麦克风、摄像头和评分流程'
     ]
   },
   {
@@ -62,12 +64,14 @@ export const BILLING_PLANS = [
     packageCode: 'trial_3h',
     badge: '按时',
     title: '3小时体验包',
-    priceText: '¥99',
+    priceText: '¥0.01',
     description: '适合临近面试前的集中冲刺和短时高强度练习。',
     features: [
-      '解锁全部付费训练模块',
-      '按剩余时长计费体验',
-      '适合短时冲刺练习'
+      '解锁模拟面试、定向备考、专项训练和题库推荐',
+      '总计 3 小时训练时长，按实际使用消耗',
+      '可与已开通套餐叠加，系统优先消耗更早到期的权益',
+      '支持查看历史报告、收藏题和低分错题',
+      '适合临近面试前集中冲刺'
     ]
   },
   {
@@ -75,12 +79,14 @@ export const BILLING_PLANS = [
     packageCode: 'monthly_1h_day',
     badge: '包月',
     title: '包月每日1小时',
-    priceText: '¥299',
+    priceText: '¥0.01',
     description: '适合系统化备考和连续多天的稳定训练。',
     features: [
-      '30天内每日1小时训练',
-      '适合稳定推进训练计划',
-      '无需关注剩余小时数'
+      '30 天有效期，每日 1 小时训练额度',
+      '解锁模拟面试、定向备考、专项训练和题库推荐',
+      '可与按时套餐或续费权益叠加，剩余额度统一汇总',
+      '支持历史报告、收藏/错题复盘和智能推荐',
+      '适合按日推进、持续复盘的备考节奏'
     ]
   }
 ]
@@ -129,7 +135,7 @@ export function getPlanActivationSummary(planType) {
 }
 
 export function getPlanAmount(planType) {
-  if (planType === BILLING_PLAN_KEYS.HOURLY) return 99
-  if (planType === BILLING_PLAN_KEYS.MONTHLY) return 299
+  if (planType === BILLING_PLAN_KEYS.HOURLY) return 0.01
+  if (planType === BILLING_PLAN_KEYS.MONTHLY) return 0.01
   return 0
 }

@@ -8,6 +8,7 @@
         <ReloadOutlined /> 刷新
       </a-button>
     </div>
+    <div class="smart-rec__source">真实题库推荐 · 按薄弱维度、省份与已练记录筛选</div>
 
     <template v-if="weakDimensions.length">
       <a-spin :spinning="loadingRec">
@@ -56,7 +57,7 @@ import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { BulbOutlined, CheckCircleOutlined, ReloadOutlined } from '@ant-design/icons-vue'
-import { getQuestions } from '@/api/questionBank'
+import { getRandomQuestions } from '@/api/questionBank'
 import { DIMENSIONS } from '@/utils/constants'
 import { useDebounce } from '@/composables/useDebounce'
 import QuestionMetaTags from '@/components/common/QuestionMetaTags.vue'
@@ -64,7 +65,8 @@ import QuestionRichContent from '@/components/common/QuestionRichContent.vue'
 import { getScoringUnavailableMessage, isQuestionScoringSupported } from '@/utils/scoringSupport'
 
 const props = defineProps({
-  weakDimensions: { type: Array, default: () => [] }
+  weakDimensions: { type: Array, default: () => [] },
+  province: { type: String, default: 'national' }
 })
 
 const router = useRouter()
@@ -108,12 +110,6 @@ function markRecommendationPracticed(questionId) {
   localStorage.setItem(RECOMMENDATION_PRACTICED_KEY, JSON.stringify(Array.from(ids).slice(-300)))
 }
 
-function rotateList(items) {
-  if (!items.length) return items
-  const offset = refreshSeed.value % items.length
-  return [...items.slice(offset), ...items.slice(0, offset)]
-}
-
 async function fetchRecommendations() {
   if (!props.weakDimensions.length) {
     recommendations.value = []
@@ -123,23 +119,29 @@ async function fetchRecommendations() {
   try {
     const results = []
     const practicedIds = loadPracticedRecommendationIds()
-    for (const dim of props.weakDimensions.slice(0, 3)) {
-      const page = (refreshSeed.value % 3) + 1
-      const res = await getQuestions({ dimension: dim, pageSize: 8, current: page })
-      const list = res.list || res || []
-      for (const q of rotateList(list)) {
-        if (practicedIds.has(q.id)) continue
-        if (!isQuestionScoringSupported(q)) continue
-        const difficulty = Math.min(5, Math.max(1, (q.scoringPoints?.length || 3)))
-        results.push({
-          id: q.id,
-          stem: q.stem,
-          dimension: q.dimension || dim,
-          difficulty,
-          reason: `${dimensionName(dim)}维度薄弱，推荐专项练习`
-        })
-      }
+    const dimensions = props.weakDimensions.slice(0, 3).filter(Boolean)
+    const list = await getRandomQuestions({
+      province: props.province || 'national',
+      dimension: dimensions.join(','),
+      count: 18,
+      refreshSeed: refreshSeed.value
+    })
+
+    for (const q of Array.isArray(list) ? list : []) {
+      if (!q?.id || practicedIds.has(q.id)) continue
+      if (!isQuestionScoringSupported(q)) continue
+      const dim = q.dimension || dimensions[0] || 'analysis'
+      const difficulty = Math.min(5, Math.max(1, (q.scoringPoints?.length || 3)))
+      results.push({
+        ...q,
+        id: q.id,
+        stem: q.stem,
+        dimension: dim,
+        difficulty,
+        reason: `${dimensionName(dim)}维度薄弱，来自真实题库的专项推荐`
+      })
     }
+
     recommendations.value = results.slice(0, 6)
   } catch (e) {
     recommendations.value = []
@@ -172,6 +174,10 @@ onMounted(() => {
 watch(() => props.weakDimensions, () => {
   debouncedFetch()
 }, { deep: true })
+
+watch(() => props.province, () => {
+  debouncedFetch()
+})
 </script>
 
 <style lang="less" scoped>
@@ -194,6 +200,12 @@ watch(() => props.weakDimensions, () => {
   font-size: @font-size-lg;
   color: @text-primary;
   margin: 0;
+}
+
+.smart-rec__source {
+  margin: -8px 0 14px;
+  color: @text-secondary;
+  font-size: @font-size-xs;
 }
 
 .smart-rec__item {

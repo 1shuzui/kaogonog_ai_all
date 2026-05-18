@@ -35,6 +35,26 @@ export function loginWithWechat(code, agreedTermsVersion) {
   })
 }
 
+export function bindWechatMiniProgram(code) {
+  return request({
+    url: '/auth/wechat/miniprogram/bind',
+    method: 'POST',
+    data: { code },
+    timeout: 15000,
+    skipErrorHandler: true
+  })
+}
+
+export function setupWechatMiniProgramAccount(data) {
+  return request({
+    url: '/auth/wechat/miniprogram/account',
+    method: 'POST',
+    data,
+    timeout: 15000,
+    skipErrorHandler: true
+  })
+}
+
 export function requestPasswordReset(data) {
   return request({
     url: '/password-reset/request',

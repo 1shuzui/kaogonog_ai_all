@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { EXAM_STATUS } from '@/utils/constants'
-import { startExam, uploadRecording } from '@/api/exam'
+import { startExam, startFullMockSuite, uploadRecording } from '@/api/exam'
 import { transcribeAudio, evaluateAnswer } from '@/api/scoring'
 import {
   getScoringUnavailableMessage,
@@ -71,7 +71,8 @@ export const useExamStore = defineStore('exam', {
     mockMode: false,
     examStartTime: null,
     examElapsed: 0,
-    submitStep: ''
+    submitStep: '',
+    fullMockSuite: null
   }),
 
   getters: {
@@ -125,8 +126,29 @@ export const useExamStore = defineStore('exam', {
       this.examStartTime = mockMode ? Date.now() : null
       this.examElapsed = 0
       this.submitStep = ''
+      this.fullMockSuite = null
       const result = await startExam(questions.map((q) => q.id))
       this.examId = result.examId
+    },
+
+    async initFullMockExam(suiteId) {
+      answerProcessingTasks.clear()
+      const result = await startFullMockSuite(suiteId)
+      const suite = result?.suite || {}
+      this.questionList = Array.isArray(suite.questions) ? suite.questions : []
+      this.currentIndex = 0
+      this.answers = []
+      this.status = EXAM_STATUS.IDLE
+      this.recordingBlob = null
+      this.transcript = ''
+      this.scoringResult = null
+      this.mockMode = true
+      this.examStartTime = Date.now()
+      this.examElapsed = 0
+      this.submitStep = ''
+      this.fullMockSuite = suite
+      this.examId = result.examId
+      return result
     },
 
     startPreparing() {

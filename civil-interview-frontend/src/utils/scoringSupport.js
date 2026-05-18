@@ -1,11 +1,8 @@
 import { TRIAL_QUESTION } from '@/utils/billing'
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
 const LOCAL_ONLY_QUESTION_ID_PATTERN = /^(?:train|training|gen|generated|local|temp|draft)_/i
 
 export function isQuestionIdScoringSupported(questionId = '') {
-  if (USE_MOCK) return true
-
   const normalizedId = String(questionId || '').trim()
   if (!normalizedId) return false
   if (normalizedId === TRIAL_QUESTION.id) return true
@@ -14,7 +11,6 @@ export function isQuestionIdScoringSupported(questionId = '') {
 }
 
 export function isQuestionScoringSupported(question = {}) {
-  if (USE_MOCK) return true
   return isQuestionIdScoringSupported(question?.id)
 }
 

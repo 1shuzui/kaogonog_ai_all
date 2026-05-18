@@ -1,7 +1,7 @@
 <template>
   <view class="page">
     <text class="page-title">套餐中心</text>
-    <text class="page-desc">开通结果以后端订单和微信支付通知为准，支付完成后会自动同步权益。</text>
+    <text class="page-desc">小程序内虚拟权益购买使用微信官方虚拟支付能力，支付完成后会自动同步权益。</text>
 
     <view class="pricing-status card">
       <text class="pricing-status__label">当前套餐</text>
@@ -13,7 +13,12 @@
       <view>
         <text class="plan-card__title">试用版</text>
         <text class="plan-card__price">¥0</text>
-        <text class="plan-card__desc">体验 1 道引导题，熟悉录音与评分流程。</text>
+        <text class="plan-card__desc">体验 1 道引导题，熟悉录音/录像提交、AI评分和结果页流程。</text>
+        <view class="feature-list">
+          <text>一次完整试用流程</text>
+          <text>结果页维度展示</text>
+          <text>适合先检测设备与网络</text>
+        </view>
       </view>
       <button class="secondary-button" @tap="startTrial">开始试用</button>
     </view>
@@ -21,8 +26,14 @@
     <view class="plan-card card">
       <view>
         <text class="plan-card__title">按时套餐</text>
-        <text class="plan-card__price">¥99</text>
-        <text class="plan-card__desc">适合短期冲刺，解锁完整模考、定向备面、专项训练。</text>
+        <text class="plan-card__price">¥0.01</text>
+        <text class="plan-card__desc">总计 3 小时训练时长，适合短期冲刺，按实际训练消耗。</text>
+        <view class="feature-list">
+          <text>完整模拟面试</text>
+          <text>定向备面与专项训练</text>
+          <text>可与已有权益叠加</text>
+          <text>历史报告、收藏题和低分错题复盘</text>
+        </view>
       </view>
       <button class="primary-button" :loading="loadingPlan === 'hourly'" :disabled="!!loadingPlan" @tap="activate('hourly')">立即开通</button>
     </view>
@@ -30,17 +41,28 @@
     <view class="plan-card card">
       <view>
         <text class="plan-card__title">包月套餐</text>
-        <text class="plan-card__price">¥299</text>
-        <text class="plan-card__desc">适合系统备考，当前周期内不限次数练习。</text>
+        <text class="plan-card__price">¥0.01</text>
+        <text class="plan-card__desc">30 天有效期，每日 1 小时训练额度，适合稳定推进备考计划。</text>
+        <view class="feature-list">
+          <text>每日额度自动刷新</text>
+          <text>完整付费训练模块</text>
+          <text>续费和按时包可叠加汇总</text>
+          <text>错题收藏、历史复盘和智能推荐</text>
+        </view>
       </view>
       <button class="primary-button" :loading="loadingPlan === 'monthly'" :disabled="!!loadingPlan" @tap="activate('monthly')">立即开通</button>
+    </view>
+
+    <view class="card pricing-note">
+      <text>支付说明</text>
+      <text>当前测试金额统一为 ¥0.01。付费权益允许叠加，系统会优先消耗更早到期的余额；支付成功后以小程序虚拟支付结果、后端订单和账户权益同步结果为准。</text>
     </view>
   </view>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import { createPaymentOrder, getPaymentOrder } from '../../api/payment'
+import { confirmVirtualPaymentOrder, createPaymentOrder, getPaymentOrder } from '../../api/payment'
 import { useBillingStore } from '../../stores/billing'
 import { useUserStore } from '../../stores/user'
 import { toast } from '../../utils/navigation'
@@ -74,18 +96,17 @@ function loginForPayCode() {
   })
 }
 
-function requestWechatPayment(payParams = {}) {
+function requestWechatVirtualPayment(payParams = {}) {
   return new Promise((resolve, reject) => {
-    uni.requestPayment({
-      provider: 'wxpay',
-      timeStamp: String(payParams.timeStamp || ''),
-      nonceStr: payParams.nonceStr || '',
-      package: payParams.package || '',
-      signType: payParams.signType || 'RSA',
-      paySign: payParams.paySign || '',
+    if (typeof wx === 'undefined' || typeof wx.requestVirtualPayment !== 'function') {
+      reject(new Error('当前微信基础库不支持小程序虚拟支付，请升级微信或开发者工具后重试'))
+      return
+    }
+    wx.requestVirtualPayment({
+      ...payParams,
       success: resolve,
       fail(err) {
-        reject(new Error(err?.errMsg || '微信支付未完成'))
+        reject(new Error(err?.errMsg || '小程序虚拟支付未完成'))
       }
     })
   })
@@ -108,13 +129,20 @@ async function activate(plan) {
     const order = await createPaymentOrder({
       packageCode: PACKAGE_BY_PLAN[plan],
       payChannel: 'wechat',
-      scene: 'mini_program',
+      scene: 'mini_program_virtual',
       appId: WECHAT_APPID,
       code,
       idempotencyKey: createIdempotencyKey(plan)
     })
 
-    await requestWechatPayment(order.payParams?.miniProgramPay || {})
+    if (order.payParams?.mode !== 'wechat_virtual') {
+      throw new Error(order.payParams?.message || '小程序虚拟支付参数未就绪')
+    }
+    await requestWechatVirtualPayment(order.payParams?.virtualPay || {})
+    await confirmVirtualPaymentOrder(order.orderNo, {
+      scene: 'mini_program_virtual',
+      payResult: 'success'
+    }).catch(() => null)
     const paidOrder = await waitOrderPaid(order.orderNo)
     await userStore.loadUserInfo()
     toast(paidOrder ? '支付成功，权益已同步' : '支付已提交，权益同步中', 'success')
@@ -187,5 +215,35 @@ function startTrial() {
   color: #6f7c8f;
   font-size: 24rpx;
   line-height: 1.6;
+}
+
+.feature-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-top: 14rpx;
+}
+
+.feature-list text {
+  padding: 6rpx 12rpx;
+  border-radius: 999rpx;
+  background: #eef6ff;
+  color: #1b5faa;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.pricing-note text {
+  display: block;
+  color: #2a3648;
+  font-size: 25rpx;
+  line-height: 1.6;
+}
+
+.pricing-note text:first-child {
+  margin-bottom: 8rpx;
+  color: #1a1a2e;
+  font-size: 30rpx;
+  font-weight: 900;
 }
 </style>

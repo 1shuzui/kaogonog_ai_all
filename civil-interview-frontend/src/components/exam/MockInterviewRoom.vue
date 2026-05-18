@@ -110,6 +110,7 @@
         >
           <div class="question-card__top">
             <span class="question-card__index">第 {{ index + 1 }} 题</span>
+            <span v-if="question.fullMockScore" class="question-card__score">{{ question.fullMockScore }} 分</span>
             <span class="question-card__status">{{ questionStatusText(index) }}</span>
           </div>
           <QuestionMetaTags :question="question" emphasis compact basic-only />
@@ -1577,10 +1578,17 @@ async function exitExam() {
 }
 
 .question-card__index,
+.question-card__score,
 .question-card__status,
 .question-card__meta {
   font-size: @font-size-xs;
   color: rgba(90, 58, 34, 0.78);
+}
+
+.question-card__score {
+  margin-left: auto;
+  font-weight: 700;
+  color: #8a5620;
 }
 
 .question-card__status {

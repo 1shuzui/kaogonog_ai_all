@@ -146,6 +146,16 @@ export const useUserStore = defineStore('user', {
       permissions: {
         canManageQuestionBank: false,
         canAccessPremiumModules: false
+      },
+      accountBindings: {
+        wechatMiniBound: false,
+        wechatUnionBound: false,
+        wechatWebBound: false
+      },
+      accountLogin: {
+        requiresPcAccountSetup: false,
+        pcLoginUsername: '',
+        wechatGeneratedUsername: ''
       }
     },
     selectedProvince: loadProvinceForUser(),
@@ -220,6 +230,16 @@ export const useUserStore = defineStore('user', {
         permissions: {
           canManageQuestionBank: false,
           canAccessPremiumModules: false
+        },
+        accountBindings: {
+          wechatMiniBound: false,
+          wechatUnionBound: false,
+          wechatWebBound: false
+        },
+        accountLogin: {
+          requiresPcAccountSetup: false,
+          pcLoginUsername: '',
+          wechatGeneratedUsername: ''
         }
       }
       localStorage.removeItem(TOKEN_STORAGE_KEY)
@@ -265,6 +285,16 @@ export const useUserStore = defineStore('user', {
         permissions: {
           canManageQuestionBank: isAdmin || !!info?.permissions?.canManageQuestionBank,
           canAccessPremiumModules: isAdmin || !!info?.permissions?.canAccessPremiumModules
+        },
+        accountBindings: {
+          wechatMiniBound: info?.accountBindings?.wechatMiniBound === true,
+          wechatUnionBound: info?.accountBindings?.wechatUnionBound === true,
+          wechatWebBound: info?.accountBindings?.wechatWebBound === true
+        },
+        accountLogin: {
+          requiresPcAccountSetup: info?.accountLogin?.requiresPcAccountSetup === true,
+          pcLoginUsername: info?.accountLogin?.pcLoginUsername || '',
+          wechatGeneratedUsername: info?.accountLogin?.wechatGeneratedUsername || ''
         }
       }
       this.email = info?.email || ''

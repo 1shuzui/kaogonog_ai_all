@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
-import { startExam, uploadRecording, completeExam } from '../api/exam'
+import { startExam, startFullMockSuite, uploadRecording, completeExam } from '../api/exam'
 import { evaluateAnswer, transcribeAudio } from '../api/scoring'
+import { prepareMediaForUpload } from '../utils/mediaUpload'
 import { normalizeResult } from '../utils/scoring'
 
 const EMPTY_TRANSCRIPT_TEXT = '未作答'
@@ -47,7 +48,8 @@ export const useExamStore = defineStore('exam', {
     latestTranscript: '',
     loading: false,
     source: '',
-    mediaMode: 'audio'
+    mediaMode: 'audio',
+    fullMockSuite: null
   }),
 
   getters: {
@@ -77,19 +79,36 @@ export const useExamStore = defineStore('exam', {
       this.latestResult = null
       this.latestTranscript = ''
       this.source = source
+      this.fullMockSuite = null
       answerProcessingTasks.clear()
       return response
     },
 
-    async submitCurrentAnswer({ text = '', filePath = '', mediaType = 'audio' } = {}) {
+    async startFromFullMockSuite(suiteId) {
+      const response = await startFullMockSuite(suiteId)
+      const suite = response?.suite || {}
+      const list = Array.isArray(suite.questions) ? suite.questions.filter(Boolean) : []
+      if (!list.length) throw new Error('暂无可用套题')
+      this.examId = response.examId
+      this.questions = list
+      this.currentIndex = 0
+      this.answers = []
+      this.latestResult = null
+      this.latestTranscript = ''
+      this.source = 'full_mock'
+      this.fullMockSuite = suite
+      answerProcessingTasks.clear()
+      return response
+    },
+
+    async submitCurrentAnswer({ filePath = '', mediaType = 'audio', audioFilePath = '' } = {}) {
       const question = this.currentQuestion
       if (!question) throw new Error('当前题目不存在')
       if (!this.examId) throw new Error('考试会话不存在，请重新开始')
 
       this.loading = true
       try {
-        let transcript = String(text || '').trim()
-        const hasAnswerPayload = !!transcript || !!filePath
+        const hasAnswerPayload = !!filePath
 
         if (!hasAnswerPayload) {
           const result = await evaluateEmptyAnswer(question.id, this.examId)
@@ -119,8 +138,8 @@ export const useExamStore = defineStore('exam', {
           questionIndex: this.currentIndex,
           filePath,
           mediaType,
-          initialText: transcript,
-          transcript,
+          audioFilePath,
+          transcript: '',
           scoringResult: null,
           submittedAt: new Date().toISOString(),
           processingStatus: 'queued',
@@ -131,7 +150,7 @@ export const useExamStore = defineStore('exam', {
           answer
         ].sort((a, b) => a.questionIndex - b.questionIndex)
         this.latestResult = null
-        this.latestTranscript = transcript
+        this.latestTranscript = ''
         this.queueAnswerProcessing(answer)
         return answer
       } finally {
@@ -155,15 +174,27 @@ export const useExamStore = defineStore('exam', {
     },
 
     async processAnswer(answer) {
-      let transcript = String(answer.initialText || answer.transcript || '').trim()
+      let transcript = ''
       const mediaType = answer.mediaType || 'audio'
       answer.processingStatus = answer.filePath ? 'uploading' : 'scoring'
 
       if (answer.filePath) {
-        await uploadRecording(answer.examId, answer.questionId, answer.filePath, { mediaType })
+        const uploadMedia = await prepareMediaForUpload(answer.filePath, mediaType)
+        const transcriptionMedia = mediaType === 'video' && answer.audioFilePath
+          ? await prepareMediaForUpload(answer.audioFilePath, 'audio')
+          : uploadMedia
+
+        await uploadRecording(answer.examId, answer.questionId, uploadMedia.filePath, {
+          mediaType,
+          source: uploadMedia.compressed
+            ? `miniapp_${mediaType}_recording_compressed`
+            : `miniapp_${mediaType}_recording`
+        })
         if (!transcript) {
           answer.processingStatus = 'transcribing'
-          const transcribeResult = await transcribeAudio(answer.filePath, { mediaType })
+          const transcribeResult = await transcribeAudio(transcriptionMedia.filePath, {
+            mediaType: transcriptionMedia.mediaType || mediaType
+          })
           transcript = String(transcribeResult?.transcript || '').trim()
         }
       }
@@ -221,6 +252,7 @@ export const useExamStore = defineStore('exam', {
       this.loading = false
       this.source = ''
       this.mediaMode = 'audio'
+      this.fullMockSuite = null
       answerProcessingTasks.clear()
     },
 

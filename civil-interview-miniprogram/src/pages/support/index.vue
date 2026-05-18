@@ -61,6 +61,16 @@
           <text class="record-item__status" :class="`record-item__status--${record.status}`">{{ statusLabel(record.status) }}</text>
         </view>
         <text class="record-item__summary">{{ record.summary }}</text>
+        <view v-if="recordAttachments(record).length" class="attachment-grid">
+          <image
+            v-for="(item, index) in recordAttachments(record)"
+            :key="item.storageKey || item.url"
+            class="attachment-thumb"
+            :src="item.url"
+            mode="aspectFill"
+            @tap="previewAttachments(recordAttachments(record), index)"
+          />
+        </view>
         <view class="record-item__status-panel" :class="`record-item__status-panel--${record.status}`">
           <text class="record-item__status-title">{{ feedbackStatusTitle(record) }}</text>
           <text class="record-item__status-desc">{{ feedbackStatusDesc(record) }}</text>
@@ -95,6 +105,36 @@
         <input v-model="form.questionId" class="field field--mt" placeholder="题号 / 页面线索" />
         <textarea v-model="form.summary" class="field field--mt textarea" placeholder="请描述问题现象、出现步骤、你的预期结果。" />
         <input v-model="form.contact" class="field field--mt" placeholder="联系方式（可选）" />
+        <view class="form-attachments field--mt">
+          <view class="form-attachments__head">
+            <text>问题截图</text>
+            <text>{{ form.attachments.length }}/{{ MAX_FEEDBACK_IMAGES }}</text>
+          </view>
+          <view v-if="form.attachments.length" class="attachment-grid attachment-grid--form">
+            <view
+              v-for="(item, index) in form.attachments"
+              :key="item.storageKey || item.url"
+              class="attachment-editor"
+            >
+              <image
+                class="attachment-thumb"
+                :src="item.url"
+                mode="aspectFill"
+                @tap="previewAttachments(form.attachments, index)"
+              />
+              <button class="attachment-editor__remove" @tap="removeAttachment(index)">×</button>
+            </view>
+          </view>
+          <button
+            v-if="form.attachments.length < MAX_FEEDBACK_IMAGES"
+            class="secondary-button attachment-add"
+            :loading="imageUploading"
+            @tap="chooseAttachments"
+          >
+            上传截图
+          </button>
+          <text class="attachment-hint">最多 8 张，单张不超过 5MB，支持 JPG、PNG、WEBP、GIF。</text>
+        </view>
         <view class="action-row field--mt">
           <button class="secondary-button" @tap="closeForm">取消</button>
           <button class="primary-button" :loading="submitLoading" @tap="submitFeedback">提交</button>
@@ -108,11 +148,20 @@
 import { computed, reactive, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import EmptyState from '../../components/EmptyState.vue'
-import { createSupportFeedback, deleteSupportFeedback, getSupportFeedback, updateSupportFeedback } from '../../api/support'
+import {
+  createSupportFeedback,
+  deleteSupportFeedback,
+  getSupportFeedback,
+  normalizeSupportAttachment,
+  updateSupportFeedback,
+  uploadSupportFeedbackImage
+} from '../../api/support'
 import { useUserStore } from '../../stores/user'
 import { PROVINCES } from '../../utils/constants'
 import { requireLogin, toast } from '../../utils/navigation'
 
+const MAX_FEEDBACK_IMAGES = 8
+const MAX_FEEDBACK_IMAGE_BYTES = 5 * 1024 * 1024
 const FEEDBACK_TYPES = [
   '全部类型',
   '题库内容问题',
@@ -132,6 +181,7 @@ const STATUS_OPTIONS = [
 const userStore = useUserStore()
 const loading = ref(false)
 const submitLoading = ref(false)
+const imageUploading = ref(false)
 const formVisible = ref(false)
 const records = ref([])
 const stats = reactive({
@@ -153,7 +203,8 @@ const form = reactive({
   type: FEEDBACK_TYPES[1],
   questionId: '',
   summary: '',
-  contact: ''
+  contact: '',
+  attachments: []
 })
 
 const feedbackTypeNames = FEEDBACK_TYPES
@@ -213,6 +264,13 @@ function closeForm() {
   formVisible.value = false
 }
 
+function resetForm() {
+  form.questionId = ''
+  form.summary = ''
+  form.contact = ''
+  form.attachments = []
+}
+
 function goBack() {
   const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : []
   if (pages.length > 1) {
@@ -239,7 +297,12 @@ async function fetchRecords() {
       keyword: filters.keyword || undefined,
       scope: userStore.isAdmin ? filters.scope : 'mine'
     })
-    records.value = response.list || []
+    records.value = (response.list || []).map((item) => ({
+      ...item,
+      attachments: Array.isArray(item.attachments)
+        ? item.attachments.map((attachment) => normalizeSupportAttachment(attachment))
+        : []
+    }))
     Object.assign(stats, response.summary || {})
   } catch (error) {
     toast(error?.message || '反馈记录加载失败')
@@ -253,6 +316,10 @@ async function submitFeedback() {
     toast('请先填写问题描述')
     return
   }
+  if (imageUploading.value) {
+    toast('截图仍在上传，请稍后提交')
+    return
+  }
   submitLoading.value = true
   try {
     await createSupportFeedback({
@@ -261,12 +328,11 @@ async function submitFeedback() {
       summary: form.summary.trim(),
       contact: form.contact.trim(),
       routePath: '/pages/support/index',
-      province: userStore.selectedProvinceName
+      province: userStore.selectedProvinceName,
+      attachments: form.attachments
     })
     formVisible.value = false
-    form.questionId = ''
-    form.summary = ''
-    form.contact = ''
+    resetForm()
     await fetchRecords()
     toast('反馈已提交', 'success')
   } catch (error) {
@@ -274,6 +340,71 @@ async function submitFeedback() {
   } finally {
     submitLoading.value = false
   }
+}
+
+function getFileSize(filePath = '') {
+  if (!filePath || typeof uni.getFileInfo !== 'function') return Promise.resolve(0)
+  return new Promise((resolve) => {
+    uni.getFileInfo({
+      filePath,
+      success(res) {
+        resolve(Number(res.size || 0))
+      },
+      fail() {
+        resolve(0)
+      }
+    })
+  })
+}
+
+async function chooseAttachments() {
+  const remaining = MAX_FEEDBACK_IMAGES - form.attachments.length
+  if (remaining <= 0) {
+    toast('反馈截图最多上传 8 张')
+    return
+  }
+  uni.chooseImage({
+    count: remaining,
+    sizeType: ['compressed'],
+    sourceType: ['album', 'camera'],
+    success: async (res) => {
+      const files = res.tempFilePaths || []
+      if (!files.length) return
+      imageUploading.value = true
+      try {
+        for (const filePath of files) {
+          const size = await getFileSize(filePath)
+          if (size > MAX_FEEDBACK_IMAGE_BYTES) {
+            toast('单张反馈图片不能超过 5MB')
+            continue
+          }
+          const uploaded = await uploadSupportFeedbackImage(filePath)
+          form.attachments = [...form.attachments, uploaded].slice(0, MAX_FEEDBACK_IMAGES)
+        }
+      } catch (error) {
+        toast(error?.message || '截图上传失败')
+      } finally {
+        imageUploading.value = false
+      }
+    }
+  })
+}
+
+function removeAttachment(index) {
+  form.attachments = form.attachments.filter((_, itemIndex) => itemIndex !== index)
+}
+
+function recordAttachments(record = {}) {
+  return Array.isArray(record.attachments) ? record.attachments : []
+}
+
+function previewAttachments(items = [], current = 0) {
+  const urls = items.map((item) => item.url).filter(Boolean)
+  if (!urls.length) return
+  uni.previewImage({
+    urls,
+    current: urls[current] || urls[0]
+  })
 }
 
 async function toggleStatus(record) {
@@ -445,6 +576,73 @@ function formatTime(value = '') {
   font-size: 28rpx;
   line-height: 1.7;
   white-space: pre-wrap;
+}
+
+.attachment-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 14rpx;
+}
+
+.attachment-grid--form {
+  margin-top: 12rpx;
+}
+
+.attachment-thumb {
+  width: 132rpx;
+  height: 132rpx;
+  border: 1rpx solid #d9e5f2;
+  border-radius: 12rpx;
+  background: #f7f9fc;
+}
+
+.attachment-editor {
+  position: relative;
+  width: 132rpx;
+  height: 132rpx;
+}
+
+.attachment-editor__remove {
+  position: absolute;
+  top: -10rpx;
+  right: -10rpx;
+  width: 42rpx;
+  height: 42rpx;
+  min-height: 42rpx;
+  padding: 0;
+  border-radius: 50%;
+  background: #cf1322;
+  color: #fff;
+  font-size: 28rpx;
+  line-height: 42rpx;
+}
+
+.form-attachments {
+  padding: 16rpx;
+  border: 1rpx solid #e5edf7;
+  border-radius: 16rpx;
+  background: #f8fbff;
+}
+
+.form-attachments__head {
+  display: flex;
+  justify-content: space-between;
+  color: #2a3648;
+  font-size: 25rpx;
+  font-weight: 800;
+}
+
+.attachment-add {
+  margin-top: 14rpx;
+}
+
+.attachment-hint {
+  display: block;
+  margin-top: 10rpx;
+  color: #6f7c8f;
+  font-size: 22rpx;
+  line-height: 1.5;
 }
 
 .record-item__status-panel {

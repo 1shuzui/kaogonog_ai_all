@@ -114,6 +114,7 @@ updates = {
     'ALLOWED_ORIGINS': 'https://xzqianmianyuzhoukeji.com',
     'PASSWORD_RESET_CODE_DEBUG_RESPONSE': 'false',
     'PRODUCTION_REQUIRE_SECURE_CONFIG': 'true',
+    'WECHAT_PAY_ENABLED': 'true',
 }
 lines = env_path.read_text().splitlines() if env_path.exists() else []
 values = {}

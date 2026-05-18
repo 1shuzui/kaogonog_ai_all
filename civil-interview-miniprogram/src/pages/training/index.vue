@@ -61,8 +61,9 @@ function openDimension(category) {
   height: 92rpx;
   border-radius: 18rpx;
   color: #1b5faa;
-  font-size: 34rpx;
+  font-size: 43rpx;
   font-weight: 900;
+  line-height: 1;
 }
 
 .training-card__title,

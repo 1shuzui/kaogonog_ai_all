@@ -18,7 +18,10 @@ function normalizeStatus(payload = {}) {
     remainingDailyMinutes: Number(payload?.remainingDailyMinutes || 0),
     expiresAt: payload?.expiresAt || '',
     canUse: payload?.canUse === true,
-    packageCode: payload?.packageCode || ''
+    packageCode: payload?.packageCode || '',
+    stacked: payload?.stacked === true,
+    activePlanCount: Number(payload?.activePlanCount || 0),
+    entitlements: Array.isArray(payload?.entitlements) ? payload.entitlements : []
   }
 }
 

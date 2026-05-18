@@ -12,6 +12,7 @@
           <span>单题试用</span>
           <span>后端订单</span>
           <span>权益同步</span>
+          <span>录音/录像评分</span>
         </div>
       </div>
 
@@ -56,6 +57,7 @@
       </div>
       <div class="pricing-risk__list">
         <div class="pricing-risk__item">账号权益建议仅限本人使用，不建议多人共用。</div>
+        <div class="pricing-risk__item">付费套餐允许叠加，系统会优先消耗更早到期或更早开通的权益余额。</div>
         <div class="pricing-risk__item">多设备同时登录或多人切换使用，可能导致练习记录、录音、评分结果出现错位或覆盖。</div>
         <div class="pricing-risk__item">当前支付以服务器订单、微信支付通知和订阅状态为准；PC 端创建订单后请在小程序端完成真实支付。</div>
         <div class="pricing-risk__item">如果出现订单、权限或设备异常，请通过个人中心的客服反馈入口联系管理员处理。</div>
@@ -118,7 +120,8 @@
         </div>
       </div>
       <p class="pricing-support__note">
-        PC 端用于查看套餐、创建订单和核对权益；小程序端使用同一套后端支付接口拉起微信支付。
+        PC 端用于查看套餐、创建订单和核对权益；小程序端使用同一套后端支付接口拉起微信支付。所有付费套餐均以服务器订单、
+        微信支付通知和后端权益余额为准，重复开通会叠加到同一账号。
       </p>
     </div>
 

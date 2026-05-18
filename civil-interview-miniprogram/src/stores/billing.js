@@ -5,17 +5,17 @@ const PLANS = {
   trial: {
     key: 'trial',
     title: '试用版',
-    status: '可体验 1 道引导题'
+    status: '可体验 1 道引导题，熟悉录音/录像评分流程'
   },
   hourly: {
     key: 'hourly',
     title: '按时套餐',
-    status: '已解锁完整训练模块'
+    status: '3 小时训练时长，解锁模拟面试、定向备面和专项训练'
   },
   monthly: {
     key: 'monthly',
     title: '包月套餐',
-    status: '当前周期内可使用全部功能'
+    status: '30 天有效期，每日 1 小时训练额度'
   }
 }
 

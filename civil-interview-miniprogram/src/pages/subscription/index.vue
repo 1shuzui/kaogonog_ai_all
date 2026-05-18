@@ -11,7 +11,7 @@
     <view class="status-card card">
       <text class="status-card__label">当前套餐</text>
       <text class="status-card__title">{{ status.planName || planTitle }}</text>
-      <text class="status-card__desc">{{ status.canUse ? '当前可进入练习与模考' : '当前权益不可用' }}</text>
+      <text class="status-card__desc">{{ statusDesc }}</text>
     </view>
 
     <view class="card">
@@ -41,6 +41,12 @@
         <text>试用状态</text>
         <text>{{ status.trialCompleted ? '已完成试用' : '可试用' }}</text>
       </view>
+      <view v-if="status.entitlements?.length" class="entitlement-list">
+        <view v-for="item in status.entitlements" :key="item.id || item.sourceOrderNo" class="entitlement-item">
+          <text class="entitlement-item__title">{{ item.planName }}</text>
+          <text class="entitlement-item__desc">剩余 {{ item.remainingMinutes }} 分钟{{ item.expiresAt ? ` | 到期 ${formatDate(item.expiresAt)}` : '' }}</text>
+        </view>
+      </view>
     </view>
 
     <view class="card">
@@ -49,7 +55,7 @@
         <text class="muted">{{ access?.mode || 'practice' }}</text>
       </view>
       <view class="access-row">
-        <button class="secondary-button" @tap="checkAccess('practice')">自由练习</button>
+        <button class="secondary-button" @tap="checkAccess('practice')">专项练习</button>
         <button class="secondary-button" @tap="checkAccess('mock')">模拟面试</button>
       </view>
       <text class="access-result" :class="{ 'access-result--ok': access?.allowed }">
@@ -72,6 +78,10 @@ const subscriptionStore = useSubscriptionStore()
 const status = computed(() => subscriptionStore.status)
 const access = computed(() => subscriptionStore.access)
 const planTitle = computed(() => status.value.planType === 'trial' ? '试用版' : '已开通套餐')
+const statusDesc = computed(() => {
+  if (!status.value.canUse) return '当前权益不可用'
+  return status.value.stacked ? `当前可进入练习与模考，已叠加 ${status.value.activePlanCount} 项权益` : '当前可进入练习与模考'
+})
 const accessText = computed(() => {
   if (!access.value) return '尚未检查'
   if (access.value.allowed) return `允许进入，剩余 ${access.value.remainingMinutes || 0} 分钟`
@@ -186,6 +196,36 @@ function goPricing() {
 .detail-row text:last-child {
   color: #1a1a2e;
   font-weight: 700;
+}
+
+.entitlement-list {
+  display: grid;
+  gap: 12rpx;
+  margin-top: 18rpx;
+}
+
+.entitlement-item {
+  padding: 16rpx;
+  border: 1rpx solid #e5edf7;
+  border-radius: 14rpx;
+  background: #f8fbff;
+}
+
+.entitlement-item__title,
+.entitlement-item__desc {
+  display: block;
+}
+
+.entitlement-item__title {
+  color: #1a1a2e;
+  font-size: 25rpx;
+  font-weight: 800;
+}
+
+.entitlement-item__desc {
+  margin-top: 6rpx;
+  color: #6f7c8f;
+  font-size: 22rpx;
 }
 
 .access-row {

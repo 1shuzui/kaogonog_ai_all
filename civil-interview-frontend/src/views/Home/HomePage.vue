@@ -118,6 +118,7 @@
     <SmartRecommendation
       v-if="historyStore.stats?.dimensionAverages?.length"
       :weakDimensions="weakDimensionKeys"
+      :province="userStore.selectedProvince"
     />
   </div>
 </template>
