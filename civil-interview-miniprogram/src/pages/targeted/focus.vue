@@ -3,7 +3,12 @@
     <text class="page-title">重点分析</text>
     <text class="page-desc">根据省份和岗位系统整理高频考点、能力重点和备考策略。</text>
 
-    <view v-if="targetedStore.focusData" class="focus">
+    <view v-if="targetedStore.focusLoading" class="card loading-card">
+      <text class="loading-card__title">AI正在分析面试重点...</text>
+      <text class="loading-card__desc">请稍候，系统正在根据省份和岗位整理核心考点。</text>
+    </view>
+
+    <view v-else-if="targetedStore.focusData" class="focus">
       <view v-if="coreFocus.length" class="card">
         <view class="section-head">
           <text class="section-title">核心能力权重</text>
@@ -50,21 +55,52 @@ import { computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import EmptyState from '../../components/EmptyState.vue'
 import { useBillingStore } from '../../stores/billing'
+import { useSubscriptionStore } from '../../stores/subscription'
 import { useTargetedStore } from '../../stores/targeted'
+import { useUserStore } from '../../stores/user'
 import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
 
 const billingStore = useBillingStore()
+const subscriptionStore = useSubscriptionStore()
 const targetedStore = useTargetedStore()
-const readonlyMode = computed(() => !billingStore.isPaid)
+const userStore = useUserStore()
+const hasFullAccess = computed(() => (
+  userStore.isAdmin
+  || billingStore.isPaid
+  || subscriptionStore.hasPremiumAccess
+  || userStore.userInfo?.billing?.isPaid === true
+  || userStore.userInfo?.permissions?.canAccessPremiumModules === true
+))
+const readonlyMode = computed(() => !hasFullAccess.value)
 const coreFocus = computed(() => Array.isArray(targetedStore.focusData?.coreFocus) ? targetedStore.focusData.coreFocus : [])
 const highFreqTypes = computed(() => Array.isArray(targetedStore.focusData?.highFreqTypes) ? targetedStore.focusData.highFreqTypes : [])
 const strategy = computed(() => Array.isArray(targetedStore.focusData?.strategy) ? targetedStore.focusData.strategy : [])
 
-onLoad(() => {
+onLoad(async (options = {}) => {
   if (!requireLogin()) return
-  if (readonlyMode.value) return
-  if (targetedStore.hasSelection && !targetedStore.focusData) loadFocus()
+  applyRouteSelection(options)
+  await refreshAccessState().catch(() => null)
+  if (!targetedStore.hasSelection) {
+    toast('请先选择省份和岗位系统')
+    uni.navigateBack()
+    return
+  }
+  if (!targetedStore.focusData) await loadFocus()
 })
+
+function applyRouteSelection(options = {}) {
+  const province = String(options.province || '').trim()
+  const position = String(options.position || '').trim()
+  if (province && position) targetedStore.setSelection(province, position)
+}
+
+async function refreshAccessState() {
+  if (!userStore.isAuthenticated) return
+  await Promise.allSettled([
+    userStore.loadUserInfo(),
+    subscriptionStore.refresh({ skipErrorHandler: true })
+  ])
+}
 
 async function loadFocus() {
   if (readonlyMode.value) return
@@ -136,6 +172,21 @@ async function loadFocus() {
 .list-item__desc,
 .strategy-item {
   display: block;
+}
+
+.loading-card__title {
+  display: block;
+  color: #1a1a2e;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.loading-card__desc {
+  display: block;
+  margin-top: 10rpx;
+  color: #6f7c8f;
+  font-size: 24rpx;
+  line-height: 1.6;
 }
 
 .list-item__title {

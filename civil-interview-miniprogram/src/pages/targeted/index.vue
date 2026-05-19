@@ -132,11 +132,17 @@ function syncSelection() {
   targetedStore.setSelection(selectedProvince.value, selectedPosition.value)
 }
 
+function buildFocusUrl() {
+  const province = encodeURIComponent(selectedProvince.value || '')
+  const position = encodeURIComponent(selectedPosition.value || '')
+  return `/pages/targeted/focus?province=${province}&position=${position}`
+}
+
 function goFocus() {
   if (readonlyMode.value) return
   if (!canProceed.value) return
   syncSelection()
-  uni.navigateTo({ url: '/pages/targeted/focus' })
+  uni.navigateTo({ url: buildFocusUrl() })
 }
 
 async function generate() {

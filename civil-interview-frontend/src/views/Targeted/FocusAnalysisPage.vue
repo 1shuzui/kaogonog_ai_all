@@ -97,7 +97,7 @@
 
 <script setup>
 import { computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { LeftOutlined, AimOutlined, BarChartOutlined, FireOutlined, BulbOutlined, ThunderboltOutlined, PlayCircleOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { useTargetedStore } from '@/stores/targeted'
@@ -106,6 +106,7 @@ import { getJiangsuTargetedPosition } from '@/utils/jiangsuJobs'
 import EmptyState from '@/components/common/EmptyState.vue'
 
 const router = useRouter()
+const route = useRoute()
 const targetedStore = useTargetedStore()
 const primaryColor = '#1B5FAA'
 
@@ -129,12 +130,22 @@ function freqColor(freq) {
   return 'default'
 }
 
-onMounted(() => {
-  if (targetedStore.hasSelection && !targetedStore.focusData) {
-    targetedStore.fetchFocusAnalysis()
+function hydrateSelectionFromRoute() {
+  const province = typeof route.query.province === 'string' ? route.query.province : ''
+  const position = typeof route.query.position === 'string' ? route.query.position : ''
+  if (province && position) {
+    targetedStore.setSelection(province, position)
   }
+}
+
+onMounted(() => {
+  hydrateSelectionFromRoute()
   if (!targetedStore.hasSelection) {
     router.replace('/targeted')
+    return
+  }
+  if (!targetedStore.focusData) {
+    targetedStore.fetchFocusAnalysis().catch(() => null)
   }
 })
 

@@ -141,7 +141,13 @@ function syncSelection() {
 
 function goToFocusAnalysis() {
   syncSelection()
-  router.push('/targeted/focus')
+  router.push({
+    path: '/targeted/focus',
+    query: {
+      province: selectedProvince.value,
+      position: selectedPosition.value
+    }
+  })
 }
 
 async function generateTargetedQuestions() {
