@@ -55,8 +55,8 @@
         <text class="muted">{{ access?.mode || 'practice' }}</text>
       </view>
       <view class="access-row">
-        <button class="secondary-button" @tap="checkAccess('practice')">自由练习</button>
-        <button class="secondary-button" @tap="checkAccess('mock')">模拟面试</button>
+        <button class="secondary-button" @tap="checkAccess('practice')">专项练习</button>
+        <button class="secondary-button" @tap="checkAccess('fullExam')">全真模拟</button>
       </view>
       <text class="access-result" :class="{ 'access-result--ok': access?.allowed }">
         {{ accessText }}
@@ -80,7 +80,7 @@ const access = computed(() => subscriptionStore.access)
 const planTitle = computed(() => status.value.planType === 'trial' ? '试用版' : '已开通套餐')
 const statusDesc = computed(() => {
   if (!status.value.canUse) return '当前权益不可用'
-  return status.value.stacked ? `当前可进入练习与模考，已叠加 ${status.value.activePlanCount} 项权益` : '当前可进入练习与模考'
+  return status.value.stacked ? `当前可进入专项练习与全真模拟，已叠加 ${status.value.activePlanCount} 项权益` : '当前可进入专项练习与全真模拟'
 })
 const accessText = computed(() => {
   if (!access.value) return '尚未检查'

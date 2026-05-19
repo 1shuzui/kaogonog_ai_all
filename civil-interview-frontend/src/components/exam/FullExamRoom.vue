@@ -1,48 +1,48 @@
 <template>
-  <div v-if="examStore.currentQuestion" class="mock-room">
-    <div class="mock-room__bg" :style="{ backgroundImage: `url(${mockRoomBg})` }"></div>
-    <div class="mock-room__overlay"></div>
+  <div v-if="examStore.currentQuestion" class="full-exam-room">
+    <div class="full-exam-room__bg" :style="{ backgroundImage: `url(${fullExamRoomBg})` }"></div>
+    <div class="full-exam-room__overlay"></div>
 
-    <div v-if="!isOnline" class="mock-room__offline-banner">
+    <div v-if="!isOnline" class="full-exam-room__offline-banner">
       当前网络异常，录音提交可能受影响，请尽量保持网络稳定。
     </div>
 
-    <header class="mock-room__topbar">
-      <div class="mock-room__topbar-left">
-        <span class="mock-room__badge">AI 模拟考场</span>
-        <span class="mock-room__meta">{{ candidateLabel }}</span>
+    <header class="full-exam-room__topbar">
+      <div class="full-exam-room__topbar-left">
+        <span class="full-exam-room__badge">AI 全真考场</span>
+        <span class="full-exam-room__meta">{{ candidateLabel }}</span>
       </div>
-      <div class="mock-room__topbar-right">
-        <div class="mock-room__timer">
+      <div class="full-exam-room__topbar-right">
+        <div class="full-exam-room__timer">
           <FieldTimeOutlined />
           <div>
-            <span class="mock-room__timer-label">总倒计时</span>
+            <span class="full-exam-room__timer-label">总倒计时</span>
             <strong>{{ formattedTotalRemaining }}</strong>
           </div>
         </div>
         <a-popconfirm
-          title="确定退出本场模拟面试吗？已完成的答题记录会先尝试保存。"
+          title="确定退出本场全真模拟吗？已完成的答题记录会先尝试保存。"
           @confirm="exitExam"
         >
-          <a-button type="text" class="mock-room__exit">
+          <a-button type="text" class="full-exam-room__exit">
             <CloseOutlined /> 退出
           </a-button>
         </a-popconfirm>
       </div>
     </header>
 
-    <section class="mock-room__judges card-shell">
-      <div class="mock-room__banner" :data-year="currentYearLabel">
-        <span class="mock-room__banner-prefix">2025 年度</span>
-        <strong>公务员结构化面试模拟现场</strong>
+    <section class="full-exam-room__judges card-shell">
+      <div class="full-exam-room__banner" :data-year="currentYearLabel">
+        <span class="full-exam-room__banner-prefix">2025 年度</span>
+        <strong>公务员结构化面试全真模拟现场</strong>
       </div>
 
-      <div class="mock-room__section-head">
+      <div class="full-exam-room__section-head">
         <div>
           <span class="section-kicker">考官席</span>
-          <h2>模拟公务员面试现场</h2>
+          <h2>全真模拟公务员面试现场</h2>
         </div>
-        <a-button type="text" class="mock-room__replay" @click="playOpeningSpeech(true)">
+        <a-button type="text" class="full-exam-room__replay" @click="playOpeningSpeech(true)">
           <SoundOutlined /> 重播引导语
         </a-button>
       </div>
@@ -54,10 +54,10 @@
           <p>{{ examinerNotice }}</p>
           <div class="judge-speech__actions">
             <a-button
-              v-if="!mockStarted"
+              v-if="!examStarted"
               type="primary"
               size="large"
-              @click="beginMockExam"
+              @click="beginExam"
             >
               <PlayCircleOutlined /> 我已准备好，开始作答
             </a-button>
@@ -85,9 +85,9 @@
       </div>
     </section>
 
-    <section class="mock-room__workspace">
-      <section class="mock-room__questions card-shell">
-      <div class="mock-room__section-head mock-room__section-head--compact">
+    <section class="full-exam-room__workspace">
+      <section class="full-exam-room__questions card-shell">
+      <div class="full-exam-room__section-head full-exam-room__section-head--compact">
         <div>
           <span class="section-kicker">题本区</span>
           <h3>{{ timingSummary }}</h3>
@@ -110,6 +110,7 @@
         >
           <div class="question-card__top">
             <span class="question-card__index">第 {{ index + 1 }} 题</span>
+            <span v-if="questionScoreLabel(question)" class="question-card__score">{{ questionScoreLabel(question) }}</span>
             <span class="question-card__status">{{ questionStatusText(index) }}</span>
           </div>
           <QuestionMetaTags :question="question" emphasis compact basic-only />
@@ -133,7 +134,7 @@
       </div>
       </section>
 
-      <section class="mock-room__candidate">
+      <section class="full-exam-room__candidate">
         <div class="candidate-stack">
           <div class="candidate-seat card-shell">
         <div class="candidate-seat__head">
@@ -194,18 +195,18 @@
 
         <div class="candidate-panel__actions">
           <a-button
-            v-if="!mockStarted"
+            v-if="!examStarted"
             type="primary"
             size="large"
             block
-            @click="beginMockExam"
+            @click="beginExam"
           >
-            <PlayCircleOutlined /> 开始本场面试
+            <PlayCircleOutlined /> 开始本场全真模拟
           </a-button>
 
           <template v-else-if="allAnswered">
             <a-button type="primary" size="large" block @click="finishExam">
-              <CheckOutlined /> 结束面试并查看结果
+              <CheckOutlined /> 结束全真模拟并查看结果
             </a-button>
           </template>
 
@@ -263,7 +264,7 @@
     </section>
   </div>
 
-  <div v-else class="mock-room mock-room--empty">
+  <div v-else class="full-exam-room full-exam-room--empty">
     <p>暂无题目，请返回重新开始。</p>
     <a-button type="primary" @click="$router.push('/')">返回首页</a-button>
   </div>
@@ -295,8 +296,8 @@ import VideoPreview from '@/components/recording/VideoPreview.vue'
 import QuestionMetaTags from '@/components/common/QuestionMetaTags.vue'
 import QuestionRichContent from '@/components/common/QuestionRichContent.vue'
 import { logger } from '@/utils/logger'
-import mockRoomBg from '@/assets/exam/mock-interview-ai-clean.jpg'
-import judgeRoomReference from '@/assets/exam/mock-interview-room-live-current.png'
+import fullExamRoomBg from '@/assets/exam/full-exam-room-ai-clean.jpg'
+import fullExamRoomReference from '@/assets/exam/full-exam-room-live-current.jpg'
 
 const router = useRouter()
 const route = useRoute()
@@ -310,7 +311,7 @@ const questionStripRef = ref(null)
 const judgeStageCanvasRef = ref(null)
 const judgeStageSceneSize = { width: 720, height: 404 }
 
-const mockStarted = ref(false)
+const examStarted = ref(false)
 const readingPhaseActive = ref(false)
 const speechInProgress = ref(false)
 const totalRemainingSeconds = ref(0)
@@ -326,12 +327,12 @@ const judgeTimerPanelConfig = {
   sourceWidth: 124,
   sourceHeight: 58
 }
-const JIANGSU_MOCK_TIMING_MODE = 'jiangsu_5_15'
+const JIANGSU_FULL_EXAM_TIMING_MODE = 'jiangsu_5_15'
 const JIANGSU_READING_SECONDS = 5 * 60
 const JIANGSU_ANSWER_SECONDS = 15 * 60
 
 function loadJudgeStageSourceImage() {
-  const src = judgeRoomReference
+  const src = fullExamRoomReference
   const cached = judgeStageSourceImageCache.get(src)
   if (cached) return Promise.resolve(cached)
 
@@ -413,30 +414,30 @@ const candidateLabel = computed(() => {
   return `${normalized}号考生`
 })
 
-const isJiangsuMockTiming = computed(() => examStore.mockMode && examStore.questionList.some((question) => (
-  question?.mockTimingMode === JIANGSU_MOCK_TIMING_MODE
+const isJiangsuFullExamTiming = computed(() => examStore.fullExamMode && examStore.questionList.some((question) => (
+  question?.fullExamTimingMode === JIANGSU_FULL_EXAM_TIMING_MODE
 )))
 const answerDurationSeconds = computed(() => {
-  if (isJiangsuMockTiming.value) return JIANGSU_ANSWER_SECONDS
+  if (isJiangsuFullExamTiming.value) return JIANGSU_ANSWER_SECONDS
   return examStore.questionList.reduce((sum, question) => {
     const answer = Math.max(60, Number(question?.answerTime) || 300)
     return sum + answer
   }, 0)
 })
 const totalDurationSeconds = computed(() => (
-  isJiangsuMockTiming.value
+  isJiangsuFullExamTiming.value
     ? JIANGSU_READING_SECONDS + JIANGSU_ANSWER_SECONDS
     : answerDurationSeconds.value
 ))
 
 const totalDurationMinutes = computed(() => Math.max(1, Math.ceil(totalDurationSeconds.value / 60)))
 const timingSummary = computed(() => {
-  if (isJiangsuMockTiming.value) return `共 ${examStore.totalQuestions} 题，5 分钟阅读，15 分钟作答`
+  if (isJiangsuFullExamTiming.value) return `共 ${examStore.totalQuestions} 题，5 分钟阅读，15 分钟作答`
   return `共 ${examStore.totalQuestions} 题，总时长 ${totalDurationMinutes.value} 分钟`
 })
 const formattedTotalRemaining = computed(() => formatClock(totalRemainingSeconds.value))
 const readingRemainingSeconds = computed(() => {
-  if (!isJiangsuMockTiming.value || !readingPhaseActive.value) return 0
+  if (!isJiangsuFullExamTiming.value || !readingPhaseActive.value) return 0
   return Math.max(0, totalRemainingSeconds.value - JIANGSU_ANSWER_SECONDS)
 })
 const nextPendingIndex = computed(() => Math.min(examStore.answers.length, Math.max(examStore.totalQuestions - 1, 0)))
@@ -447,20 +448,20 @@ const isViewingPastAnsweredQuestion = computed(() => {
   return examStore.currentIndex < examStore.answers.length
 })
 const isAnsweringActiveQuestion = computed(() => (
-  mockStarted.value
+  examStarted.value
   && examStore.status === EXAM_STATUS.ANSWERING
   && examStore.currentIndex === examStore.answers.length
 ))
 
 const openingSpeechText = computed(() => (
   `${candidateLabel.value}，请就座。欢迎参加今天的面试，希望通过交流增进对你的了解。`
-  + (isJiangsuMockTiming.value
+  + (isJiangsuFullExamTiming.value
     ? `本次面试共有 ${examStore.totalQuestions} 道题目，先阅读五分钟，再作答十五分钟。阅读结束后请开始作答。`
     : `本次面试共有 ${examStore.totalQuestions} 道题目，时间为 ${totalDurationMinutes.value} 分钟。请开始作答。`)
 ))
 
 const examinerNotice = computed(() => {
-  if (!mockStarted.value) return openingSpeechText.value
+  if (!examStarted.value) return openingSpeechText.value
   if (readingPhaseActive.value) return `现在是题本阅读时间，剩余 ${formatClock(readingRemainingSeconds.value)}，请先通读四道题。`
   if (allAnswered.value) return '本场题目已全部作答完成，请点击下方按钮结束面试并查看结果。'
   if (totalRemainingSeconds.value <= 60) return '距离本场面试结束不足 1 分钟，请注意统筹剩余时间。'
@@ -477,7 +478,7 @@ const examinerNotice = computed(() => {
 })
 
 const candidateStatusText = computed(() => {
-  if (!mockStarted.value) return '等待开场'
+  if (!examStarted.value) return '等待开场'
   if (readingPhaseActive.value) return '阅读题本中'
   if (examStore.status === EXAM_STATUS.ANSWERING) return '正在录制作答'
   if (examStore.status === EXAM_STATUS.SUBMITTING) return '答案提交中'
@@ -494,16 +495,16 @@ const currentQuestionTag = computed(() => {
   if (allAnswered.value) return { text: '已完成', color: 'success' }
   if (isFutureQuestion(examStore.currentIndex)) return { text: '预览中', color: 'blue' }
   if (currentAnswer.value) return { text: '已提交', color: 'success' }
-  if (!mockStarted.value) return { text: '待开始', color: 'blue' }
+  if (!examStarted.value) return { text: '待开始', color: 'blue' }
   if (examStore.status === EXAM_STATUS.ANSWERING) return { text: '作答中', color: 'processing' }
   if (examStore.status === EXAM_STATUS.SUBMITTING) return { text: '评分中', color: 'warning' }
   return { text: '待作答', color: 'gold' }
 })
 
 const currentQuestionHint = computed(() => {
-  if (!mockStarted.value) return '开场引导语播放完成后，点击开始作答即可进入真实考场节奏。'
+  if (!examStarted.value) return '开场引导语播放完成后，点击开始作答即可进入真实考场节奏。'
   if (readingPhaseActive.value) return '江苏模式为 5+15：当前仅阅读题本，阅读倒计时结束后再开始录制作答。'
-  if (allAnswered.value) return '所有题目均已提交，可以结束本场模拟面试。'
+  if (allAnswered.value) return '所有题目均已提交，可以结束本场全真模拟。'
   if (isFutureQuestion(examStore.currentIndex)) {
     return `你可以先浏览这道题，但系统只允许按顺序从第 ${nextPendingIndex.value + 1} 题开始作答。`
   }
@@ -571,8 +572,29 @@ function isFutureQuestion(index) {
 
 function questionStatusText(index) {
   if (isAnsweredQuestion(index)) return '已作答'
-  if (index === examStore.answers.length) return mockStarted.value ? '当前作答位' : '待开始'
+  if (index === examStore.answers.length) return examStarted.value ? '当前作答位' : '待开始'
   return '可预览'
+}
+
+function normalizeScoreText(value) {
+  const score = Number(value)
+  if (!Number.isFinite(score) || score <= 0) return ''
+  return Number.isInteger(score) ? String(score) : score.toFixed(1).replace(/\.0$/, '')
+}
+
+function questionScoreLabel(question = {}) {
+  const directScore = [
+    question.assignedScore,
+    question.questionMaxScore,
+    question.fullScore,
+    question.full_score
+  ].map((value) => Number(value)).find((value) => Number.isFinite(value) && value > 0)
+  if (directScore) return `${normalizeScoreText(directScore)} 分`
+
+  const pointsTotal = Array.isArray(question.scoringPoints)
+    ? question.scoringPoints.reduce((sum, point) => sum + (Number(point?.score || point?.points || 0) || 0), 0)
+    : 0
+  return pointsTotal > 0 ? `${normalizeScoreText(pointsTotal)} 分` : ''
 }
 
 function questionCardClass(index) {
@@ -630,7 +652,7 @@ function stopSpeech() {
 
 function playOpeningSpeech(forceReplay = false) {
   if (typeof window === 'undefined' || !window.speechSynthesis) return
-  if (mockStarted.value && !forceReplay) return
+  if (examStarted.value && !forceReplay) return
 
   stopSpeech()
 
@@ -652,11 +674,11 @@ function playOpeningSpeech(forceReplay = false) {
   window.speechSynthesis.speak(utterance)
 }
 
-function beginMockExam() {
-  if (mockStarted.value) return
+function beginExam() {
+  if (examStarted.value) return
   stopSpeech()
-  mockStarted.value = true
-  readingPhaseActive.value = isJiangsuMockTiming.value
+  examStarted.value = true
+  readingPhaseActive.value = isJiangsuFullExamTiming.value
   examStore.examStartTime = Date.now()
   examStore.goToQuestion(0)
   totalRemainingSeconds.value = totalDurationSeconds.value
@@ -668,7 +690,7 @@ function startTotalTimer() {
   totalTimer = setInterval(() => {
     const elapsed = Math.floor((Date.now() - examStore.examStartTime) / 1000)
     totalRemainingSeconds.value = Math.max(0, totalDurationSeconds.value - elapsed)
-    if (isJiangsuMockTiming.value && readingPhaseActive.value && elapsed >= JIANGSU_READING_SECONDS) {
+    if (isJiangsuFullExamTiming.value && readingPhaseActive.value && elapsed >= JIANGSU_READING_SECONDS) {
       readingPhaseActive.value = false
       message.info('阅读时间结束，进入 15 分钟作答阶段。')
     }
@@ -685,8 +707,8 @@ function stopTotalTimer() {
 }
 
 async function startCurrentAnswer() {
-  if (!mockStarted.value) {
-    beginMockExam()
+  if (!examStarted.value) {
+    beginExam()
     return
   }
   if (readingPhaseActive.value) {
@@ -726,7 +748,7 @@ async function submitCurrentAnswer(options = {}) {
 }
 
 async function handleTimeUp() {
-  message.warning('总计时结束，系统将结束本场模拟面试。')
+  message.warning('总计时结束，系统将结束本场全真模拟。')
 
   if (examStore.status === EXAM_STATUS.ANSWERING) {
     await submitCurrentAnswer({ finishAfterSubmit: true })
@@ -755,8 +777,8 @@ async function finishExam() {
     await examStore.evaluatePendingAnswers()
     await completeExam(examId)
   } catch (error) {
-    logger.error('Mock interview save failed', {
-      event: 'mock_interview.save_failed',
+    logger.error('Full exam save failed', {
+      event: 'full_exam.save_failed',
       exam_id: examId,
       error
     })
@@ -783,8 +805,8 @@ async function exitExam() {
       await completeExam(examStore.examId)
       message.success('已保存当前面试进度。')
     } catch (error) {
-      logger.error('Mock interview progress save failed', {
-        event: 'mock_interview.progress.save_failed',
+      logger.error('Full exam progress save failed', {
+        event: 'full_exam.progress.save_failed',
         exam_id: examStore.examId,
         error
       })
@@ -800,7 +822,7 @@ async function exitExam() {
 <style lang="less" scoped>
 @import '@/styles/variables.less';
 
-.mock-room {
+.full-exam-room {
   position: relative;
   min-height: 100vh;
   padding: 18px 20px 22px;
@@ -809,21 +831,21 @@ async function exitExam() {
   background: #342218;
 }
 
-.mock-room__bg,
-.mock-room__overlay {
+.full-exam-room__bg,
+.full-exam-room__overlay {
   position: fixed;
   inset: 0;
   pointer-events: none;
 }
 
-.mock-room__bg {
+.full-exam-room__bg {
   background-position: center 8%;
   background-size: cover;
   filter: saturate(0.96) contrast(1.01) brightness(0.8);
   transform: scale(1.015);
 }
 
-.mock-room__overlay {
+.full-exam-room__overlay {
   background:
     linear-gradient(180deg, rgba(42, 25, 17, 0.08) 0%, rgba(103, 72, 43, 0.1) 22%, rgba(81, 55, 35, 0.24) 46%, rgba(58, 37, 25, 0.6) 72%, rgba(41, 25, 18, 0.9) 100%),
     radial-gradient(circle at 26% 4%, rgba(255, 220, 152, 0.38), transparent 20%),
@@ -832,12 +854,12 @@ async function exitExam() {
     repeating-linear-gradient(90deg, rgba(142, 108, 74, 0.12) 0 1px, transparent 1px 16.66%);
 }
 
-.mock-room > * {
+.full-exam-room > * {
   position: relative;
   z-index: 1;
 }
 
-.mock-room__offline-banner {
+.full-exam-room__offline-banner {
   margin-bottom: 12px;
   padding: 10px 14px;
   border-radius: 14px;
@@ -847,7 +869,7 @@ async function exitExam() {
   font-weight: 600;
 }
 
-.mock-room__topbar {
+.full-exam-room__topbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -855,15 +877,15 @@ async function exitExam() {
   margin-bottom: 18px;
 }
 
-.mock-room__topbar-left,
-.mock-room__topbar-right {
+.full-exam-room__topbar-left,
+.full-exam-room__topbar-right {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.mock-room__badge,
-.mock-room__meta {
+.full-exam-room__badge,
+.full-exam-room__meta {
   display: inline-flex;
   align-items: center;
   min-height: 38px;
@@ -876,12 +898,12 @@ async function exitExam() {
   font-size: @font-size-sm;
 }
 
-.mock-room__badge {
+.full-exam-room__badge {
   font-weight: 700;
   letter-spacing: 0.4px;
 }
 
-.mock-room__timer {
+.full-exam-room__timer {
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -906,13 +928,13 @@ async function exitExam() {
   }
 }
 
-.mock-room__timer-label {
+.full-exam-room__timer-label {
   display: block;
   color: rgba(255, 255, 255, 0.72);
   font-size: 11px;
 }
 
-.mock-room__exit {
+.full-exam-room__exit {
   color: rgba(255, 255, 255, 0.82);
 }
 
@@ -926,7 +948,7 @@ async function exitExam() {
   backdrop-filter: blur(4px);
 }
 
-.mock-room__judges {
+.full-exam-room__judges {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -939,7 +961,7 @@ async function exitExam() {
   overflow: hidden;
 }
 
-.mock-room__judges::before {
+.full-exam-room__judges::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -952,7 +974,7 @@ async function exitExam() {
   pointer-events: none;
 }
 
-.mock-room__judges::after {
+.full-exam-room__judges::after {
   content: '';
   position: absolute;
   left: 0;
@@ -966,12 +988,12 @@ async function exitExam() {
   pointer-events: none;
 }
 
-.mock-room__judges > * {
+.full-exam-room__judges > * {
   position: relative;
   z-index: 1;
 }
 
-.mock-room__workspace {
+.full-exam-room__workspace {
   display: grid;
   grid-template-columns: minmax(0, 1.48fr) minmax(360px, 0.84fr);
   gap: 20px;
@@ -979,14 +1001,14 @@ async function exitExam() {
   margin-top: -14px;
 }
 
-.mock-room__questions {
+.full-exam-room__questions {
   position: relative;
   padding: 22px;
   background: linear-gradient(180deg, rgba(147, 95, 58, 0.96) 0%, rgba(112, 67, 38, 0.98) 56%, rgba(84, 49, 28, 0.98) 100%);
   box-shadow: 0 24px 36px rgba(43, 21, 11, 0.22);
 }
 
-.mock-room__questions::before {
+.full-exam-room__questions::before {
   content: '';
   position: absolute;
   inset: 12px 14px 16px;
@@ -997,12 +1019,12 @@ async function exitExam() {
   pointer-events: none;
 }
 
-.mock-room__questions > * {
+.full-exam-room__questions > * {
   position: relative;
   z-index: 1;
 }
 
-.mock-room__candidate {
+.full-exam-room__candidate {
   min-width: 0;
 }
 
@@ -1058,7 +1080,7 @@ async function exitExam() {
   box-shadow: 0 18px 28px rgba(43, 22, 11, 0.22);
 }
 
-.mock-room__section-head {
+.full-exam-room__section-head {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -1082,11 +1104,11 @@ async function exitExam() {
   }
 }
 
-.mock-room__banner {
+.full-exam-room__banner {
   display: none;
 }
 
-.mock-room__banner::before {
+.full-exam-room__banner::before {
   content: attr(data-year);
   position: relative;
   z-index: 1;
@@ -1096,7 +1118,7 @@ async function exitExam() {
   letter-spacing: 1px;
 }
 
-.mock-room__banner::after {
+.full-exam-room__banner::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -1109,11 +1131,11 @@ async function exitExam() {
   pointer-events: none;
 }
 
-.mock-room__banner-prefix {
+.full-exam-room__banner-prefix {
   display: none;
 }
 
-.mock-room__banner strong {
+.full-exam-room__banner strong {
   position: relative;
   z-index: 1;
   font-size: clamp(30px, 2.6vw, 54px);
@@ -1123,7 +1145,7 @@ async function exitExam() {
   text-shadow: 0 3px 10px rgba(92, 18, 10, 0.24);
 }
 
-.mock-room__section-head--compact {
+.full-exam-room__section-head--compact {
   align-items: center;
 }
 
@@ -1138,26 +1160,26 @@ async function exitExam() {
   letter-spacing: 1px;
 }
 
-.mock-room__judges .section-kicker {
+.full-exam-room__judges .section-kicker {
   background: rgba(118, 25, 18, 0.82);
   color: rgba(255, 245, 229, 0.94);
 }
 
-.mock-room__judges .mock-room__section-head h2 {
+.full-exam-room__judges .full-exam-room__section-head h2 {
   color: #fff6e8;
   text-shadow: 0 5px 18px rgba(51, 20, 9, 0.3);
 }
 
-.mock-room__questions .section-kicker {
+.full-exam-room__questions .section-kicker {
   background: rgba(115, 76, 40, 0.12);
   color: #704520;
 }
 
-.mock-room__questions .mock-room__section-head h3 {
+.full-exam-room__questions .full-exam-room__section-head h3 {
   color: #442816;
 }
 
-.mock-room__replay {
+.full-exam-room__replay {
   color: rgba(255, 245, 229, 0.92);
   padding: 0 14px;
   border-radius: 999px;
@@ -1619,7 +1641,7 @@ async function exitExam() {
   border-top: 1px solid rgba(120, 81, 46, 0.16);
 }
 
-.mock-room__questions::after,
+.full-exam-room__questions::after,
 .candidate-seat::after,
 .candidate-panel::after {
   content: '';
@@ -1727,7 +1749,7 @@ async function exitExam() {
   min-height: 48px;
 }
 
-.mock-room--empty {
+.full-exam-room--empty {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1736,7 +1758,7 @@ async function exitExam() {
 }
 
 @media (max-width: 1200px) {
-  .mock-room__workspace {
+  .full-exam-room__workspace {
     grid-template-columns: 1fr;
     margin-top: 12px;
   }
@@ -1766,11 +1788,11 @@ async function exitExam() {
 }
 
 @media (max-width: 900px) {
-  .mock-room {
+  .full-exam-room {
     padding: 12px;
   }
 
-  .mock-room__judges {
+  .full-exam-room__judges {
     padding-top: 28px;
   }
 
@@ -1818,7 +1840,7 @@ async function exitExam() {
     }
   }
 
-  .mock-room__banner {
+  .full-exam-room__banner {
     position: relative;
     top: auto;
     left: auto;
@@ -1829,13 +1851,13 @@ async function exitExam() {
     padding: 0 18px;
   }
 
-  .mock-room__banner strong {
+  .full-exam-room__banner strong {
     font-size: 24px;
     letter-spacing: 1px;
   }
 
-  .mock-room__topbar,
-  .mock-room__topbar-right {
+  .full-exam-room__topbar,
+  .full-exam-room__topbar-right {
     flex-direction: column;
     align-items: stretch;
   }
@@ -1850,9 +1872,9 @@ async function exitExam() {
 }
 
 @media (max-width: 640px) {
-  .mock-room__topbar-left,
-  .mock-room__topbar-right,
-  .mock-room__section-head,
+  .full-exam-room__topbar-left,
+  .full-exam-room__topbar-right,
+  .full-exam-room__section-head,
   .candidate-seat__head,
   .candidate-panel__head {
     flex-direction: column;
@@ -1867,7 +1889,7 @@ async function exitExam() {
     margin: 0 auto;
   }
 
-  .mock-room__banner {
+  .full-exam-room__banner {
     flex-direction: column;
     gap: 4px;
   }

@@ -1,11 +1,11 @@
 <template>
   <view class="page">
-    <text class="page-title">模考准备</text>
-    <text class="page-desc">小程序端支持麦克风录音和摄像头录像作答，提交后自动转写并评分。</text>
+    <text class="page-title">{{ pageTitle }}</text>
+    <text class="page-desc">{{ pageDesc }}</text>
 
     <view v-if="readonlyMode" class="card access-card">
       <text class="access-card__title">未开通正式训练</text>
-      <text class="access-card__desc">可以先体验 1 道试用题，或开通套餐后进入完整模考、自由练习和训练复盘。</text>
+      <text class="access-card__desc">可以先体验 1 道试用题，或开通套餐后进入全真模拟、专项练习和训练复盘。</text>
       <view class="access-card__actions">
         <button class="secondary-button" :disabled="loading || accessLoading" @tap="startTrialEntry">试用 1 题</button>
         <button class="primary-button" :disabled="loading || accessLoading" @tap="goPricing">开通套餐</button>
@@ -36,13 +36,35 @@
       </view>
       <view class="mode-grid">
         <view class="mode-card" :class="{ 'mode-card--active': mode === 'free' }" @tap.stop="selectFreeMode">
-          <text class="mode-card__title">自由练习</text>
-          <text class="mode-card__desc">适合单题拆解和即时复盘</text>
+          <text class="mode-card__title">专项练习</text>
+          <text class="mode-card__desc">适合专项训练和即时复盘</text>
         </view>
-        <view class="mode-card" :class="{ 'mode-card--active': mode === 'mock' }" @tap.stop="selectMockMode">
-          <text class="mode-card__title">模拟面试</text>
-          <text class="mode-card__desc">按准备和作答计时推进</text>
+        <view class="mode-card" :class="{ 'mode-card--active': mode === 'fullExam' }" @tap.stop="selectFullExamMode">
+          <text class="mode-card__title">全真模拟</text>
+          <text class="mode-card__desc">按真题套卷连续作答</text>
         </view>
+      </view>
+
+      <view v-if="mode === 'fullExam'" class="suite-panel">
+        <view class="config-row config-row--suite">
+          <text>真题套卷</text>
+          <text class="config-row__value">{{ selectedFullExamSuiteLabel }}</text>
+        </view>
+        <picker
+          v-if="fullExamSuiteOptions.length"
+          mode="selector"
+          :range="fullExamPickerOptions"
+          range-key="label"
+          :value="selectedFullExamSuiteIndex"
+          @change="onFullExamSuiteChange"
+        >
+          <view class="suite-picker">
+            <text>{{ selectedFullExamSuite?.title || '选择整套真题' }}</text>
+            <text class="suite-picker__arrow">切换</text>
+          </view>
+        </picker>
+        <text v-if="selectedFullExamSuite" class="suite-panel__summary">{{ selectedFullExamSuiteSummary }}</text>
+        <text v-else class="suite-panel__summary">{{ fullExamSuitesLoading ? '正在加载真题套卷...' : '当前省份暂无整套真题套卷，请切换江苏、安徽或湖南。' }}</text>
       </view>
 
       <view class="config-row media-row">
@@ -100,18 +122,23 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useExamStore } from '../../stores/exam'
 import { useBillingStore } from '../../stores/billing'
 import { useQuestionBankStore } from '../../stores/questionBank'
 import { useSubscriptionStore } from '../../stores/subscription'
 import { useUserStore } from '../../stores/user'
-import { getQuestionById } from '../../api/questionBank'
+import { getQuestionById, getQuestions } from '../../api/questionBank'
 import { getAsrStatus } from '../../api/scoring'
 import { getTrialQuestion, getTrialStatus } from '../../api/trial'
 import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
 import { QUESTION_CATEGORIES } from '../../utils/constants'
+import {
+  fetchFullExamSuites,
+  getFullExamSuiteSummary,
+  loadFullExamSuiteQuestions
+} from '../../utils/fullExamSuites'
 
 const examStore = useExamStore()
 const billingStore = useBillingStore()
@@ -119,8 +146,7 @@ const questionBankStore = useQuestionBankStore()
 const subscriptionStore = useSubscriptionStore()
 const userStore = useUserStore()
 const DEFAULT_EXAM_QUESTION_COUNT = 5
-const JIANGSU_MOCK_QUESTION_COUNT = 4
-const JIANGSU_MOCK_TIMING_MODE = 'jiangsu_5_15'
+const JIANGSU_FULL_EXAM_TIMING_MODE = 'jiangsu_5_15'
 const MAX_FREE_QUESTION_COUNT = 10
 const STATE_REFRESH_TIMEOUT_MS = 6000
 const ENTER_ROOM_TIMEOUT_MS = 10000
@@ -128,6 +154,9 @@ const count = ref(DEFAULT_EXAM_QUESTION_COUNT)
 const mode = ref('free')
 const mediaMode = ref('audio')
 const selectedDimensions = ref(['random'])
+const selectedFullExamSuiteId = ref('')
+const fullExamSuites = ref([])
+const fullExamSuitesLoading = ref(false)
 const loading = ref(false)
 const accessLoading = ref(false)
 const trial = ref(false)
@@ -154,8 +183,24 @@ const questionCategoryOptions = [
 const showPracticeConfig = computed(() => mode.value === 'free')
 const selectedSpecificDimensions = computed(() => selectedDimensions.value.filter((item) => item && item !== RANDOM_DIMENSION_KEY))
 const selectedDimensionParam = computed(() => selectedSpecificDimensions.value.join(','))
-const mockQuestionCount = computed(() => (
-  userStore.selectedProvince === 'jiangsu' ? JIANGSU_MOCK_QUESTION_COUNT : DEFAULT_EXAM_QUESTION_COUNT
+const fullExamSuiteOptions = computed(() => fullExamSuites.value)
+const selectedFullExamSuite = computed(() => (
+  fullExamSuiteOptions.value.find((suite) => suite.id === selectedFullExamSuiteId.value)
+  || fullExamSuiteOptions.value[0]
+  || null
+))
+const selectedFullExamSuiteIndex = computed(() => Math.max(0, fullExamSuiteOptions.value.findIndex((suite) => suite.id === selectedFullExamSuite.value?.id)))
+const fullExamPickerOptions = computed(() => fullExamSuiteOptions.value.map((suite) => ({
+  id: suite.id,
+  label: suite.title
+})))
+const selectedFullExamSuiteLabel = computed(() => selectedFullExamSuite.value?.title || '暂无套题')
+const selectedFullExamSuiteSummary = computed(() => getFullExamSuiteSummary(selectedFullExamSuite.value))
+const pageTitle = computed(() => (mode.value === 'fullExam' ? '全真模拟准备' : '专项练习准备'))
+const pageDesc = computed(() => (
+  mode.value === 'fullExam'
+    ? '按照整套真题连续作答，提交后自动转写并评分。'
+    : '按题型进行专项训练，支持录音和录像作答，提交后自动转写并评分。'
 ))
 const selectedCategoryName = computed(() => {
   if (!selectedSpecificDimensions.value.length) return '随机题型'
@@ -164,6 +209,26 @@ const selectedCategoryName = computed(() => {
     .filter(Boolean)
   return names.join('、') || '随机题型'
 })
+
+watch(pageTitle, (title) => {
+  if (typeof uni.setNavigationBarTitle === 'function') {
+    uni.setNavigationBarTitle({ title })
+  }
+}, { immediate: true })
+
+watch(fullExamSuiteOptions, (suites) => {
+  if (!suites.length) {
+    selectedFullExamSuiteId.value = ''
+    return
+  }
+  if (!suites.some((suite) => suite.id === selectedFullExamSuiteId.value)) {
+    selectedFullExamSuiteId.value = suites[0].id
+  }
+}, { immediate: true })
+
+watch(() => userStore.selectedProvince, () => {
+  refreshFullExamSuites().catch(() => null)
+}, { immediate: true })
 
 function applyUserPracticePreferencesToQuestions(questions = []) {
   const prefs = userStore.preferences || {}
@@ -176,17 +241,30 @@ function applyUserPracticePreferencesToQuestions(questions = []) {
   }))
 }
 
-function applyMockTimingMode(questions = []) {
-  if (mode.value !== 'mock' || userStore.selectedProvince !== 'jiangsu') return questions
-  return questions.slice(0, JIANGSU_MOCK_QUESTION_COUNT).map((question) => ({
+function applyFullExamTimingMode(questions = []) {
+  if (mode.value !== 'fullExam') return questions
+  return questions.map((question) => ({
     ...question,
-    mockTimingMode: JIANGSU_MOCK_TIMING_MODE
+    fullExamTimingMode: question?.fullExamTimingMode || (userStore.selectedProvince === 'jiangsu' ? JIANGSU_FULL_EXAM_TIMING_MODE : '')
   }))
 }
 
+async function refreshFullExamSuites() {
+  fullExamSuitesLoading.value = true
+  try {
+    const suites = await fetchFullExamSuites(getQuestions, userStore.selectedProvince)
+    fullExamSuites.value = suites
+  } catch (error) {
+    fullExamSuites.value = []
+    toast(error?.message || '真题套卷加载失败，请稍后重试')
+  } finally {
+    fullExamSuitesLoading.value = false
+  }
+}
+
 onLoad((query) => {
-  if (String(query?.mode || '') === 'mock') {
-    mode.value = 'mock'
+  if (String(query?.mode || '') === 'fullExam') {
+    mode.value = 'fullExam'
   } else if (String(query?.mode || '') === 'free') {
     mode.value = 'free'
   }
@@ -277,8 +355,14 @@ function selectFreeMode() {
   mode.value = 'free'
 }
 
-function selectMockMode() {
-  mode.value = 'mock'
+function selectFullExamMode() {
+  mode.value = 'fullExam'
+}
+
+function onFullExamSuiteChange(event) {
+  const index = Number(event?.detail?.value || 0)
+  const suite = fullExamSuiteOptions.value[index]
+  if (suite) selectedFullExamSuiteId.value = suite.id
 }
 
 function selectAudioMode() {
@@ -358,7 +442,7 @@ async function startPractice() {
     } else {
       if (!userStore.isAdmin) {
         const access = await withTimeout(
-          subscriptionStore.check(mode.value === 'mock' ? 'mock' : 'practice', { skipErrorHandler: true }),
+          subscriptionStore.check(mode.value === 'fullExam' ? 'fullExam' : 'practice', { skipErrorHandler: true }),
           ENTER_ROOM_TIMEOUT_MS,
           { timeout: true }
         )
@@ -372,22 +456,28 @@ async function startPractice() {
         }
       }
       questions = await withTimeout(
-        questionBankStore.fetchRandom({
-          province: userStore.selectedProvince,
-          count: mode.value === 'mock' ? mockQuestionCount.value : count.value,
-          dimension: mode.value === 'mock' ? '' : selectedDimensionParam.value
-        }),
+        mode.value === 'fullExam'
+          ? loadFullExamSuiteQuestions(selectedFullExamSuite.value, getQuestionById)
+          : questionBankStore.fetchRandom({
+            province: userStore.selectedProvince,
+            count: count.value,
+            dimension: selectedDimensionParam.value
+          }),
         ENTER_ROOM_TIMEOUT_MS,
         []
       )
     }
 
     if (!questions.length) {
-      toast(trial.value ? '试用题暂不可用，请稍后重试' : '当前筛选条件暂无题目')
+      toast(trial.value ? '试用题暂不可用，请稍后重试' : mode.value === 'fullExam' ? '当前省份暂无整套真题套卷' : '当前筛选条件暂无题目')
       return
     }
-    const targetCount = trial.value ? 1 : mode.value === 'mock' ? mockQuestionCount.value : count.value
-    const preparedQuestions = applyMockTimingMode(applyUserPracticePreferencesToQuestions(questions.slice(0, targetCount)))
+    if (mode.value === 'fullExam' && selectedFullExamSuite.value && questions.length !== selectedFullExamSuite.value.questions.length) {
+      toast('当前套题题目加载不完整，请切换其他套卷后重试')
+      return
+    }
+    const targetCount = trial.value ? 1 : mode.value === 'fullExam' ? questions.length : count.value
+    const preparedQuestions = applyFullExamTimingMode(applyUserPracticePreferencesToQuestions(questions.slice(0, targetCount)))
     examStore.setMediaMode(mediaMode.value)
     await examStore.startFromQuestions(preparedQuestions, trial.value ? 'trial' : mode.value)
     uni.navigateTo({ url: '/pages/exam/room' })
@@ -474,8 +564,50 @@ function goPricing() {
   align-items: flex-start;
 }
 
+.config-row--suite {
+  padding-bottom: 10rpx;
+  align-items: flex-start;
+}
+
 .media-row {
   margin-top: 18rpx;
+}
+
+.suite-panel {
+  margin-top: 16rpx;
+  padding: 18rpx;
+  border: 1rpx solid #d9e3ef;
+  border-radius: 14rpx;
+  background: #f8fbff;
+}
+
+.suite-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18rpx;
+  min-height: 74rpx;
+  padding: 0 18rpx;
+  border: 1rpx solid #bfd7ef;
+  border-radius: 12rpx;
+  background: #ffffff;
+  color: #1a1a2e;
+  font-size: 25rpx;
+  font-weight: 700;
+}
+
+.suite-picker__arrow {
+  flex-shrink: 0;
+  color: #1b5faa;
+  font-size: 23rpx;
+}
+
+.suite-panel__summary {
+  display: block;
+  margin-top: 12rpx;
+  color: #5f6f83;
+  font-size: 23rpx;
+  line-height: 1.6;
 }
 
 .question-type-panel {

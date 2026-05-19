@@ -38,10 +38,10 @@
         <checkbox :checked="form.agreedTerms" @tap="toggleAgreement" />
         <view class="agreement-box__content">
           <text class="agreement-box__text">
-            我已自主阅读并同意
+            我已阅读并同意
             <text class="agreement-box__link" @tap.stop="goLegalDocuments">《用户协议》与《隐私政策》</text>
           </text>
-          <text class="agreement-box__hint">未勾选前不会登录、注册或发起微信快捷登录。</text>
+          <text class="agreement-box__hint">未勾选前无法登录、注册或发起微信快捷登录。</text>
         </view>
       </view>
 
@@ -151,6 +151,8 @@ const resetTip = ref('')
 const privacyAuthRequired = ref(false)
 const privacyAuthorizationReady = ref(false)
 const privacyContractName = ref('')
+const AGREED_TERMS_STORAGE_KEY = 'civil_agreed_terms_version'
+const AGREED_TERMS_VERSION = '2026-05-12'
 const form = reactive({
   username: '',
   password: '',
@@ -185,8 +187,29 @@ function openResetPanel() {
 }
 
 onLoad(() => {
+  restoreAgreementState()
   loadWechatPrivacySetting()
 })
+
+function readAcceptedTermsVersion() {
+  try {
+    return uni.getStorageSync(AGREED_TERMS_STORAGE_KEY) || ''
+  } catch {
+    return ''
+  }
+}
+
+function saveAcceptedTermsVersion() {
+  try {
+    uni.setStorageSync(AGREED_TERMS_STORAGE_KEY, AGREED_TERMS_VERSION)
+  } catch {
+    // ignore storage failures
+  }
+}
+
+function restoreAgreementState() {
+  form.agreedTerms = readAcceptedTermsVersion() === AGREED_TERMS_VERSION
+}
 
 function loadWechatPrivacySetting() {
   if (typeof wx === 'undefined' || typeof wx.getPrivacySetting !== 'function') return
@@ -207,7 +230,7 @@ function loadWechatPrivacySetting() {
 
 function validateTermsAgreement() {
   if (!form.agreedTerms) {
-    toast('请先自主阅读并勾选同意用户协议与隐私政策')
+    toast('请先阅读并勾选同意用户协议与隐私政策')
     return false
   }
   if (privacyAuthRequired.value && !privacyAuthorizationReady.value) {
@@ -433,12 +456,14 @@ async function confirmResetPassword() {
 
 function toggleAgreement() {
   form.agreedTerms = !form.agreedTerms
+  if (form.agreedTerms) {
+    saveAcceptedTermsVersion()
+  }
 }
 
 function onAgreePrivacyAuthorization() {
   privacyAuthorizationReady.value = true
-  form.agreedTerms = true
-  toast('已确认隐私授权，可继续登录', 'success')
+  toast(form.agreedTerms ? '已确认微信隐私授权，可继续登录' : '已确认微信隐私授权，请手动勾选用户协议与隐私政策', 'success')
 }
 
 function goLegalDocuments() {

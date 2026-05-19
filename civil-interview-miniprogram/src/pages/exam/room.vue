@@ -1,126 +1,237 @@
 <template>
-  <view class="exam-room">
+  <view
+    class="exam-room"
+    :class="{ 'exam-room--full-exam': isFullExamSource, 'exam-room--practice': !isFullExamSource }"
+  >
     <view v-if="question" class="exam-room__body">
-      <view class="question-book" :class="{ 'question-book--long': questionBookLong }">
-        <view class="question-book__head">
-          <text class="question-book__title">题本区</text>
-          <text class="question-book__meta">第 {{ questionBookIndex + 1 }} / {{ examStore.totalQuestions }} 题</text>
-        </view>
-        <swiper
-          class="question-book__swiper"
-          :current="questionBookIndex"
-          :indicator-dots="examStore.totalQuestions > 1"
-          indicator-color="rgba(27,95,170,0.22)"
-          indicator-active-color="#1b5faa"
-          @change="onQuestionBookChange"
-        >
-          <swiper-item
-            v-for="(item, index) in examStore.questions"
-            :key="item.id || index"
+      <template v-if="isFullExamSource">
+        <view class="question-book" :class="{ 'question-book--long': questionBookLong }">
+          <view class="question-book__head">
+            <text class="question-book__title">题本区</text>
+            <text class="question-book__meta">第 {{ questionBookIndex + 1 }} / {{ examStore.totalQuestions }} 题</text>
+          </view>
+          <swiper
+            class="question-book__swiper"
+            :current="questionBookIndex"
+            :indicator-dots="examStore.totalQuestions > 1"
+            indicator-color="rgba(27,95,170,0.22)"
+            indicator-active-color="#1b5faa"
+            @change="onQuestionBookChange"
           >
-            <view
-              class="question-book__card"
-              :class="{ 'question-book__card--current': index === examStore.currentIndex }"
+            <swiper-item
+              v-for="(item, index) in examStore.questions"
+              :key="item.id || index"
             >
-              <view class="question-tags">
-                <text class="question-tag">{{ provinceLabel(item) }}</text>
-                <text class="question-tag question-tag--blue">{{ categoryLabel(item) }}</text>
-                <text v-if="index === examStore.currentIndex" class="question-tag question-tag--active">当前作答</text>
+              <view
+                class="question-book__card"
+                :class="{ 'question-book__card--current': index === examStore.currentIndex }"
+              >
+                <view class="question-tags">
+                  <text class="question-tag">{{ provinceLabel(item) }}</text>
+                  <text class="question-tag question-tag--blue">{{ categoryLabel(item) }}</text>
+                  <text v-if="questionScoreLabel(item)" class="question-tag question-tag--score">{{ questionScoreLabel(item) }}</text>
+                  <text v-if="index === examStore.currentIndex" class="question-tag question-tag--active">当前作答</text>
+                </view>
+                <scroll-view scroll-y class="question-book__stem-scroll">
+                  <text class="question-book__stem">{{ item.stem }}</text>
+                </scroll-view>
               </view>
-              <scroll-view scroll-y class="question-book__stem-scroll">
-                <text class="question-book__stem">{{ item.stem }}</text>
-              </scroll-view>
-            </view>
-          </swiper-item>
-        </swiper>
-      </view>
-
-      <view
-        v-if="useVideoMode"
-        class="floating-camera"
-        :class="cameraSizeClass"
-        @tap="handleCameraTap"
-      >
-        <camera
-          class="floating-camera__camera"
-          device-position="front"
-          flash="off"
-          mode="normal"
-          resolution="medium"
-          frame-size="medium"
-          @error="onCameraError"
-        />
-        <view class="floating-camera__mask">
-          <text class="floating-camera__status">{{ floatingCameraStatus }}</text>
-          <text class="floating-camera__size">{{ cameraSizeText }}</text>
+            </swiper-item>
+          </swiper>
         </view>
-      </view>
 
-      <scroll-view scroll-y class="exam-room__scroll" :style="{ paddingTop: questionBookScrollPadding }">
-        <view class="mock-scene">
-          <image
-            class="mock-scene__image"
-            src="/static/exam/mock-interview-room-live-current.jpg"
-            mode="aspectFill"
+        <view
+          v-if="useVideoMode"
+          class="floating-camera"
+          :class="cameraSizeClass"
+          @tap="handleCameraTap"
+        >
+          <camera
+            class="floating-camera__camera"
+            device-position="front"
+            flash="off"
+            mode="normal"
+            resolution="medium"
+            frame-size="medium"
+            @error="onCameraError"
           />
-          <view class="mock-scene__timer">
-            <text class="mock-scene__timer-label">{{ sceneTimerLabel }}</text>
-            <text class="mock-scene__timer-value">{{ formatTime(sceneTimeLeft) }}</text>
+          <view class="floating-camera__mask">
+            <text class="floating-camera__status">{{ floatingCameraStatus }}</text>
+            <text class="floating-camera__size">{{ cameraSizeText }}</text>
           </view>
         </view>
 
-        <view class="question-panel">
-        <view v-if="isJiangsuReading" class="card reading-list-card">
-          <text class="reading-list__title">江苏 5+15 阅读题本</text>
-          <text v-for="(item, index) in examStore.questions" :key="item.id || index" class="reading-list__item">
-            {{ index + 1 }}. {{ item.stem }}
-          </text>
-        </view>
-
-        <view class="card">
-          <view class="section-head">
-            <text class="section-title">作答区</text>
-            <text class="muted">{{ useVideoMode ? '录像 + 录音' : '仅录音' }}</text>
-          </view>
-
-          <view class="record-panel">
-            <view class="record-panel__status">
-              <text>{{ captureStatusText }}</text>
-              <text v-if="captureReady" class="record-panel__ready">已记录</text>
-            </view>
-            <view v-if="useVideoMode" class="record-panel__camera-status">
-              {{ cameraStatusText }}
-            </view>
-            <view class="record-actions">
-              <button
-                class="secondary-button"
-                :disabled="captureActive || examStore.loading"
-                @tap="startCapture"
-              >
-                {{ useVideoMode ? '开始录像+录音' : '开始录音' }}
-              </button>
-              <button
-                class="secondary-button"
-                :disabled="!captureActive || examStore.loading"
-                @tap="stopCapture"
-              >
-                {{ useVideoMode ? '停止录像+录音' : '停止录音' }}
-              </button>
+        <scroll-view scroll-y class="exam-room__scroll" :style="{ paddingTop: questionBookScrollPadding }">
+          <view class="full-exam-scene">
+            <image
+              class="full-exam-scene__image"
+              src="/static/exam/full-exam-room-live-current.jpg"
+              mode="aspectFill"
+            />
+            <view class="full-exam-scene__timer">
+              <text class="full-exam-scene__timer-label">{{ sceneTimerLabel }}</text>
+              <text class="full-exam-scene__timer-value">{{ formatTime(sceneTimeLeft) }}</text>
             </view>
           </view>
-        </view>
-        </view>
-      </scroll-view>
 
-      <view class="room-actions">
-        <button class="secondary-button" @tap="goBackHome">退出</button>
-        <button class="primary-button" :loading="examStore.loading" @tap="submitAnswer">
-          {{ examStore.isLastQuestion ? '提交并看结果' : '提交本题' }}
-        </button>
-      </view>
+          <view class="question-panel">
+            <view v-if="isJiangsuReading" class="card reading-list-card">
+              <text class="reading-list__title">江苏 5+15 阅读题本</text>
+              <text v-for="(item, index) in examStore.questions" :key="item.id || index" class="reading-list__item">
+                {{ index + 1 }}. {{ item.stem }}
+              </text>
+            </view>
+
+            <view class="card">
+              <view class="section-head">
+                <text class="section-title">作答区</text>
+                <text class="muted">{{ useVideoMode ? '录像 + 录音' : '仅录音' }}</text>
+              </view>
+
+              <view class="record-panel">
+                <view class="record-panel__status">
+                  <text>{{ captureStatusText }}</text>
+                  <text v-if="captureReady" class="record-panel__ready">已记录</text>
+                </view>
+                <view v-if="useVideoMode" class="record-panel__camera-status">
+                  {{ cameraStatusText }}
+                </view>
+                <view class="record-actions">
+                  <button
+                    class="secondary-button"
+                    :disabled="captureActive || examStore.loading"
+                    @tap="startCapture"
+                  >
+                    {{ useVideoMode ? '开始录像+录音' : '开始录音' }}
+                  </button>
+                  <button
+                    class="secondary-button"
+                    :disabled="!captureActive || examStore.loading"
+                    @tap="stopCapture"
+                  >
+                    {{ useVideoMode ? '停止录像+录音' : '停止录音' }}
+                  </button>
+                </view>
+              </view>
+            </view>
+          </view>
+        </scroll-view>
+
+        <view class="room-actions">
+          <button class="secondary-button" @tap="goBackHome">退出</button>
+          <button class="primary-button" :loading="examStore.loading" @tap="submitAnswer">
+            {{ examStore.isLastQuestion ? '提交并看结果' : '提交本题' }}
+          </button>
+        </view>
+      </template>
+
+      <template v-else>
+        <view class="room-header">
+          <text class="room-header__count">第 {{ examStore.questionNumber }} / {{ examStore.totalQuestions }} 题</text>
+          <text class="room-header__timer">{{ sceneTimerLabel }} {{ formatTime(sceneTimeLeft) }}</text>
+        </view>
+
+        <scroll-view scroll-y class="question-panel">
+          <view class="card">
+            <view class="question-tags">
+              <text class="question-tag">{{ provinceLabel(question) }}</text>
+              <text class="question-tag question-tag--blue">{{ categoryLabel(question) }}</text>
+              <text v-if="questionScoreLabel(question)" class="question-tag question-tag--score">{{ questionScoreLabel(question) }}</text>
+            </view>
+            <text class="question-stem">{{ question.stem }}</text>
+            <view v-if="isJiangsuReading" class="reading-list">
+              <text class="reading-list__title">江苏 5+15 阅读题本</text>
+              <text v-for="(item, index) in examStore.questions" :key="item.id || index" class="reading-list__item">
+                {{ index + 1 }}. {{ item.stem }}
+              </text>
+            </view>
+          </view>
+
+          <view class="card">
+            <view class="section-head">
+              <text class="section-title">作答区</text>
+              <text class="muted">{{ useVideoMode ? '录像 / 录音' : '仅录音' }}</text>
+            </view>
+
+            <view class="media-toggle">
+              <view class="media-toggle__item" :class="{ 'media-toggle__item--active': !useVideoMode }" @tap="selectAudioMode">
+                <text>仅录音</text>
+              </view>
+              <view class="media-toggle__item" :class="{ 'media-toggle__item--active': useVideoMode }" @tap="selectVideoMode">
+                <text>录像+录音</text>
+              </view>
+            </view>
+
+            <view v-if="useVideoMode" class="camera-panel">
+              <camera
+                class="camera-preview"
+                mode="normal"
+                device-position="front"
+                flash="off"
+                resolution="medium"
+                frame-size="medium"
+                @error="onCameraError"
+              />
+              <view class="record-panel__status camera-panel__status">
+                <text>{{ cameraStatusText }}</text>
+                <text v-if="recordedVideoFile" class="record-panel__ready">已录像</text>
+              </view>
+              <view class="record-actions">
+                <button
+                  class="secondary-button"
+                  :disabled="!cameraAvailable || videoRecording || recording || examStore.loading"
+                  @tap="startVideoRecord"
+                >
+                  开始录像
+                </button>
+                <button
+                  class="secondary-button"
+                  :disabled="!videoRecording || examStore.loading"
+                  @tap="stopVideoRecord"
+                >
+                  停止录像
+                </button>
+              </view>
+            </view>
+
+            <view class="record-panel">
+              <view class="record-panel__status">
+                <text>{{ recordStatusText }}</text>
+                <text v-if="recordedFile" class="record-panel__ready">已录音</text>
+              </view>
+              <view class="record-actions">
+                <button
+                  class="secondary-button"
+                  :disabled="recording || videoRecording || examStore.loading"
+                  @tap="startRecord"
+                >
+                  开始录音
+                </button>
+                <button
+                  class="secondary-button"
+                  :disabled="!recording || examStore.loading"
+                  @tap="stopRecord"
+                >
+                  停止录音
+                </button>
+              </view>
+            </view>
+          </view>
+        </scroll-view>
+
+        <view class="room-actions">
+          <button class="secondary-button" @tap="goBackHome">退出</button>
+          <button class="primary-button" :loading="examStore.loading" @tap="submitAnswer">
+            {{ examStore.isLastQuestion ? '提交并看结果' : '提交本题' }}
+          </button>
+        </view>
+      </template>
     </view>
     <view v-else class="exam-room__empty">
-      <EmptyState title="考场未创建" desc="请先从模考准备页进入。" />
+      <EmptyState
+        :title="isFullExamSource ? '考场未创建' : '练习未创建'"
+        :desc="isFullExamSource ? '请先从全真模拟准备页进入。' : '请先从练习准备页进入。'"
+      />
       <button class="primary-button" @tap="goPrepare">去准备</button>
     </view>
   </view>
@@ -158,7 +269,7 @@ const selectedMediaType = ref('')
 const questionStartedAt = ref(Date.now())
 const questionBookIndex = ref(0)
 const reportedQuestionKeys = new Set()
-const JIANGSU_MOCK_TIMING_MODE = 'jiangsu_5_15'
+const JIANGSU_FULL_EXAM_TIMING_MODE = 'jiangsu_5_15'
 const JIANGSU_READING_SECONDS = 5 * 60
 const JIANGSU_ANSWER_SECONDS = 15 * 60
 let timer = null
@@ -176,11 +287,12 @@ const questionBookScrollPadding = computed(() => (
     ? 'calc(430rpx + env(safe-area-inset-top))'
     : 'calc(338rpx + env(safe-area-inset-top))'
 ))
-const isMockLikeSource = computed(() => examStore.source === 'mock')
-const isJiangsuMockTiming = computed(() => isMockLikeSource.value && examStore.questions.some((item) => (
-  item?.mockTimingMode === JIANGSU_MOCK_TIMING_MODE
+const isFullExamSource = computed(() => examStore.source === 'fullExam')
+const roomNavigationTitle = computed(() => (isFullExamSource.value ? '全真考场' : '练习作答'))
+const isJiangsuFullExamTiming = computed(() => isFullExamSource.value && examStore.questions.some((item) => (
+  item?.fullExamTimingMode === JIANGSU_FULL_EXAM_TIMING_MODE
 )))
-const isJiangsuReading = computed(() => isJiangsuMockTiming.value && phase.value === 'reading')
+const isJiangsuReading = computed(() => isJiangsuFullExamTiming.value && phase.value === 'reading')
 const activeTimerLabel = computed(() => {
   if (phase.value === 'reading') return '阅读'
   return phase.value === 'preparing' ? '准备' : '作答'
@@ -192,7 +304,7 @@ const sceneTimeLeft = computed(() => {
   return Math.max(0, Number(answerLeft.value) || 0)
 })
 const sceneTimerLabel = computed(() => (
-  isJiangsuMockTiming.value || isMockLikeSource.value ? '总倒计时' : activeTimerLabel.value
+  isJiangsuFullExamTiming.value || isFullExamSource.value ? '总倒计时' : activeTimerLabel.value
 ))
 const cameraStatusText = computed(() => {
   if (!useVideoMode.value) return '已选择仅录音，不启用摄像头'
@@ -273,6 +385,12 @@ watch(() => examStore.currentIndex, (index) => {
   questionBookIndex.value = Math.max(0, Number(index) || 0)
 })
 
+watch(roomNavigationTitle, (title) => {
+  if (typeof uni.setNavigationBarTitle === 'function') {
+    uni.setNavigationBarTitle({ title })
+  }
+}, { immediate: true })
+
 watch(useVideoMode, async (enabled) => {
   if (enabled) {
     await nextTick()
@@ -290,6 +408,27 @@ function provinceLabel(item = {}) {
 
 function categoryLabel(item = {}) {
   return getCategoryName(item?.dimension || item?.type || '')
+}
+
+function normalizeScoreText(value) {
+  const score = Number(value)
+  if (!Number.isFinite(score) || score <= 0) return ''
+  return Number.isInteger(score) ? String(score) : score.toFixed(1).replace(/\.0$/, '')
+}
+
+function questionScoreLabel(item = {}) {
+  const directScore = [
+    item.assignedScore,
+    item.questionMaxScore,
+    item.fullScore,
+    item.full_score
+  ].map((value) => Number(value)).find((value) => Number.isFinite(value) && value > 0)
+  if (directScore) return `${normalizeScoreText(directScore)} 分`
+
+  const pointsTotal = Array.isArray(item.scoringPoints)
+    ? item.scoringPoints.reduce((sum, point) => sum + (Number(point?.score || point?.points || 0) || 0), 0)
+    : 0
+  return pointsTotal > 0 ? `${normalizeScoreText(pointsTotal)} 分` : ''
 }
 
 function onQuestionBookChange(event) {
@@ -345,11 +484,11 @@ function startTimer() {
 }
 
 function resetQuestionState() {
-  phase.value = isJiangsuMockTiming.value ? 'reading' : 'preparing'
-  prepLeft.value = isJiangsuMockTiming.value
+  phase.value = isJiangsuFullExamTiming.value ? 'reading' : 'preparing'
+  prepLeft.value = isJiangsuFullExamTiming.value
     ? JIANGSU_READING_SECONDS
     : Number(question.value?.prepTime || userStore.preferences.defaultPrepTime || 90)
-  answerLeft.value = isJiangsuMockTiming.value
+  answerLeft.value = isJiangsuFullExamTiming.value
     ? JIANGSU_ANSWER_SECONDS
     : Number(question.value?.answerTime || userStore.preferences.defaultAnswerTime || 180)
   questionStartedAt.value = Date.now()
@@ -367,7 +506,7 @@ function resetAnswerInputState() {
 
 function currentUsageSeconds() {
   const elapsed = Math.ceil((Date.now() - questionStartedAt.value) / 1000)
-  const maxSeconds = isJiangsuMockTiming.value
+  const maxSeconds = isJiangsuFullExamTiming.value
     ? JIANGSU_READING_SECONDS + JIANGSU_ANSWER_SECONDS
     : Number(question.value?.prepTime || userStore.preferences.defaultPrepTime || 90)
       + Number(question.value?.answerTime || userStore.preferences.defaultAnswerTime || 180)
@@ -384,7 +523,7 @@ function canRecordNow() {
 
 function usageType() {
   if (examStore.source === 'trial') return 'trial'
-  if (isMockLikeSource.value) return 'mock'
+  if (isFullExamSource.value) return 'full_exam'
   return 'practice'
 }
 
@@ -432,11 +571,11 @@ function startRecorderInternal() {
 }
 
 function startRecord() {
-  if (useVideoMode.value) {
-    startVideoWithAudio()
+  if (!canRecordNow()) return
+  if (videoRecording.value) {
+    toast('请先停止录像')
     return
   }
-  if (!canRecordNow()) return
   startRecorderInternal()
 }
 
@@ -471,10 +610,14 @@ function handleVideoSaved(res, message = '录像已保存') {
   toast(message, 'success')
 }
 
-function startVideoRecord() {
+function startVideoRecord(options = {}) {
   if (!canRecordNow()) return
   if (!useVideoMode.value) {
     toast('当前已选择仅录音')
+    return
+  }
+  if (recording.value && options.allowAudioRecording !== true) {
+    toast('请先停止录音')
     return
   }
   if (!cameraContext.value) {
@@ -554,6 +697,14 @@ function onCameraError(error) {
   cameraAvailable.value = false
 }
 
+function selectAudioMode() {
+  examStore.setMediaMode('audio')
+}
+
+function selectVideoMode() {
+  examStore.setMediaMode('video')
+}
+
 function startVideoWithAudio() {
   if (!canRecordNow()) return
   if (!useVideoMode.value) {
@@ -569,7 +720,7 @@ function startVideoWithAudio() {
   selectedMediaType.value = ''
 
   if (!startRecorderInternal()) return
-  startVideoRecord()
+  startVideoRecord({ allowAudioRecording: true })
 }
 
 async function stopVideoWithAudio() {
@@ -653,7 +804,7 @@ async function submitAnswer() {
 
     toast('本题已提交，后台评分中', 'success')
     if (examStore.goNext()) {
-      if (isJiangsuMockTiming.value) {
+      if (isJiangsuFullExamTiming.value) {
         resetAnswerInputState()
         questionStartedAt.value = Date.now()
       } else {
@@ -668,7 +819,8 @@ async function submitAnswer() {
 }
 
 function goPrepare() {
-  uni.redirectTo({ url: '/pages/exam/prepare' })
+  const mode = isFullExamSource.value ? 'fullExam' : 'free'
+  uni.redirectTo({ url: `/pages/exam/prepare?mode=${mode}` })
 }
 
 function goBackHome() {
@@ -689,6 +841,10 @@ function goBackHome() {
 <style scoped>
 .exam-room {
   min-height: 100vh;
+  background: #f0f5fa;
+}
+
+.exam-room--full-exam {
   background: #2b1b13;
 }
 
@@ -705,21 +861,21 @@ function goBackHome() {
     linear-gradient(180deg, rgba(56, 34, 23, 0.96) 0%, rgba(38, 24, 18, 0.98) 42%, #f0e7d8 42%, #f5efe4 100%);
 }
 
-.mock-scene {
+.full-exam-scene {
   position: relative;
   height: 330rpx;
   overflow: hidden;
   background: #2b1b13;
 }
 
-.mock-scene__image {
+.full-exam-scene__image {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
 }
 
-.mock-scene__timer {
+.full-exam-scene__timer {
   position: absolute;
   top: 116rpx;
   right: 18rpx;
@@ -734,20 +890,20 @@ function goBackHome() {
   box-shadow: 0 0 12rpx rgba(255, 24, 24, 0.28);
 }
 
-.mock-scene__timer-label,
-.mock-scene__timer-value {
+.full-exam-scene__timer-label,
+.full-exam-scene__timer-value {
   display: block;
   line-height: 1;
 }
 
-.mock-scene__timer-label {
+.full-exam-scene__timer-label {
   margin-bottom: 3rpx;
   color: rgba(255, 118, 118, 0.76);
   font-size: 13rpx;
   font-weight: 700;
 }
 
-.mock-scene__timer-value {
+.full-exam-scene__timer-value {
   color: #ff3030;
   font-size: 21rpx;
   font-weight: 900;
@@ -996,5 +1152,139 @@ function goBackHome() {
   color: rgba(255, 247, 232, 0.68);
   font-size: 17rpx;
   font-weight: 600;
+}
+
+.exam-room--practice .room-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22rpx 28rpx;
+  border-bottom: 1rpx solid #e8eef5;
+  background: #ffffff;
+}
+
+.exam-room--practice .room-header__count {
+  color: #1a1a2e;
+  font-size: 29rpx;
+  font-weight: 800;
+}
+
+.exam-room--practice .room-header__timer {
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: #e8f4fd;
+  color: #1b5faa;
+  font-size: 25rpx;
+  font-weight: 700;
+}
+
+.exam-room--practice .question-panel {
+  flex: 1;
+  min-height: 0;
+  padding: 24rpx 28rpx;
+  background: #f0f5fa;
+}
+
+.exam-room--practice .question-panel .card {
+  border-color: #d9e3ef;
+  background: #ffffff;
+}
+
+.exam-room--practice .question-stem {
+  display: block;
+  color: #1f2b3d;
+  font-size: 31rpx;
+  font-weight: 650;
+  line-height: 1.75;
+}
+
+.exam-room--practice .media-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12rpx;
+  margin-bottom: 20rpx;
+}
+
+.exam-room--practice .media-toggle__item {
+  padding: 18rpx 14rpx;
+  border: 1rpx solid #d9e3ef;
+  border-radius: 14rpx;
+  background: #ffffff;
+  color: #2a3648;
+  font-size: 25rpx;
+  font-weight: 800;
+  text-align: center;
+}
+
+.exam-room--practice .media-toggle__item--active {
+  border-color: #1b5faa;
+  background: #e8f4fd;
+  color: #1b5faa;
+}
+
+.exam-room--practice .camera-panel {
+  overflow: hidden;
+  border: 1rpx solid #d9e3ef;
+  border-radius: 16rpx;
+  background: #f6f8fb;
+}
+
+.exam-room--practice .camera-preview {
+  display: block;
+  width: 100%;
+  height: 220rpx;
+  background: #111827;
+}
+
+.exam-room--practice .camera-panel__status {
+  padding: 18rpx 20rpx 0;
+}
+
+.exam-room--practice .record-panel {
+  margin-top: 22rpx;
+  padding-top: 22rpx;
+  border-top: 1rpx solid #eef2f6;
+}
+
+.exam-room--practice .record-panel__status {
+  display: flex;
+  justify-content: space-between;
+  color: #6f7c8f;
+  font-size: 24rpx;
+}
+
+.exam-room--practice .record-panel__ready {
+  color: #389e0d;
+  font-weight: 700;
+}
+
+.exam-room--practice .record-panel__camera-status {
+  margin-top: 12rpx;
+  padding: 14rpx 16rpx;
+  border-radius: 12rpx;
+  background: #fff7e8;
+  color: #7a4520;
+  font-size: 23rpx;
+  line-height: 1.5;
+}
+
+.exam-room--practice .record-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+  margin-top: 18rpx;
+}
+
+.exam-room--practice .camera-panel .record-actions {
+  padding: 0 20rpx 20rpx;
+}
+
+.exam-room--practice .room-actions {
+  display: grid;
+  grid-template-columns: 180rpx minmax(0, 1fr);
+  gap: 16rpx;
+  padding: 18rpx 28rpx calc(18rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid #e8eef5;
+  background: #ffffff;
 }
 </style>

@@ -38,13 +38,13 @@
     {
       "path": "pages/exam/prepare",
       "style": {
-        "navigationBarTitleText": "模考准备"
+        "navigationBarTitleText": "练习准备"
       }
     },
     {
       "path": "pages/exam/room",
       "style": {
-        "navigationBarTitleText": "模拟考场",
+        "navigationBarTitleText": "练习作答",
         "disableScroll": true
       }
     },

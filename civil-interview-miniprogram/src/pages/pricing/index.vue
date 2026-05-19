@@ -29,7 +29,7 @@
         <text class="plan-card__price">¥0.01</text>
         <text class="plan-card__desc">总计 3 小时训练时长，适合短期冲刺，按实际训练消耗。</text>
         <view class="feature-list">
-          <text>完整模拟面试</text>
+          <text>完整全真模拟</text>
           <text>定向备面与专项训练</text>
           <text>可与已有权益叠加</text>
           <text>历史报告、收藏题和低分错题复盘</text>
@@ -81,6 +81,55 @@ function createIdempotencyKey(plan) {
   return `mini_${plan}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
 }
 
+function compareVersion(versionA = '', versionB = '') {
+  const a = String(versionA || '').split('.').map((item) => Number(item) || 0)
+  const b = String(versionB || '').split('.').map((item) => Number(item) || 0)
+  const length = Math.max(a.length, b.length)
+  for (let index = 0; index < length; index += 1) {
+    const diff = (a[index] || 0) - (b[index] || 0)
+    if (diff !== 0) return diff
+  }
+  return 0
+}
+
+function canUseWechatVirtualPayment() {
+  if (typeof wx === 'undefined' || typeof wx.requestVirtualPayment !== 'function') return false
+  const sdkVersion = wx.getSystemInfoSync?.().SDKVersion || ''
+  return compareVersion(sdkVersion, '2.19.2') >= 0 || wx.canIUse?.('requestVirtualPayment') === true
+}
+
+function parseVirtualPaySignData(signData) {
+  if (typeof signData !== 'string' || !signData.trim()) {
+    throw new Error('小程序虚拟支付参数不完整：缺少 signData')
+  }
+  try {
+    return JSON.parse(signData)
+  } catch {
+    throw new Error('小程序虚拟支付参数格式错误：signData 必须为 JSON 字符串')
+  }
+}
+
+function validateWechatVirtualPayParams(payParams = {}) {
+  const requiredFields = ['signData', 'mode', 'paySig', 'signature']
+  const missing = requiredFields.filter((field) => !payParams[field])
+  if (missing.length) {
+    throw new Error(`小程序虚拟支付参数不完整：缺少 ${missing.join('、')}`)
+  }
+
+  const signData = parseVirtualPaySignData(payParams.signData)
+  const requiredSignDataFields = ['offerId', 'buyQuantity', 'currencyType', 'outTradeNo', 'attach']
+  const missingSignData = requiredSignDataFields.filter((field) => signData[field] === undefined || signData[field] === '')
+  if (missingSignData.length) {
+    throw new Error(`小程序虚拟支付 signData 不完整：缺少 ${missingSignData.join('、')}`)
+  }
+  if (signData.currencyType !== 'CNY') {
+    throw new Error('小程序虚拟支付仅支持 CNY 币种')
+  }
+  if (payParams.mode === 'short_series_goods' && (!signData.productId || !signData.goodsPrice)) {
+    throw new Error('小程序虚拟支付道具直购参数不完整')
+  }
+}
+
 function loginForPayCode() {
   return new Promise((resolve, reject) => {
     uni.login({
@@ -98,8 +147,14 @@ function loginForPayCode() {
 
 function requestWechatVirtualPayment(payParams = {}) {
   return new Promise((resolve, reject) => {
-    if (typeof wx === 'undefined' || typeof wx.requestVirtualPayment !== 'function') {
+    if (!canUseWechatVirtualPayment()) {
       reject(new Error('当前微信基础库不支持小程序虚拟支付，请升级微信或开发者工具后重试'))
+      return
+    }
+    try {
+      validateWechatVirtualPayParams(payParams)
+    } catch (error) {
+      reject(error)
       return
     }
     wx.requestVirtualPayment({

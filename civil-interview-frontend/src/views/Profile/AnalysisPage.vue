@@ -81,7 +81,7 @@
         </div>
       </template>
 
-      <EmptyState v-else-if="!loading" text="暂无练习数据，开始你的第一次模考吧" />
+      <EmptyState v-else-if="!loading" text="暂无练习数据，开始你的第一次全真模拟吧" />
     </a-spin>
   </div>
 </template>

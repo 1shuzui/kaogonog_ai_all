@@ -84,7 +84,7 @@
         <a-form-item label="题号 / 页面线索">
           <a-input
             v-model:value="form.questionId"
-            placeholder="例如：AH-202405-01 / /pricing / 模拟面试第 2 题"
+            placeholder="例如：AH-202405-01 / /pricing / 全真模拟第 2 题"
           />
         </a-form-item>
         <a-form-item label="问题描述">

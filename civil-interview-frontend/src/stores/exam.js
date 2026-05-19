@@ -68,7 +68,7 @@ export const useExamStore = defineStore('exam', {
     answers: [],
     deviceReady: false,
     videoEnabled: true,
-    mockMode: false,
+    fullExamMode: false,
     examStartTime: null,
     examElapsed: 0,
     submitStep: ''
@@ -112,7 +112,7 @@ export const useExamStore = defineStore('exam', {
   },
 
   actions: {
-    async initExam(questions, mockMode = false) {
+    async initExam(questions, fullExamMode = false) {
       answerProcessingTasks.clear()
       this.questionList = questions
       this.currentIndex = 0
@@ -121,8 +121,8 @@ export const useExamStore = defineStore('exam', {
       this.recordingBlob = null
       this.transcript = ''
       this.scoringResult = null
-      this.mockMode = mockMode
-      this.examStartTime = mockMode ? Date.now() : null
+      this.fullExamMode = fullExamMode
+      this.examStartTime = fullExamMode ? Date.now() : null
       this.examElapsed = 0
       this.submitStep = ''
       const result = await startExam(questions.map((q) => q.id))
@@ -191,7 +191,7 @@ export const useExamStore = defineStore('exam', {
 
         this.status = EXAM_STATUS.COMPLETED
         this.submitStep = ''
-        this.queueMockAnswerProcessing(queuedAnswer)
+        this.queueExamAnswerProcessing(queuedAnswer)
         return queuedAnswer
       } catch (err) {
         this.status = EXAM_STATUS.ANSWERING
@@ -200,8 +200,8 @@ export const useExamStore = defineStore('exam', {
       }
     },
 
-    queueMockAnswerProcessing(answer) {
-      const task = this.processMockAnswer(answer)
+    queueExamAnswerProcessing(answer) {
+      const task = this.processExamAnswer(answer)
         .catch((error) => {
           const normalizedError = normalizeExamError(error)
           answer.processingStatus = 'failed'
@@ -216,7 +216,7 @@ export const useExamStore = defineStore('exam', {
       return task
     },
 
-    async processMockAnswer(answer) {
+    async processExamAnswer(answer) {
       const answerExamId = answer.examId || this.examId
       if (!answer.recordingBlob || answer.recordingBlob.size <= 0) {
         assertQuestionScoringSupported(answer.questionId)
@@ -272,14 +272,14 @@ export const useExamStore = defineStore('exam', {
 
       const incompleteAnswers = this.answers.filter((item) => !item.transcript && item.recordingBlob)
 
-      if (this.mockMode && incompleteAnswers.length) {
+      if (this.fullExamMode && incompleteAnswers.length) {
         const previousStatus = this.status
         this.status = EXAM_STATUS.SUBMITTING
         this.submitStep = 'batchScoring'
 
         try {
           for (const answer of incompleteAnswers) {
-            await this.processMockAnswer(answer)
+            await this.processExamAnswer(answer)
           }
         } catch (err) {
           this.status = previousStatus
@@ -383,7 +383,7 @@ export const useExamStore = defineStore('exam', {
       this.recordingBlob = null
       this.transcript = ''
       this.scoringResult = null
-      this.mockMode = false
+      this.fullExamMode = false
       this.examStartTime = null
       this.examElapsed = 0
       this.submitStep = ''

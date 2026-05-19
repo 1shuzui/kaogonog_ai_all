@@ -32,7 +32,7 @@ const routes = [
     path: '/exam/prepare',
     name: 'ExamPrepare',
     component: () => import('@/views/Exam/ExamPrepare.vue'),
-    meta: { title: '模拟面试准备', layout: 'simple', requiresPayment: true, paywallSource: '完整模拟面试' }
+    meta: { title: '全真模拟准备', layout: 'simple', requiresPayment: true, paywallSource: '完整全真模拟' }
   },
   {
     path: '/exam/room',

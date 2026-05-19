@@ -12,7 +12,7 @@ export const HOURLY_PLAN_TOTAL_SECONDS = 3 * 60 * 60
 export const MONTHLY_PLAN_DURATION_MS = 30 * 24 * 60 * 60 * 1000
 
 export const PREMIUM_MODULES = [
-  '完整模拟面试与录音/录像评分',
+  '完整全真模拟与录音/录像评分',
   '定向备考与岗位/省份题源',
   '专项训练与薄弱维度推荐',
   '历史报告、错题本与收藏夹'
@@ -26,7 +26,7 @@ export const TRIAL_QUESTION = {
 }
 
 const BILLING_COPY_MAP = {
-  'Full mock exam': '完整模拟面试',
+  'Full exam': '完整全真模拟',
   'Targeted preparation': '定向备考',
   'Dimension training': '专项训练',
   'Trial question': '试用题',
@@ -67,7 +67,7 @@ export const BILLING_PLANS = [
     priceText: '¥0.01',
     description: '适合临近面试前的集中冲刺和短时高强度练习。',
     features: [
-      '解锁模拟面试、定向备考、专项训练和题库推荐',
+      '解锁全真模拟、定向备考、专项训练和题库推荐',
       '总计 3 小时训练时长，按实际使用消耗',
       '可与已开通套餐叠加，系统优先消耗更早到期的权益',
       '支持查看历史报告、收藏题和低分错题',
@@ -83,7 +83,7 @@ export const BILLING_PLANS = [
     description: '适合系统化备考和连续多天的稳定训练。',
     features: [
       '30 天有效期，每日 1 小时训练额度',
-      '解锁模拟面试、定向备考、专项训练和题库推荐',
+      '解锁全真模拟、定向备考、专项训练和题库推荐',
       '可与按时套餐或续费权益叠加，剩余额度统一汇总',
       '支持历史报告、收藏/错题复盘和智能推荐',
       '适合按日推进、持续复盘的备考节奏'

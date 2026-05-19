@@ -8,7 +8,7 @@
       <span class="exam-room__progress">
         {{ examStore.currentQuestionNumber }} / {{ examStore.totalQuestions }}
       </span>
-      <span v-if="examStore.mockMode" class="exam-room__total-timer">
+      <span v-if="examStore.fullExamMode" class="exam-room__total-timer">
         {{ formattedElapsed }}
       </span>
       <a-popconfirm title="确定退出考试？已答题目不会丢失。" @confirm="exitExam">
@@ -152,12 +152,12 @@ onMounted(async () => {
     await new Promise((resolve) => setTimeout(resolve, 500))
     await recorder.initStream({ videoEnabled: examStore.videoEnabled })
   }
-  if (examStore.mockMode && examStore.examStartTime) {
+  if (examStore.fullExamMode && examStore.examStartTime) {
     elapsedTimer = setInterval(() => {
       elapsed.value = Math.floor((Date.now() - examStore.examStartTime) / 1000)
     }, 1000)
   }
-  if (examStore.currentQuestion && examStore.status === EXAM_STATUS.IDLE && examStore.mockMode) {
+  if (examStore.currentQuestion && examStore.status === EXAM_STATUS.IDLE && examStore.fullExamMode) {
     onStartPrep()
   }
 })
@@ -166,7 +166,7 @@ onUnmounted(() => {
   recorder.destroyStream()
   countdown.stop()
   clearInterval(elapsedTimer)
-  if (examStore.mockMode) {
+  if (examStore.fullExamMode) {
     examStore.examElapsed = elapsed.value
   }
 })
@@ -210,7 +210,7 @@ async function onSubmit() {
 function onNext() {
   examStore.nextQuestion()
   countdown.reset(0)
-  if (examStore.mockMode) {
+  if (examStore.fullExamMode) {
     setTimeout(() => onStartPrep(), 500)
   }
 }

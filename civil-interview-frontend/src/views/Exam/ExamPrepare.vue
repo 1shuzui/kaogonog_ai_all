@@ -4,7 +4,7 @@
     <div v-if="waitingRoom" class="waiting-room card">
       <div class="waiting-room__icon">🏛️</div>
       <h2>候考室</h2>
-      <p class="waiting-room__hint">模拟面试即将开始，请做好准备</p>
+      <p class="waiting-room__hint">全真模拟即将开始，请做好准备</p>
       <div class="waiting-room__countdown">{{ waitCountdown }}</div>
       <p class="waiting-room__tip">提示：调整坐姿，保持自信微笑，深呼吸放松</p>
       <a-space class="waiting-room__actions">
@@ -84,15 +84,37 @@
         <a-radio-group v-model:value="examMode" style="width: 100%">
           <a-space direction="vertical" style="width: 100%">
             <a-radio value="free" class="mode-radio">
-              <span class="mode-label">自由练习</span>
-              <span class="mode-desc">随时暂停，自定义节奏</span>
+              <span class="mode-label">专项练习</span>
+              <span class="mode-desc">适合专项训练和即时复盘</span>
             </a-radio>
-            <a-radio value="mock" class="mode-radio">
-              <span class="mode-label">模拟面试</span>
-              <span class="mode-desc">候考等待 → 连续作答 → 全程计时，贴近真实考场</span>
+            <a-radio value="fullExam" class="mode-radio">
+              <span class="mode-label">全真模拟</span>
+              <span class="mode-desc">按真题套卷连续作答，保留每题赋分和整套总分</span>
             </a-radio>
           </a-space>
         </a-radio-group>
+        <div v-if="examMode === 'fullExam'" class="practice-config">
+          <div class="practice-config__item">
+            <span class="practice-config__label">真题套卷</span>
+            <a-select
+              v-model:value="selectedFullExamSuiteId"
+              placeholder="选择整套真题"
+              style="width: 320px"
+              :disabled="fullExamSuitesLoading || !fullExamSuiteOptions.length"
+            >
+              <a-select-option
+                v-for="suite in fullExamSuiteOptions"
+                :key="suite.id"
+                :value="suite.id"
+              >
+                {{ suite.title }}
+              </a-select-option>
+            </a-select>
+          </div>
+          <div class="practice-config__meta">
+            {{ selectedFullExamSuite ? selectedFullExamSuiteSummary : (fullExamSuitesLoading ? '正在加载真题套卷...' : '当前省份暂无整套真题套卷，请切换江苏、安徽或湖南。') }}
+          </div>
+        </div>
         <div v-if="showPracticeConfig" class="practice-config">
           <div class="practice-config__item">
             <span class="practice-config__label">题目数量</span>
@@ -127,7 +149,7 @@
         </div>
       </div>
       <a-button type="primary" size="large" block :loading="enteringExam" :disabled="enteringExam || asrUnavailable" @click="enterExam" style="margin-top: 16px">
-        {{ asrUnavailable ? '语音服务未就绪' : examMode === 'mock' ? '开始模拟面试' : '进入考场' }}
+        {{ asrUnavailable ? '语音服务未就绪' : examMode === 'fullExam' ? '开始全真模拟' : '进入考场' }}
       </a-button>
     </div>
     </template>
@@ -135,14 +157,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { usePermission } from '@/composables/usePermission'
 import { useMediaRecorder } from '@/composables/useMediaRecorder'
 import { useExamStore } from '@/stores/exam'
 import { useBillingStore } from '@/stores/billing'
-import { getRandomQuestions, getQuestionById } from '@/api/questionBank'
+import { getRandomQuestions, getQuestionById, getQuestions } from '@/api/questionBank'
 import { getAsrStatus } from '@/api/scoring'
 import { useUserStore } from '@/stores/user'
 import { useTargetedStore } from '@/stores/targeted'
@@ -150,6 +172,11 @@ import {
   getScoringUnavailableMessage,
   splitScoringSupportedQuestions
 } from '@/utils/scoringSupport'
+import {
+  fetchFullExamSuites,
+  getFullExamSuiteSummary,
+  loadFullExamSuiteQuestions
+} from '@/utils/fullExamSuites'
 
 const router = useRouter()
 const route = useRoute()
@@ -173,6 +200,9 @@ const enteringExam = ref(false)
 const questionCount = ref(5)
 const dimensionFilters = ref(['random'])
 const asrStatus = ref(null)
+const selectedFullExamSuiteId = ref('')
+const fullExamSuites = ref([])
+const fullExamSuitesLoading = ref(false)
 
 // 候考室
 const waitingRoom = ref(false)
@@ -187,8 +217,7 @@ let countdownTimer = null
 let waitTimer = null
 let pendingQuestions = null
 const DEFAULT_EXAM_QUESTION_COUNT = 5
-const JIANGSU_MOCK_QUESTION_COUNT = 4
-const JIANGSU_MOCK_TIMING_MODE = 'jiangsu_5_15'
+const JIANGSU_FULL_EXAM_TIMING_MODE = 'jiangsu_5_15'
 const RANDOM_FETCH_BUFFER = 6
 const RANDOM_FETCH_ATTEMPTS = 3
 const RANDOM_DIMENSION_KEY = 'random'
@@ -214,9 +243,27 @@ const selectedSpecificDimensions = computed(() => (
 ))
 const selectedSpecificDimensionCount = computed(() => selectedSpecificDimensions.value.length)
 const selectedDimensionParam = computed(() => selectedSpecificDimensions.value.join(','))
-const mockQuestionCount = computed(() => (
-  userStore.selectedProvince === 'jiangsu' ? JIANGSU_MOCK_QUESTION_COUNT : DEFAULT_EXAM_QUESTION_COUNT
+const fullExamSuiteOptions = computed(() => fullExamSuites.value)
+const selectedFullExamSuite = computed(() => (
+  fullExamSuiteOptions.value.find((suite) => suite.id === selectedFullExamSuiteId.value)
+  || fullExamSuiteOptions.value[0]
+  || null
 ))
+const selectedFullExamSuiteSummary = computed(() => getFullExamSuiteSummary(selectedFullExamSuite.value))
+
+watch(fullExamSuiteOptions, (suites) => {
+  if (!suites.length) {
+    selectedFullExamSuiteId.value = ''
+    return
+  }
+  if (!suites.some((suite) => suite.id === selectedFullExamSuiteId.value)) {
+    selectedFullExamSuiteId.value = suites[0].id
+  }
+}, { immediate: true })
+
+watch(() => userStore.selectedProvince, () => {
+  refreshFullExamSuites().catch(() => null)
+}, { immediate: true })
 
 function handleDimensionFiltersChange(values = []) {
   const selected = Array.isArray(values) ? values.filter(Boolean) : []
@@ -235,12 +282,25 @@ function applyUserPracticePreferencesToQuestions(questions = []) {
   }))
 }
 
-function applyMockTimingMode(questions = []) {
-  if (examMode.value !== 'mock' || userStore.selectedProvince !== 'jiangsu') return questions
-  return questions.slice(0, JIANGSU_MOCK_QUESTION_COUNT).map((question) => ({
+function applyFullExamTimingMode(questions = []) {
+  if (examMode.value !== 'fullExam') return questions
+  return questions.map((question) => ({
     ...question,
-    mockTimingMode: JIANGSU_MOCK_TIMING_MODE
+    fullExamTimingMode: question?.fullExamTimingMode || (userStore.selectedProvince === 'jiangsu' ? JIANGSU_FULL_EXAM_TIMING_MODE : '')
   }))
+}
+
+async function refreshFullExamSuites() {
+  fullExamSuitesLoading.value = true
+  try {
+    const suites = await fetchFullExamSuites(getQuestions, userStore.selectedProvince)
+    fullExamSuites.value = suites
+  } catch (error) {
+    fullExamSuites.value = []
+    message.warning(error?.message || '真题套卷加载失败，请稍后重试。')
+  } finally {
+    fullExamSuitesLoading.value = false
+  }
 }
 
 async function loadAsrStatus() {
@@ -436,8 +496,8 @@ async function enterExam() {
   const freeQuestionCount = Math.max(1, Math.min(10, Number(questionCount.value) || DEFAULT_EXAM_QUESTION_COUNT))
   const targetQuestionCount = isTrialEntry.value
     ? 1
-    : examMode.value === 'mock'
-      ? mockQuestionCount.value
+    : examMode.value === 'fullExam'
+      ? (selectedFullExamSuite.value?.questions?.length || 0)
       : freeQuestionCount
 
   try {
@@ -480,6 +540,16 @@ async function enterExam() {
       } catch {
         questions = await fetchScoringReadyRandomQuestions(targetQuestionCount)
       }
+    } else if (examMode.value === 'fullExam') {
+      if (!selectedFullExamSuite.value) {
+        message.warning('当前省份暂无整套真题套卷，请切换江苏、安徽或湖南。')
+        return
+      }
+      questions = await loadFullExamSuiteQuestions(selectedFullExamSuite.value, getQuestionById)
+      questions = await ensureScoringReadyQuestions(questions, {
+        requiredCount: selectedFullExamSuite.value.questions.length,
+        allowAutoSupplement: false
+      })
     } else {
       questions = await fetchScoringReadyRandomQuestions(targetQuestionCount)
     }
@@ -490,12 +560,17 @@ async function enterExam() {
       return
     }
 
-    questions = applyMockTimingMode(applyUserPracticePreferencesToQuestions(questions))
+    if (examMode.value === 'fullExam' && selectedFullExamSuite.value && questions.length !== selectedFullExamSuite.value.questions.length) {
+      message.warning('当前套题题目加载不完整，请切换其他套卷后重试。')
+      return
+    }
+
+    questions = applyFullExamTimingMode(applyUserPracticePreferencesToQuestions(questions))
 
     recorder.destroyStream()
     examStore.setVideoEnabled(videoEnabled.value)
 
-    if (examMode.value === 'mock') {
+    if (examMode.value === 'fullExam') {
       if (isTrialEntry.value) {
         await examStore.initExam(questions, true)
         router.push('/exam/room')
@@ -510,7 +585,7 @@ async function enterExam() {
         waitSeconds.value -= 1
         if (waitSeconds.value <= 0) {
           clearInterval(waitTimer)
-          await startMockExam(pendingQuestions)
+          await startFullExam(pendingQuestions)
         }
       }, 1000)
       return
@@ -527,7 +602,7 @@ async function enterExam() {
 
 async function skipWaiting() {
   clearInterval(waitTimer)
-  await startMockExam(pendingQuestions)
+  await startFullExam(pendingQuestions)
 }
 
 function exitWaitingRoom() {
@@ -538,7 +613,7 @@ function exitWaitingRoom() {
   router.push('/')
 }
 
-async function startMockExam(questions) {
+async function startFullExam(questions) {
   waitingRoom.value = false
   await examStore.initExam(questions, true)
   router.push('/exam/room')
@@ -616,6 +691,12 @@ async function startMockExam(questions) {
   flex: 0 0 auto;
   color: @text-primary;
   font-weight: 600;
+}
+
+.practice-config__meta {
+  color: @text-secondary;
+  font-size: @font-size-xs;
+  line-height: 1.6;
 }
 
 .waiting-room {

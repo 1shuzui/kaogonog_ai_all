@@ -93,49 +93,51 @@
       <EmptyState title="暂无反馈" desc="提交后会在这里显示处理状态。" />
     </view>
 
-    <view v-if="formVisible" class="modal-mask" @tap="closeForm">
+    <view v-if="formVisible" class="modal-mask" catchtouchmove="noop" @tap="closeForm">
       <view class="modal-card" @tap.stop>
         <text class="modal-card__title">提交客服反馈</text>
-        <picker :range="feedbackTypeNames.slice(1)" :value="formTypeIndex" @change="onFormTypeChange">
-          <view class="filter-row">
-            <text>问题类型</text>
-            <text class="filter-row__value">{{ form.type }}</text>
-          </view>
-        </picker>
-        <input v-model="form.questionId" class="field field--mt" placeholder="题号 / 页面线索" />
-        <textarea v-model="form.summary" class="field field--mt textarea" placeholder="请描述问题现象、出现步骤、你的预期结果。" />
-        <input v-model="form.contact" class="field field--mt" placeholder="联系方式（可选）" />
-        <view class="form-attachments field--mt">
-          <view class="form-attachments__head">
-            <text>问题截图</text>
-            <text>{{ form.attachments.length }}/{{ MAX_FEEDBACK_IMAGES }}</text>
-          </view>
-          <view v-if="form.attachments.length" class="attachment-grid attachment-grid--form">
-            <view
-              v-for="(item, index) in form.attachments"
-              :key="item.storageKey || item.url"
-              class="attachment-editor"
-            >
-              <image
-                class="attachment-thumb"
-                :src="item.url"
-                mode="aspectFill"
-                @tap="previewAttachments(form.attachments, index)"
-              />
-              <button class="attachment-editor__remove" @tap="removeAttachment(index)">×</button>
+        <scroll-view scroll-y class="modal-card__body">
+          <picker :range="feedbackTypeNames.slice(1)" :value="formTypeIndex" @change="onFormTypeChange">
+            <view class="filter-row">
+              <text>问题类型</text>
+              <text class="filter-row__value">{{ form.type }}</text>
             </view>
+          </picker>
+          <input v-model="form.questionId" class="field field--mt" placeholder="题号 / 页面线索" />
+          <textarea v-model="form.summary" class="field field--mt textarea" placeholder="请描述问题现象、出现步骤、你的预期结果。" />
+          <input v-model="form.contact" class="field field--mt" placeholder="联系方式（可选）" />
+          <view class="form-attachments field--mt">
+            <view class="form-attachments__head">
+              <text>问题截图</text>
+              <text>{{ form.attachments.length }}/{{ MAX_FEEDBACK_IMAGES }}</text>
+            </view>
+            <view v-if="form.attachments.length" class="attachment-grid attachment-grid--form">
+              <view
+                v-for="(item, index) in form.attachments"
+                :key="item.storageKey || item.url"
+                class="attachment-editor"
+              >
+                <image
+                  class="attachment-thumb"
+                  :src="item.url"
+                  mode="aspectFill"
+                  @tap="previewAttachments(form.attachments, index)"
+                />
+                <button class="attachment-editor__remove" @tap="removeAttachment(index)">×</button>
+              </view>
+            </view>
+            <button
+              v-if="form.attachments.length < MAX_FEEDBACK_IMAGES"
+              class="secondary-button attachment-add"
+              :loading="imageUploading"
+              @tap="chooseAttachments"
+            >
+              上传截图
+            </button>
+            <text class="attachment-hint">最多 8 张，单张不超过 5MB，支持 JPG、PNG、WEBP、GIF。</text>
           </view>
-          <button
-            v-if="form.attachments.length < MAX_FEEDBACK_IMAGES"
-            class="secondary-button attachment-add"
-            :loading="imageUploading"
-            @tap="chooseAttachments"
-          >
-            上传截图
-          </button>
-          <text class="attachment-hint">最多 8 张，单张不超过 5MB，支持 JPG、PNG、WEBP、GIF。</text>
-        </view>
-        <view class="action-row field--mt">
+        </scroll-view>
+        <view class="action-row field--mt modal-card__actions">
           <button class="secondary-button" @tap="closeForm">取消</button>
           <button class="primary-button" :loading="submitLoading" @tap="submitFeedback">提交</button>
         </view>
@@ -263,6 +265,8 @@ function openForm() {
 function closeForm() {
   formVisible.value = false
 }
+
+function noop() {}
 
 function resetForm() {
   form.questionId = ''
@@ -680,18 +684,35 @@ function formatTime(value = '') {
 .modal-mask {
   position: fixed;
   inset: 0;
+  z-index: 1000;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   padding: 24rpx;
-  background: rgba(0, 0, 0, 0.32);
+  background: rgba(0, 0, 0, 0.5);
 }
 
 .modal-card {
   width: 100%;
+  max-height: calc(100vh - 48rpx);
   padding: 28rpx;
   border-radius: 22rpx;
   background: #ffffff;
+  box-shadow: 0 28rpx 72rpx rgba(18, 32, 50, 0.26);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-card__body {
+  flex: 1;
+  height: calc(100vh - 260rpx);
+  max-height: calc(100vh - 260rpx);
+  min-height: 0;
+}
+
+.modal-card__actions {
+  margin-top: 20rpx;
 }
 
 .modal-card__title {
@@ -699,6 +720,21 @@ function formatTime(value = '') {
   color: #1a1a2e;
   font-size: 32rpx;
   font-weight: 900;
+}
+
+.action-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+  margin-top: 18rpx;
+}
+
+.action-row button {
+  min-height: 72rpx;
+}
+
+.action-row.modal-card__actions {
+  margin-top: 20rpx;
 }
 
 .textarea {

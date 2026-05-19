@@ -31,10 +31,12 @@
                 :prefix="h(LockOutlined)"
               />
             </a-form-item>
-            <div class="legal-hint">
-              登录即表示您已阅读并同意
-              <a-button type="link" size="small" @click="$router.push('/legal')">《用户协议》与《隐私协议》</a-button>
-            </div>
+            <a-form-item name="agreedTerms">
+              <a-checkbox :checked="loginForm.agreedTerms" @change="handleAgreementChange">
+                我已阅读并同意
+                <a-button type="link" size="small" @click.stop="$router.push('/legal')">《用户协议》与《隐私协议》</a-button>
+              </a-checkbox>
+            </a-form-item>
             <div class="login-tools">
               <a-button type="link" size="small" @click="resetModalVisible = true">忘记密码？</a-button>
             </div>
@@ -85,7 +87,7 @@
               />
             </a-form-item>
             <a-form-item name="agreedTerms">
-              <a-checkbox v-model:checked="registerForm.agreedTerms">
+              <a-checkbox :checked="registerForm.agreedTerms" @change="handleAgreementChange">
                 我已阅读并同意
                 <a-button type="link" size="small" @click.stop="$router.push('/legal')">《用户协议》与《隐私协议》</a-button>
               </a-checkbox>
@@ -173,8 +175,10 @@ const resetRequesting = ref(false)
 const resetTip = ref('')
 const loginFormRef = ref(null)
 const registerFormRef = ref(null)
+const AGREED_TERMS_STORAGE_KEY = 'civil_agreed_terms_version'
+const AGREED_TERMS_VERSION = '2026-05-12'
 
-const loginForm = reactive({ username: '', password: '' })
+const loginForm = reactive({ username: '', password: '', agreedTerms: false })
 const registerForm = reactive({ username: '', password: '', confirmPassword: '', agreedTerms: false })
 const resetForm = reactive({
   username: '',
@@ -186,7 +190,18 @@ const resetForm = reactive({
 
 const loginRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  agreedTerms: [
+    {
+      validator: (_, value) => {
+        if (!value) {
+          return Promise.reject('请先阅读并同意用户协议与隐私协议')
+        }
+        return Promise.resolve()
+      },
+      trigger: 'change'
+    }
+  ]
 }
 
 const registerRules = {
@@ -223,6 +238,41 @@ const registerRules = {
   ]
 }
 
+function readAcceptedTermsVersion() {
+  try {
+    return localStorage.getItem(AGREED_TERMS_STORAGE_KEY) || ''
+  } catch {
+    return ''
+  }
+}
+
+function saveAcceptedTermsVersion() {
+  try {
+    localStorage.setItem(AGREED_TERMS_STORAGE_KEY, AGREED_TERMS_VERSION)
+  } catch {
+    // ignore storage failures
+  }
+}
+
+function restoreAgreementState() {
+  const accepted = readAcceptedTermsVersion() === AGREED_TERMS_VERSION
+  loginForm.agreedTerms = accepted
+  registerForm.agreedTerms = accepted
+}
+
+function handleAgreementChange(event) {
+  const checked = typeof event === 'boolean'
+    ? event
+    : !!event?.target?.checked
+  loginForm.agreedTerms = checked
+  registerForm.agreedTerms = checked
+  if (checked) {
+    saveAcceptedTermsVersion()
+  }
+}
+
+restoreAgreementState()
+
 function normalizeRedirectTarget(value) {
   const raw = Array.isArray(value) ? value[0] : value
   if (typeof raw !== 'string' || !raw.startsWith('/') || raw.startsWith('//')) {
@@ -258,7 +308,6 @@ async function handleRegister() {
     activeTab.value = 'login'
     loginForm.username = registerForm.username
     loginForm.password = ''
-    registerForm.agreedTerms = false
   } catch (e) {
     const msg = e.normalizedMessage || e.response?.data?.detail || '注册失败'
     message.error(msg)
@@ -342,14 +391,6 @@ async function handlePasswordResetConfirm() {
 }
 
 </script>
-
-<style scoped>
-.legal-hint {
-  margin-bottom: 12px;
-  color: #8c8c8c;
-  font-size: 13px;
-}
-</style>
 
 <style lang="less" scoped>
 @import '@/styles/variables.less';

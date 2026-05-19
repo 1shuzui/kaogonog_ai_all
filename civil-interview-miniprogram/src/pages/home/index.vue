@@ -65,7 +65,7 @@
         @tap="openResult(record)"
       >
         <view class="record-card__main">
-          <text class="record-card__title">{{ record.questionSummary || '模拟面试练习' }}</text>
+          <text class="record-card__title">{{ record.questionSummary || '全真模拟练习' }}</text>
           <text class="record-card__meta">{{ formatDate(record.completedAt || record.date) }} · {{ record.questionCount || 1 }} 题</text>
         </view>
         <ScoreRing :score="record.totalScore || 0" :max-score="record.maxScore || 100" size="small" />
