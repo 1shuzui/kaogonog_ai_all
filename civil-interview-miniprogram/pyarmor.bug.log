@@ -1,7 +1,7 @@
-[BUG]: no found input "/home/quyu/kaogong_ai/civil-interview-backend/main.py"
+[BUG]: invalid non-printable character U+FEFF (<frozen database_setup>, line 1)
 
 ## Command Line
-/home/quyu/.pyenv/versions/3.10.20/bin/pyarmor gen -O /tmp/tmp.XPGuIKKuVH -r /home/quyu/kaogong_ai/civil-interview-backend/main.py /home/quyu/kaogong_ai/civil-interview-backend/app /home/quyu/kaogong_ai/civil-interview-backend/database_setup.py /home/quyu/kaogong_ai/civil-interview-backend/data_loader.py /home/quyu/kaogong_ai/civil-interview-backend/keyword_matcher.py /home/quyu/kaogong_ai/civil-interview-backend/llm_scorer.py /home/quyu/kaogong_ai/civil-interview-backend/post_process.py /home/quyu/kaogong_ai/civil-interview-backend/prompt_builder.py /home/quyu/kaogong_ai/civil-interview-backend/seed.py /home/quyu/kaogong_ai/civil-interview-backend/two_stage_scoring.py
+/home/quyu/.pyenv/versions/3.10.20/bin/pyarmor gen -O /tmp/tmp.EMjExb3qJn -r /home/quyu/kaogong_ai/civil-interview-backend/main.py /home/quyu/kaogong_ai/civil-interview-backend/app /home/quyu/kaogong_ai/civil-interview-backend/database_setup.py /home/quyu/kaogong_ai/civil-interview-backend/data_loader.py /home/quyu/kaogong_ai/civil-interview-backend/keyword_matcher.py /home/quyu/kaogong_ai/civil-interview-backend/llm_scorer.py /home/quyu/kaogong_ai/civil-interview-backend/post_process.py /home/quyu/kaogong_ai/civil-interview-backend/prompt_builder.py /home/quyu/kaogong_ai/civil-interview-backend/seed.py /home/quyu/kaogong_ai/civil-interview-backend/two_stage_scoring.py
 
 ## Environments
 Python 3.10.20
@@ -9,4 +9,32 @@ Pyarmor 9.2.4 (trial), 000000, non-profits
 Platform linux.x86_64
 Native linux.x86_64
 Home /home/quyu/.pyarmor
+
+## Traceback
+Traceback (most recent call last):
+  File "/home/quyu/.pyenv/versions/3.10.20/lib/python3.10/site-packages/pyarmor/cli/__main__.py", line 804, in main
+    main_entry(sys.argv[1:])
+  File "/home/quyu/.pyenv/versions/3.10.20/lib/python3.10/site-packages/pyarmor/cli/__main__.py", line 789, in main_entry
+    return args.func(ctx, args)
+  File "/home/quyu/.pyenv/versions/3.10.20/lib/python3.10/site-packages/pyarmor/cli/__main__.py", line 248, in cmd_gen
+    builder.process(options)
+  File "/home/quyu/.pyenv/versions/3.10.20/lib/python3.10/site-packages/pyarmor/cli/generate.py", line 190, in process
+    async_obfuscate_scripts(self, n) if n else self._obfuscate_scripts()
+  File "/home/quyu/.pyenv/versions/3.10.20/lib/python3.10/site-packages/pyarmor/cli/generate.py", line 145, in _obfuscate_scripts
+    code = Pytransform3.generate_obfuscated_script(self.ctx, r)
+  File "/home/quyu/.pyenv/versions/3.10.20/lib/python3.10/site-packages/pyarmor/cli/core/__init__.py", line 95, in generate_obfuscated_script
+    return m.generate_obfuscated_script(ctx, res)
+  File "<maker>", line 728, in generate_obfuscated_script
+  File "/home/quyu/.pyenv/versions/3.10.20/lib/python3.10/site-packages/pyarmor/cli/__init__.py", line 16, in process
+    return meth(self, res, *args, **kwargs)
+  File "<maker>", line 521, in process
+  File "/home/quyu/.pyenv/versions/3.10.20/lib/python3.10/site-packages/pyarmor/cli/resource.py", line 156, in reparse
+    self.mtree = ast.parse(''.join(lines), self.frozenname, 'exec')
+  File "/home/quyu/.pyenv/versions/3.10.20/lib/python3.10/ast.py", line 50, in parse
+    return compile(source, filename, mode, flags,
+  File "<frozen database_setup>", line 1
+    ﻿""" 一键部署脚本 — 初始化/重置 MySQL 数据库、建表、写入种子数据 """
+    ^
+SyntaxError: invalid non-printable character U+FEFF
+
 

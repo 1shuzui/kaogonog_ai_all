@@ -25,8 +25,8 @@
 
     <view class="plan-card card">
       <view>
-        <text class="plan-card__title">按时套餐</text>
-        <text class="plan-card__price">¥0.01</text>
+        <text class="plan-card__title">3小时套餐</text>
+        <text class="plan-card__price">¥99</text>
         <text class="plan-card__desc">总计 3 小时训练时长，适合短期冲刺，按实际训练消耗。</text>
         <view class="feature-list">
           <text>完整全真模拟</text>
@@ -41,7 +41,7 @@
     <view class="plan-card card">
       <view>
         <text class="plan-card__title">包月套餐</text>
-        <text class="plan-card__price">¥0.01</text>
+        <text class="plan-card__price">¥299</text>
         <text class="plan-card__desc">30 天有效期，每日 1 小时训练额度，适合稳定推进备考计划。</text>
         <view class="feature-list">
           <text>每日额度自动刷新</text>
@@ -55,7 +55,7 @@
 
     <view class="card pricing-note">
       <text>支付说明</text>
-      <text>当前测试金额统一为 ¥0.01。付费权益允许叠加，系统会优先消耗更早到期的余额；支付成功后以小程序虚拟支付结果、后端订单和账户权益同步结果为准。</text>
+      <text>付费权益允许叠加，系统会优先消耗更早到期的余额；支付成功后以小程序虚拟支付结果、后端订单和账户权益同步结果为准。</text>
     </view>
   </view>
 </template>

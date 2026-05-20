@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+python-multipart
+openai
+requests
+pandas
+openpyxl
+pydantic
+passlib[bcrypt]
+python-jose[cryptography]
+sqlalchemy
+pymysql
+cryptography
+python-dotenv

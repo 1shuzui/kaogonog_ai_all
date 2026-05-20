@@ -9,7 +9,7 @@ const PLANS = {
   },
   hourly: {
     key: 'hourly',
-    title: '按时套餐',
+    title: '3小时套餐',
     status: '3 小时训练时长，解锁全真模拟、定向备面和专项训练'
   },
   monthly: {

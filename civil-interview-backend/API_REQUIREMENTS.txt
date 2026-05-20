@@ -1,0 +1,239 @@
+# 公考面试AI测评系统 - 前端接口需求文档
+
+## 基本信息
+- 前端端口：3001
+- 后端端口：8000
+- 前端所有请求以 /api 开头，代理会自动去掉 /api 前缀再转发到后端
+- 例：前端请求 /api/questions → 实际到后端 /questions
+
+---
+
+## 1. 题库管理
+
+### GET /questions
+请求参数：?province=&dimension=&keyword=&page=1&pageSize=10
+响应：
+{
+  "list": [
+    {
+      "id": "q001",
+      "stem": "题目内容",
+      "dimension": "analysis",
+      "province": "national",
+      "prepTime": 90,
+      "answerTime": 180,
+      "scoringPoints": [
+        {"content": "评分点描述", "score": 8}
+      ],
+      "synonyms": ["同义词"],
+      "keywords": {
+        "scoring": ["采分关键词"],
+        "deducting": ["扣分关键词"],
+        "bonus": ["加分关键词"]
+      }
+    }
+  ],
+  "total": 10,
+  "page": 1,
+  "pageSize": 10
+}
+
+### GET /questions/random
+请求参数：?count=3&province=
+响应：直接返回题目数组 [{id, stem, dimension, ...}]
+
+### GET /questions/{id}
+响应：单个题目对象
+
+### POST /questions
+请求体：{stem, dimension, province, prepTime, answerTime, scoringPoints, keywords}
+响应：创建后的题目对象（含id）
+
+### PUT /questions/{id}
+请求体：{stem?, dimension?, province?, keywords?}（可选字段）
+响应：更新后的题目对象
+
+### DELETE /questions/{id}
+响应：{"success": true}
+
+### POST /questions/import
+请求：FormData，字段名 file
+响应：{"imported": 10, "failed": 0, "filename": "xxx.xlsx"}
+
+---
+
+## 2. 考试流程
+
+### POST /exam/start
+请求体：{"questionIds": ["q001", "q002", "q003"]}
+响应：
+{
+  "examId": "exam_1711353600000",
+  "questionIds": ["q001", "q002", "q003"],
+  "startTime": "2026-03-25T10:00:00.000Z"
+}
+
+### POST /exam/{examId}/upload
+请求：FormData，字段名 recording（webm格式音频）
+响应：{"success": true, "fileUrl": "/uploads/xxx.webm"}
+
+### POST /exam/{examId}/complete
+响应：{"success": true}
+
+---
+
+## 3. 评分（核心接口）
+
+### POST /scoring/transcribe
+请求：FormData，字段名 audio（音频文件）
+响应：
+{
+  "transcript": "转录的文字内容",
+  "duration": 165
+}
+注意：字段名是 transcript 不是 text
+
+### POST /scoring/evaluate
+请求体：
+{
+  "questionId": "q001",
+  "transcript": "考生回答的文字内容"
+}
+注意：字段名是 transcript 不是 answerText，examId 可选
+
+响应：
+{
+  "totalScore": 82,
+  "maxScore": 100,
+  "grade": "B",
+  "dimensions": [
+    {
+      "name": "法治思维",
+      "key": "legal",
+      "score": 15,
+      "maxScore": 20,
+      "lostReasons": ["失分原因1", "失分原因2"]
+    },
+    {
+      "name": "实践能力",
+      "key": "practical",
+      "score": 18,
+      "maxScore": 20,
+      "lostReasons": ["失分原因"]
+    }
+  ],
+  "matchedKeywords": {
+    "scoring": [
+      {"word": "基层治理", "inTranscript": true, "score": 3}
+    ],
+    "deducting": [
+      {"word": "形式主义", "inTranscript": true, "penalty": -2}
+    ],
+    "bonus": [
+      {"word": "共建共治共享", "inTranscript": true, "bonus": 2}
+    ]
+  },
+  "aiComment": "AI评分评语，指出优缺点",
+  "highlightedTranscript": "高亮标注后的转录文本"
+}
+
+### GET /scoring/result/{examId}/{questionId}
+响应：同上 evaluate 的响应结构
+
+---
+
+## 4. 历史记录
+
+### GET /history
+请求参数：?page=1&pageSize=10&province=
+响应：
+{
+  "list": [
+    {
+      "examId": "exam_1000",
+      "date": "2026-03-25T10:00:00.000Z",
+      "questionCount": 4,
+      "totalScore": 82,
+      "maxScore": 100,
+      "grade": "B",
+      "province": "national",
+      "dimensions": [
+        {"name": "法治思维", "score": 15, "maxScore": 20}
+      ],
+      "questionSummary": "题目摘要"
+    }
+  ],
+  "total": 15,
+  "page": 1,
+  "pageSize": 10
+}
+
+### GET /history/{examId}
+响应：单条历史记录详情（同list中的对象结构）
+
+### GET /history/trend
+请求参数：?days=30
+响应：
+[
+  {"date": "2026-03-20", "score": 75},
+  {"date": "2026-03-21", "score": 82}
+]
+
+### GET /history/stats
+响应：
+{
+  "totalExams": 15,
+  "avgScore": 76,
+  "bestScore": 98,
+  "weakestDimension": "表达能力",
+  "dimensionAverages": [
+    {"name": "法治思维", "avg": 16.2, "maxScore": 20},
+    {"name": "实践能力", "avg": 14.5, "maxScore": 20}
+  ]
+}
+
+---
+
+## 5. 用户
+
+### GET /user/info
+响应：
+{
+  "id": "user_001",
+  "name": "考生A",
+  "avatar": "",
+  "province": "national"
+}
+
+### PUT /user/preferences
+请求体：
+{
+  "defaultPrepTime": 90,
+  "defaultAnswerTime": 180,
+  "enableVideo": true
+}
+响应：{"success": true}
+
+### GET /user/provinces
+响应：
+[
+  {"code": "national", "name": "国考"},
+  {"code": "beijing", "name": "北京"},
+  {"code": "guangdong", "name": "广东"},
+  {"code": "zhejiang", "name": "浙江"},
+  {"code": "sichuan", "name": "四川"},
+  {"code": "jiangsu", "name": "江苏"},
+  {"code": "henan", "name": "河南"},
+  {"code": "shandong", "name": "山东"}
+]
+
+---
+
+## 重要注意事项
+1. 所有列表接口返回 {list, total, page, pageSize} 格式，不是裸数组
+2. 评分接口的字段名用 camelCase（如 totalScore 不是 total_score）
+3. 语音转文字返回字段名是 transcript 不是 text
+4. 评分请求字段名是 transcript 不是 answerText
+5. 省份 code 用字符串（如 "national", "beijing"），不是数字编码
+6. /questions/random 路由必须定义在 /questions/{id} 之前，否则会被拦截
+7. /history/trend 和 /history/stats 路由必须定义在 /history/{examId} 之前

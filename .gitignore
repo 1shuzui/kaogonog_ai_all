@@ -27,3 +27,10 @@ temp/
 .DS_Store
 .venv/
 .gitnexus
+
+# Backend runtime data
+civil-interview-backend/*.db
+civil-interview-backend/*.db-shm
+civil-interview-backend/*.db-wal
+civil-interview-backend/storage/
+civil-interview-backend/uploads/
