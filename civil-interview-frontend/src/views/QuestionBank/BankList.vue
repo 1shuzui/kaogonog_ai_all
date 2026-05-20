@@ -111,9 +111,11 @@
         <a-pagination
           v-model:current="bankStore.pagination.current"
           :total="bankStore.pagination.total"
-          :pageSize="bankStore.pagination.pageSize"
+          :page-size="bankStore.pagination.pageSize"
           @change="onPageChange"
+          @showSizeChange="onPageChange"
           size="small"
+          show-size-changer
           show-less-items
         />
       </div>
@@ -187,9 +189,9 @@ function onFilterChange() {
   bankStore.fetchQuestions()
 }
 
-function onPageChange(page) {
+function onPageChange(page, pageSize) {
   if (!hasQuestionBankAccess.value) return
-  bankStore.fetchQuestions({ page })
+  bankStore.fetchQuestions({ current: page, pageSize })
 }
 
 async function onDelete(id) {

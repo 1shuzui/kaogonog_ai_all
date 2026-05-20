@@ -193,10 +193,12 @@ async function activate(plan) {
     if (order.payParams?.mode !== 'wechat_virtual') {
       throw new Error(order.payParams?.message || '小程序虚拟支付参数未就绪')
     }
-    await requestWechatVirtualPayment(order.payParams?.virtualPay || {})
+    const payResult = await requestWechatVirtualPayment(order.payParams?.virtualPay || {})
     await confirmVirtualPaymentOrder(order.orderNo, {
       scene: 'mini_program_virtual',
-      payResult: 'success'
+      payResult: 'success',
+      outTradeNo: order.payParams?.virtualPayMeta?.outTradeNo || order.orderNo,
+      rawResult: payResult || {}
     }).catch(() => null)
     const paidOrder = await waitOrderPaid(order.orderNo)
     await userStore.loadUserInfo()

@@ -19,11 +19,19 @@ export const useQuestionBankStore = defineStore('questionBank', {
     async fetchQuestions(params = {}) {
       this.loading = true
       try {
-        const mergedParams = { ...this.filters, ...this.pagination, ...params }
+        const nextCurrent = Number(params.current || params.page || this.pagination.current || 1)
+        const nextPageSize = Number(params.pageSize || this.pagination.pageSize || 10)
+        this.pagination.current = nextCurrent
+        this.pagination.pageSize = nextPageSize
+        const mergedParams = {
+          ...this.filters,
+          ...params,
+          current: nextCurrent,
+          pageSize: nextPageSize
+        }
         const res = await getQuestions(mergedParams)
         this.questions = Array.isArray(res?.list) ? res.list : []
         this.pagination.total = Number(res?.total ?? this.questions.length)
-        if (params.page) this.pagination.current = params.page
       } finally {
         this.loading = false
       }

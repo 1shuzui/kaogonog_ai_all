@@ -11,6 +11,7 @@ class ScoringRouteRegistrationTestCase(unittest.TestCase):
         self.assertIn("/scoring/transcribe", route_paths)
         self.assertIn("/scoring/evaluate", route_paths)
         self.assertIn("/scoring/result/{exam_id}/{question_id}", route_paths)
+        self.assertIn("/legal/documents", route_paths)
 
 
 if __name__ == "__main__":

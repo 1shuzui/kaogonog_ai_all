@@ -17,9 +17,36 @@ from app.core.access import (
 
 
 class DummyUser:
-    def __init__(self, username, preferences=None):
+    def __init__(self, username, preferences=None, subscriptions=None):
         self.username = username
         self.preferences = preferences or {}
+        self.subscriptions = subscriptions or []
+
+
+class DummySubscription:
+    def __init__(
+        self,
+        plan_type=BILLING_PLAN_HOURLY,
+        plan_name="3小时套餐",
+        total_minutes=180,
+        used_minutes=0,
+        daily_limit_minutes=180,
+        daily_used_minutes=0,
+        status="active",
+        is_trial=False,
+    ):
+        self.id = 1
+        self.created_at = None
+        self.status = status
+        self.is_trial = is_trial
+        self.plan_type = plan_type
+        self.plan_name = plan_name
+        self.total_minutes = total_minutes
+        self.used_minutes = used_minutes
+        self.daily_limit_minutes = daily_limit_minutes
+        self.daily_used_minutes = daily_used_minutes
+        self.last_reset_date = None
+        self.end_at = None
 
 
 class DummyAuthUser:
@@ -67,6 +94,15 @@ class AccessControlTestCase(unittest.TestCase):
         self.assertTrue(context["isAdmin"])
         self.assertTrue(context["billing"]["isPaid"])
         self.assertTrue(context["permissions"]["canManageQuestionBank"])
+
+    def test_build_access_context_uses_active_subscription(self):
+        context = build_access_context(DummyUser("ssy", subscriptions=[DummySubscription(used_minutes=3)]))
+
+        self.assertTrue(context["billing"]["isPaid"])
+        self.assertEqual(context["billing"]["planType"], BILLING_PLAN_HOURLY)
+        self.assertEqual(context["billing"]["remainingMinutes"], 177)
+        self.assertEqual(context["billing"]["remainingSeconds"], 10620)
+        self.assertTrue(context["permissions"]["canAccessPremiumModules"])
 
     def test_trial_user_only_can_start_trial_question(self):
         trial_user = DummyAuthUser(is_admin=False, can_access_premium=False)

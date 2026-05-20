@@ -32,7 +32,7 @@
                   <text v-if="questionScoreLabel(item)" class="question-tag question-tag--score">{{ questionScoreLabel(item) }}</text>
                   <text v-if="index === examStore.currentIndex" class="question-tag question-tag--active">当前作答</text>
                 </view>
-                <scroll-view scroll-y class="question-book__stem-scroll">
+                <scroll-view scroll-y show-scrollbar class="question-book__stem-scroll">
                   <text class="question-book__stem">{{ item.stem }}</text>
                 </scroll-view>
               </view>
@@ -40,28 +40,7 @@
           </swiper>
         </view>
 
-        <view
-          v-if="useVideoMode"
-          class="floating-camera"
-          :class="cameraSizeClass"
-          @tap="handleCameraTap"
-        >
-          <camera
-            class="floating-camera__camera"
-            device-position="front"
-            flash="off"
-            mode="normal"
-            resolution="medium"
-            frame-size="medium"
-            @error="onCameraError"
-          />
-          <view class="floating-camera__mask">
-            <text class="floating-camera__status">{{ floatingCameraStatus }}</text>
-            <text class="floating-camera__size">{{ cameraSizeText }}</text>
-          </view>
-        </view>
-
-        <scroll-view scroll-y class="exam-room__scroll" :style="{ paddingTop: questionBookScrollPadding }">
+        <scroll-view scroll-y show-scrollbar class="exam-room__scroll" :style="{ paddingTop: questionBookScrollPadding }">
           <view class="full-exam-scene">
             <image
               class="full-exam-scene__image"
@@ -93,9 +72,6 @@
                   <text>{{ captureStatusText }}</text>
                   <text v-if="captureReady" class="record-panel__ready">已记录</text>
                 </view>
-                <view v-if="useVideoMode" class="record-panel__camera-status">
-                  {{ cameraStatusText }}
-                </view>
                 <view class="record-actions">
                   <button
                     class="secondary-button"
@@ -117,6 +93,32 @@
           </view>
         </scroll-view>
 
+        <view
+          v-if="useVideoMode"
+          class="floating-camera"
+          :class="cameraSizeClass"
+          @tap="handleCameraTap"
+        >
+          <camera
+            v-if="cameraPlatformSupported"
+            class="floating-camera__camera"
+            device-position="front"
+            flash="off"
+            mode="normal"
+            resolution="medium"
+            frame-size="medium"
+            @error="onCameraError"
+          />
+          <view v-else class="floating-camera__fallback">
+            <text class="floating-camera__status">{{ floatingCameraStatus }}</text>
+            <text class="floating-camera__size">{{ cameraSizeText }}</text>
+          </view>
+          <view v-if="cameraPlatformSupported" class="floating-camera__mask">
+            <text class="floating-camera__status">{{ floatingCameraStatus }}</text>
+            <text class="floating-camera__size">{{ cameraSizeText }}</text>
+          </view>
+        </view>
+
         <view class="room-actions">
           <button class="secondary-button" @tap="goBackHome">退出</button>
           <button class="primary-button" :loading="examStore.loading" @tap="submitAnswer">
@@ -131,7 +133,7 @@
           <text class="room-header__timer">{{ sceneTimerLabel }} {{ formatTime(sceneTimeLeft) }}</text>
         </view>
 
-        <scroll-view scroll-y class="question-panel">
+        <scroll-view scroll-y show-scrollbar class="question-panel">
           <view class="card">
             <view class="question-tags">
               <text class="question-tag">{{ provinceLabel(question) }}</text>
@@ -150,7 +152,7 @@
           <view class="card">
             <view class="section-head">
               <text class="section-title">作答区</text>
-              <text class="muted">{{ useVideoMode ? '录像 / 录音' : '仅录音' }}</text>
+              <text class="muted">{{ useVideoMode ? '录像 + 录音' : '仅录音' }}</text>
             </view>
 
             <view class="media-toggle">
@@ -162,62 +164,59 @@
               </view>
             </view>
 
-            <view v-if="useVideoMode" class="camera-panel">
-              <camera
-                class="camera-preview"
-                mode="normal"
-                device-position="front"
-                flash="off"
-                resolution="medium"
-                frame-size="medium"
-                @error="onCameraError"
-              />
-              <view class="record-panel__status camera-panel__status">
-                <text>{{ cameraStatusText }}</text>
-                <text v-if="recordedVideoFile" class="record-panel__ready">已录像</text>
-              </view>
-              <view class="record-actions">
-                <button
-                  class="secondary-button"
-                  :disabled="!cameraAvailable || videoRecording || recording || examStore.loading"
-                  @tap="startVideoRecord"
-                >
-                  开始录像
-                </button>
-                <button
-                  class="secondary-button"
-                  :disabled="!videoRecording || examStore.loading"
-                  @tap="stopVideoRecord"
-                >
-                  停止录像
-                </button>
-              </view>
-            </view>
-
             <view class="record-panel">
               <view class="record-panel__status">
-                <text>{{ recordStatusText }}</text>
-                <text v-if="recordedFile" class="record-panel__ready">已录音</text>
+                <text>{{ captureStatusText }}</text>
+                <text v-if="captureReady" class="record-panel__ready">已记录</text>
+              </view>
+              <view v-if="useVideoMode" class="record-panel__camera-status">
+                {{ cameraStatusText }}
               </view>
               <view class="record-actions">
                 <button
                   class="secondary-button"
-                  :disabled="recording || videoRecording || examStore.loading"
-                  @tap="startRecord"
+                  :disabled="captureActive || examStore.loading"
+                  @tap="startCapture"
                 >
-                  开始录音
+                  {{ useVideoMode ? '开始录像+录音' : '开始录音' }}
                 </button>
                 <button
                   class="secondary-button"
-                  :disabled="!recording || examStore.loading"
-                  @tap="stopRecord"
+                  :disabled="!captureActive || examStore.loading"
+                  @tap="stopCapture"
                 >
-                  停止录音
+                  {{ useVideoMode ? '停止录像+录音' : '停止录音' }}
                 </button>
               </view>
             </view>
           </view>
         </scroll-view>
+
+        <view
+          v-if="useVideoMode"
+          class="floating-camera"
+          :class="cameraSizeClass"
+          @tap="handleCameraTap"
+        >
+          <camera
+            v-if="cameraPlatformSupported"
+            class="floating-camera__camera"
+            mode="normal"
+            device-position="front"
+            flash="off"
+            resolution="medium"
+            frame-size="medium"
+            @error="onCameraError"
+          />
+          <view v-else class="floating-camera__fallback">
+            <text class="floating-camera__status">{{ floatingCameraStatus }}</text>
+            <text class="floating-camera__size">{{ cameraSizeText }}</text>
+          </view>
+          <view v-if="cameraPlatformSupported" class="floating-camera__mask">
+            <text class="floating-camera__status">{{ floatingCameraStatus }}</text>
+            <text class="floating-camera__size">{{ cameraSizeText }}</text>
+          </view>
+        </view>
 
         <view class="room-actions">
           <button class="secondary-button" @tap="goBackHome">退出</button>
@@ -264,6 +263,7 @@ const recordedVideoFile = ref('')
 const cameraContext = ref(null)
 const cameraError = ref('')
 const cameraAvailable = ref(false)
+const cameraPlatformSupported = ref(typeof uni !== 'undefined' && typeof uni.createCameraContext === 'function')
 const cameraSize = ref('small')
 const selectedMediaType = ref('')
 const questionStartedAt = ref(Date.now())
@@ -308,6 +308,7 @@ const sceneTimerLabel = computed(() => (
 ))
 const cameraStatusText = computed(() => {
   if (!useVideoMode.value) return '已选择仅录音，不启用摄像头'
+  if (!cameraPlatformSupported.value) return '当前设备暂不支持摄像头录像，开始后将仅录音'
   if (cameraError.value) return cameraError.value
   if (videoRecording.value) return '摄像头录像中，请保持正对镜头'
   if (recordedVideoFile.value) return '录像已保存，可提交或重新录制'
@@ -327,11 +328,13 @@ const captureReady = computed(() => (
 ))
 const captureStatusText = computed(() => {
   if (!useVideoMode.value) return recordStatusText.value
+  if (recording.value && cameraError.value && !videoRecording.value) return '摄像头不可用，已继续录音'
   if (recording.value && videoRecording.value) return '录像与录音同步记录中'
   if (videoRecording.value) return '录像中，音频将随视频一并保存'
   if (recording.value) return '录音中，正在等待摄像头录像'
   if (recordedVideoFile.value) return '录像已保存，可提交或重新录制'
   if (recordedFile.value) return '已保存录音，未获得录像文件'
+  if (!cameraPlatformSupported.value) return '设备不支持摄像头，开始后将录音提交'
   return '请授权摄像头和麦克风，开始后同步记录'
 })
 const cameraSizeClass = computed(() => `floating-camera--${cameraSize.value}`)
@@ -340,6 +343,7 @@ const cameraSizeText = computed(() => {
   return `${labels[cameraSize.value] || '小窗'} · 双击切换`
 })
 const floatingCameraStatus = computed(() => {
+  if (!cameraPlatformSupported.value) return '仅录音'
   if (videoRecording.value) return '录像中'
   if (cameraError.value) return '摄像头异常'
   if (recordedVideoFile.value) return '已保存'
@@ -463,10 +467,13 @@ function setupRecorder() {
 function setupCamera() {
   if (!useVideoMode.value) return
   if (typeof uni.createCameraContext !== 'function') {
+    cameraPlatformSupported.value = false
     cameraAvailable.value = false
     cameraError.value = '当前环境不支持摄像头录像'
+    cameraContext.value = null
     return
   }
+  cameraPlatformSupported.value = true
   cameraContext.value = uni.createCameraContext()
   cameraAvailable.value = true
 }
@@ -616,15 +623,34 @@ function startVideoRecord(options = {}) {
     toast('当前已选择仅录音')
     return
   }
-  if (recording.value && options.allowAudioRecording !== true) {
+  const allowAudioRecording = options.allowAudioRecording === true
+  if (recording.value && !allowAudioRecording) {
     toast('请先停止录音')
     return
+  }
+  if (!cameraPlatformSupported.value) {
+    const message = cameraError.value || '当前设备不支持摄像头录像'
+    cameraError.value = message
+    cameraAvailable.value = false
+    if (allowAudioRecording && recording.value) {
+      selectedMediaType.value = 'audio'
+      toast(`${message}，已继续录音`)
+      return false
+    }
+    toast(message)
+    return false
   }
   if (!cameraContext.value) {
     setupCamera()
   }
   if (!cameraContext.value) {
-    toast(cameraError.value || '当前环境不支持摄像头')
+    const message = cameraError.value || '当前环境不支持摄像头'
+    if (allowAudioRecording && recording.value) {
+      selectedMediaType.value = 'audio'
+      toast(`${message}，已继续录音`)
+      return false
+    }
+    toast(message)
     return
   }
   phase.value = 'answering'
@@ -646,8 +672,13 @@ function startVideoRecord(options = {}) {
         cameraAvailable.value = false
         const message = error?.errMsg || '无法启动摄像头录像'
         cameraError.value = message
-        if (recording.value) stopRecordAsync()
-        toast(message)
+        if (allowAudioRecording && recording.value) {
+          selectedMediaType.value = 'audio'
+          toast(`${message}，已继续录音`)
+        } else {
+          if (recording.value) stopRecordAsync()
+          toast(message)
+        }
       }
     })
   } catch (error) {
@@ -655,8 +686,13 @@ function startVideoRecord(options = {}) {
     cameraAvailable.value = false
     const message = error?.message || '无法启动摄像头录像'
     cameraError.value = message
-    if (recording.value) stopRecordAsync()
-    toast(message)
+    if (allowAudioRecording && recording.value) {
+      selectedMediaType.value = 'audio'
+      toast(`${message}，已继续录音`)
+    } else {
+      if (recording.value) stopRecordAsync()
+      toast(message)
+    }
   }
 }
 
@@ -1100,13 +1136,14 @@ function goBackHome() {
 .floating-camera {
   position: fixed;
   right: 24rpx;
-  bottom: calc(142rpx + env(safe-area-inset-bottom));
+  bottom: calc(156rpx + env(safe-area-inset-bottom));
   z-index: 42;
   overflow: hidden;
-  border: 4rpx solid rgba(255, 241, 218, 0.92);
-  border-radius: 18rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.88);
+  border-radius: 16rpx;
   background: #080808;
-  box-shadow: 0 16rpx 38rpx rgba(22, 12, 7, 0.38);
+  box-shadow: 0 18rpx 42rpx rgba(18, 24, 38, 0.34);
+  transform-origin: right bottom;
 }
 
 .floating-camera--small {
@@ -1127,6 +1164,17 @@ function goBackHome() {
 .floating-camera__camera {
   width: 100%;
   height: 100%;
+}
+
+.floating-camera__fallback {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  width: 100%;
+  height: 100%;
+  padding: 12rpx;
+  box-sizing: border-box;
+  background: linear-gradient(145deg, #111827 0%, #0f172a 100%);
 }
 
 .floating-camera__mask {
@@ -1222,24 +1270,6 @@ function goBackHome() {
   color: #1b5faa;
 }
 
-.exam-room--practice .camera-panel {
-  overflow: hidden;
-  border: 1rpx solid #d9e3ef;
-  border-radius: 16rpx;
-  background: #f6f8fb;
-}
-
-.exam-room--practice .camera-preview {
-  display: block;
-  width: 100%;
-  height: 220rpx;
-  background: #111827;
-}
-
-.exam-room--practice .camera-panel__status {
-  padding: 18rpx 20rpx 0;
-}
-
 .exam-room--practice .record-panel {
   margin-top: 22rpx;
   padding-top: 22rpx;
@@ -1273,10 +1303,6 @@ function goBackHome() {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16rpx;
   margin-top: 18rpx;
-}
-
-.exam-room--practice .camera-panel .record-actions {
-  padding: 0 20rpx 20rpx;
 }
 
 .exam-room--practice .room-actions {

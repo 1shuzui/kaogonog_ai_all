@@ -13,14 +13,6 @@
       "postcss": true,
       "minified": true
     },
-    "permission": {
-      "scope.record": {
-        "desc": "用于录制面试作答音频并生成测评结果"
-      },
-      "scope.camera": {
-        "desc": "用于录制面试作答视频并生成测评结果"
-      }
-    },
     "lazyCodeLoading": "requiredComponents",
     "usingComponents": true
   },

@@ -49,6 +49,17 @@ def _serialize_payment_response(order: PaymentOrder, package: SubscriptionPackag
     }
 
 
+def _sync_order_amount_to_virtual_goods_price(order: PaymentOrder, pay_payload: dict | None) -> None:
+    meta = pay_payload.get("virtualPayMeta") if isinstance(pay_payload, dict) else {}
+    goods_price = meta.get("goodsPrice") if isinstance(meta, dict) else None
+    if goods_price in (None, ""):
+        return
+    try:
+        order.amount = Decimal(int(goods_price)) / Decimal("100")
+    except (TypeError, ValueError):
+        return
+
+
 def create_payment_order(db: Session, current_user: AuthUser, data: PaymentOrderCreateRequest) -> dict:
     _get_user(db, current_user)
     package = _get_package_or_404(db, data.packageCode)
@@ -72,6 +83,7 @@ def create_payment_order(db: Session, current_user: AuthUser, data: PaymentOrder
     db.flush()
     try:
         pay_payload = wechat_pay_service.get_pay_payload(order, package, data)
+        _sync_order_amount_to_virtual_goods_price(order, pay_payload)
     except Exception:
         db.rollback()
         raise
@@ -141,6 +153,33 @@ def _assert_callback_amount(order: PaymentOrder, amount_total: int | None) -> No
         raise HTTPException(status_code=400, detail="回调金额与订单金额不一致")
 
 
+def _extract_virtual_transaction_id(data: PaymentVirtualConfirmRequest) -> str:
+    if data.thirdPartyOrderNo:
+        return str(data.thirdPartyOrderNo)
+    raw = data.rawResult if isinstance(data.rawResult, dict) else {}
+    candidates = [
+        raw.get("transactionId"),
+        raw.get("transaction_id"),
+        raw.get("orderId"),
+        raw.get("order_id"),
+        raw.get("paymentOrderId"),
+        raw.get("payment_order_id"),
+        raw.get("tradeNo"),
+        raw.get("trade_no"),
+    ]
+    pay_info = raw.get("WeChatPayInfo") or raw.get("wechatPayInfo") or raw.get("wechat_pay_info")
+    if isinstance(pay_info, dict):
+        candidates.extend([
+            pay_info.get("TransactionId"),
+            pay_info.get("transactionId"),
+            pay_info.get("transaction_id"),
+        ])
+    for value in candidates:
+        if value not in (None, ""):
+            return str(value)
+    return ""
+
+
 def _ensure_subscription_for_paid_order(db: Session, order: PaymentOrder, package: SubscriptionPackage, paid_at: datetime) -> UserSubscription:
     existing = db.query(UserSubscription).filter(
         UserSubscription.source_order_no == order.order_no,
@@ -204,7 +243,7 @@ def confirm_virtual_payment_order(db: Session, current_user: AuthUser, order_no:
         }
 
     order.status = "paid"
-    order.third_party_order_no = data.thirdPartyOrderNo or order.third_party_order_no or ""
+    order.third_party_order_no = _extract_virtual_transaction_id(data) or order.third_party_order_no or ""
     order.paid_at = paid_at
     order.callback_payload = {
         "mode": "wechat_virtual_client_confirm",

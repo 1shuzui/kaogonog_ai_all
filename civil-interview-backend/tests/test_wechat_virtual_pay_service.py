@@ -6,6 +6,7 @@ from decimal import Decimal
 from app.core.config import settings
 from app.models.entities import PaymentOrder, SubscriptionPackage
 from app.schemas.common import PaymentOrderCreateRequest
+from app.services.payment_service import _extract_virtual_transaction_id, _sync_order_amount_to_virtual_goods_price
 from app.services.wechat_pay_service import wechat_pay_service
 
 
@@ -54,3 +55,20 @@ def test_virtual_pay_payload_uses_code2session_and_official_params(monkeypatch):
     ).hexdigest()
     assert virtual_pay["signature"] == hmac.new(b"session_key", sign_data.encode("utf-8"), hashlib.sha256).hexdigest()
     assert order.extra_payload["openId"] == "openid_1"
+
+
+def test_virtual_pay_order_amount_follows_actual_goods_price():
+    order = PaymentOrder(order_no="PAY_TEST_002", username="alice", amount=Decimal("99.00"), extra_payload={})
+
+    _sync_order_amount_to_virtual_goods_price(order, {"virtualPayMeta": {"goodsPrice": 1}})
+
+    assert order.amount == Decimal("0.01")
+
+
+def test_virtual_pay_confirm_extracts_transaction_id_from_raw_result():
+    data = type("Confirm", (), {
+        "thirdPartyOrderNo": "",
+        "rawResult": {"WeChatPayInfo": {"TransactionId": "420000000000000001"}},
+    })()
+
+    assert _extract_virtual_transaction_id(data) == "420000000000000001"

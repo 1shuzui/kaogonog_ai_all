@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date, datetime, timezone
 from time import time
 
 from fastapi import HTTPException, status
@@ -63,11 +64,98 @@ def has_paid_access_from_billing(billing_state: dict | None, now_ms: int | None 
     return False
 
 
+def _timestamp_ms(value) -> int:
+    if not value:
+        return 0
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            return int(value.timestamp() * 1000)
+        return int(value.astimezone(timezone.utc).timestamp() * 1000)
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _is_subscription_expired(end_at) -> bool:
+    if not end_at:
+        return False
+    if not isinstance(end_at, datetime):
+        return False
+    now = datetime.now(end_at.tzinfo or timezone.utc)
+    if end_at.tzinfo is None:
+        now = datetime.now()
+    return end_at <= now
+
+
+def _subscription_snapshot(subscription) -> dict | None:
+    if not subscription:
+        return None
+    if str(getattr(subscription, "status", "") or "") != "active":
+        return None
+    if bool(getattr(subscription, "is_trial", False)):
+        return None
+    if _is_subscription_expired(getattr(subscription, "end_at", None)):
+        return None
+
+    total_minutes = max(0, int(getattr(subscription, "total_minutes", 0) or 0))
+    used_minutes = max(0, int(getattr(subscription, "used_minutes", 0) or 0))
+    daily_limit_minutes = max(0, int(getattr(subscription, "daily_limit_minutes", 0) or 0))
+    raw_daily_used = max(0, int(getattr(subscription, "daily_used_minutes", 0) or 0))
+    last_reset_date = getattr(subscription, "last_reset_date", None)
+    daily_used_minutes = raw_daily_used if last_reset_date == date.today() else 0
+    remaining_minutes = max(total_minutes - used_minutes, 0)
+    remaining_daily_minutes = (
+        max(daily_limit_minutes - daily_used_minutes, 0)
+        if daily_limit_minutes > 0
+        else remaining_minutes
+    )
+    can_use = remaining_minutes > 0 and (daily_limit_minutes <= 0 or remaining_daily_minutes > 0)
+    if not can_use:
+        return None
+
+    return {
+        "planType": str(getattr(subscription, "plan_type", "") or BILLING_PLAN_HOURLY),
+        "planName": str(getattr(subscription, "plan_name", "") or ""),
+        "status": "active",
+        "remainingMinutes": remaining_minutes,
+        "remainingDailyMinutes": remaining_daily_minutes,
+        "dailyLimitMinutes": daily_limit_minutes,
+        "usedMinutes": used_minutes,
+        "totalMinutes": total_minutes,
+        "monthlyExpireAt": _timestamp_ms(getattr(subscription, "end_at", None)),
+    }
+
+
+def _latest_paid_subscription_snapshot(user) -> dict | None:
+    subscriptions = getattr(user, "subscriptions", None) or []
+    snapshots = []
+    for subscription in subscriptions:
+        snapshot = _subscription_snapshot(subscription)
+        if not snapshot:
+            continue
+        created_at = getattr(subscription, "created_at", None)
+        sub_id = int(getattr(subscription, "id", 0) or 0)
+        snapshots.append((_timestamp_ms(created_at), sub_id, snapshot))
+    if not snapshots:
+        return None
+    snapshots.sort(key=lambda item: (item[0], item[1]), reverse=True)
+    return snapshots[0][2]
+
+
 def build_access_context(user) -> dict:
     preferences = user.preferences if isinstance(getattr(user, "preferences", None), dict) else {}
     billing_state = normalize_billing_state(preferences.get("billing"))
+    subscription_state = _latest_paid_subscription_snapshot(user)
     is_admin = is_admin_username(getattr(user, "username", ""))
-    is_paid = is_admin or has_paid_access_from_billing(billing_state)
+    has_subscription_access = subscription_state is not None
+    is_paid = is_admin or has_subscription_access or has_paid_access_from_billing(billing_state)
+    if subscription_state:
+        billing_state = {
+            **billing_state,
+            **subscription_state,
+            "remainingSeconds": subscription_state["remainingMinutes"] * 60,
+        }
 
     return {
         "role": "admin" if is_admin else "user",

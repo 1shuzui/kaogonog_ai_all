@@ -95,6 +95,7 @@ class PaymentVirtualConfirmRequest(BaseModel):
     payResult: str = Field(default="success", validation_alias=AliasChoices("payResult", "pay_result"))
     thirdPartyOrderNo: Optional[str] = Field(default=None, validation_alias=AliasChoices("thirdPartyOrderNo", "third_party_order_no"))
     paidAt: Optional[str] = Field(default=None, validation_alias=AliasChoices("paidAt", "paid_at"))
+    outTradeNo: Optional[str] = Field(default=None, validation_alias=AliasChoices("outTradeNo", "out_trade_no"))
     rawResult: Dict = Field(default_factory=dict, validation_alias=AliasChoices("rawResult", "raw_result"))
 
 

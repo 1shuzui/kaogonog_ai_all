@@ -55,11 +55,14 @@
         <text class="muted">{{ access?.mode || 'practice' }}</text>
       </view>
       <view class="access-row">
-        <button class="secondary-button" @tap="checkAccess('practice')">专项练习</button>
-        <button class="secondary-button" @tap="checkAccess('fullExam')">全真模拟</button>
+        <button class="secondary-button" :loading="checkingMode === 'practice'" :disabled="!!checkingMode" @tap="checkAccess('practice')">专项练习</button>
+        <button class="secondary-button" :loading="checkingMode === 'fullExam'" :disabled="!!checkingMode" @tap="checkAccess('fullExam')">全真模拟</button>
       </view>
       <text class="access-result" :class="{ 'access-result--ok': access?.allowed }">
         {{ accessText }}
+      </text>
+      <text v-if="lastCheckedAt" class="access-time">
+        已于 {{ lastCheckedAt }} 完成访问检查
       </text>
     </view>
 
@@ -68,13 +71,15 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useSubscriptionStore } from '../../stores/subscription'
 import { formatDate } from '../../utils/format'
 import { requireLogin, toast } from '../../utils/navigation'
 
 const subscriptionStore = useSubscriptionStore()
+const checkingMode = ref('')
+const lastCheckedAt = ref('')
 const status = computed(() => subscriptionStore.status)
 const access = computed(() => subscriptionStore.access)
 const planTitle = computed(() => status.value.planType === 'trial' ? '试用版' : '已开通套餐')
@@ -103,15 +108,29 @@ async function refresh() {
 }
 
 async function checkAccess(mode, silent = false) {
+  if (checkingMode.value) return
+  checkingMode.value = mode
   try {
-    await subscriptionStore.check(mode, { skipErrorHandler: true })
+    const result = await subscriptionStore.check(mode, { skipErrorHandler: true })
+    lastCheckedAt.value = formatCheckTime()
+    if (!silent) {
+      toast(result?.allowed ? '访问检查完成：允许进入' : `访问检查完成：${result?.reason || '暂不可用'}`, result?.allowed ? 'success' : 'none')
+    }
   } catch (error) {
     if (!silent) toast(error?.message || '访问检查失败')
+  } finally {
+    checkingMode.value = ''
   }
 }
 
 function goPricing() {
   uni.navigateTo({ url: '/pages/pricing/index' })
+}
+
+function formatCheckTime() {
+  const date = new Date()
+  const pad = (value) => String(value).padStart(2, '0')
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
 }
 </script>
 
@@ -244,5 +263,12 @@ function goPricing() {
 
 .access-result--ok {
   color: #389e0d;
+}
+
+.access-time {
+  display: block;
+  margin-top: 8rpx;
+  color: #6f7c8f;
+  font-size: 22rpx;
 }
 </style>

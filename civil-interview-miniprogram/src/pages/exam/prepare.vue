@@ -112,7 +112,7 @@
     <button
       v-if="!readonlyMode"
       class="primary-button"
-      :disabled="loading || asrUnavailable"
+      :disabled="loading || accessLoading || enteringExam || asrUnavailable"
       :loading="loading"
       @tap="startPractice"
     >
@@ -159,6 +159,7 @@ const fullExamSuites = ref([])
 const fullExamSuitesLoading = ref(false)
 const loading = ref(false)
 const accessLoading = ref(false)
+const enteringExam = ref(false)
 const trial = ref(false)
 const trialStatus = ref(null)
 const asrStatus = ref(null)
@@ -286,6 +287,7 @@ onLoad((query) => {
 onShow(() => {
   loading.value = false
   accessLoading.value = false
+  enteringExam.value = false
   hideLoading()
   refreshAccessState()
     .then(() => refreshFullExamSuites())
@@ -412,7 +414,8 @@ function toggleQuestionType(key) {
 
 async function startPractice() {
   if (!requireLogin()) return
-  if (loading.value) return
+  if (loading.value || enteringExam.value) return
+  enteringExam.value = true
   loading.value = true
   showLoading('检查考场')
   try {
@@ -492,6 +495,7 @@ async function startPractice() {
     toast(error?.message || '进入考场失败')
   } finally {
     loading.value = false
+    enteringExam.value = false
     hideLoading()
   }
 }
