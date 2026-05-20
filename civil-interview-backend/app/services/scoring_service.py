@@ -13,10 +13,6 @@ from app.core.ai import call_llm_api_async, transcribe_audio_file
 from app.core.config import settings
 from app.core.video_analysis import analyze_video_behavior
 from app.models.entities import Question, Exam, ExamAnswer
-
-# Import two-stage scoring utilities (same directory as before)
-import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../.."))
 from two_stage_scoring import (
     build_evidence_extraction_prompt,
     build_evidence_based_scoring_prompt,

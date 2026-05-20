@@ -73,6 +73,7 @@ import { useBillingStore } from '../../stores/billing'
 import { useQuestionBankStore } from '../../stores/questionBank'
 import { useSubscriptionStore } from '../../stores/subscription'
 import { useUserStore } from '../../stores/user'
+import { hasPremiumAccess } from '../../utils/access'
 import { PROVINCES, QUESTION_CATEGORIES } from '../../utils/constants'
 import { JIANGSU_TARGETED_POSITIONS } from '../../utils/jiangsuJobs'
 import { requireLogin } from '../../utils/navigation'
@@ -100,13 +101,7 @@ const positionIndex = computed(() => Math.max(0, positionOptions.value.findIndex
 const selectedProvinceName = computed(() => provinceOptions.value[provinceIndex.value]?.name || '国考')
 const selectedCategoryName = computed(() => QUESTION_CATEGORIES[categoryIndex.value]?.name || '全部题型')
 const selectedPositionName = computed(() => positionOptions.value[positionIndex.value]?.name || '全部岗位系统')
-const hasFullAccess = computed(() => (
-  userStore.isAdmin
-  || billingStore.isPaid
-  || subscriptionStore.hasPremiumAccess
-  || userStore.userInfo?.billing?.isPaid === true
-  || userStore.userInfo?.permissions?.canAccessPremiumModules === true
-))
+const hasFullAccess = computed(() => hasPremiumAccess(userStore, billingStore, subscriptionStore))
 const readonlyMode = computed(() => !hasFullAccess.value)
 
 onShow(async () => {

@@ -184,7 +184,7 @@ import { useFavoritesStore } from '../../stores/favorites'
 import { useTrainingStore } from '../../stores/training'
 import { getGrade, getProvinceName } from '../../utils/constants'
 import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
-import { normalizeResult } from '../../utils/scoring'
+import { normalizeImprovementSuggestion, normalizeResult } from '../../utils/scoring'
 
 const examStore = useExamStore()
 const favoritesStore = useFavoritesStore()
@@ -202,7 +202,11 @@ const grade = computed(() => getGrade(result.value?.totalScore || 0, result.valu
 const localFitProvinceName = computed(() => getProvinceName(questionProvince.value || 'national'))
 const improvementSuggestion = computed(() => {
   if (isNoContentTranscript(transcript.value, result.value)) return buildNoContentImprovementSuggestion()
-  return normalizeImprovementSuggestion(result.value?.answerImprovementSuggestion)
+  return normalizeImprovementSuggestion(
+    result.value?.answerImprovementSuggestion,
+    result.value?.totalScore || 0,
+    result.value?.maxScore || 100
+  )
 })
 const suggestionSourceLabel = computed(() => (
   improvementSuggestion.value?.source === 'model' ? '模型建议' : '基础建议'
@@ -227,10 +231,6 @@ onShareAppMessage(() => ({
   path: sharePath.value
 }))
 
-function normalizeTextList(value) {
-  return Array.isArray(value) ? value.map((item) => String(item || '').trim()).filter(Boolean) : []
-}
-
 function isNoContentTranscript(value, scoring = {}) {
   const text = String(value || '').trim()
   const mode = String(scoring?.scoringMode || '').trim()
@@ -254,36 +254,6 @@ function buildNoContentImprovementSuggestion() {
     sampleAnswer: '',
     rewriteOpening: '',
     rewriteClosing: ''
-  }
-}
-
-function normalizeImprovementSuggestion(value) {
-  if (!value || typeof value !== 'object') return null
-  const focusPoints = Array.isArray(value.focusPoints)
-    ? value.focusPoints.map((item, index) => ({
-        order: String(item?.order || index + 1),
-        title: String(item?.title || item?.name || '').trim(),
-        hint: String(item?.hint || item?.content || '').trim()
-      })).filter((item) => item.title || item.hint)
-    : []
-  const expressionUpgrades = Array.isArray(value.expressionUpgrades)
-    ? value.expressionUpgrades.map((item) => ({
-        before: String(item?.before || '').trim(),
-        after: String(item?.after || '').trim()
-      })).filter((item) => item.before || item.after)
-    : []
-
-  return {
-    source: String(value.source || 'fallback'),
-    summary: String(value.summary || '').trim(),
-    teacherComment: String(value.teacherComment || '').trim(),
-    diagnosisItems: normalizeTextList(value.diagnosisItems),
-    focusPoints,
-    missingKeywords: normalizeTextList(value.missingKeywords),
-    expressionUpgrades,
-    sampleAnswer: String(value.sampleAnswer || '').trim(),
-    rewriteOpening: String(value.rewriteOpening || '').trim(),
-    rewriteClosing: String(value.rewriteClosing || '').trim()
   }
 }
 

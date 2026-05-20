@@ -58,6 +58,9 @@ def _normalize_preferences(prefs: dict | None) -> dict:
 def get_user_info(db: Session, current_user: AuthUser) -> dict:
     user = _get_user_or_404(db, current_user.username)
     normalized_preferences = _normalize_preferences(user.preferences)
+    raw_preferences = user.preferences if isinstance(user.preferences, dict) else {}
+    wechat_mini = raw_preferences.get("wechatMiniProgram") if isinstance(raw_preferences.get("wechatMiniProgram"), dict) else {}
+    generated_wechat_username = user.username.startswith("wxmp_")
     access_context = build_access_context(user)
     terms = get_terms_status(db, user.username)
     return {
@@ -71,6 +74,16 @@ def get_user_info(db: Session, current_user: AuthUser) -> dict:
             for key in DEFAULT_PREFERENCES
         },
         "terms": terms,
+        "accountBindings": {
+            "wechatMiniBound": bool(wechat_mini.get("openId")),
+            "wechatUnionBound": bool(wechat_mini.get("unionId")),
+            "wechatWebBound": False,
+        },
+        "accountLogin": {
+            "requiresPcAccountSetup": generated_wechat_username,
+            "pcLoginUsername": "" if generated_wechat_username else user.username,
+            "wechatGeneratedUsername": user.username if generated_wechat_username else "",
+        },
         **access_context,
     }
 

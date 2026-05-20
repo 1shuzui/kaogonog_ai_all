@@ -100,6 +100,7 @@ import { message } from 'ant-design-vue'
 import { useTargetedStore } from '@/stores/targeted'
 import { useUserStore } from '@/stores/user'
 import { useBillingStore } from '@/stores/billing'
+import { hasPremiumAccess } from '@/utils/access'
 import { PROVINCES, POSITION_SYSTEMS } from '@/utils/constants'
 import { JIANGSU_TARGETED_POSITIONS } from '@/utils/jiangsuJobs'
 import QuestionMetaTags from '@/components/common/QuestionMetaTags.vue'
@@ -116,12 +117,7 @@ const positionSystems = POSITION_SYSTEMS
 
 const selectedProvince = ref(targetedStore.selectedProvince || userStore.selectedProvince || 'national')
 const selectedPosition = ref(targetedStore.selectedPosition || '')
-const hasFullAccess = computed(() => (
-  userStore.isAdmin
-  || billingStore.isPaid
-  || userStore.userInfo?.billing?.isPaid === true
-  || userStore.userInfo?.permissions?.canAccessPremiumModules === true
-))
+const hasFullAccess = computed(() => hasPremiumAccess(userStore, billingStore))
 
 const currentPositionSystems = computed(() => (
   selectedProvince.value === 'jiangsu' ? JIANGSU_TARGETED_POSITIONS : positionSystems

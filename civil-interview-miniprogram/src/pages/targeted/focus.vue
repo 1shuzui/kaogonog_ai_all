@@ -58,19 +58,14 @@ import { useBillingStore } from '../../stores/billing'
 import { useSubscriptionStore } from '../../stores/subscription'
 import { useTargetedStore } from '../../stores/targeted'
 import { useUserStore } from '../../stores/user'
+import { hasPremiumAccess } from '../../utils/access'
 import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
 
 const billingStore = useBillingStore()
 const subscriptionStore = useSubscriptionStore()
 const targetedStore = useTargetedStore()
 const userStore = useUserStore()
-const hasFullAccess = computed(() => (
-  userStore.isAdmin
-  || billingStore.isPaid
-  || subscriptionStore.hasPremiumAccess
-  || userStore.userInfo?.billing?.isPaid === true
-  || userStore.userInfo?.permissions?.canAccessPremiumModules === true
-))
+const hasFullAccess = computed(() => hasPremiumAccess(userStore, billingStore, subscriptionStore))
 const readonlyMode = computed(() => !hasFullAccess.value)
 const coreFocus = computed(() => Array.isArray(targetedStore.focusData?.coreFocus) ? targetedStore.focusData.coreFocus : [])
 const highFreqTypes = computed(() => Array.isArray(targetedStore.focusData?.highFreqTypes) ? targetedStore.focusData.highFreqTypes : [])

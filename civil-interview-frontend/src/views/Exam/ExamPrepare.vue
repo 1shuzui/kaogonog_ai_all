@@ -168,6 +168,7 @@ import { getRandomQuestions, getQuestionById, getQuestions } from '@/api/questio
 import { getAsrStatus } from '@/api/scoring'
 import { useUserStore } from '@/stores/user'
 import { useTargetedStore } from '@/stores/targeted'
+import { hasPremiumAccess } from '@/utils/access'
 import {
   getScoringUnavailableMessage,
   splitScoringSupportedQuestions
@@ -231,12 +232,7 @@ const questionCategoryOptions = [
   { key: 'legal', name: '职业认知' }
 ]
 
-const hasFullAccess = computed(() => (
-  userStore.isAdmin
-  || billingStore.isPaid
-  || userStore.userInfo?.billing?.isPaid === true
-  || userStore.userInfo?.permissions?.canAccessPremiumModules === true
-))
+const hasFullAccess = computed(() => hasPremiumAccess(userStore, billingStore))
 const isTrialEntry = computed(() => String(route.query.trial || '') === '1' && !hasFullAccess.value)
 const showPracticeConfig = computed(() => examMode.value === 'free')
 const asrUnavailable = computed(() => asrStatus.value && asrStatus.value.ready === false)

@@ -1,7 +1,6 @@
 import importlib.util
 import re
 import shutil
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
@@ -10,9 +9,9 @@ from app.core.ai import _resolve_asr_model
 from app.core.config import settings
 from app.core.security import get_current_user
 from app.db.session import get_db
-from app.models.entities import ExamAnswer, Question
+from app.models.entities import Question
 from app.schemas.common import AuthUser, EvaluateRequest
-from app.services.scoring_service import transcribe, evaluate_answer, get_scoring_result
+from app.services.scoring_service import _build_zero_score_result, _persist_result, transcribe, evaluate_answer, get_scoring_result
 
 router = APIRouter(prefix="/scoring", tags=["scoring"])
 
@@ -52,43 +51,6 @@ def _is_low_value_transcript(text: str) -> bool:
     return not stripped
 
 
-def _build_zero_score_result() -> dict:
-    dimensions = [
-        {"name": "综合分析", "key": "analysis", "score": 0.0, "maxScore": 20, "lostReasons": []},
-        {"name": "实务落地", "key": "practical", "score": 0.0, "maxScore": 20, "lostReasons": []},
-        {"name": "应急应变", "key": "emergency", "score": 0.0, "maxScore": 15, "lostReasons": []},
-        {"name": "法治思维", "key": "legal", "score": 0.0, "maxScore": 15, "lostReasons": []},
-        {"name": "逻辑结构", "key": "logic", "score": 0.0, "maxScore": 15, "lostReasons": []},
-        {"name": "语言表达", "key": "expression", "score": 0.0, "maxScore": 15, "lostReasons": []},
-    ]
-    return {
-        "totalScore": 0.0,
-        "maxScore": 100,
-        "grade": "D",
-        "dimensions": dimensions,
-        "aiComment": "系统判定本次作答仅包含语气词或无有效内容，按无效作答记 0 分。",
-        "scoringMode": "screened_zero",
-    }
-
-
-def _persist_result(db: Session, exam_id: str | None, question_id: str, transcript: str, result: dict) -> dict:
-    if not exam_id:
-        return result
-
-    answer = db.query(ExamAnswer).filter(
-        ExamAnswer.exam_id == exam_id,
-        ExamAnswer.question_id == question_id,
-    ).first()
-    if not answer:
-        answer = ExamAnswer(exam_id=exam_id, question_id=question_id)
-        db.add(answer)
-    answer.transcript = transcript
-    answer.score_result = result
-    answer.answered_at = datetime.now(timezone.utc)
-    db.commit()
-    return result
-
-
 @router.post("/transcribe")
 async def scoring_transcribe(audio: UploadFile = File(...), current_user: AuthUser = Depends(get_current_user)):
     audio_bytes = await audio.read()
@@ -125,7 +87,13 @@ async def scoring_evaluate(data: EvaluateRequest, current_user: AuthUser = Depen
 
     transcript = str(data.transcript or "").strip()
     if _is_low_value_transcript(transcript):
-        return _persist_result(db, data.examId, data.questionId, transcript, _build_zero_score_result())
+        return _persist_result(
+            db,
+            data.examId,
+            data.questionId,
+            transcript,
+            _build_zero_score_result("系统判定本次作答仅包含语气词或无有效内容，按无效作答记 0 分。"),
+        )
 
     return await evaluate_answer(db, data.questionId, data.transcript, data.examId)
 

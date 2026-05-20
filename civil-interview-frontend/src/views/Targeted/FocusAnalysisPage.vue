@@ -103,6 +103,7 @@ import { message } from 'ant-design-vue'
 import { useTargetedStore } from '@/stores/targeted'
 import { useUserStore } from '@/stores/user'
 import { useBillingStore } from '@/stores/billing'
+import { hasPremiumAccess } from '@/utils/access'
 import { PROVINCES, POSITION_SYSTEMS } from '@/utils/constants'
 import { getJiangsuTargetedPosition } from '@/utils/jiangsuJobs'
 import EmptyState from '@/components/common/EmptyState.vue'
@@ -115,12 +116,7 @@ const billingStore = useBillingStore()
 const primaryColor = '#1B5FAA'
 
 const focusData = computed(() => targetedStore.focusData)
-const hasFullAccess = computed(() => (
-  userStore.isAdmin
-  || billingStore.isPaid
-  || userStore.userInfo?.billing?.isPaid === true
-  || userStore.userInfo?.permissions?.canAccessPremiumModules === true
-))
+const hasFullAccess = computed(() => hasPremiumAccess(userStore, billingStore))
 
 const provinceName = computed(() => {
   const p = PROVINCES.find(p => p.code === targetedStore.selectedProvince)

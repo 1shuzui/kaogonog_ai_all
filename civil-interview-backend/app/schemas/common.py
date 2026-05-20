@@ -25,6 +25,35 @@ class RegisterRequest(BaseModel):
     password: str = Field(min_length=6)
     email: Optional[str] = None
     full_name: Optional[str] = Field(default=None, validation_alias=AliasChoices("full_name", "fullName"))
+    agreedTermsVersion: Optional[str] = Field(default=None, validation_alias=AliasChoices("agreedTermsVersion", "agreed_terms_version"))
+
+
+class WechatMiniProgramLoginRequest(BaseModel):
+    code: str
+    agreedTermsVersion: Optional[str] = Field(default=None, validation_alias=AliasChoices("agreedTermsVersion", "agreed_terms_version"))
+
+
+class WechatMiniProgramBindRequest(BaseModel):
+    code: str
+
+
+class WechatMiniProgramAccountRequest(BaseModel):
+    username: str
+    password: str = Field(min_length=6)
+
+
+class PasswordResetRequest(BaseModel):
+    username: str
+    contact: Optional[str] = ""
+
+
+class PasswordResetVerifyRequest(BaseModel):
+    username: str
+    code: str
+
+
+class PasswordResetConfirmRequest(PasswordResetVerifyRequest):
+    newPassword: str = Field(min_length=6, validation_alias=AliasChoices("newPassword", "new_password"))
 
 
 # ===== User =====
@@ -108,6 +137,18 @@ class PaymentCallbackRequest(BaseModel):
     amountTotal: Optional[int] = Field(default=None, validation_alias=AliasChoices("amountTotal", "amount_total"))
     callbackPayload: Dict = Field(default_factory=dict, validation_alias=AliasChoices("callbackPayload", "callback_payload"))
     resourcePlain: Optional[Dict] = Field(default=None, validation_alias=AliasChoices("resourcePlain", "resource_plain"))
+
+
+class RefundBalanceStatsRequest(BaseModel):
+    username: Optional[str] = None
+    orderNo: Optional[str] = Field(default=None, validation_alias=AliasChoices("orderNo", "order_no"))
+
+
+class RefundApplyRequest(BaseModel):
+    orderNo: str = Field(validation_alias=AliasChoices("orderNo", "order_no"))
+    refundedHours: Optional[float] = Field(default=None, ge=0, validation_alias=AliasChoices("refundedHours", "refunded_hours"))
+    refundReason: Optional[str] = Field(default="", validation_alias=AliasChoices("refundReason", "refund_reason"))
+    refundRemark: Optional[str] = Field(default="", validation_alias=AliasChoices("refundRemark", "refund_remark"))
 
 
 # ===== Support =====

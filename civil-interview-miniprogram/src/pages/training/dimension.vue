@@ -52,6 +52,7 @@ import { useExamStore } from '../../stores/exam'
 import { useSubscriptionStore } from '../../stores/subscription'
 import { useTrainingStore } from '../../stores/training'
 import { useUserStore } from '../../stores/user'
+import { hasPremiumAccess } from '../../utils/access'
 import { getTrainingCategory } from '../../utils/constants'
 import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
 
@@ -62,13 +63,7 @@ const examStore = useExamStore()
 const userStore = useUserStore()
 const categoryKey = ref('analysis')
 const category = computed(() => getTrainingCategory(categoryKey.value))
-const hasFullAccess = computed(() => (
-  userStore.isAdmin
-  || billingStore.isPaid
-  || subscriptionStore.hasPremiumAccess
-  || userStore.userInfo?.billing?.isPaid === true
-  || userStore.userInfo?.permissions?.canAccessPremiumModules === true
-))
+const hasFullAccess = computed(() => hasPremiumAccess(userStore, billingStore, subscriptionStore))
 const readonlyMode = computed(() => !hasFullAccess.value)
 const progress = computed(() => trainingStore.getDimensionProgress(categoryKey.value))
 const progressItems = computed(() => [

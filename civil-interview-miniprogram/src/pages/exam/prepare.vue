@@ -132,6 +132,7 @@ import { useUserStore } from '../../stores/user'
 import { getQuestionById, getQuestions } from '../../api/questionBank'
 import { getAsrStatus } from '../../api/scoring'
 import { getTrialQuestion, getTrialStatus } from '../../api/trial'
+import { hasPremiumAccess } from '../../utils/access'
 import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
 import { QUESTION_CATEGORIES } from '../../utils/constants'
 import {
@@ -163,13 +164,7 @@ const enteringExam = ref(false)
 const trial = ref(false)
 const trialStatus = ref(null)
 const asrStatus = ref(null)
-const hasFullAccess = computed(() => {
-  return billingStore.isPaid
-    || subscriptionStore.hasPremiumAccess
-    || userStore.isAdmin
-    || userStore.userInfo?.billing?.isPaid === true
-    || userStore.userInfo?.permissions?.canAccessPremiumModules === true
-})
+const hasFullAccess = computed(() => hasPremiumAccess(userStore, billingStore, subscriptionStore))
 const readonlyMode = computed(() => !trial.value && !hasFullAccess.value)
 const asrUnavailable = computed(() => asrStatus.value && asrStatus.value.ready === false)
 const asrStatusText = computed(() => {

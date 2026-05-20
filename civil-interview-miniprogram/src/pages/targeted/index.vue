@@ -80,6 +80,7 @@ import { useExamStore } from '../../stores/exam'
 import { useSubscriptionStore } from '../../stores/subscription'
 import { useTargetedStore } from '../../stores/targeted'
 import { useUserStore } from '../../stores/user'
+import { hasPremiumAccess } from '../../utils/access'
 import { POSITION_SYSTEMS, PROVINCES } from '../../utils/constants'
 import { JIANGSU_TARGETED_POSITIONS } from '../../utils/jiangsuJobs'
 import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
@@ -95,13 +96,7 @@ const currentPositionSystems = computed(() => (
   selectedProvince.value === 'jiangsu' ? JIANGSU_TARGETED_POSITIONS : POSITION_SYSTEMS
 ))
 const canProceed = computed(() => !!selectedProvince.value && !!selectedPosition.value)
-const hasFullAccess = computed(() => (
-  userStore.isAdmin
-  || billingStore.isPaid
-  || subscriptionStore.hasPremiumAccess
-  || userStore.userInfo?.billing?.isPaid === true
-  || userStore.userInfo?.permissions?.canAccessPremiumModules === true
-))
+const hasFullAccess = computed(() => hasPremiumAccess(userStore, billingStore, subscriptionStore))
 const readonlyMode = computed(() => !hasFullAccess.value)
 
 function getDefaultPositionCode() {
