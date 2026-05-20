@@ -109,6 +109,22 @@ class PaymentCallbackRequest(BaseModel):
     resourcePlain: Optional[Dict] = Field(default=None, validation_alias=AliasChoices("resourcePlain", "resource_plain"))
 
 
+# ===== Support =====
+class SupportFeedbackCreateRequest(BaseModel):
+    type: str = "其他建议"
+    questionId: Optional[str] = Field(default="", validation_alias=AliasChoices("questionId", "question_id"))
+    summary: str = Field(min_length=1, max_length=5000)
+    contact: Optional[str] = None
+    routePath: Optional[str] = Field(default="", validation_alias=AliasChoices("routePath", "route_path"))
+    province: Optional[str] = ""
+    attachments: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+class SupportFeedbackUpdateRequest(BaseModel):
+    status: Optional[str] = None
+    adminNote: Optional[str] = Field(default=None, validation_alias=AliasChoices("adminNote", "admin_note"))
+
+
 # ===== Scoring =====
 class EvaluateRequest(BaseModel):
     questionId: str

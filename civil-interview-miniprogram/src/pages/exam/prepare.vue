@@ -250,6 +250,11 @@ function applyFullExamTimingMode(questions = []) {
 }
 
 async function refreshFullExamSuites() {
+  if (!hasFullAccess.value) {
+    fullExamSuites.value = []
+    selectedFullExamSuiteId.value = ''
+    return
+  }
   fullExamSuitesLoading.value = true
   try {
     const suites = await fetchFullExamSuites(getQuestions, userStore.selectedProvince)
@@ -282,7 +287,9 @@ onShow(() => {
   loading.value = false
   accessLoading.value = false
   hideLoading()
-  refreshAccessState().catch(() => null)
+  refreshAccessState()
+    .then(() => refreshFullExamSuites())
+    .catch(() => null)
   refreshAsrStatus().catch(() => null)
 })
 

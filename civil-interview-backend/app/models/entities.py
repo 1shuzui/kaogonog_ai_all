@@ -120,6 +120,29 @@ class PaymentOrder(Base):
     user = relationship("User", back_populates="payment_orders")
 
 
+class SupportFeedback(Base):
+    __tablename__ = "support_feedback"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(64), nullable=False, index=True)
+    feedback_type = Column(String(64), nullable=False, default="其他建议", index=True)
+    question_id = Column(String(64), default="")
+    summary = Column(Text, nullable=False)
+    contact = Column(String(255), default="")
+    route_path = Column(String(255), default="")
+    province = Column(String(64), default="", index=True)
+    status = Column(String(30), nullable=False, default="pending", index=True)
+    admin_note = Column(Text, default="")
+    handled_by = Column(String(64), default="")
+    handled_at = Column(DateTime, nullable=True)
+    attachments = Column(JSON, default=list)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
 class UserSubscription(Base):
     __tablename__ = "user_subscriptions"
     id = Column(Integer, primary_key=True, autoincrement=True)

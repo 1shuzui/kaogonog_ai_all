@@ -99,6 +99,7 @@ import { SearchOutlined, ThunderboltOutlined, RightOutlined, PlayCircleOutlined 
 import { message } from 'ant-design-vue'
 import { useTargetedStore } from '@/stores/targeted'
 import { useUserStore } from '@/stores/user'
+import { useBillingStore } from '@/stores/billing'
 import { PROVINCES, POSITION_SYSTEMS } from '@/utils/constants'
 import { JIANGSU_TARGETED_POSITIONS } from '@/utils/jiangsuJobs'
 import QuestionMetaTags from '@/components/common/QuestionMetaTags.vue'
@@ -108,12 +109,19 @@ import { getScoringUnavailableMessage, isQuestionScoringSupported } from '@/util
 const router = useRouter()
 const targetedStore = useTargetedStore()
 const userStore = useUserStore()
+const billingStore = useBillingStore()
 
 const provinces = PROVINCES
 const positionSystems = POSITION_SYSTEMS
 
 const selectedProvince = ref(targetedStore.selectedProvince || userStore.selectedProvince || 'national')
 const selectedPosition = ref(targetedStore.selectedPosition || '')
+const hasFullAccess = computed(() => (
+  userStore.isAdmin
+  || billingStore.isPaid
+  || userStore.userInfo?.billing?.isPaid === true
+  || userStore.userInfo?.permissions?.canAccessPremiumModules === true
+))
 
 const currentPositionSystems = computed(() => (
   selectedProvince.value === 'jiangsu' ? JIANGSU_TARGETED_POSITIONS : positionSystems
@@ -139,7 +147,16 @@ function syncSelection() {
   targetedStore.setSelection(selectedProvince.value, selectedPosition.value)
 }
 
-function goToFocusAnalysis() {
+async function ensureFullAccess() {
+  await userStore.loadUserInfo().catch(() => null)
+  if (hasFullAccess.value) return true
+  billingStore.openPaywall('/targeted', '定向备考')
+  router.push('/')
+  return false
+}
+
+async function goToFocusAnalysis() {
+  if (!(await ensureFullAccess())) return
   syncSelection()
   router.push({
     path: '/targeted/focus',
@@ -151,6 +168,7 @@ function goToFocusAnalysis() {
 }
 
 async function generateTargetedQuestions() {
+  if (!(await ensureFullAccess())) return
   syncSelection()
   const questions = await targetedStore.fetchGeneratedQuestions(5)
   if (!questions?.length) {

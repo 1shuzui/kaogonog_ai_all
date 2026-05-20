@@ -101,6 +101,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { LeftOutlined, AimOutlined, BarChartOutlined, FireOutlined, BulbOutlined, ThunderboltOutlined, PlayCircleOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { useTargetedStore } from '@/stores/targeted'
+import { useUserStore } from '@/stores/user'
+import { useBillingStore } from '@/stores/billing'
 import { PROVINCES, POSITION_SYSTEMS } from '@/utils/constants'
 import { getJiangsuTargetedPosition } from '@/utils/jiangsuJobs'
 import EmptyState from '@/components/common/EmptyState.vue'
@@ -108,9 +110,17 @@ import EmptyState from '@/components/common/EmptyState.vue'
 const router = useRouter()
 const route = useRoute()
 const targetedStore = useTargetedStore()
+const userStore = useUserStore()
+const billingStore = useBillingStore()
 const primaryColor = '#1B5FAA'
 
 const focusData = computed(() => targetedStore.focusData)
+const hasFullAccess = computed(() => (
+  userStore.isAdmin
+  || billingStore.isPaid
+  || userStore.userInfo?.billing?.isPaid === true
+  || userStore.userInfo?.permissions?.canAccessPremiumModules === true
+))
 
 const provinceName = computed(() => {
   const p = PROVINCES.find(p => p.code === targetedStore.selectedProvince)
@@ -138,8 +148,14 @@ function hydrateSelectionFromRoute() {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   hydrateSelectionFromRoute()
+  await userStore.loadUserInfo().catch(() => null)
+  if (!hasFullAccess.value) {
+    billingStore.openPaywall(route.fullPath, '定向备考')
+    router.replace('/')
+    return
+  }
   if (!targetedStore.hasSelection) {
     router.replace('/targeted')
     return
@@ -150,6 +166,12 @@ onMounted(() => {
 })
 
 async function generateTargetedPractice() {
+  await userStore.loadUserInfo().catch(() => null)
+  if (!hasFullAccess.value) {
+    billingStore.openPaywall(route.fullPath, '定向备考')
+    router.replace('/')
+    return
+  }
   const questions = await targetedStore.fetchGeneratedQuestions(5)
   if (questions?.length) {
     message.success('题目已生成，请在下方核对后开始练习。')

@@ -1,9 +1,13 @@
+import importlib.util
 import re
+import shutil
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
+from app.core.ai import _resolve_asr_model
+from app.core.config import settings
 from app.core.security import get_current_user
 from app.db.session import get_db
 from app.models.entities import ExamAnswer, Question
@@ -89,6 +93,29 @@ def _persist_result(db: Session, exam_id: str | None, question_id: str, transcri
 async def scoring_transcribe(audio: UploadFile = File(...), current_user: AuthUser = Depends(get_current_user)):
     audio_bytes = await audio.read()
     return await transcribe(audio_bytes, filename=audio.filename or "answer.webm")
+
+
+@router.get("/asr-status")
+def scoring_asr_status(current_user: AuthUser = Depends(get_current_user)):
+    asr_model = _resolve_asr_model()
+    remote_ready = bool(settings.llm_api_key and asr_model)
+    ffmpeg_ready = shutil.which("ffmpeg") is not None
+    local_whisper_ready = importlib.util.find_spec("whisper") is not None and ffmpeg_ready
+
+    ready = remote_ready or local_whisper_ready
+    mode = "remote_asr" if remote_ready else "local_whisper" if local_whisper_ready else "unavailable"
+    model = asr_model if remote_ready else "whisper" if local_whisper_ready else ""
+    message = "语音转写服务已就绪" if ready else "语音转写服务未就绪，请检查 ASR 模型配置、Whisper 依赖和 ffmpeg。"
+    return {
+        "ready": ready,
+        "mode": mode,
+        "provider": settings.llm_provider,
+        "model": model,
+        "remoteAsrReady": remote_ready,
+        "localWhisperReady": local_whisper_ready,
+        "ffmpegReady": ffmpeg_ready,
+        "message": message,
+    }
 
 
 @router.post("/evaluate")

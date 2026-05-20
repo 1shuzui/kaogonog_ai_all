@@ -231,7 +231,13 @@ const questionCategoryOptions = [
   { key: 'legal', name: '职业认知' }
 ]
 
-const isTrialEntry = computed(() => String(route.query.trial || '') === '1' && !billingStore.isPaid)
+const hasFullAccess = computed(() => (
+  userStore.isAdmin
+  || billingStore.isPaid
+  || userStore.userInfo?.billing?.isPaid === true
+  || userStore.userInfo?.permissions?.canAccessPremiumModules === true
+))
+const isTrialEntry = computed(() => String(route.query.trial || '') === '1' && !hasFullAccess.value)
 const showPracticeConfig = computed(() => examMode.value === 'free')
 const asrUnavailable = computed(() => asrStatus.value && asrStatus.value.ready === false)
 const asrStatusText = computed(() => {
@@ -291,6 +297,12 @@ function applyFullExamTimingMode(questions = []) {
 }
 
 async function refreshFullExamSuites() {
+  if (!hasFullAccess.value) {
+    fullExamSuites.value = []
+    selectedFullExamSuiteId.value = ''
+    fullExamSuitesLoading.value = false
+    return
+  }
   fullExamSuitesLoading.value = true
   try {
     const suites = await fetchFullExamSuites(getQuestions, userStore.selectedProvince)
@@ -385,7 +397,9 @@ async function ensureScoringReadyQuestions(questions, options = {}) {
   return resolved.slice(0, requiredCount || resolved.length)
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await userStore.loadUserInfo().catch(() => null)
+  await refreshFullExamSuites().catch(() => null)
   loadAsrStatus().catch(() => null)
   doPermissionCheck()
 })
@@ -501,6 +515,13 @@ async function enterExam() {
       : freeQuestionCount
 
   try {
+    await userStore.loadUserInfo().catch(() => null)
+    if (!isTrialEntry.value && !hasFullAccess.value) {
+      billingStore.openPaywall(route.fullPath, examMode.value === 'fullExam' ? '全真模拟' : '专项练习')
+      router.push('/')
+      return
+    }
+
     if (isTrialEntry.value) {
       try {
         const trialQuestion = await getQuestionById(billingStore.trialQuestion.id)
