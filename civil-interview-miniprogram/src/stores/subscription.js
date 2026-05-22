@@ -1,9 +1,20 @@
 import { defineStore } from 'pinia'
-import { checkSubscriptionAccess, getSubscriptionStatus } from '../api/subscription'
+import { checkSubscriptionAccess, getSubscriptionStatus, switchSubscription } from '../api/subscription'
 import { useBillingStore } from './billing'
 
 function normalizeStatus(payload = {}) {
+  const remainingMinutes = Math.max(0, Number(payload?.remainingMinutes || 0))
+  const hasDailyRemaining = payload?.remainingDailyMinutes !== undefined && payload?.remainingDailyMinutes !== null && payload?.remainingDailyMinutes !== ''
+  const rawRemainingDailyMinutes = hasDailyRemaining ? Number(payload.remainingDailyMinutes) : remainingMinutes
+  const remainingDailyMinutes = remainingMinutes > 0 ? Math.min(Math.max(0, rawRemainingDailyMinutes || 0), remainingMinutes) : 0
+  const activeSubscriptionId = Number(payload?.activeSubscriptionId || payload?.subscriptionId || payload?.id || 0)
+  const entitlements = Array.isArray(payload?.entitlements)
+    ? payload.entitlements.map((item) => normalizeEntitlement(item, activeSubscriptionId))
+    : []
   return {
+    id: activeSubscriptionId,
+    subscriptionId: activeSubscriptionId,
+    activeSubscriptionId,
     isTrialUser: payload?.isTrialUser !== false,
     trialCompleted: payload?.trialCompleted === true,
     hasActivePlan: payload?.hasActivePlan === true,
@@ -14,14 +25,40 @@ function normalizeStatus(payload = {}) {
     usedMinutes: Number(payload?.usedMinutes || 0),
     dailyLimitMinutes: Number(payload?.dailyLimitMinutes || 0),
     dailyUsedMinutes: Number(payload?.dailyUsedMinutes || 0),
-    remainingMinutes: Number(payload?.remainingMinutes || 0),
-    remainingDailyMinutes: Number(payload?.remainingDailyMinutes || 0),
+    remainingMinutes,
+    remainingDailyMinutes,
     expiresAt: payload?.expiresAt || '',
     canUse: payload?.canUse === true,
     packageCode: payload?.packageCode || '',
     stacked: payload?.stacked === true,
     activePlanCount: Number(payload?.activePlanCount || 0),
-    entitlements: Array.isArray(payload?.entitlements) ? payload.entitlements : []
+    entitlements
+  }
+}
+
+function normalizeEntitlement(payload = {}, activeSubscriptionId = 0) {
+  const subscriptionId = Number(payload?.subscriptionId || payload?.id || 0)
+  const remainingMinutes = Math.max(0, Number(payload?.remainingMinutes || 0))
+  const hasDailyRemaining = payload?.remainingDailyMinutes !== undefined && payload?.remainingDailyMinutes !== null && payload?.remainingDailyMinutes !== ''
+  const rawRemainingDailyMinutes = hasDailyRemaining ? Number(payload.remainingDailyMinutes) : remainingMinutes
+  return {
+    id: subscriptionId,
+    subscriptionId,
+    isActiveSelection: payload?.isActiveSelection === true || (activeSubscriptionId > 0 && subscriptionId === activeSubscriptionId),
+    planType: payload?.planType || 'trial',
+    planName: payload?.planName || '',
+    packageCode: payload?.packageCode || '',
+    status: payload?.status || '',
+    totalMinutes: Number(payload?.totalMinutes || 0),
+    usedMinutes: Number(payload?.usedMinutes || 0),
+    dailyLimitMinutes: Number(payload?.dailyLimitMinutes || 0),
+    dailyUsedMinutes: Number(payload?.dailyUsedMinutes || 0),
+    remainingMinutes,
+    remainingDailyMinutes: remainingMinutes > 0 ? Math.min(Math.max(0, rawRemainingDailyMinutes || 0), remainingMinutes) : 0,
+    expiresAt: payload?.expiresAt || '',
+    canUse: payload?.canUse === true,
+    sourceOrderNo: payload?.sourceOrderNo || '',
+    startAt: payload?.startAt || ''
   }
 }
 
@@ -89,6 +126,16 @@ export const useSubscriptionStore = defineStore('subscription', {
     async check(mode = 'practice', config = {}) {
       this.access = await checkSubscriptionAccess(mode, config)
       return this.access
+    },
+
+    async switchActive(subscriptionId, config = {}) {
+      this.loading = true
+      try {
+        const payload = await switchSubscription(subscriptionId, config)
+        return this.applyStatus(payload)
+      } finally {
+        this.loading = false
+      }
     }
   }
 })

@@ -25,9 +25,7 @@
           <QuestionRichContent
             :text="examStore.currentQuestion.stem"
             dark
-            scrollable
-            :scroll-height="220"
-            :collapsed-height="160"
+            :show-toggle="false"
           />
         </div>
       </div>
@@ -39,6 +37,9 @@
         'is-pip': examStore.status === 'answering' || examStore.status === 'submitting' || examStore.status === 'completed',
         'is-prep': examStore.status === 'preparing' || examStore.status === 'idle'
       }"
+      :style="cameraWindowStyle"
+      @pointerdown="onCameraPointerDown"
+      @contextmenu.prevent
     >
       <VideoPreview
         :stream="stream"
@@ -48,6 +49,15 @@
       <div v-if="examStore.status === 'preparing'" class="camera-hint">
         准备时间，请思考作答思路
       </div>
+      <span
+        v-for="handle in cameraResizeHandles"
+        :key="handle"
+        class="camera-resize-handle"
+        :class="`is-${handle}`"
+        aria-hidden="true"
+        @pointerdown.stop="onCameraResizePointerDown($event, handle)"
+        @contextmenu.prevent
+      />
     </div>
 
     <div class="exam-room__timer">
@@ -123,6 +133,15 @@ import QuestionRichContent from '@/components/common/QuestionRichContent.vue'
 import { message } from 'ant-design-vue'
 import { logger } from '@/utils/logger'
 
+const CAMERA_DEFAULT = Object.freeze({
+  width: 240,
+  height: 180,
+  margin: 24
+})
+const CAMERA_MIN = Object.freeze({ width: 180, height: 135 })
+const CAMERA_MAX = Object.freeze({ width: 420, height: 315 })
+const cameraResizeHandles = Object.freeze(['n', 'e', 's', 'w', 'ne', 'se', 'sw', 'nw'])
+
 const router = useRouter()
 const examStore = useExamStore()
 const recorder = useMediaRecorder()
@@ -132,7 +151,21 @@ const recorderDuration = recorder.duration
 const countdown = useCountdown(0)
 
 const elapsed = ref(0)
+const cameraWindow = ref({
+  width: CAMERA_DEFAULT.width,
+  height: CAMERA_DEFAULT.height,
+  left: null,
+  top: null
+})
 let elapsedTimer = null
+let cameraDragState = null
+
+const cameraWindowStyle = computed(() => ({
+  width: `${cameraWindow.value.width}px`,
+  height: `${cameraWindow.value.height}px`,
+  left: `${cameraWindow.value.left ?? getDefaultCameraPosition().left}px`,
+  top: `${cameraWindow.value.top ?? getDefaultCameraPosition().top}px`
+}))
 
 const formattedElapsed = computed(() => {
   const m = Math.floor(elapsed.value / 60)
@@ -146,6 +179,8 @@ const gradeLabel = computed(() => {
 })
 
 onMounted(async () => {
+  resetCameraWindow()
+  window.addEventListener('resize', keepCameraWindowInBounds)
   await new Promise((resolve) => setTimeout(resolve, 300))
   const currentStream = await recorder.initStream({ videoEnabled: examStore.videoEnabled })
   if (!currentStream) {
@@ -163,6 +198,8 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  window.removeEventListener('resize', keepCameraWindowInBounds)
+  stopCameraInteraction()
   recorder.destroyStream()
   countdown.stop()
   clearInterval(elapsedTimer)
@@ -257,6 +294,146 @@ async function exitExam() {
   }
   examStore.exitExam()
   router.push('/')
+}
+
+function getViewportSize() {
+  return {
+    width: window.innerWidth || document.documentElement.clientWidth || 1024,
+    height: window.innerHeight || document.documentElement.clientHeight || 768
+  }
+}
+
+function getDefaultCameraPosition(width = cameraWindow.value.width, height = cameraWindow.value.height) {
+  const viewport = getViewportSize()
+  return {
+    left: Math.max(CAMERA_DEFAULT.margin, viewport.width - width - CAMERA_DEFAULT.margin),
+    top: Math.max(CAMERA_DEFAULT.margin, viewport.height - height - CAMERA_DEFAULT.margin)
+  }
+}
+
+function clampCameraWindow(next) {
+  const viewport = getViewportSize()
+  const sizeLimits = getCameraSizeLimits()
+  const width = Math.min(Math.max(next.width, sizeLimits.minWidth), sizeLimits.maxWidth)
+  const height = Math.min(Math.max(next.height, sizeLimits.minHeight), sizeLimits.maxHeight)
+  return {
+    width,
+    height,
+    left: Math.min(Math.max(next.left, CAMERA_DEFAULT.margin), Math.max(CAMERA_DEFAULT.margin, viewport.width - width - CAMERA_DEFAULT.margin)),
+    top: Math.min(Math.max(next.top, CAMERA_DEFAULT.margin), Math.max(CAMERA_DEFAULT.margin, viewport.height - height - CAMERA_DEFAULT.margin))
+  }
+}
+
+function resetCameraWindow() {
+  const position = getDefaultCameraPosition(CAMERA_DEFAULT.width, CAMERA_DEFAULT.height)
+  cameraWindow.value = clampCameraWindow({
+    ...position,
+    width: CAMERA_DEFAULT.width,
+    height: CAMERA_DEFAULT.height
+  })
+}
+
+function keepCameraWindowInBounds() {
+  cameraWindow.value = clampCameraWindow(cameraWindow.value)
+}
+
+function onCameraPointerDown(event) {
+  if (event.button !== 0) return
+  const rect = event.currentTarget.getBoundingClientRect()
+  startCameraInteraction(event, {
+    mode: 'move',
+    rect
+  })
+}
+
+function onCameraResizePointerDown(event, handle) {
+  if (event.button !== 0) return
+  const rect = event.currentTarget.parentElement.getBoundingClientRect()
+  startCameraInteraction(event, {
+    mode: 'resize',
+    rect,
+    handle
+  })
+}
+
+function startCameraInteraction(event, { mode, rect, handle = '' }) {
+  cameraDragState = {
+    mode,
+    handle,
+    startX: event.clientX,
+    startY: event.clientY,
+    startLeft: rect.left,
+    startTop: rect.top,
+    startWidth: rect.width,
+    startHeight: rect.height
+  }
+
+  event.currentTarget.setPointerCapture?.(event.pointerId)
+  window.addEventListener('pointermove', onCameraPointerMove)
+  window.addEventListener('pointerup', stopCameraInteraction)
+  event.preventDefault()
+}
+
+function onCameraPointerMove(event) {
+  if (!cameraDragState) return
+  const deltaX = event.clientX - cameraDragState.startX
+  const deltaY = event.clientY - cameraDragState.startY
+
+  if (cameraDragState.mode === 'resize') {
+    const movesLeft = cameraDragState.handle.includes('w')
+    const movesRight = cameraDragState.handle.includes('e')
+    const movesTop = cameraDragState.handle.includes('n')
+    const movesBottom = cameraDragState.handle.includes('s')
+    const sizeLimits = getCameraSizeLimits()
+    let nextLeft = movesLeft ? cameraDragState.startLeft + deltaX : cameraDragState.startLeft
+    let nextTop = movesTop ? cameraDragState.startTop + deltaY : cameraDragState.startTop
+    let nextWidth = cameraDragState.startWidth
+      + (movesRight ? deltaX : 0)
+      - (movesLeft ? deltaX : 0)
+    let nextHeight = cameraDragState.startHeight
+      + (movesBottom ? deltaY : 0)
+      - (movesTop ? deltaY : 0)
+
+    if (movesLeft) {
+      nextWidth = Math.min(Math.max(nextWidth, sizeLimits.minWidth), sizeLimits.maxWidth)
+      nextLeft = cameraDragState.startLeft + cameraDragState.startWidth - nextWidth
+    }
+    if (movesTop) {
+      nextHeight = Math.min(Math.max(nextHeight, sizeLimits.minHeight), sizeLimits.maxHeight)
+      nextTop = cameraDragState.startTop + cameraDragState.startHeight - nextHeight
+    }
+
+    cameraWindow.value = clampCameraWindow({
+      left: nextLeft,
+      top: nextTop,
+      width: nextWidth,
+      height: nextHeight
+    })
+    return
+  }
+
+  cameraWindow.value = clampCameraWindow({
+    left: cameraDragState.startLeft + deltaX,
+    top: cameraDragState.startTop + deltaY,
+    width: cameraDragState.startWidth,
+    height: cameraDragState.startHeight
+  })
+}
+
+function getCameraSizeLimits() {
+  const viewport = getViewportSize()
+  return {
+    minWidth: CAMERA_MIN.width,
+    minHeight: CAMERA_MIN.height,
+    maxWidth: Math.min(CAMERA_MAX.width, viewport.width - CAMERA_DEFAULT.margin * 2),
+    maxHeight: Math.min(CAMERA_MAX.height, viewport.height - CAMERA_DEFAULT.margin * 2)
+  }
+}
+
+function stopCameraInteraction() {
+  cameraDragState = null
+  window.removeEventListener('pointermove', onCameraPointerMove)
+  window.removeEventListener('pointerup', stopCameraInteraction)
 }
 </script>
 

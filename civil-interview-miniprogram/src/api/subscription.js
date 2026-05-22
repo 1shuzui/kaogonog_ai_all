@@ -14,3 +14,12 @@ export function checkSubscriptionAccess(mode = 'practice', config = {}) {
     ...config
   })
 }
+
+export function switchSubscription(subscriptionId, config = {}) {
+  return request({
+    url: '/subscription/switch',
+    method: 'POST',
+    data: { subscriptionId },
+    ...config
+  })
+}

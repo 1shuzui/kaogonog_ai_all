@@ -81,6 +81,10 @@ class UserTermsAgreementRequest(BaseModel):
     version: str
 
 
+class SubscriptionSwitchRequest(BaseModel):
+    subscriptionId: int = Field(validation_alias=AliasChoices("subscriptionId", "subscription_id"))
+
+
 # ===== Question =====
 class QuestionCreate(BaseModel):
     stem: str

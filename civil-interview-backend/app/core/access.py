@@ -105,11 +105,8 @@ def _subscription_snapshot(subscription) -> dict | None:
     last_reset_date = getattr(subscription, "last_reset_date", None)
     daily_used_minutes = raw_daily_used if last_reset_date == date.today() else 0
     remaining_minutes = max(total_minutes - used_minutes, 0)
-    remaining_daily_minutes = (
-        max(daily_limit_minutes - daily_used_minutes, 0)
-        if daily_limit_minutes > 0
-        else remaining_minutes
-    )
+    remaining_daily_quota = max(daily_limit_minutes - daily_used_minutes, 0) if daily_limit_minutes > 0 else remaining_minutes
+    remaining_daily_minutes = min(remaining_minutes, remaining_daily_quota)
     can_use = remaining_minutes > 0 and (daily_limit_minutes <= 0 or remaining_daily_minutes > 0)
     if not can_use:
         return None
@@ -130,15 +127,31 @@ def _subscription_snapshot(subscription) -> dict | None:
 def _latest_paid_subscription_snapshot(user) -> dict | None:
     subscriptions = getattr(user, "subscriptions", None) or []
     snapshots = []
+    preferences = user.preferences if isinstance(getattr(user, "preferences", None), dict) else {}
+    try:
+        preferred_id = int(preferences.get("activeSubscriptionId") or 0)
+    except (TypeError, ValueError):
+        preferred_id = 0
     for subscription in subscriptions:
         snapshot = _subscription_snapshot(subscription)
         if not snapshot:
             continue
         created_at = getattr(subscription, "created_at", None)
         sub_id = int(getattr(subscription, "id", 0) or 0)
+        snapshot = {
+            **snapshot,
+            "id": sub_id,
+            "subscriptionId": sub_id,
+            "isActiveSelection": preferred_id > 0 and sub_id == preferred_id,
+            "packageCode": str(getattr(subscription, "package_code", "") or ""),
+        }
         snapshots.append((_timestamp_ms(created_at), sub_id, snapshot))
     if not snapshots:
         return None
+    if preferred_id:
+        preferred = next((item for item in snapshots if item[1] == preferred_id), None)
+        if preferred:
+            return preferred[2]
     snapshots.sort(key=lambda item: (item[0], item[1]), reverse=True)
     return snapshots[0][2]
 

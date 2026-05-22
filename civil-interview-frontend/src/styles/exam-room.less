@@ -49,14 +49,18 @@
 // 摄像头预览 - 始终浮动定位，不占用布局空间
 .exam-room__camera {
   position: fixed;
-  right: 16px;
   background: #000;
   border-radius: 10px;
   overflow: hidden;
-  transition: top 0.4s ease, width 0.4s ease, height 0.4s ease, opacity 0.4s ease;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
   border: 2px solid rgba(255, 255, 255, 0.15);
   z-index: 100;
+  cursor: move;
+  min-width: 180px;
+  min-height: 135px;
+  max-width: min(420px, calc(100vw - 48px));
+  max-height: min(315px, calc(100vh - 48px));
+  touch-action: none;
 
   video {
     width: 100%;
@@ -66,17 +70,11 @@
 
   // 准备阶段 - 右上角中等大小
   &.is-prep {
-    top: 70px;
-    width: 180px;
-    height: 135px;
+    opacity: 1;
   }
 
   // 答题阶段 - 右下角小窗
   &.is-pip {
-    top: calc(100vh - 205px);
-    width: 130px;
-    height: 98px;
-
     .camera-hint {
       display: none;
     }
@@ -107,6 +105,88 @@
   color: rgba(255, 255, 255, 0.8);
   pointer-events: none;
   white-space: nowrap;
+}
+
+.camera-resize-handle {
+  position: absolute;
+  z-index: 2;
+
+  &.is-n,
+  &.is-s {
+    left: 14px;
+    right: 14px;
+    height: 10px;
+  }
+
+  &.is-n {
+    top: -4px;
+    cursor: ns-resize;
+  }
+
+  &.is-s {
+    bottom: -4px;
+    cursor: ns-resize;
+  }
+
+  &.is-e,
+  &.is-w {
+    top: 14px;
+    bottom: 14px;
+    width: 10px;
+  }
+
+  &.is-e {
+    right: -4px;
+    cursor: ew-resize;
+  }
+
+  &.is-w {
+    left: -4px;
+    cursor: ew-resize;
+  }
+
+  &.is-ne,
+  &.is-se,
+  &.is-sw,
+  &.is-nw {
+    width: 24px;
+    height: 24px;
+  }
+
+  &.is-ne {
+    top: -4px;
+    right: -4px;
+    cursor: nesw-resize;
+  }
+
+  &.is-se {
+    right: -4px;
+    bottom: -4px;
+    cursor: nwse-resize;
+  }
+
+  &.is-sw {
+    left: -4px;
+    bottom: -4px;
+    cursor: nesw-resize;
+  }
+
+  &.is-nw {
+    top: -4px;
+    left: -4px;
+    cursor: nwse-resize;
+  }
+
+  &.is-se::before {
+    content: '';
+    position: absolute;
+    right: 6px;
+    bottom: 6px;
+    width: 10px;
+    height: 10px;
+    border-right: 2px solid rgba(255, 255, 255, 0.78);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.78);
+  }
 }
 
 .exam-room__timer {

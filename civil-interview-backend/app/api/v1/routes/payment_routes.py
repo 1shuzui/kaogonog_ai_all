@@ -19,6 +19,7 @@ from app.services.payment_service import (
     get_refund_balance_stats,
     handle_payment_callback,
     list_payment_orders,
+    verify_virtual_payment_order,
 )
 
 router = APIRouter(prefix="/payment", tags=["payment"])
@@ -37,6 +38,11 @@ def payment_list_orders(current_user: AuthUser = Depends(get_current_user), db: 
 @router.get("/orders/{order_no}")
 def payment_get_order(order_no: str, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     return get_payment_order(db, current_user, order_no)
+
+
+@router.post("/orders/{order_no}/virtual/verify")
+def payment_verify_virtual_order(order_no: str, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    return verify_virtual_payment_order(db, current_user, order_no)
 
 
 @router.post("/admin/refund-stats")

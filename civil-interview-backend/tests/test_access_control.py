@@ -1,4 +1,5 @@
 import unittest
+from datetime import date
 
 from fastapi import HTTPException
 
@@ -103,6 +104,15 @@ class AccessControlTestCase(unittest.TestCase):
         self.assertEqual(context["billing"]["remainingMinutes"], 177)
         self.assertEqual(context["billing"]["remainingSeconds"], 10620)
         self.assertTrue(context["permissions"]["canAccessPremiumModules"])
+
+    def test_build_access_context_caps_daily_remaining_at_total_remaining(self):
+        subscription = DummySubscription(used_minutes=18, daily_used_minutes=6)
+        subscription.last_reset_date = date.today()
+
+        context = build_access_context(DummyUser("ssy", subscriptions=[subscription]))
+
+        self.assertEqual(context["billing"]["remainingMinutes"], 162)
+        self.assertEqual(context["billing"]["remainingDailyMinutes"], 162)
 
     def test_trial_user_only_can_start_trial_question(self):
         trial_user = DummyAuthUser(is_admin=False, can_access_premium=False)

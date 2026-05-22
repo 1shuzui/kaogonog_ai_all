@@ -42,9 +42,10 @@ function createDefaultState() {
 }
 
 function normalizeState(raw = {}) {
+  const source = raw && typeof raw === 'object' ? raw : {}
   const state = {
     ...createDefaultState(),
-    ...(raw && typeof raw === 'object' ? raw : {})
+    ...source
   }
   const planType = String(state.planType || 'trial')
   state.planType = PLANS[planType] ? planType : 'trial'
@@ -52,7 +53,11 @@ function normalizeState(raw = {}) {
   state.activatedAt = Number(state.activatedAt || 0)
   state.remainingSeconds = Math.max(0, Number(state.remainingSeconds || 0))
   state.remainingMinutes = Math.max(0, Number(state.remainingMinutes || 0))
-  state.remainingDailyMinutes = Math.max(0, Number(state.remainingDailyMinutes || 0))
+  const hasDailyRemaining = source.remainingDailyMinutes !== undefined && source.remainingDailyMinutes !== null && source.remainingDailyMinutes !== ''
+  state.remainingDailyMinutes = hasDailyRemaining ? Math.max(0, Number(state.remainingDailyMinutes || 0)) : state.remainingMinutes
+  if (state.remainingMinutes > 0) {
+    state.remainingDailyMinutes = Math.min(state.remainingDailyMinutes, state.remainingMinutes)
+  }
   state.dailyLimitMinutes = Math.max(0, Number(state.dailyLimitMinutes || 0))
   state.usedMinutes = Math.max(0, Number(state.usedMinutes || 0))
   state.totalMinutes = Math.max(0, Number(state.totalMinutes || 0))
@@ -109,7 +114,11 @@ export const useBillingStore = defineStore('billing', {
       this.status = String(billing.status || '')
       this.remainingSeconds = Math.max(0, Number(billing.remainingSeconds || 0))
       this.remainingMinutes = Math.max(0, Number(billing.remainingMinutes || Math.ceil(this.remainingSeconds / 60) || 0))
-      this.remainingDailyMinutes = Math.max(0, Number(billing.remainingDailyMinutes || 0))
+      const hasDailyRemaining = billing.remainingDailyMinutes !== undefined && billing.remainingDailyMinutes !== null && billing.remainingDailyMinutes !== ''
+      this.remainingDailyMinutes = hasDailyRemaining ? Math.max(0, Number(billing.remainingDailyMinutes || 0)) : this.remainingMinutes
+      if (this.remainingMinutes > 0) {
+        this.remainingDailyMinutes = Math.min(this.remainingDailyMinutes, this.remainingMinutes)
+      }
       this.dailyLimitMinutes = Math.max(0, Number(billing.dailyLimitMinutes || 0))
       this.usedMinutes = Math.max(0, Number(billing.usedMinutes || 0))
       this.totalMinutes = Math.max(0, Number(billing.totalMinutes || 0))

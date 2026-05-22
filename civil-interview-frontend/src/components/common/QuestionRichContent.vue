@@ -65,6 +65,10 @@ const props = defineProps({
   scrollHeight: {
     type: Number,
     default: 320
+  },
+  showToggle: {
+    type: Boolean,
+    default: true
   }
 })
 
@@ -80,7 +84,7 @@ watch(
 const paragraphs = computed(() => splitQuestionContent(props.text))
 const isComic = computed(() => isComicQuestion(props.text))
 const isLong = computed(() => isLongQuestion(props.text))
-const expandable = computed(() => paragraphs.value.length > 3 || String(props.text || '').length > 120)
+const expandable = computed(() => props.showToggle && (paragraphs.value.length > 3 || String(props.text || '').length > 120))
 const bodyStyle = computed(() => {
   if (props.scrollable) {
     return {

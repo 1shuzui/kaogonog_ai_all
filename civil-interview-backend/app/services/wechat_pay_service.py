@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 import hashlib
 import hmac
 import json
+from time import time
 
 from fastapi import HTTPException
 import requests
@@ -12,9 +13,14 @@ from app.schemas.common import PaymentCallbackRequest, PaymentOrderCreateRequest
 
 
 VIRTUAL_PAY_SCENE = "mini_program_virtual"
+X_PAY_QUERY_ORDER_PATH = "/xpay/query_order"
+X_PAY_QUERY_ORDER_URL = f"https://api.weixin.qq.com{X_PAY_QUERY_ORDER_PATH}"
 
 
 class WechatPayService:
+    _access_token: str = ""
+    _access_token_expires_at: int = 0
+
     def get_pay_payload(self, order: PaymentOrder, package: SubscriptionPackage, data: PaymentOrderCreateRequest) -> dict:
         if data.payChannel != "wechat":
             raise HTTPException(status_code=400, detail="当前仅支持微信支付")
@@ -30,6 +36,54 @@ class WechatPayService:
         if mode == "wechat":
             return self._parse_wechat_callback_placeholder(data, headers)
         raise HTTPException(status_code=400, detail="不支持的微信支付回调模式")
+
+    def query_virtual_order(self, order: PaymentOrder, package: SubscriptionPackage) -> dict:
+        extra_payload = order.extra_payload if isinstance(order.extra_payload, dict) else {}
+        openid = str(extra_payload.get("openId") or "")
+        if not openid:
+            raise HTTPException(status_code=400, detail="订单缺少 openId，无法查询微信虚拟支付订单")
+        if not settings.wechat_virtual_pay_offer_id:
+            raise HTTPException(status_code=500, detail="小程序虚拟支付 OfferID 未配置")
+
+        body_payload = {
+            "openid": openid,
+            "order_id": order.order_no,
+            "env": int(extra_payload.get("virtualPayEnv") or settings.wechat_virtual_pay_env or 0),
+        }
+        product_id = extra_payload.get("virtualProductId") or self._get_virtual_product_id(package)
+        if product_id:
+            body_payload["product_id"] = str(product_id)
+
+        body = json.dumps(body_payload, ensure_ascii=False, separators=(",", ":"))
+        response = requests.post(
+            X_PAY_QUERY_ORDER_URL,
+            params={
+                "access_token": self._get_access_token(),
+                "pay_sig": self._hmac_sha256(self._get_virtual_app_key(), f"{X_PAY_QUERY_ORDER_PATH}&{body}"),
+            },
+            data=body.encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            timeout=settings.wechat_pay_request_timeout,
+        )
+        if response.status_code >= 400:
+            raise HTTPException(status_code=502, detail=f"微信虚拟支付查单失败: HTTP {response.status_code}")
+        try:
+            result = response.json()
+        except ValueError as exc:
+            raise HTTPException(status_code=502, detail="微信虚拟支付查单响应不是 JSON") from exc
+
+        errcode = int(result.get("errcode") or result.get("err_code") or 0)
+        if errcode:
+            errmsg = result.get("errmsg") or result.get("err_msg") or "unknown error"
+            raise HTTPException(status_code=502, detail=f"微信虚拟支付查单失败: {errcode} {errmsg}")
+        return {
+            "verified": self._virtual_order_is_paid(result),
+            "transactionId": self._extract_virtual_order_id(result),
+            "amountTotal": self._extract_virtual_order_amount(result),
+            "paidAt": self._extract_virtual_paid_at(result),
+            "raw": result,
+            "request": body_payload,
+        }
 
     def _build_virtual_payment_payload(self, order: PaymentOrder, package: SubscriptionPackage, data: PaymentOrderCreateRequest) -> dict:
         self._assert_virtual_config(data)
@@ -133,6 +187,38 @@ class WechatPayService:
             raise HTTPException(status_code=502, detail="微信 code2Session 响应缺少 session_key")
         return result
 
+    def _get_access_token(self) -> str:
+        now = int(time())
+        if self._access_token and self._access_token_expires_at > now + 60:
+            return self._access_token
+        if not settings.wechat_pay_appid or not settings.wechat_miniprogram_app_secret:
+            raise HTTPException(status_code=500, detail="小程序 AppID 或 AppSecret 未配置")
+        response = requests.get(
+            "https://api.weixin.qq.com/cgi-bin/token",
+            params={
+                "grant_type": "client_credential",
+                "appid": settings.wechat_pay_appid,
+                "secret": settings.wechat_miniprogram_app_secret,
+            },
+            timeout=settings.wechat_pay_request_timeout,
+        )
+        if response.status_code >= 400:
+            raise HTTPException(status_code=502, detail=f"微信 access_token 获取失败: HTTP {response.status_code}")
+        try:
+            result = response.json()
+        except ValueError as exc:
+            raise HTTPException(status_code=502, detail="微信 access_token 响应不是 JSON") from exc
+        errcode = int(result.get("errcode") or 0)
+        if errcode:
+            errmsg = result.get("errmsg") or "unknown error"
+            raise HTTPException(status_code=502, detail=f"微信 access_token 获取失败: {errcode} {errmsg}")
+        token = result.get("access_token")
+        if not token:
+            raise HTTPException(status_code=502, detail="微信 access_token 响应缺少 access_token")
+        self._access_token = str(token)
+        self._access_token_expires_at = now + max(int(result.get("expires_in") or 7200), 300)
+        return self._access_token
+
     def _get_virtual_product_id(self, package: SubscriptionPackage) -> str:
         mapping = self._load_json_mapping(settings.wechat_virtual_pay_product_map_json)
         product_id = mapping.get(package.package_code)
@@ -170,6 +256,145 @@ class WechatPayService:
 
     def _hmac_sha256(self, key: str, message: str) -> str:
         return hmac.new(key.encode("utf-8"), message.encode("utf-8"), hashlib.sha256).hexdigest()
+
+    def _virtual_order_is_paid(self, result: dict) -> bool:
+        order_info = result.get("order") or result.get("orderInfo") or result.get("order_info")
+        status_values = [
+            result.get("trade_state"),
+            result.get("tradeState"),
+            result.get("status"),
+            result.get("order_status"),
+            result.get("orderStatus"),
+            result.get("pay_status"),
+            result.get("payStatus"),
+        ]
+        if isinstance(order_info, dict):
+            status_values.extend([
+                order_info.get("trade_state"),
+                order_info.get("tradeState"),
+                order_info.get("status"),
+                order_info.get("order_status"),
+                order_info.get("orderStatus"),
+                order_info.get("pay_status"),
+                order_info.get("payStatus"),
+            ])
+        paid_values = {"success", "paid", "complete", "completed", "finish", "finished", "1", "2", "3"}
+        for value in status_values:
+            if value is None:
+                continue
+            normalized = str(value).strip().lower()
+            if normalized in paid_values or normalized == "success":
+                return True
+        if result.get("paid") is True or result.get("is_paid") is True or result.get("isPaid") is True:
+            return True
+        if isinstance(order_info, dict):
+            try:
+                return int(order_info.get("paid_fee") or 0) > 0
+            except (TypeError, ValueError):
+                return False
+        return False
+
+    def _extract_virtual_order_id(self, result: dict) -> str:
+        candidates = [
+            result.get("wxpay_order_id"),
+            result.get("wxpayOrderId"),
+            result.get("wx_order_id"),
+            result.get("wxOrderId"),
+            result.get("channel_order_id"),
+            result.get("channelOrderId"),
+            result.get("transaction_id"),
+            result.get("transactionId"),
+            result.get("wechat_order_id"),
+            result.get("wechatOrderId"),
+            result.get("payment_order_id"),
+            result.get("paymentOrderId"),
+            result.get("trade_no"),
+            result.get("tradeNo"),
+        ]
+        order_info = result.get("order") or result.get("orderInfo") or result.get("order_info")
+        if isinstance(order_info, dict):
+            candidates.extend([
+                order_info.get("wxpay_order_id"),
+                order_info.get("wxpayOrderId"),
+                order_info.get("wx_order_id"),
+                order_info.get("wxOrderId"),
+                order_info.get("channel_order_id"),
+                order_info.get("channelOrderId"),
+                order_info.get("transaction_id"),
+                order_info.get("transactionId"),
+                order_info.get("payment_order_id"),
+                order_info.get("paymentOrderId"),
+                order_info.get("order_id"),
+                order_info.get("orderId"),
+            ])
+        for value in candidates:
+            if value not in (None, ""):
+                return str(value)
+        return ""
+
+    def _extract_virtual_order_amount(self, result: dict) -> int | None:
+        candidates = [
+            result.get("amount_total"),
+            result.get("amountTotal"),
+            result.get("total_fee"),
+            result.get("totalFee"),
+            result.get("goods_price"),
+            result.get("goodsPrice"),
+        ]
+        amount = result.get("amount")
+        if isinstance(amount, dict):
+            candidates.extend([amount.get("total"), amount.get("payer_total"), amount.get("payerTotal")])
+        order_info = result.get("order") or result.get("orderInfo") or result.get("order_info")
+        if isinstance(order_info, dict):
+            candidates.extend([
+                order_info.get("paid_fee"),
+                order_info.get("paidFee"),
+                order_info.get("order_fee"),
+                order_info.get("orderFee"),
+                order_info.get("left_fee"),
+                order_info.get("leftFee"),
+            ])
+        for value in candidates:
+            if value in (None, ""):
+                continue
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                continue
+        return None
+
+    def _extract_virtual_paid_at(self, result: dict) -> str:
+        candidates = [
+            result.get("success_time"),
+            result.get("successTime"),
+            result.get("paid_at"),
+            result.get("paidAt"),
+            result.get("pay_time"),
+            result.get("payTime"),
+            result.get("create_time"),
+            result.get("createTime"),
+        ]
+        order_info = result.get("order") or result.get("orderInfo") or result.get("order_info")
+        if isinstance(order_info, dict):
+            candidates.extend([
+                order_info.get("paid_time"),
+                order_info.get("paidTime"),
+                order_info.get("update_time"),
+                order_info.get("updateTime"),
+                order_info.get("create_time"),
+                order_info.get("createTime"),
+            ])
+        for value in candidates:
+            if value not in (None, ""):
+                try:
+                    numeric_value = int(value)
+                    if numeric_value > 10_000_000_000:
+                        numeric_value = numeric_value // 1000
+                    return datetime.fromtimestamp(numeric_value, tz=timezone.utc).isoformat()
+                except (TypeError, ValueError):
+                    pass
+                return str(value)
+        return datetime.now(timezone.utc).isoformat()
 
     def _parse_wechat_callback_placeholder(self, data: PaymentCallbackRequest, headers: dict) -> dict:
         picked_headers = self._pick_wechat_headers(headers)

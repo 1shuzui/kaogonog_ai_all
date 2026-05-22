@@ -41,6 +41,12 @@ function createDefaultState() {
 function normalizeBillingState(rawState = {}) {
   const nextState = createDefaultState()
   const planType = String(rawState.planType || BILLING_PLAN_KEYS.TRIAL)
+  const remainingMinutes = Math.max(0, Math.floor(Number(rawState.remainingMinutes) || 0))
+  const hasDailyRemaining = rawState.remainingDailyMinutes !== undefined && rawState.remainingDailyMinutes !== null && rawState.remainingDailyMinutes !== ''
+  const rawRemainingDailyMinutes = hasDailyRemaining
+    ? Math.max(0, Math.floor(Number(rawState.remainingDailyMinutes) || 0))
+    : remainingMinutes
+  const remainingDailyMinutes = remainingMinutes > 0 ? Math.min(rawRemainingDailyMinutes, remainingMinutes) : 0
 
   return {
     ...nextState,
@@ -49,8 +55,8 @@ function normalizeBillingState(rawState = {}) {
     remainingSeconds: Math.max(0, Math.floor(Number(rawState.remainingSeconds) || 0)),
     monthlyExpireAt: Math.max(0, Number(rawState.monthlyExpireAt) || 0),
     activatedAt: Math.max(0, Number(rawState.activatedAt) || 0),
-    remainingMinutes: Math.max(0, Math.floor(Number(rawState.remainingMinutes) || 0)),
-    remainingDailyMinutes: Math.max(0, Math.floor(Number(rawState.remainingDailyMinutes) || 0)),
+    remainingMinutes,
+    remainingDailyMinutes,
     dailyLimitMinutes: Math.max(0, Math.floor(Number(rawState.dailyLimitMinutes) || 0)),
     usedMinutes: Math.max(0, Math.floor(Number(rawState.usedMinutes) || 0)),
     totalMinutes: Math.max(0, Math.floor(Number(rawState.totalMinutes) || 0)),

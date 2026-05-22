@@ -43,8 +43,22 @@
       </view>
       <view v-if="status.entitlements?.length" class="entitlement-list">
         <view v-for="item in status.entitlements" :key="item.id || item.sourceOrderNo" class="entitlement-item">
-          <text class="entitlement-item__title">{{ item.planName }}</text>
-          <text class="entitlement-item__desc">剩余 {{ item.remainingMinutes }} 分钟{{ item.expiresAt ? ` | 到期 ${formatDate(item.expiresAt)}` : '' }}</text>
+          <view class="entitlement-item__main">
+            <text class="entitlement-item__title">{{ item.planName }}</text>
+            <text class="entitlement-item__desc">
+              剩余 {{ item.remainingMinutes }} 分钟，今日可用 {{ item.remainingDailyMinutes }} 分钟{{ item.expiresAt ? ` | 到期 ${formatDate(item.expiresAt)}` : '' }}
+            </text>
+          </view>
+          <button
+            class="entitlement-item__button"
+            :class="{ 'entitlement-item__button--active': item.isActiveSelection }"
+            size="mini"
+            :loading="switchingId === item.subscriptionId"
+            :disabled="item.isActiveSelection || !item.canUse || !!switchingId"
+            @tap="switchEntitlement(item)"
+          >
+            {{ item.isActiveSelection ? '当前使用' : '切换使用' }}
+          </button>
         </view>
       </view>
     </view>
@@ -80,6 +94,7 @@ import { requireLogin, toast } from '../../utils/navigation'
 const subscriptionStore = useSubscriptionStore()
 const checkingMode = ref('')
 const lastCheckedAt = ref('')
+const switchingId = ref(0)
 const status = computed(() => subscriptionStore.status)
 const access = computed(() => subscriptionStore.access)
 const planTitle = computed(() => status.value.planType === 'trial' ? '试用版' : '已开通套餐')
@@ -120,6 +135,21 @@ async function checkAccess(mode, silent = false) {
     if (!silent) toast(error?.message || '访问检查失败')
   } finally {
     checkingMode.value = ''
+  }
+}
+
+async function switchEntitlement(item) {
+  const subscriptionId = Number(item?.subscriptionId || item?.id || 0)
+  if (!subscriptionId || item?.isActiveSelection || switchingId.value) return
+  switchingId.value = subscriptionId
+  try {
+    await subscriptionStore.switchActive(subscriptionId, { skipErrorHandler: true })
+    await checkAccess('practice', true)
+    toast('已切换当前使用权益', 'success')
+  } catch (error) {
+    toast(error?.message || '切换权益失败')
+  } finally {
+    switchingId.value = 0
   }
 }
 
@@ -224,6 +254,10 @@ function formatCheckTime() {
 }
 
 .entitlement-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150rpx;
+  gap: 14rpx;
+  align-items: center;
   padding: 16rpx;
   border: 1rpx solid #e5edf7;
   border-radius: 14rpx;
@@ -245,6 +279,24 @@ function formatCheckTime() {
   margin-top: 6rpx;
   color: #6f7c8f;
   font-size: 22rpx;
+}
+
+.entitlement-item__button {
+  width: 150rpx;
+  min-height: 58rpx;
+  padding: 0;
+  border: 1rpx solid #1b5faa;
+  border-radius: 8rpx;
+  background: #ffffff;
+  color: #1b5faa;
+  font-size: 22rpx;
+  line-height: 58rpx;
+}
+
+.entitlement-item__button--active {
+  border-color: #389e0d;
+  background: #f0f9eb;
+  color: #389e0d;
 }
 
 .access-row {

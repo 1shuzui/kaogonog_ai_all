@@ -59,7 +59,8 @@ def report_usage(db: Session, current_user: AuthUser, data: UsageReportRequest) 
     daily_used_minutes = int(subscription.daily_used_minutes or 0)
 
     remaining_minutes_before = max(total_minutes - used_minutes, 0)
-    remaining_daily_before = max(daily_limit_minutes - daily_used_minutes, 0) if daily_limit_minutes > 0 else remaining_minutes_before
+    remaining_daily_quota = max(daily_limit_minutes - daily_used_minutes, 0) if daily_limit_minutes > 0 else remaining_minutes_before
+    remaining_daily_before = min(remaining_minutes_before, remaining_daily_quota)
     if total_minutes <= 0 or remaining_minutes_before <= 0 or (daily_limit_minutes > 0 and remaining_daily_before <= 0):
         snapshot = _sync_user_preferences_subscription(user, subscription)
         db.commit()
@@ -76,6 +77,8 @@ def report_usage(db: Session, current_user: AuthUser, data: UsageReportRequest) 
             "remainingDailyMinutes": snapshot["remainingDailyMinutes"],
             "allowed": False,
             "reason": "当前订阅额度不足",
+            "subscriptionId": int(subscription.id or 0),
+            "packageCode": subscription.package_code,
         }
 
     billable_minutes = min(additional_minutes, remaining_minutes_before)
@@ -114,4 +117,6 @@ def report_usage(db: Session, current_user: AuthUser, data: UsageReportRequest) 
         "remainingDailyMinutes": snapshot["remainingDailyMinutes"],
         "allowed": snapshot["canUse"],
         "subscriptionStatus": subscription.status,
+        "subscriptionId": int(subscription.id or 0),
+        "packageCode": subscription.package_code,
     }

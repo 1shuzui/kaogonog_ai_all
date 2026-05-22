@@ -35,6 +35,7 @@ def _get_package_or_404(db: Session, package_code: str) -> SubscriptionPackage:
 
 
 def _serialize_order(order: PaymentOrder) -> dict:
+    callback_payload = order.callback_payload if isinstance(order.callback_payload, dict) else {}
     return {
         "orderNo": order.order_no,
         "status": order.status,
@@ -43,6 +44,9 @@ def _serialize_order(order: PaymentOrder) -> dict:
         "amount": float(order.amount or 0),
         "payChannel": order.pay_channel,
         "thirdPartyOrderNo": order.third_party_order_no or "",
+        "verified": callback_payload.get("verified") is True,
+        "verifyPending": callback_payload.get("verifyPending") is True,
+        "verifyError": callback_payload.get("verifyError") or "",
         "paidAt": order.paid_at.isoformat() if order.paid_at else "",
         "createdAt": order.created_at.isoformat() if order.created_at else "",
     }
@@ -253,6 +257,26 @@ def get_payment_order(db: Session, current_user: AuthUser, order_no: str) -> dic
     return _serialize_payment_response(order, package, pay_payload)
 
 
+def verify_virtual_payment_order(db: Session, current_user: AuthUser, order_no: str) -> dict:
+    order = db.query(PaymentOrder).filter(
+        PaymentOrder.order_no == order_no,
+        PaymentOrder.username == current_user.username,
+    ).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="订单不存在")
+    package = db.query(SubscriptionPackage).filter(SubscriptionPackage.package_code == order.package_code).first()
+    if not package:
+        raise HTTPException(status_code=404, detail="订单关联套餐不存在")
+    query_result = _verify_order_with_wechat(order, package, raise_on_error=True)
+    db.commit()
+    db.refresh(order)
+    return {
+        "success": True,
+        "order": _serialize_order(order),
+        "verification": query_result,
+    }
+
+
 def _sync_user_preferences_subscription(user: User, package: SubscriptionPackage, subscription: UserSubscription):
     prefs = dict(user.preferences) if isinstance(user.preferences, dict) else {}
     prefs["subscription"] = {
@@ -313,6 +337,38 @@ def _extract_virtual_transaction_id(data: PaymentVirtualConfirmRequest) -> str:
         if value not in (None, ""):
             return str(value)
     return ""
+
+
+def _verify_order_with_wechat(order: PaymentOrder, package: SubscriptionPackage, raise_on_error: bool = False) -> dict:
+    callback_payload = dict(order.callback_payload) if isinstance(order.callback_payload, dict) else {}
+    try:
+        query_result = wechat_pay_service.query_virtual_order(order, package)
+    except HTTPException as exc:
+        callback_payload["verified"] = False
+        callback_payload["verifyPending"] = True
+        callback_payload["verifyError"] = str(exc.detail)
+        callback_payload["verifiedAt"] = datetime.now(timezone.utc).isoformat()
+        order.callback_payload = callback_payload
+        if raise_on_error:
+            raise
+        return {"verified": False, "verifyPending": True, "verifyError": str(exc.detail)}
+
+    callback_payload["verified"] = bool(query_result.get("verified"))
+    callback_payload["verifyPending"] = not bool(query_result.get("verified"))
+    callback_payload["verifyError"] = ""
+    callback_payload["verifiedAt"] = datetime.now(timezone.utc).isoformat()
+    callback_payload["queryResult"] = query_result.get("raw") or {}
+    callback_payload["queryRequest"] = query_result.get("request") or {}
+    transaction_id = query_result.get("transactionId") or ""
+    if transaction_id:
+        order.third_party_order_no = transaction_id
+    paid_at = _parse_paid_at(query_result.get("paidAt")) if query_result.get("paidAt") else order.paid_at
+    if paid_at:
+        order.paid_at = paid_at
+    order.callback_payload = callback_payload
+    if raise_on_error and not query_result.get("verified"):
+        raise HTTPException(status_code=409, detail="微信虚拟支付查单未确认支付成功")
+    return query_result
 
 
 def _ensure_subscription_for_paid_order(db: Session, order: PaymentOrder, package: SubscriptionPackage, paid_at: datetime) -> UserSubscription:
@@ -387,6 +443,7 @@ def confirm_virtual_payment_order(db: Session, current_user: AuthUser, order_no:
         "payResult": data.payResult,
         "rawResult": data.rawResult or {},
     }
+    _verify_order_with_wechat(order, package, raise_on_error=False)
     subscription = _ensure_subscription_for_paid_order(db, order, package, paid_at)
     _sync_user_preferences_subscription(user, package, subscription)
     db.commit()
