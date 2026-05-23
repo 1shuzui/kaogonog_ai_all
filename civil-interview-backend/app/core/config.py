@@ -108,6 +108,10 @@ class Settings:
     qwen_model: str = _env("QWEN_MODEL", default=llm_model)
     qwen_asr_model: str = _env("QWEN_ASR_MODEL", default=llm_asr_model)
     llm_timeout_seconds: int = _env_int("LLM_TIMEOUT_SECONDS", default=25)
+    redis_url: str = _env("REDIS_URL", default="")
+    redis_cache_ttl_questions: int = _env_int("REDIS_CACHE_TTL_QUESTIONS", default=3600)
+    redis_cache_ttl_llm: int = _env_int("REDIS_CACHE_TTL_LLM", default=86400)
+    redis_cache_ttl_transcript: int = _env_int("REDIS_CACHE_TTL_TRANSCRIPT", default=3600)
 
     wechat_pay_enabled: bool = _env_bool("WECHAT_PAY_ENABLED", default=False)
     wechat_pay_scene: str = _env("WECHAT_PAY_SCENE", default="mini_program_virtual")

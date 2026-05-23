@@ -100,6 +100,8 @@ if [[ "${DEPLOY_BACKEND:-0}" == "1" ]]; then
     "$LOCAL_BACKEND_ARTIFACT/" \
     "$SERVER:$REMOTE_LATEST/backend/"
 
+  ssh "${SSH_OPTS[@]}" "$SERVER" "cd '$REMOTE_LATEST/backend' && if [[ ! -x .venv/bin/python ]]; then python3 -m venv .venv; fi && .venv/bin/python -m pip install -r requirements.txt"
+
   ssh "${SSH_OPTS[@]}" "$SERVER" "mkdir -p '$REMOTE_LATEST/ai_gongwu_backend/assets/questions'"
   rsync -az --delete -e "$RSYNC_RSH" \
     "$ROOT_DIR/ai_gongwu_backend/assets/questions/" \
@@ -114,6 +116,7 @@ updates = {
     'ALLOWED_ORIGINS': 'https://xzqianmianyuzhoukeji.com',
     'PASSWORD_RESET_CODE_DEBUG_RESPONSE': 'false',
     'PRODUCTION_REQUIRE_SECURE_CONFIG': 'true',
+    'REDIS_URL': 'redis://:4Wv79nd4v3%21@127.0.0.1:6379/0',
     'WECHAT_PAY_ENABLED': 'true',
 }
 lines = env_path.read_text().splitlines() if env_path.exists() else []

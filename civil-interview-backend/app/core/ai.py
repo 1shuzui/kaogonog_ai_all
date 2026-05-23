@@ -1,6 +1,7 @@
 """LLM and ASR utilities"""
 import asyncio
 import base64
+import hashlib
 import io
 import logging
 import mimetypes
@@ -13,6 +14,7 @@ from typing import Optional, Dict
 from openai import OpenAI
 
 from app.core.config import settings
+from app.core.redis_cache import cache_get_json, cache_set_json
 
 logger = logging.getLogger(__name__)
 
@@ -262,8 +264,25 @@ async def transcribe_audio_file(audio_bytes: bytes, filename: str = "answer.webm
     if len(audio_bytes) < 2048:
         return SHORT_AUDIO_PLACEHOLDER
 
-    client = get_client()
     asr_model = _resolve_asr_model()
+    asr_cache_scope = hashlib.sha256(
+        "|".join(
+            [
+                settings.llm_provider,
+                settings.llm_base_url,
+                asr_model,
+                "zh",
+                ASR_SIMPLIFIED_CHINESE_PROMPT,
+            ]
+        ).encode("utf-8")
+    ).hexdigest()[:12]
+    asr_cache_key = f"asr:transcript:{asr_cache_scope}:{hashlib.sha256(audio_bytes).hexdigest()}"
+    cached_transcript = await cache_get_json(asr_cache_key)
+    if isinstance(cached_transcript, str) and cached_transcript.strip():
+        logger.info("ASR cache hit: %s", asr_cache_key)
+        return cached_transcript.strip()
+
+    client = get_client()
     if client and asr_model:
         try:
             prepared_bytes, prepared_name = _normalize_media_for_asr(audio_bytes, filename)
@@ -300,14 +319,26 @@ async def transcribe_audio_file(audio_bytes: bytes, filename: str = "answer.webm
                 if not text and isinstance(response, dict):
                     text = response.get("text")
             if isinstance(text, str) and text.strip():
-                return text.strip()
+                transcript = text.strip()
+                await cache_set_json(
+                    asr_cache_key,
+                    transcript,
+                    settings.redis_cache_ttl_transcript,
+                )
+                return transcript
         except Exception as exc:
             logger.warning("ASR transcription failed, trying local Whisper fallback: %s", exc)
 
     try:
         text = _transcribe_with_local_whisper(audio_bytes, filename)
         if text.strip():
-            return text.strip()
+            transcript = text.strip()
+            await cache_set_json(
+                asr_cache_key,
+                transcript,
+                settings.redis_cache_ttl_transcript,
+            )
+            return transcript
     except Exception as exc:
         logger.warning("Local Whisper fallback failed, falling back to placeholder: %s", exc)
 

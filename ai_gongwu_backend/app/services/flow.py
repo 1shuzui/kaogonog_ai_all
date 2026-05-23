@@ -117,36 +117,6 @@ def _normalize_violation_payload(raw_payload: dict | None) -> ViolationCheckPayl
         }
     )
 
-
-def _dedupe_preserve_order(items: list[str]) -> list[str]:
-    """去重但保留原始顺序。"""
-
-    values: list[str] = []
-    seen = set()
-    for item in items:
-        value = str(item).strip()
-        if not value or value in seen:
-            continue
-        values.append(value)
-        seen.add(value)
-    return values
-def _normalize_violation_payload(raw_payload: dict | None) -> ViolationCheckPayload:
-    """把模型返回的违规检测结果整理成稳定结构。"""
-
-    try:
-        payload = ViolationCheckPayload.model_validate(raw_payload or {})
-    except Exception:
-        return ViolationCheckPayload()
-
-    return payload.model_copy(
-        update={
-            "category": str(payload.category or "").strip(),
-            "matched_terms": _dedupe_preserve_order(list(payload.matched_terms or []))[:5],
-            "reason": str(payload.reason or "").strip(),
-        }
-    )
-
-
 class InterviewFlowService:
     """统筹媒体解析、模型评分和确定性校验的核心服务。"""
 

@@ -1,4 +1,6 @@
 """Scoring service: transcribe, evaluate (two-stage), get result"""
+import hashlib
+import json
 import logging
 from pathlib import Path
 import re
@@ -11,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.core.ai import call_llm_api_async, transcribe_audio_file
 from app.core.config import settings
+from app.core.redis_cache import cache_get_json, cache_set_json
 from app.core.video_analysis import analyze_video_behavior
 from app.models.entities import Question, Exam, ExamAnswer
 from two_stage_scoring import (
@@ -456,6 +459,24 @@ def _media_record_for_exam(db: Session, exam_id: Optional[str], question_id: str
     return media_record if isinstance(media_record, dict) else {}
 
 
+def _media_cache_fingerprint(media_record: dict) -> str:
+    if not media_record:
+        return ""
+    return hashlib.sha256(
+        json.dumps(
+            {
+                "storedFilename": media_record.get("storedFilename", ""),
+                "fileUrl": media_record.get("fileUrl", ""),
+                "mediaType": media_record.get("mediaType", ""),
+                "originalFilename": media_record.get("originalFilename", ""),
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+            default=str,
+        ).encode("utf-8")
+    ).hexdigest()[:16]
+
+
 def _video_media_path(media_record: dict) -> Path | None:
     stored_filename = str(media_record.get("storedFilename") or "").strip()
     if not stored_filename:
@@ -785,6 +806,40 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
     if not question:
         raise HTTPException(status_code=404, detail="Question not found")
 
+    media_record = _media_record_for_exam(db, exam_id, question_id)
+    media_fingerprint = _media_cache_fingerprint(media_record)
+    question_fingerprint = hashlib.sha256(
+        json.dumps(
+            {
+                "stem": question.stem,
+                "dimension": question.dimension,
+                "scoringPoints": question.scoring_points or [],
+                "keywords": question.keywords or {},
+                "llmProvider": settings.llm_provider,
+                "llmModel": settings.llm_model,
+                "llmReady": bool(settings.llm_api_key),
+                "media": media_fingerprint,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+            default=str,
+        ).encode("utf-8")
+    ).hexdigest()[:16]
+    transcript_hash = hashlib.sha256(str(transcript or "").encode("utf-8")).hexdigest()
+    score_cache_key = f"llm:score:{question_id}:{question_fingerprint}:{transcript_hash}"
+    cached_result = await cache_get_json(score_cache_key)
+    if isinstance(cached_result, dict) and cached_result.get("totalScore") is not None:
+        logger.info("Scoring cache hit: %s", score_cache_key)
+        cached_payload = {
+            key: value
+            for key, value in cached_result.items()
+            if key not in {"mediaRecord", "visualObservation"}
+        }
+        visual_observation = str(cached_result.get("visualObservation") or "") if media_fingerprint else ""
+        if visual_observation:
+            cached_payload["visualObservation"] = visual_observation
+        return _persist_result(db, exam_id, question_id, transcript, cached_payload)
+
     effective_length = _effective_transcript_length(transcript)
     visual_observation = _visual_observation_for_media(db, exam_id, question_id)
 
@@ -827,6 +882,7 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
                 visual_observation=visual_observation,
             ),
         )
+        await cache_set_json(score_cache_key, result, settings.redis_cache_ttl_llm)
         return _persist_result(db, exam_id, question_id, transcript, result)
 
     if _is_gibberish_answer(question, transcript):
@@ -842,6 +898,7 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
                 visual_observation=visual_observation,
             ),
         )
+        await cache_set_json(score_cache_key, result, settings.redis_cache_ttl_llm)
         return _persist_result(db, exam_id, question_id, transcript, result)
 
     if not settings.llm_api_key:
@@ -862,6 +919,7 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
                 visual_observation=visual_observation,
             ),
         )
+        await cache_set_json(score_cache_key, result, settings.redis_cache_ttl_llm)
         return _persist_result(db, exam_id, question_id, transcript, result)
 
     # Stage 1: Evidence extraction
@@ -927,6 +985,7 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
                 visual_observation=visual_observation,
             ),
         )
+        await cache_set_json(score_cache_key, result, settings.redis_cache_ttl_llm)
         return _persist_result(db, exam_id, question_id, transcript, result)
 
     frontend_dims = []
@@ -960,6 +1019,7 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
             visual_observation=visual_observation,
         ),
     )
+    await cache_set_json(score_cache_key, result, settings.redis_cache_ttl_llm)
     return _persist_result(db, exam_id, question_id, transcript, result)
 
 

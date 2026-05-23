@@ -15,6 +15,10 @@ class SettingsCompatibilityTestCase(unittest.TestCase):
         self.assertTrue(hasattr(settings, "qwen_model"))
         self.assertTrue(hasattr(settings, "qwen_asr_model"))
         self.assertTrue(hasattr(settings, "llm_timeout_seconds"))
+        self.assertTrue(hasattr(settings, "redis_url"))
+        self.assertTrue(hasattr(settings, "redis_cache_ttl_questions"))
+        self.assertTrue(hasattr(settings, "redis_cache_ttl_llm"))
+        self.assertTrue(hasattr(settings, "redis_cache_ttl_transcript"))
 
 
 if __name__ == "__main__":

@@ -129,6 +129,13 @@ async def startup():
         logger.warning(f"Seed skipped: {e}")
 
 
+@app.on_event("shutdown")
+async def shutdown():
+    from app.core.redis_cache import close_redis
+
+    await close_redis()
+
+
 # ── routers ───────────────────────────────────────────────────────────────────
 app.include_router(api_router)
 
