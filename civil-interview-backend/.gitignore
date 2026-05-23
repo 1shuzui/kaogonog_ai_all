@@ -47,7 +47,8 @@ temp/
 *.db-wal
 .codex
 /uploads
-
+.claude
+.agents
 
 # 4. IDE 与系统配置文件
 .vscode/
