@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Optional, List
 
 from fastapi import HTTPException
+from sqlalchemy import String, or_
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -392,26 +393,55 @@ def _pick_question_id(preferred_id: str | None = "") -> str:
     return f"q_{uuid.uuid4().hex[:8]}"
 
 
-def _upsert_normalized_question(db: Session, item: dict, *, allow_update: bool = True) -> Question:
+def _build_existing_question_indexes(db: Session) -> tuple[dict[str, Question], dict[str, Question]]:
+    by_id: dict[str, Question] = {}
+    by_stem: dict[str, Question] = {}
+    for row in db.query(Question).all():
+        by_id[row.id] = row
+        stem_key = _normalize_stem_key(row.stem)
+        if stem_key and stem_key not in by_stem:
+            by_stem[stem_key] = row
+    return by_id, by_stem
+
+
+def _upsert_normalized_question(
+    db: Session,
+    item: dict,
+    *,
+    allow_update: bool = True,
+    by_id: dict[str, Question] | None = None,
+    by_stem: dict[str, Question] | None = None,
+) -> Question:
     preferred_id = _pick_question_id(item.get("id"))
     stem_key = _normalize_stem_key(item.get("stem"))
-    question = db.query(Question).filter(Question.id == preferred_id).first()
+    if by_id is not None:
+        question = by_id.get(preferred_id)
+    else:
+        question = db.query(Question).filter(Question.id == preferred_id).first()
 
     if not question and stem_key:
-        question = next(
-            (
-                row for row in db.query(Question).all()
-                if _normalize_stem_key(row.stem) == stem_key
-            ),
-            None,
-        )
+        if by_stem is not None:
+            question = by_stem.get(stem_key)
+        else:
+            question = next(
+                (
+                    row for row in db.query(Question).all()
+                    if _normalize_stem_key(row.stem) == stem_key
+                ),
+                None,
+            )
 
     if not question:
         question = Question(id=preferred_id)
         db.add(question)
+        if by_id is not None:
+            by_id[preferred_id] = question
+        if by_stem is not None and stem_key:
+            by_stem[stem_key] = question
     elif not allow_update:
         return question
 
+    old_stem_key = _normalize_stem_key(question.stem)
     question.stem = item["stem"]
     question.dimension = item.get("dimension", "analysis")
     question.province = item.get("province", "national")
@@ -419,6 +449,10 @@ def _upsert_normalized_question(db: Session, item: dict, *, allow_update: bool =
     question.answer_time = item.get("answerTime", 180)
     question.scoring_points = item.get("scoringPoints", [])
     question.keywords = _normalize_keywords(item.get("keywords"))
+    if by_stem is not None and old_stem_key and old_stem_key != stem_key:
+        by_stem.pop(old_stem_key, None)
+    if by_stem is not None and stem_key:
+        by_stem[stem_key] = question
     return question
 
 
@@ -429,6 +463,7 @@ def sync_curated_question_assets(db: Session) -> dict:
     synced = 0
     updated = 0
     changed = False
+    by_id, by_stem = _build_existing_question_indexes(db)
 
     for path in sorted(CURATED_QUESTION_DIR.rglob("*.json")):
         if path.name.lower() == "readme.md":
@@ -442,19 +477,12 @@ def sync_curated_question_assets(db: Session) -> dict:
         )
         for item in normalized_items:
             stem_key = _normalize_stem_key(item.get("stem"))
-            existing = next(
-                (
-                    row for row in db.query(Question).all()
-                    if row.id == _pick_question_id(item.get("id"))
-                    or _normalize_stem_key(row.stem) == stem_key
-                ),
-                None,
-            )
+            existing = by_id.get(_pick_question_id(item.get("id"))) or by_stem.get(stem_key)
             if existing:
                 updated += 1
             else:
                 synced += 1
-            _upsert_normalized_question(db, item)
+            _upsert_normalized_question(db, item, by_id=by_id, by_stem=by_stem)
             changed = True
 
     if changed:
@@ -583,6 +611,49 @@ def _apply_position_filter(questions: list[Question], position: str) -> list[Que
     return [question for question in questions if _question_matches_position(question, position)]
 
 
+def _question_base_query(db: Session, province: str = "", dimension: str = ""):
+    query = db.query(Question)
+    if province and province != "all":
+        query = query.filter(Question.province.in_([province, "national"]))
+    if dimension:
+        dimensions = [item.strip() for item in str(dimension).split(",") if item.strip()]
+        if dimensions:
+            query = query.filter(Question.dimension.in_(dimensions))
+    return query
+
+
+def _position_prefilter_query(query, position: str = ""):
+    if not position:
+        return query
+    aliases = POSITION_ALIASES.get(position, ())
+    keywords_text = Question.keywords.cast(String)
+    filters = [keywords_text.contains(position)]
+    if position.startswith("jiangsu_"):
+        filters.append(keywords_text.contains("jiangsu_"))
+    for alias in aliases:
+        filters.append(Question.stem.contains(alias))
+        filters.append(keywords_text.contains(alias))
+    return query.filter(or_(*filters))
+
+
+def _fetch_position_candidates(
+    db: Session,
+    *,
+    province: str = "",
+    dimension: str = "",
+    position: str = "",
+    limit: int | None = None,
+) -> list[Question]:
+    query = _question_base_query(db, province=province, dimension=dimension)
+    prefiltered = _position_prefilter_query(query, position)
+    if limit:
+        prefiltered = prefiltered.limit(limit)
+    rows = prefiltered.all()
+    if position:
+        rows = _apply_position_filter(rows, position)
+    return rows
+
+
 def _question_matches_province(question: Question, province: str) -> bool:
     if not province or province == "all":
         return True
@@ -595,12 +666,10 @@ def _question_prefers_local_source(question: Question) -> bool:
 
 
 def _choose_targeted_bank_questions(db: Session, province: str, position: str, count: int) -> list[dict]:
-    questions = [
-        question for question in db.query(Question).all()
-        if _question_matches_province(question, province)
-    ]
-    exact = [question for question in questions if _question_matches_position(question, position)]
-    fallback = [question for question in questions if question not in exact]
+    questions = _question_base_query(db, province=province).all()
+    exact = _fetch_position_candidates(db, province=province, position=position)
+    exact_ids = {question.id for question in exact}
+    fallback = [question for question in questions if question.id not in exact_ids]
 
     exact_local = [question for question in exact if _question_prefers_local_source(question)]
     exact_other = [question for question in exact if question not in exact_local]
@@ -626,8 +695,8 @@ def _choose_targeted_bank_questions(db: Session, province: str, position: str, c
 
 
 def _choose_training_bank_questions(db: Session, dimension: str, count: int) -> list[dict]:
-    preferred = db.query(Question).filter(Question.dimension == dimension).all()
-    fallback = db.query(Question).all() if not preferred else []
+    preferred = _question_base_query(db, dimension=dimension).all()
+    fallback = db.query(Question).limit(max(count * 4, 50)).all() if not preferred else []
     pool = preferred or fallback
     if not pool:
         return []
@@ -699,6 +768,8 @@ def list_questions(
     current: int = 1,
     page_size: int = 10,
 ) -> dict:
+    current = max(1, int(current or 1))
+    page_size = max(1, min(int(page_size or 10), 1000))
     query = db.query(Question)
     if keyword:
         query = query.filter(Question.stem.contains(keyword))
@@ -707,7 +778,7 @@ def list_questions(
     if province and province != "all":
         query = query.filter(Question.province == province)
     if position:
-        rows = _apply_position_filter(query.all(), position)
+        rows = _apply_position_filter(_position_prefilter_query(query, position).all(), position)
         total = len(rows)
         start = (current - 1) * page_size
         rows = rows[start:start + page_size]
@@ -723,14 +794,21 @@ def list_questions(
 
 
 def get_random_questions(db: Session, province: str = "national", count: int = 5, dimension: str = "", position: str = "") -> List[dict]:
-    query = db.query(Question)
-    if province and province != "all":
-        query = query.filter(Question.province.in_([province, "national"]))
-    if dimension:
-        dimensions = [item.strip() for item in str(dimension).split(",") if item.strip()]
-        if dimensions:
-            query = query.filter(Question.dimension.in_(dimensions))
-    all_qs = _apply_position_filter(query.all(), position)
+    count = max(1, min(int(count or 5), 100))
+    query = _question_base_query(db, province=province, dimension=dimension)
+
+    if position:
+        all_qs = _apply_position_filter(_position_prefilter_query(query, position).all(), position)
+    else:
+        total = query.count()
+        if total <= count:
+            all_qs = query.all()
+        else:
+            sample_limit = min(total, max(count * 6, 80))
+            max_offset = max(total - sample_limit, 0)
+            offset = random.randint(0, max_offset) if max_offset else 0
+            all_qs = query.order_by(Question.id).offset(offset).limit(sample_limit).all()
+
     count = min(count, len(all_qs))
     return [_q_to_dict(q) for q in random.sample(all_qs, count)] if all_qs else []
 

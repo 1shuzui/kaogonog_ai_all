@@ -1,0 +1,228 @@
+{
+  "schemaVersion": "question-bank-import-v1",
+  "description": "题库导入标准模板。当前后端可直接读取 questions 数组；suiteId/suiteName/questionNo/questionScore 等字段用于全真模拟套题维护和后续批量脚本抽取。",
+  "questions": [
+    {
+      "suiteId": "AH-SYDW-2026-001",
+      "suiteName": "2026年安徽事业单位面试全真模拟卷一",
+      "examDate": "2026-01-01",
+      "batch": "第一批次",
+      "province": "安徽",
+      "position": "综合管理岗",
+      "totalScore": 100,
+      "questionNo": 1,
+      "id": "AH-SYDW-20260101-01",
+      "type": "综合分析·基层治理",
+      "dimension": "analysis",
+      "fullScore": 25,
+      "questionScore": 25,
+      "prepTime": 90,
+      "answerTime": 180,
+      "question": "某地推进基层治理数字化，但部分群众反映线上流程复杂、线下窗口减少。对此你怎么看？（25分）",
+      "dimensions": [
+        {
+          "name": "观点明确，能辩证看待数字治理与群众便利的关系",
+          "score": 5
+        },
+        {
+          "name": "分析充分，能指出效率提升、适老化不足、线下兜底等关键矛盾",
+          "score": 8
+        },
+        {
+          "name": "对策可行，能提出流程优化、帮办代办、保留窗口、反馈闭环等措施",
+          "score": 8
+        },
+        {
+          "name": "表达清晰，结构完整，语言规范",
+          "score": 4
+        }
+      ],
+      "scoringPoints": [
+        {
+          "content": "观点明确，能辩证看待数字治理与群众便利的关系",
+          "score": 5
+        },
+        {
+          "content": "分析充分，能指出效率提升、适老化不足、线下兜底等关键矛盾",
+          "score": 8
+        },
+        {
+          "content": "对策可行，能提出流程优化、帮办代办、保留窗口、反馈闭环等措施",
+          "score": 8
+        },
+        {
+          "content": "表达清晰，结构完整，语言规范",
+          "score": 4
+        }
+      ],
+      "coreKeywords": [
+        "基层治理",
+        "数字化",
+        "群众便利",
+        "线下兜底"
+      ],
+      "strongKeywords": [
+        "适老化",
+        "帮办代办",
+        "反馈闭环"
+      ],
+      "weakKeywords": [
+        "窗口服务",
+        "流程优化"
+      ],
+      "bonusKeywords": [
+        "以人民为中心",
+        "长效机制",
+        "数据赋能"
+      ],
+      "penaltyKeywords": [
+        "只谈技术不谈群众",
+        "脱离题意",
+        "对策空泛"
+      ],
+      "scoringCriteria": [
+        "观点明确（5分）：能指出数字治理应服务群众，而不是让群众迁就系统。",
+        "分析充分（8分）：能同时看到效率价值和特殊群体使用门槛。",
+        "对策可行（8分）：措施具体，兼顾线上优化和线下兜底。",
+        "表达清晰（4分）：结构完整，语言规范。"
+      ],
+      "deductionRules": [
+        "完全脱离题意扣8-12分。",
+        "只有表态无分析扣4-6分。",
+        "无具体对策扣3-5分。"
+      ],
+      "referenceAnswer": "参考作答应围绕数字治理的初衷、当前痛点和改进路径展开。首先肯定数字化提升办理效率，但也要看到部分群众尤其老年群体存在不会用、不敢用、用不好等问题。下一步应优化线上流程，保留必要线下窗口，建立帮办代办机制，并通过群众反馈持续迭代系统。",
+      "tags": [
+        "安徽",
+        "事业单位",
+        "综合分析",
+        "基层治理",
+        "全真模拟"
+      ],
+      "sourceDocument": "2026安徽事业单位面试真题.docx",
+      "scoreBands": [
+        {
+          "label": "严重偏离",
+          "minScore": 0,
+          "maxScore": 13.7,
+          "description": "观点错误或明显脱题，缺少有效分析。"
+        },
+        {
+          "label": "基本合格",
+          "minScore": 13.8,
+          "maxScore": 17.5,
+          "description": "能回应题目，但分析和对策较泛。"
+        },
+        {
+          "label": "微微偏离",
+          "minScore": 17.6,
+          "maxScore": 21.2,
+          "description": "主线正确，部分要点展开不足。"
+        },
+        {
+          "label": "预期范围",
+          "minScore": 21.3,
+          "maxScore": 25,
+          "description": "结构完整、要点充分、表达自然。"
+        }
+      ],
+      "regressionCases": [
+        {
+          "caseId": "AH-SYDW-20260101-01-A",
+          "answerType": "high",
+          "expectedMinScore": 21,
+          "expectedMaxScore": 25,
+          "answer": "示例高分作答文本。"
+        },
+        {
+          "caseId": "AH-SYDW-20260101-01-B",
+          "answerType": "low",
+          "expectedMinScore": 0,
+          "expectedMaxScore": 14,
+          "answer": "示例低分作答文本。"
+        }
+      ],
+      "notes": "每题分值以 questionScore/fullScore 为准；dimensions/scoringPoints 分值建议合计等于该题满分。"
+    },
+    {
+      "suiteId": "AH-SYDW-2026-001",
+      "suiteName": "2026年安徽事业单位面试全真模拟卷一",
+      "examDate": "2026-01-01",
+      "batch": "第一批次",
+      "province": "安徽",
+      "position": "综合管理岗",
+      "totalScore": 100,
+      "questionNo": 2,
+      "id": "AH-SYDW-20260101-02",
+      "type": "组织管理·调研宣传",
+      "dimension": "practical",
+      "fullScore": 25,
+      "questionScore": 25,
+      "prepTime": 90,
+      "answerTime": 180,
+      "question": "单位准备开展便民政策宣传活动，领导交给你组织，你会怎么做？（25分）",
+      "dimensions": [
+        {
+          "name": "目标明确，能围绕群众知晓和政策落地设计活动",
+          "score": 6
+        },
+        {
+          "name": "流程完整，包含前期调研、对象分层、渠道安排、现场保障",
+          "score": 9
+        },
+        {
+          "name": "效果评估充分，能收集反馈并形成改进建议",
+          "score": 6
+        },
+        {
+          "name": "表达有条理，执行意识强",
+          "score": 4
+        }
+      ],
+      "coreKeywords": [
+        "便民政策",
+        "宣传活动",
+        "群众需求",
+        "效果反馈"
+      ],
+      "strongKeywords": [
+        "分层分类",
+        "线上线下结合",
+        "现场答疑"
+      ],
+      "weakKeywords": [
+        "物料准备",
+        "部门协同"
+      ],
+      "bonusKeywords": [
+        "闭环评估",
+        "精准触达"
+      ],
+      "penaltyKeywords": [
+        "流程缺失",
+        "没有群众视角"
+      ],
+      "scoringCriteria": [
+        "按准备、实施、总结三个阶段评分。"
+      ],
+      "deductionRules": [
+        "无具体执行步骤扣4-8分。"
+      ],
+      "referenceAnswer": "参考作答略。",
+      "tags": [
+        "安徽",
+        "事业单位",
+        "组织管理",
+        "全真模拟"
+      ],
+      "sourceDocument": "2026安徽事业单位面试真题.docx"
+    }
+  ],
+  "importChecklist": [
+    "每道题必须有 id、province、question、type、fullScore/questionScore。",
+    "套题内 suiteId 必须一致，questionNo 不重复且从 1 开始递增。",
+    "dimensions 或 scoringPoints 的分值合计建议等于 questionScore。",
+    "关键词请使用数组；Excel 模板中用中文分号分隔。",
+    "referenceAnswer 可为空，但正式题库建议补齐，便于模型校准。"
+  ]
+}

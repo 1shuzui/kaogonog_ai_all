@@ -23,20 +23,22 @@ export async function getWechatWebLoginUrl() {
   })
 }
 
-export async function requestPasswordReset(data) {
-  return http.post('/password-reset/request', data, {
-    skipErrorHandler: true
-  })
-}
-
-export async function verifyPasswordReset(data) {
-  return http.post('/password-reset/verify', data, {
-    skipErrorHandler: true
-  })
-}
-
-export async function confirmPasswordReset(data) {
-  return http.post('/password-reset/confirm', data, {
-    skipErrorHandler: true
-  })
-}
+// Password reset is intentionally hidden on PC for now. Keep the endpoints
+// inactive here so no visible PC flow can call the unfinished reset service.
+// export async function requestPasswordReset(data) {
+//   return http.post('/password-reset/request', data, {
+//     skipErrorHandler: true
+//   })
+// }
+//
+// export async function verifyPasswordReset(data) {
+//   return http.post('/password-reset/verify', data, {
+//     skipErrorHandler: true
+//   })
+// }
+//
+// export async function confirmPasswordReset(data) {
+//   return http.post('/password-reset/confirm', data, {
+//     skipErrorHandler: true
+//   })
+// }

@@ -59,6 +59,9 @@
               <text v-for="(item, index) in examStore.questions" :key="item.id || index" class="reading-list__item">
                 {{ index + 1 }}. {{ item.stem }}
               </text>
+              <button class="primary-button reading-list__action" @tap="startJiangsuAnswer">
+                已读完题目，开始 15 分钟作答
+              </button>
             </view>
 
             <view class="card">
@@ -104,6 +107,11 @@
           v-if="useVideoMode"
           class="floating-camera"
           :class="cameraSizeClass"
+          :style="floatingCameraStyle"
+          @touchstart.stop="onCameraTouchStart"
+          @touchmove.stop.prevent="onCameraTouchMove"
+          @touchend.stop="onCameraTouchEnd"
+          @touchcancel.stop="onCameraTouchEnd"
           @tap="handleCameraTap"
         >
           <camera
@@ -207,6 +215,11 @@
           v-if="useVideoMode"
           class="floating-camera"
           :class="cameraSizeClass"
+          :style="floatingCameraStyle"
+          @touchstart.stop="onCameraTouchStart"
+          @touchmove.stop.prevent="onCameraTouchMove"
+          @touchend.stop="onCameraTouchEnd"
+          @touchcancel.stop="onCameraTouchEnd"
           @tap="handleCameraTap"
         >
           <camera
@@ -276,6 +289,7 @@ const cameraError = ref('')
 const cameraAvailable = ref(false)
 const cameraPlatformSupported = ref(typeof uni !== 'undefined' && typeof uni.createCameraContext === 'function')
 const cameraSize = ref('small')
+const cameraPosition = ref({ left: 0, top: 0 })
 const selectedMediaType = ref('')
 const questionStartedAt = ref(Date.now())
 const questionBookIndex = ref(0)
@@ -287,6 +301,8 @@ const JIANGSU_ANSWER_SECONDS = 15 * 60
 let timer = null
 let pendingRecordStopResolve = null
 let lastCameraTapAt = 0
+let cameraDragState = null
+let suppressCameraTapUntil = 0
 
 const question = computed(() => examStore.currentQuestion)
 const useVideoMode = computed(() => examStore.mediaMode === 'video')
@@ -310,14 +326,22 @@ const activeTimerLabel = computed(() => {
   return phase.value === 'preparing' ? '准备' : '作答'
 })
 const sceneTimeLeft = computed(() => {
+  if (isJiangsuFullExamTiming.value) {
+    return phase.value === 'reading'
+      ? Math.max(0, Number(prepLeft.value) || 0)
+      : Math.max(0, Number(answerLeft.value) || 0)
+  }
   if (phase.value === 'preparing' || phase.value === 'reading') {
     return Math.max(0, Number(prepLeft.value) || 0) + Math.max(0, Number(answerLeft.value) || 0)
   }
   return Math.max(0, Number(answerLeft.value) || 0)
 })
-const sceneTimerLabel = computed(() => (
-  isJiangsuFullExamTiming.value || isFullExamSource.value ? '总倒计时' : activeTimerLabel.value
-))
+const sceneTimerLabel = computed(() => {
+  if (isJiangsuFullExamTiming.value) {
+    return phase.value === 'reading' ? '阅读倒计时' : '作答倒计时'
+  }
+  return isFullExamSource.value ? '总倒计时' : activeTimerLabel.value
+})
 const cameraStatusText = computed(() => {
   if (!useVideoMode.value) return '已选择仅录音，不启用摄像头'
   if (!cameraPlatformSupported.value) return '当前设备暂不支持摄像头录像，开始后将仅录音'
@@ -350,9 +374,13 @@ const captureStatusText = computed(() => {
   return '请授权摄像头和麦克风，开始后同步记录'
 })
 const cameraSizeClass = computed(() => `floating-camera--${cameraSize.value}`)
+const floatingCameraStyle = computed(() => {
+  const position = cameraPosition.value
+  return `left:${position.left}px;top:${position.top}px;`
+})
 const cameraSizeText = computed(() => {
   const labels = { small: '小窗', medium: '中窗', large: '大窗' }
-  return `${labels[cameraSize.value] || '小窗'} · 双击切换`
+  return `${labels[cameraSize.value] || '小窗'} · 可拖动`
 })
 const floatingCameraStatus = computed(() => {
   if (!cameraPlatformSupported.value) return '仅录音'
@@ -379,6 +407,7 @@ const currentMedia = computed(() => {
 onLoad(() => {
   setupRecorder()
   resetQuestionState()
+  if (useVideoMode.value) resetCameraPosition()
   startTimer()
 })
 
@@ -410,12 +439,17 @@ watch(roomNavigationTitle, (title) => {
 watch(useVideoMode, async (enabled) => {
   if (enabled) {
     await nextTick()
+    resetCameraPosition()
     setupCamera()
     return
   }
   cameraError.value = ''
   recordedVideoFile.value = ''
   if (selectedMediaType.value === 'video') selectedMediaType.value = recordedFile.value ? 'audio' : ''
+})
+
+watch(cameraSize, () => {
+  clampCameraPosition()
 })
 
 function provinceLabel(item = {}) {
@@ -502,6 +536,64 @@ function startTimer() {
   }, 1000)
 }
 
+function getWindowRect() {
+  try {
+    const info = uni.getSystemInfoSync()
+    return {
+      width: Number(info.windowWidth || info.screenWidth || 375),
+      height: Number(info.windowHeight || info.screenHeight || 667)
+    }
+  } catch {
+    return { width: 375, height: 667 }
+  }
+}
+
+function rpxToPx(value) {
+  return (Number(value) || 0) * getWindowRect().width / 750
+}
+
+function getCameraPixelSize() {
+  const sizes = {
+    small: { width: 148, height: 198 },
+    medium: { width: 212, height: 284 },
+    large: { width: 284, height: 378 }
+  }
+  const size = sizes[cameraSize.value] || sizes.small
+  return {
+    width: rpxToPx(size.width),
+    height: rpxToPx(size.height)
+  }
+}
+
+function clampCameraPosition(position = cameraPosition.value) {
+  const rect = getWindowRect()
+  const size = getCameraPixelSize()
+  const margin = rpxToPx(18)
+  const maxLeft = Math.max(margin, rect.width - size.width - margin)
+  const maxTop = Math.max(margin, rect.height - size.height - rpxToPx(128))
+  cameraPosition.value = {
+    left: Math.min(Math.max(Number(position.left) || margin, margin), maxLeft),
+    top: Math.min(Math.max(Number(position.top) || margin, margin), maxTop)
+  }
+  return cameraPosition.value
+}
+
+function resetCameraPosition() {
+  const rect = getWindowRect()
+  const size = getCameraPixelSize()
+  cameraPosition.value = clampCameraPosition({
+    left: rect.width - size.width - rpxToPx(24),
+    top: rect.height - size.height - rpxToPx(156)
+  })
+}
+
+function ensureCameraPosition() {
+  if (!cameraPosition.value.left && !cameraPosition.value.top) {
+    resetCameraPosition()
+  }
+  return cameraPosition.value
+}
+
 function resetQuestionState() {
   phase.value = isJiangsuFullExamTiming.value ? 'reading' : 'preparing'
   prepLeft.value = isJiangsuFullExamTiming.value
@@ -534,10 +626,17 @@ function currentUsageSeconds() {
 
 function canRecordNow() {
   if (isJiangsuReading.value) {
-    toast('当前是 5 分钟阅读阶段，请阅读结束后再开始作答')
-    return false
+    startJiangsuAnswer()
   }
   return true
+}
+
+function startJiangsuAnswer() {
+  if (!isJiangsuReading.value) return
+  phase.value = 'answering'
+  prepLeft.value = 0
+  answerLeft.value = Math.max(Number(answerLeft.value) || 0, JIANGSU_ANSWER_SECONDS)
+  toast('已进入 15 分钟作答阶段', 'success')
 }
 
 function usageType() {
@@ -809,6 +908,7 @@ function cycleCameraSize() {
 }
 
 function handleCameraTap() {
+  if (Date.now() < suppressCameraTapUntil) return
   const now = Date.now()
   if (now - lastCameraTapAt < 320) {
     cycleCameraSize()
@@ -816,6 +916,50 @@ function handleCameraTap() {
     return
   }
   lastCameraTapAt = now
+}
+
+function getTouchPoint(event) {
+  const touch = event?.touches?.[0] || event?.changedTouches?.[0]
+  if (!touch) return null
+  return {
+    x: Number(touch.clientX || touch.pageX || 0),
+    y: Number(touch.clientY || touch.pageY || 0)
+  }
+}
+
+function onCameraTouchStart(event) {
+  const point = getTouchPoint(event)
+  if (!point) return
+  const position = ensureCameraPosition()
+  cameraDragState = {
+    startX: point.x,
+    startY: point.y,
+    originLeft: position.left,
+    originTop: position.top,
+    moved: false
+  }
+}
+
+function onCameraTouchMove(event) {
+  if (!cameraDragState) return
+  const point = getTouchPoint(event)
+  if (!point) return
+  const dx = point.x - cameraDragState.startX
+  const dy = point.y - cameraDragState.startY
+  if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+    cameraDragState.moved = true
+  }
+  clampCameraPosition({
+    left: cameraDragState.originLeft + dx,
+    top: cameraDragState.originTop + dy
+  })
+}
+
+function onCameraTouchEnd() {
+  if (cameraDragState?.moved) {
+    suppressCameraTapUntil = Date.now() + 360
+  }
+  cameraDragState = null
 }
 
 async function submitAnswer() {
@@ -1101,6 +1245,10 @@ function goBackHome() {
   line-height: 1.5;
 }
 
+.reading-list__action {
+  margin-top: 20rpx;
+}
+
 .record-panel {
   margin-top: 22rpx;
   padding-top: 22rpx;
@@ -1177,8 +1325,6 @@ function goBackHome() {
 
 .floating-camera {
   position: fixed;
-  right: 24rpx;
-  bottom: calc(156rpx + env(safe-area-inset-bottom));
   z-index: 42;
   overflow: hidden;
   border: 4rpx solid rgba(255, 255, 255, 0.88);

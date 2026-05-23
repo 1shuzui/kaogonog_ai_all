@@ -8,6 +8,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import inspect, text
 
 from app.core.config import settings
 from app.db.session import engine, Base
@@ -59,6 +60,25 @@ def sync_subscription_package_seeds(db) -> int:
     return synced
 
 
+def ensure_question_indexes() -> None:
+    index_specs = {
+        "idx_questions_province_dimension": "CREATE INDEX idx_questions_province_dimension ON questions (province, dimension)",
+        "idx_questions_dimension_province": "CREATE INDEX idx_questions_dimension_province ON questions (dimension, province)",
+    }
+    try:
+        inspector = inspect(engine)
+        existing = {item.get("name") for item in inspector.get_indexes("questions")}
+        missing = [(name, sql) for name, sql in index_specs.items() if name not in existing]
+        if not missing:
+            return
+        with engine.begin() as conn:
+            for name, sql in missing:
+                conn.execute(text(sql))
+                logger.info("Created question index: %s", name)
+    except Exception as exc:
+        logger.warning("Question index sync skipped: %s", exc)
+
+
 # ── app factory ──────────────────────────────────────────────────────────────
 app = FastAPI(
     title="公务员面试练习平台 API",
@@ -80,6 +100,7 @@ app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 @app.on_event("startup")
 async def startup():
     Base.metadata.create_all(bind=engine)
+    ensure_question_indexes()
     logger.info(f"Database tables ready ({settings.database_url.split(':')[0]})")
     # Auto-seed if DB is empty
     try:

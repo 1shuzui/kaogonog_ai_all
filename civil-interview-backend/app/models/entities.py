@@ -2,7 +2,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, Date, DateTime, Float, ForeignKey, Integer, Numeric, String, Text, JSON
+from sqlalchemy import Boolean, Column, Date, DateTime, Float, ForeignKey, Index, Integer, Numeric, String, Text, JSON
 from sqlalchemy.orm import relationship
 
 from app.db.session import Base
@@ -36,6 +36,10 @@ class User(Base):
 
 class Question(Base):
     __tablename__ = "questions"
+    __table_args__ = (
+        Index("idx_questions_province_dimension", "province", "dimension"),
+        Index("idx_questions_dimension_province", "dimension", "province"),
+    )
     id = Column(String(32), primary_key=True, default=lambda: gen_id("q_"))
     stem = Column(Text, nullable=False)
     dimension = Column(String(32), default="analysis")

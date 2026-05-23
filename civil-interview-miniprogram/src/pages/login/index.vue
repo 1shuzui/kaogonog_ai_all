@@ -307,11 +307,9 @@ async function loginByWechat() {
     const code = await getWechatLoginCode()
     const result = await userStore.loginWithWechat(code, '2026-05-12')
     if (result?.requiresPcAccountSetup) {
-      accountSetupVisible.value = true
-      accountSetupForm.username = ''
-      accountSetupForm.password = ''
-      accountSetupForm.confirmPassword = ''
-      toast('微信已登录，请设置 PC 登录账号')
+      accountSetupVisible.value = false
+      toast('登录成功', 'success')
+      uni.switchTab({ url: '/pages/home/index' })
       return
     }
     toast('登录成功', 'success')
