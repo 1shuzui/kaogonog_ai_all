@@ -57,9 +57,11 @@
         size="large"
         shape="round"
         :style="isLast ? {} : { background: '#389E0D', borderColor: '#389E0D' }"
+        :loading="finishing"
+        :disabled="finishing"
         @click="$emit('finish')"
       >
-        <CheckOutlined /> {{ isLast ? '查看结果' : '结束练习' }}
+        <CheckOutlined /> {{ finishing ? finishingText : (isLast ? '查看结果' : '结束练习') }}
       </a-button>
     </div>
   </div>
@@ -77,7 +79,9 @@ import {
 defineProps({
   status: { type: String, default: 'idle' },
   isLast: { type: Boolean, default: false },
-  submittingText: { type: String, default: '处理中...' }
+  submittingText: { type: String, default: '处理中...' },
+  finishing: { type: Boolean, default: false },
+  finishingText: { type: String, default: '正在分析结果...' }
 })
 
 defineEmits(['start-prep', 'start-answer', 'submit', 'next', 'finish'])

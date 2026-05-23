@@ -224,9 +224,40 @@
         </div>
       </div>
 
-      <div class="card" style="margin-top: 12px" v-if="currentVideoUrl" data-html2canvas-ignore>
-        <h4 class="section-title">作答视频回放</h4>
-        <video :src="currentVideoUrl" controls style="width: 100%; border-radius: 8px"></video>
+      <div class="card result-page__video-card" style="margin-top: 12px" v-if="currentVideoUrl" data-html2canvas-ignore>
+        <div class="result-page__video-head">
+          <h4 class="section-title">作答视频回放</h4>
+          <a-button size="small" @click="openFloatingVideo">
+            <VideoCameraOutlined /> 画中画
+          </a-button>
+        </div>
+        <video
+          :src="currentVideoUrl"
+          controls
+          class="result-page__video"
+          @play="openFloatingVideo"
+        ></video>
+      </div>
+
+      <div
+        v-if="floatingVideoVisible && currentVideoUrl"
+        class="result-page__floating-video"
+        data-html2canvas-ignore
+        @click="closeFloatingVideo"
+      >
+        <video
+          :key="currentVideoUrl"
+          :src="currentVideoUrl"
+          controls
+          autoplay
+          muted
+          playsinline
+          class="result-page__floating-video-player"
+          @click.stop
+        ></video>
+        <button class="result-page__floating-video-close" type="button" @click.stop="closeFloatingVideo">
+          <CloseOutlined />
+        </button>
       </div>
 
       <div class="result-page__actions" data-html2canvas-ignore>
@@ -262,7 +293,14 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { FilePdfOutlined, StarOutlined, StarFilled, ShareAltOutlined } from '@ant-design/icons-vue'
+import {
+  CloseOutlined,
+  FilePdfOutlined,
+  StarOutlined,
+  StarFilled,
+  ShareAltOutlined,
+  VideoCameraOutlined
+} from '@ant-design/icons-vue'
 import { useExamStore } from '@/stores/exam'
 import { useFavoritesStore } from '@/stores/favorites'
 import { useTrainingStore } from '@/stores/training'
@@ -297,6 +335,7 @@ const answerList = ref([])
 const currentAnswerIdx = ref(0)
 const blobUrls = ref([])
 const questionDetailsMap = ref({})
+const floatingVideoVisible = ref(false)
 
 const activeExamId = computed(() => String(examStore.examId || route.params.examId || ''))
 const currentAnswer = computed(() => answerList.value[currentAnswerIdx.value] || null)
@@ -542,6 +581,15 @@ function revokeBlobUrls() {
   })
 }
 
+function openFloatingVideo() {
+  if (!currentVideoUrl.value) return
+  floatingVideoVisible.value = true
+}
+
+function closeFloatingVideo() {
+  floatingVideoVisible.value = false
+}
+
 function syncDisplayedAnswer(answer) {
   if (!answer) return
   result.value = answer.scoringResult || null
@@ -597,6 +645,7 @@ async function hydrateQuestionDetails(answers = []) {
 }
 
 watch(currentAnswerIdx, (idx) => {
+  closeFloatingVideo()
   syncDisplayedAnswer(answerList.value[idx])
 })
 
@@ -744,6 +793,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  closeFloatingVideo()
   revokeBlobUrls()
 })
 </script>
@@ -1119,6 +1169,66 @@ onUnmounted(() => {
 
 .playback-controls {
   padding: 8px 0;
+}
+
+.result-page__video-card {
+  padding: 16px;
+}
+
+.result-page__video-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.result-page__video-head .section-title {
+  margin-bottom: 0;
+}
+
+.result-page__video {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  border-radius: 8px;
+}
+
+.result-page__floating-video {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1200;
+  width: min(360px, calc(100vw - 32px));
+  aspect-ratio: 16 / 9;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #050505;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 18px 46px rgba(16, 24, 40, 0.32);
+}
+
+.result-page__floating-video-player {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.result-page__floating-video-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.58);
+  color: #fff;
+  cursor: pointer;
 }
 
 @media (max-width: 768px) {

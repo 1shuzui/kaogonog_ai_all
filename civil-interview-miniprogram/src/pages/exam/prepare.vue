@@ -19,7 +19,7 @@
 
     <view class="card">
       <view class="section-head">
-        <text class="section-title">练习配置</text>
+        <text class="section-title">{{ fixedPracticeEntry ? '专项练习配置' : '练习配置' }}</text>
       </view>
 
       <view v-if="showPracticeConfig" class="config-row">
@@ -31,10 +31,14 @@
         </view>
       </view>
 
-      <view class="config-row">
+      <view v-if="!fixedPracticeEntry" class="config-row">
         <text>练习模式</text>
       </view>
-      <view class="mode-grid">
+      <view v-if="fixedPracticeEntry" class="fixed-practice-mode">
+        <text class="fixed-practice-mode__title">专项练习</text>
+        <text class="fixed-practice-mode__desc">已使用当前生成题目进入练习</text>
+      </view>
+      <view v-else class="mode-grid">
         <view class="mode-card" :class="{ 'mode-card--active': mode === 'free' }" @tap.stop="selectFreeMode">
           <text class="mode-card__title">专项练习</text>
           <text class="mode-card__desc">适合专项训练和即时复盘</text>
@@ -161,6 +165,7 @@ const fullExamSuitesLoading = ref(false)
 const loading = ref(false)
 const accessLoading = ref(false)
 const enteringExam = ref(false)
+const source = ref('')
 const trial = ref(false)
 const trialStatus = ref(null)
 const asrStatus = ref(null)
@@ -176,7 +181,9 @@ const questionCategoryOptions = [
   { key: RANDOM_DIMENSION_KEY, name: '随机题型' },
   ...QUESTION_CATEGORIES.filter((item) => item.key)
 ]
-const showPracticeConfig = computed(() => mode.value === 'free')
+const fixedPracticeSources = new Set(['targeted', 'training', 'jiangsu'])
+const fixedPracticeEntry = computed(() => fixedPracticeSources.has(source.value))
+const showPracticeConfig = computed(() => mode.value === 'free' && !fixedPracticeEntry.value)
 const selectedSpecificDimensions = computed(() => selectedDimensions.value.filter((item) => item && item !== RANDOM_DIMENSION_KEY))
 const selectedDimensionParam = computed(() => selectedSpecificDimensions.value.join(','))
 const fullExamSuiteOptions = computed(() => fullExamSuites.value)
@@ -264,9 +271,18 @@ async function refreshFullExamSuites() {
 }
 
 onLoad((query) => {
+  source.value = String(query?.source || '')
+  if (fixedPracticeEntry.value) {
+    mode.value = 'free'
+    count.value = 1
+    selectedDimensions.value = [RANDOM_DIMENSION_KEY]
+  }
   if (String(query?.mode || '') === 'fullExam') {
     mode.value = 'fullExam'
   } else if (String(query?.mode || '') === 'free') {
+    mode.value = 'free'
+  }
+  if (fixedPracticeEntry.value) {
     mode.value = 'free'
   }
   if (String(query?.media || '') === 'video') {
@@ -278,6 +294,13 @@ onLoad((query) => {
   trial.value = requestedTrial && !hasFullAccess.value
   if (trial.value) count.value = 1
 })
+
+watch(fixedPracticeEntry, (fixed) => {
+  if (!fixed) return
+  mode.value = 'free'
+  count.value = 1
+  selectedDimensions.value = [RANDOM_DIMENSION_KEY]
+}, { immediate: true })
 
 onShow(() => {
   loading.value = false
@@ -360,6 +383,7 @@ function selectFreeMode() {
 }
 
 function selectFullExamMode() {
+  if (fixedPracticeEntry.value) return
   mode.value = 'fullExam'
 }
 
@@ -614,6 +638,31 @@ function goPricing() {
   color: #5f6f83;
   font-size: 23rpx;
   line-height: 1.6;
+}
+
+.fixed-practice-mode {
+  margin-top: 8rpx;
+  padding: 18rpx;
+  border: 1rpx solid #bfd7ef;
+  border-radius: 14rpx;
+  background: #f4f9fe;
+}
+
+.fixed-practice-mode__title,
+.fixed-practice-mode__desc {
+  display: block;
+}
+
+.fixed-practice-mode__title {
+  color: #1a1a2e;
+  font-size: 29rpx;
+  font-weight: 800;
+}
+
+.fixed-practice-mode__desc {
+  margin-top: 8rpx;
+  color: #6f7c8f;
+  font-size: 23rpx;
 }
 
 .question-type-panel {

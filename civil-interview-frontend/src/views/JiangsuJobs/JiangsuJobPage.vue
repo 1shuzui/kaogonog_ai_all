@@ -46,54 +46,125 @@
     <div class="jiangsu-job-list">
       <div class="jiangsu-job-list__head">
         <h2>题目列表</h2>
-        <span>按年份倒序 · {{ filteredItems.length }} 题</span>
+        <span>{{ listStatusText }}</span>
       </div>
 
+      <a-spin :spinning="loading">
       <div v-if="filteredItems.length">
         <div v-for="item in filteredItems" :key="item.id" class="jiangsu-question-card card">
           <div class="jiangsu-question-card__top">
-            <a-tag color="blue">{{ item.date }}</a-tag>
+            <a-tag color="blue">{{ item.yearLabel }}</a-tag>
             <a-tag>{{ item.cityName }}</a-tag>
             <a-tag color="green">{{ item.typeName }}</a-tag>
           </div>
           <h3>{{ item.title }}</h3>
           <p>{{ item.stem }}</p>
           <div class="jiangsu-question-card__actions">
-            <a-button type="primary" size="small" @click="$router.push('/exam/prepare')">
+            <a-button type="primary" size="small" @click="startPractice(item)">
               开始刷题
             </a-button>
-            <a-button size="small" @click="$router.push('/bank')">去题库筛选</a-button>
+            <a-button size="small" @click="$router.push({ path: '/bank', query: { province: 'jiangsu', position: positionCode } })">去题库筛选</a-button>
           </div>
         </div>
       </div>
-      <EmptyState v-else text="暂无匹配题目，请调整筛选条件" />
+      <EmptyState v-else :text="emptyText" />
+      </a-spin>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, reactive } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import EmptyState from '@/components/common/EmptyState.vue'
 import {
   JIANGSU_CITY_FILTERS,
   JIANGSU_QUESTION_TYPES,
   JIANGSU_YEAR_FILTERS,
-  buildJiangsuQuestionItems,
-  filterJiangsuQuestionItems,
   getJiangsuJobCategory
 } from '@/utils/jiangsuJobs'
+import { getQuestions } from '@/api/questionBank'
+import { message } from 'ant-design-vue'
 
 const route = useRoute()
+const router = useRouter()
 const category = computed(() => getJiangsuJobCategory(String(route.params.category || 'a')))
 const categoryMeta = computed(() => [category.value.scope, category.value.subtitle].filter(Boolean).join(' · '))
-const allItems = computed(() => buildJiangsuQuestionItems(category.value.key))
 const filters = reactive({
   city: 'all',
   year: '',
   type: ''
 })
-const filteredItems = computed(() => filterJiangsuQuestionItems(allItems.value, filters))
+const loading = ref(false)
+const allItems = ref([])
+const positionCode = computed(() => `jiangsu_${category.value.key}`)
+const listStatusText = computed(() => (loading.value ? '正在加载真实题库...' : `真实题库 · ${filteredItems.value.length} 题`))
+const emptyText = computed(() => category.value.key === 'd'
+  ? '当前江苏题库暂未收录教师岗真题，请先切换其他岗位或导入教师岗资料。'
+  : '暂无匹配题目，请调整筛选条件')
+const filteredItems = computed(() => allItems.value.filter((item) => {
+  if (filters.city !== 'all' && item.cityKey !== filters.city) return false
+  if (filters.year && item.year !== filters.year) return false
+  if (filters.type && item.typeKey !== filters.type) return false
+  return true
+}))
+
+function normalizeQuestion(item = {}) {
+  const metaText = [
+    item.sourceDocument,
+    item.sourceFile,
+    ...(Array.isArray(item.tags) ? item.tags : [])
+  ].join(' ')
+  const year = String(metaText.match(/20\d{2}/)?.[0] || '')
+  const city = JIANGSU_CITY_FILTERS.find((option) => option.key !== 'all' && metaText.includes(option.name))
+  const type = JIANGSU_QUESTION_TYPES.find((option) => item.dimension === option.key || metaText.includes(option.name))
+  return {
+    ...item,
+    year,
+    yearLabel: year || '真题',
+    cityKey: city?.key || 'all',
+    cityName: city?.name || '江苏',
+    typeKey: type?.key || item.dimension || '',
+    typeName: type?.name || '结构化面试',
+    title: `${year || '江苏'} · ${city?.name || '江苏'} · ${category.value.shortTitle} · ${type?.name || '结构化面试'}`
+  }
+}
+
+async function loadQuestions() {
+  loading.value = true
+  try {
+    const res = await getQuestions({
+      province: 'jiangsu',
+      position: positionCode.value,
+      current: 1,
+      page: 1,
+      pageSize: 1000
+    })
+    allItems.value = (Array.isArray(res?.list) ? res.list : []).map(normalizeQuestion)
+  } catch (error) {
+    allItems.value = []
+    message.error(error?.normalizedMessage || error?.message || '江苏题库加载失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+function startPractice(item) {
+  if (!item?.id) return
+  router.push({
+    path: '/exam/prepare',
+    query: { source: 'jiangsu', questionId: item.id, mode: 'free' }
+  })
+}
+
+watch(() => route.params.category, () => {
+  filters.city = 'all'
+  filters.year = ''
+  filters.type = ''
+  loadQuestions()
+})
+
+onMounted(loadQuestions)
 </script>
 
 <style lang="less" scoped>

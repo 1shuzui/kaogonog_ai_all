@@ -99,6 +99,9 @@
       <RecordingControl
         :status="examStore.status"
         :isLast="examStore.isLastQuestion"
+        :submitting-text="examStore.submitStepText"
+        :finishing="finishRequested"
+        finishing-text="正在分析结果..."
         @start-prep="onStartPrep"
         @start-answer="onStartAnswer"
         @submit="onSubmit"
@@ -151,6 +154,7 @@ const recorderDuration = recorder.duration
 const countdown = useCountdown(0)
 
 const elapsed = ref(0)
+const finishRequested = ref(false)
 const cameraWindow = ref({
   width: CAMERA_DEFAULT.width,
   height: CAMERA_DEFAULT.height,
@@ -231,6 +235,7 @@ function onStartAnswer() {
 }
 
 async function onSubmit() {
+  if (finishRequested.value) return
   countdown.stop()
   try {
     const blob = await recorder.stopRecording()
@@ -253,12 +258,14 @@ function onNext() {
 }
 
 async function onFinish() {
+  if (finishRequested.value) return
   const examId = examStore.examId
   if (!examId) {
     message.error('考试数据异常，返回首页')
     router.push('/')
     return
   }
+  finishRequested.value = true
   try {
     await examStore.evaluatePendingAnswers()
     await completeExam(examId)

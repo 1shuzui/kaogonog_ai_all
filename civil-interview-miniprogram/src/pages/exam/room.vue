@@ -64,7 +64,14 @@
             <view class="card">
               <view class="section-head">
                 <text class="section-title">作答区</text>
-                <text class="muted">{{ useVideoMode ? '录像 + 录音' : '仅录音' }}</text>
+                <view class="answer-head-meta">
+                  <text class="answer-head-meta__timer">{{ sceneTimerLabel }} {{ formatTime(sceneTimeLeft) }}</text>
+                  <text class="muted">{{ useVideoMode ? '录像 + 录音' : '仅录音' }}</text>
+                </view>
+              </view>
+
+              <view v-if="finishingExam" class="analysis-status">
+                <text>正在分析结果，请稍候</text>
               </view>
 
               <view class="record-panel">
@@ -121,8 +128,8 @@
 
         <view class="room-actions">
           <button class="secondary-button" @tap="goBackHome">退出</button>
-          <button class="primary-button" :loading="examStore.loading" @tap="submitAnswer">
-            {{ examStore.isLastQuestion ? '提交并看结果' : '提交本题' }}
+          <button class="primary-button" :disabled="finishingExam" :loading="examStore.loading || finishingExam" @tap="submitAnswer">
+            {{ finishingExam ? '正在分析结果...' : examStore.isLastQuestion ? '提交并看结果' : '提交本题' }}
           </button>
         </view>
       </template>
@@ -153,6 +160,10 @@
             <view class="section-head">
               <text class="section-title">作答区</text>
               <text class="muted">{{ useVideoMode ? '录像 + 录音' : '仅录音' }}</text>
+            </view>
+
+            <view v-if="finishingExam" class="analysis-status">
+              <text>正在分析结果，请稍候</text>
             </view>
 
             <view class="media-toggle">
@@ -220,8 +231,8 @@
 
         <view class="room-actions">
           <button class="secondary-button" @tap="goBackHome">退出</button>
-          <button class="primary-button" :loading="examStore.loading" @tap="submitAnswer">
-            {{ examStore.isLastQuestion ? '提交并看结果' : '提交本题' }}
+          <button class="primary-button" :disabled="finishingExam" :loading="examStore.loading || finishingExam" @tap="submitAnswer">
+            {{ finishingExam ? '正在分析结果...' : examStore.isLastQuestion ? '提交并看结果' : '提交本题' }}
           </button>
         </view>
       </template>
@@ -268,6 +279,7 @@ const cameraSize = ref('small')
 const selectedMediaType = ref('')
 const questionStartedAt = ref(Date.now())
 const questionBookIndex = ref(0)
+const finishingExam = ref(false)
 const reportedQuestionKeys = new Set()
 const JIANGSU_FULL_EXAM_TIMING_MODE = 'jiangsu_5_15'
 const JIANGSU_READING_SECONDS = 5 * 60
@@ -807,6 +819,7 @@ function handleCameraTap() {
 }
 
 async function submitAnswer() {
+  if (finishingExam.value || examStore.loading) return
   if (isJiangsuReading.value) {
     toast('阅读阶段暂不能提交，请阅读结束后作答')
     return
@@ -819,7 +832,9 @@ async function submitAnswer() {
   }
   const media = currentMedia.value
 
-  showLoading(examStore.isLastQuestion ? '生成结果' : '保存作答')
+  const isFinishing = examStore.isLastQuestion
+  if (isFinishing) finishingExam.value = true
+  showLoading(isFinishing ? '正在分析结果' : '保存作答')
   try {
     const answer = await examStore.submitCurrentAnswer({
       filePath: media.filePath,
@@ -828,7 +843,7 @@ async function submitAnswer() {
     })
     await syncUsageAndTrial(answer)
 
-    if (examStore.isLastQuestion) {
+    if (isFinishing) {
       const finishedExamId = examStore.examId
       await examStore.finish()
       examStore.reset()
@@ -850,6 +865,7 @@ async function submitAnswer() {
   } catch (error) {
     toast(error?.message || '评分失败')
   } finally {
+    finishingExam.value = false
     hideLoading()
   }
 }
@@ -1089,6 +1105,32 @@ function goBackHome() {
   margin-top: 22rpx;
   padding-top: 22rpx;
   border-top: 1rpx solid #eef2f6;
+}
+
+.answer-head-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8rpx;
+}
+
+.answer-head-meta__timer {
+  padding: 8rpx 14rpx;
+  border-radius: 999rpx;
+  background: #fff2e8;
+  color: #8a4d17;
+  font-size: 25rpx;
+  font-weight: 900;
+}
+
+.analysis-status {
+  margin-top: 18rpx;
+  padding: 16rpx 18rpx;
+  border-radius: 14rpx;
+  background: #fff8eb;
+  color: #8a4d17;
+  font-size: 25rpx;
+  font-weight: 800;
 }
 
 .record-panel__status {

@@ -1,6 +1,7 @@
 const PROVINCE_NAME_TO_CODE = {
   江苏: 'jiangsu',
   安徽: 'anhui',
+  安徽消防: 'anhui',
   湖南: 'hunan',
   全国: 'national'
 }

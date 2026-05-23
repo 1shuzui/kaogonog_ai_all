@@ -1,7 +1,12 @@
 <template>
   <view class="page">
-    <text class="page-title">历史记录</text>
-    <text class="page-desc">回看每次练习的得分、题目和维度表现。</text>
+    <view class="page-head">
+      <button class="secondary-button page-head__back" @tap="goBack">返回</button>
+      <view>
+        <text class="page-title">历史记录</text>
+        <text class="page-desc">回看每次练习的得分、题目和维度表现。</text>
+      </view>
+    </view>
 
     <view class="card filter-card">
       <picker :range="provinceNames" :value="provinceIndex" @change="onProvinceChange">
@@ -130,12 +135,34 @@ function resetFilters() {
   refreshRecords()
 }
 
+function goBack() {
+  const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : []
+  if (pages.length > 1) {
+    uni.navigateBack()
+    return
+  }
+  uni.switchTab({ url: '/pages/profile/index' })
+}
+
 function openResult(record) {
   uni.navigateTo({ url: `/pages/result/index?examId=${encodeURIComponent(record.examId)}` })
 }
 </script>
 
 <style scoped>
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 18rpx;
+  margin-bottom: 18rpx;
+}
+
+.page-head__back {
+  flex: 0 0 auto;
+  width: 132rpx;
+  margin: 0;
+}
+
 .history-card {
   display: flex;
   align-items: center;

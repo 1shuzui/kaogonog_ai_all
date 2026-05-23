@@ -1,8 +1,20 @@
 import { http } from './index'
 
+function cleanSupportQuery(params = {}) {
+  return Object.fromEntries(
+    Object.entries(params).filter(([, value]) => (
+      value !== undefined &&
+      value !== null &&
+      String(value).trim() !== '' &&
+      String(value).trim() !== 'undefined' &&
+      String(value).trim() !== 'null'
+    ))
+  )
+}
+
 export function getSupportFeedback(params = {}) {
   return http.get('/support/feedback', {
-    params,
+    params: cleanSupportQuery(params),
     skipErrorHandler: true
   })
 }

@@ -209,7 +209,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { LeftOutlined, PlusOutlined } from '@ant-design/icons-vue'
 import { message, Upload } from 'ant-design-vue'
@@ -295,6 +295,13 @@ onMounted(async () => {
 
   await refreshRecords()
 })
+
+watch(
+  () => [filters.type, filters.status, filters.province, filters.scope],
+  () => {
+    refreshRecords()
+  }
+)
 
 async function refreshRecords() {
   try {

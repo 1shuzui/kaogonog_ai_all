@@ -80,8 +80,8 @@
     <!-- 模式选择 & 进入考场 -->
     <div class="exam-prepare__actions" v-if="allReady">
       <div class="mode-select card">
-        <h4 style="margin-bottom: 12px">选择练习模式</h4>
-        <a-radio-group v-model:value="examMode" style="width: 100%">
+        <h4 style="margin-bottom: 12px">{{ isFixedPracticeEntry ? '专项练习' : '选择练习模式' }}</h4>
+        <a-radio-group v-if="!isFixedPracticeEntry" v-model:value="examMode" style="width: 100%">
           <a-space direction="vertical" style="width: 100%">
             <a-radio value="free" class="mode-radio">
               <span class="mode-label">专项练习</span>
@@ -93,6 +93,10 @@
             </a-radio>
           </a-space>
         </a-radio-group>
+        <div v-else class="fixed-practice-mode">
+          <span class="mode-label">专项练习</span>
+          <span class="mode-desc">已使用当前生成题目进入练习</span>
+        </div>
         <div v-if="examMode === 'fullExam'" class="practice-config">
           <div class="practice-config__item">
             <span class="practice-config__label">真题套卷</span>
@@ -234,7 +238,10 @@ const questionCategoryOptions = [
 
 const hasFullAccess = computed(() => hasPremiumAccess(userStore, billingStore))
 const isTrialEntry = computed(() => String(route.query.trial || '') === '1' && !hasFullAccess.value)
-const showPracticeConfig = computed(() => examMode.value === 'free')
+const fixedPracticeSources = new Set(['targeted', 'training', 'jiangsu'])
+const source = computed(() => String(route.query.source || ''))
+const isFixedPracticeEntry = computed(() => fixedPracticeSources.has(source.value))
+const showPracticeConfig = computed(() => examMode.value === 'free' && !isFixedPracticeEntry.value)
 const asrUnavailable = computed(() => asrStatus.value && asrStatus.value.ready === false)
 const asrStatusText = computed(() => {
   if (!asrStatus.value) return ''
@@ -252,6 +259,14 @@ const selectedFullExamSuite = computed(() => (
   || null
 ))
 const selectedFullExamSuiteSummary = computed(() => getFullExamSuiteSummary(selectedFullExamSuite.value))
+
+watch(isFixedPracticeEntry, (fixed) => {
+  if (fixed) {
+    examMode.value = 'free'
+    questionCount.value = 1
+    dimensionFilters.value = [RANDOM_DIMENSION_KEY]
+  }
+}, { immediate: true })
 
 watch(fullExamSuiteOptions, (suites) => {
   if (!suites.length) {
@@ -501,7 +516,6 @@ async function enterExam() {
 
   enteringExam.value = true
   let questions = []
-  const source = String(route.query.source || '')
   const recommendedId = String(route.query.questionId || '')
   const freeQuestionCount = Math.max(1, Math.min(10, Number(questionCount.value) || DEFAULT_EXAM_QUESTION_COUNT))
   const targetQuestionCount = isTrialEntry.value
@@ -526,11 +540,11 @@ async function enterExam() {
         const fallbackQuestion = await getQuestionById('q001')
         questions = fallbackQuestion ? [fallbackQuestion] : []
       }
-    } else if (source === 'targeted' && targetedStore.generatedQuestions.length) {
+    } else if (source.value === 'targeted' && targetedStore.generatedQuestions.length) {
       questions = await ensureScoringReadyQuestions(targetedStore.generatedQuestions, {
         allowAutoSupplement: false
       })
-    } else if (source === 'targeted' && recommendedId) {
+    } else if (source.value === 'targeted' && recommendedId) {
       try {
         const cached = sessionStorage.getItem('targeted_question')
         const selectedQuestion = cached ? JSON.parse(cached) : await getQuestionById(recommendedId)
@@ -540,7 +554,7 @@ async function enterExam() {
       } catch {
         questions = await fetchScoringReadyRandomQuestions(targetQuestionCount)
       }
-    } else if (source === 'training' && recommendedId) {
+    } else if (source.value === 'training' && recommendedId) {
       try {
         const cached = sessionStorage.getItem('training_question')
         const selectedQuestion = cached ? JSON.parse(cached) : await getQuestionById(recommendedId)
@@ -676,6 +690,17 @@ async function startFullExam(questions) {
   display: flex;
   align-items: flex-start;
   padding: 8px 0;
+}
+
+.fixed-practice-mode {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid rgba(27, 95, 170, 0.14);
+  border-radius: 12px;
+  background: rgba(27, 95, 170, 0.06);
 }
 
 .mode-label {

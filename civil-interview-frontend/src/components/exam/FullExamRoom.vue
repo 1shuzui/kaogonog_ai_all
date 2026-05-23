@@ -171,7 +171,13 @@
             <span class="section-kicker">作答控制</span>
             <h3>{{ currentQuestionTitle }}</h3>
           </div>
-          <a-tag :color="currentQuestionTag.color">{{ currentQuestionTag.text }}</a-tag>
+          <div class="candidate-panel__head-side">
+            <div class="candidate-panel__inline-timer">
+              <FieldTimeOutlined />
+              <span>{{ formattedTotalRemaining }}</span>
+            </div>
+            <a-tag :color="currentQuestionTag.color">{{ currentQuestionTag.text }}</a-tag>
+          </div>
         </div>
 
         <div class="candidate-panel__question">
@@ -189,6 +195,11 @@
 
         <p class="candidate-panel__hint">{{ currentQuestionHint }}</p>
 
+        <div v-if="finishRequested" class="candidate-panel__analysis">
+          <a-spin size="small" />
+          <span>{{ finalAnalysisText }}</span>
+        </div>
+
         <div v-if="currentAnswer && isAnsweredQuestion(examStore.currentIndex)" class="candidate-panel__summary">
           本题已提交，可继续查看题干，或前往下一题继续作答。
         </div>
@@ -205,8 +216,15 @@
           </a-button>
 
           <template v-else-if="allAnswered">
-            <a-button type="primary" size="large" block @click="finishExam">
-              <CheckOutlined /> 结束全真模拟并查看结果
+            <a-button
+              type="primary"
+              size="large"
+              block
+              :loading="finishRequested"
+              :disabled="finishRequested"
+              @click="finishExam"
+            >
+              <CheckOutlined /> {{ finishRequested ? '正在分析结果...' : '结束全真模拟并查看结果' }}
             </a-button>
           </template>
 
@@ -253,8 +271,16 @@
             >
               <CaretRightOutlined /> 进入下一题
             </a-button>
-            <a-button v-else type="primary" size="large" block @click="finishExam">
-              <CheckOutlined /> 全部完成，查看结果
+            <a-button
+              v-else
+              type="primary"
+              size="large"
+              block
+              :loading="finishRequested"
+              :disabled="finishRequested"
+              @click="finishExam"
+            >
+              <CheckOutlined /> {{ finishRequested ? '正在分析结果...' : '全部完成，查看结果' }}
             </a-button>
           </template>
         </div>
@@ -436,6 +462,7 @@ const timingSummary = computed(() => {
   return `共 ${examStore.totalQuestions} 题，总时长 ${totalDurationMinutes.value} 分钟`
 })
 const formattedTotalRemaining = computed(() => formatClock(totalRemainingSeconds.value))
+const finalAnalysisText = computed(() => examStore.submitStepText || '正在分析结果，请稍候...')
 const readingRemainingSeconds = computed(() => {
   if (!isJiangsuFullExamTiming.value || !readingPhaseActive.value) return 0
   return Math.max(0, totalRemainingSeconds.value - JIANGSU_ANSWER_SECONDS)
@@ -733,7 +760,7 @@ async function startCurrentAnswer() {
 async function submitCurrentAnswer(options = {}) {
   const { finishAfterSubmit = false } = options
 
-  if (examStore.status !== EXAM_STATUS.ANSWERING) return
+  if (finishRequested.value || examStore.status !== EXAM_STATUS.ANSWERING) return
 
   try {
     const blob = await recorder.stopRecording()
@@ -1676,6 +1703,33 @@ async function exitExam() {
   color: #fff7ec;
 }
 
+.candidate-panel__head-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.candidate-panel__inline-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 218, 173, 0.2);
+  background: rgba(28, 13, 10, 0.34);
+  color: #fff7ec;
+  font-size: 18px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+
+  .anticon {
+    color: #ffd77a;
+    font-size: 15px;
+  }
+}
+
 .candidate-seat__status {
   padding: 6px 12px;
   border-radius: 999px;
@@ -1710,6 +1764,20 @@ async function exitExam() {
   margin: 14px 0 12px;
   color: rgba(255, 244, 232, 0.86);
   line-height: 1.8;
+}
+
+.candidate-panel__analysis {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 246, 233, 0.12);
+  border: 1px solid rgba(255, 226, 195, 0.14);
+  color: rgba(255, 244, 232, 0.9);
+  font-size: @font-size-sm;
+  line-height: 1.6;
 }
 
 .candidate-panel__question {
@@ -1879,6 +1947,10 @@ async function exitExam() {
   .candidate-panel__head {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .candidate-panel__head-side {
+    align-items: flex-start;
   }
 
   .judge-speech {

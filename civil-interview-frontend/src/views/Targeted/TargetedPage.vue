@@ -67,7 +67,7 @@
       <div class="generated-start card">
         <div>
           <strong>已为当前省份和岗位准备 {{ targetedStore.generatedQuestions.length }} 道练习题</strong>
-          <p>先核对题目，再开始练习；进入候考室后仍可选择专项练习或全真模拟。</p>
+          <p>先核对题目，再进入专项练习。</p>
         </div>
         <a-button type="primary" size="large" @click="startGeneratedPractice">
           <PlayCircleOutlined /> 开始练习

@@ -21,6 +21,10 @@ ASR_UNAVAILABLE_PLACEHOLDER = "（当前未配置真实语音转写服务，无�
 DASHSCOPE_DEFAULT_ASR_MODEL = "qwen3-asr-flash"
 DASHSCOPE_CHAT_AUDIO_SAFE_BYTES = 12 * 1024 * 1024
 VIDEO_EXTENSIONS = {".mp4", ".avi", ".mov", ".mkv", ".webm"}
+ASR_SIMPLIFIED_CHINESE_PROMPT = (
+    "请将音频完整转写为简体中文普通话文本。"
+    "保留考生原意，不要翻译成英文，不要输出繁体字，不要添加总结、标点说明或无关内容。"
+)
 _whisper_model = None
 
 # OpenAI-compatible client for the configured LLM provider
@@ -175,22 +179,38 @@ def _normalize_media_for_asr(media_bytes: bytes, filename: str) -> tuple[bytes, 
     return media_bytes, filename or f"answer{suffix}"
 
 
-def _transcribe_with_dashscope_chat_asr(client: OpenAI, audio_bytes: bytes, filename: str, model: str) -> str:
+def _transcribe_with_dashscope_chat_asr(
+    client: OpenAI,
+    audio_bytes: bytes,
+    filename: str,
+    model: str,
+    *,
+    include_prompt: bool = True,
+) -> str:
     data_url = (
         f"data:{_guess_audio_media_type(filename)};base64,"
         f"{base64.b64encode(audio_bytes).decode('ascii')}"
+    )
+    content = []
+    if include_prompt:
+        content.append(
+            {
+                "type": "text",
+                "text": ASR_SIMPLIFIED_CHINESE_PROMPT,
+            }
+        )
+    content.append(
+        {
+            "type": "input_audio",
+            "input_audio": {"data": data_url},
+        }
     )
     response = client.chat.completions.create(
         model=model,
         messages=[
             {
                 "role": "user",
-                "content": [
-                    {
-                        "type": "input_audio",
-                        "input_audio": {"data": data_url},
-                    }
-                ],
+                "content": content,
             }
         ],
         extra_body={
@@ -248,15 +268,34 @@ async def transcribe_audio_file(audio_bytes: bytes, filename: str = "answer.webm
         try:
             prepared_bytes, prepared_name = _normalize_media_for_asr(audio_bytes, filename)
             if "dashscope.aliyuncs.com" in str(settings.llm_base_url or ""):
-                text = _transcribe_with_dashscope_chat_asr(client, prepared_bytes, prepared_name, asr_model)
+                try:
+                    text = _transcribe_with_dashscope_chat_asr(client, prepared_bytes, prepared_name, asr_model)
+                except Exception as prompt_exc:
+                    logger.warning("DashScope ASR prompt request failed, retrying audio-only: %s", prompt_exc)
+                    text = _transcribe_with_dashscope_chat_asr(
+                        client,
+                        prepared_bytes,
+                        prepared_name,
+                        asr_model,
+                        include_prompt=False,
+                    )
             else:
                 file_obj = io.BytesIO(prepared_bytes)
                 file_obj.name = prepared_name or "answer.webm"
-                response = client.audio.transcriptions.create(
-                    model=asr_model,
-                    file=file_obj,
-                    language="zh",
-                )
+                try:
+                    response = client.audio.transcriptions.create(
+                        model=asr_model,
+                        file=file_obj,
+                        language="zh",
+                        prompt=ASR_SIMPLIFIED_CHINESE_PROMPT,
+                    )
+                except TypeError:
+                    file_obj.seek(0)
+                    response = client.audio.transcriptions.create(
+                        model=asr_model,
+                        file=file_obj,
+                        language="zh",
+                    )
                 text = getattr(response, "text", None)
                 if not text and isinstance(response, dict):
                     text = response.get("text")
@@ -283,6 +322,7 @@ PROVINCE_NAMES = {
     "zhejiang": "浙江",
     "sichuan": "四川",
     "jiangsu": "江苏",
+    "anhui": "安徽",
     "henan": "河南",
     "shandong": "山东",
     "hubei": "湖北",

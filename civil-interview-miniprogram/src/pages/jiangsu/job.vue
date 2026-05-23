@@ -60,23 +60,26 @@
 
     <view class="section-head">
       <text class="section-title">题目列表</text>
-      <text class="muted">按年份倒序 · {{ filteredItems.length }} 题</text>
+      <text class="muted">{{ listStatusText }}</text>
     </view>
 
-    <view v-if="filteredItems.length">
+    <view v-if="loading" class="card">
+      <text class="loading-text">正在加载真实题库...</text>
+    </view>
+    <view v-else-if="filteredItems.length">
       <view v-for="item in filteredItems" :key="item.id" class="question-card card">
         <view class="question-card__meta">
-          <text>{{ item.date }}</text>
+          <text>{{ item.yearLabel }}</text>
           <text>{{ item.cityName }}</text>
           <text>{{ item.typeName }}</text>
         </view>
         <text class="question-card__title">{{ item.title }}</text>
         <text class="question-card__stem">{{ item.stem }}</text>
-        <button class="primary-button question-card__button" @tap="goPractice">开始刷题</button>
+        <button class="primary-button question-card__button" @tap="goPractice(item)">开始刷题</button>
       </view>
     </view>
     <view v-else class="card">
-      <EmptyState title="暂无匹配题目" desc="换个地市、年份或题型再试。" />
+      <EmptyState title="暂无匹配题目" :desc="emptyText" />
     </view>
   </view>
 </template>
@@ -85,16 +88,17 @@
 import { computed, reactive, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import EmptyState from '../../components/EmptyState.vue'
+import { getQuestions } from '../../api/questionBank'
 import {
   JIANGSU_CITY_FILTERS,
   JIANGSU_QUESTION_TYPES,
   JIANGSU_YEAR_FILTERS,
-  buildJiangsuQuestionItems,
-  filterJiangsuQuestionItems,
   getJiangsuJobCategory
 } from '../../utils/jiangsuJobs'
 
 const categoryKey = ref('a')
+const loading = ref(false)
+const allItems = ref([])
 const filters = reactive({
   city: 'all',
   year: '',
@@ -103,15 +107,63 @@ const filters = reactive({
 
 const category = computed(() => getJiangsuJobCategory(categoryKey.value))
 const categoryMeta = computed(() => [category.value.scope, category.value.subtitle].filter(Boolean).join(' · '))
-const allItems = computed(() => buildJiangsuQuestionItems(category.value.key))
-const filteredItems = computed(() => filterJiangsuQuestionItems(allItems.value, filters))
+const positionCode = computed(() => `jiangsu_${category.value.key}`)
+const listStatusText = computed(() => (loading.value ? '正在加载真实题库...' : `真实题库 · ${filteredItems.value.length} 题`))
+const emptyText = computed(() => categoryKey.value === 'd'
+  ? '当前江苏题库暂未收录教师岗真题，请先切换其他岗位或导入教师岗资料。'
+  : '换个地市、年份或题型再试。')
+const filteredItems = computed(() => allItems.value.filter((item) => {
+  if (filters.city !== 'all' && item.cityKey !== filters.city) return false
+  if (filters.year && item.year !== filters.year) return false
+  if (filters.type && item.typeKey !== filters.type) return false
+  return true
+}))
 
 onLoad((query) => {
   categoryKey.value = query?.category || 'a'
+  loadQuestions()
 })
 
-function goPractice() {
-  uni.navigateTo({ url: '/pages/exam/prepare' })
+function normalizeQuestion(item = {}) {
+  const tags = Array.isArray(item.tags) ? item.tags : []
+  const metaText = [item.sourceDocument, item.sourceFile, ...tags].join(' ')
+  const year = String(metaText.match(/20\d{2}/)?.[0] || '')
+  const city = JIANGSU_CITY_FILTERS.find((option) => option.key !== 'all' && metaText.includes(option.name))
+  const type = JIANGSU_QUESTION_TYPES.find((option) => item.dimension === option.key || metaText.includes(option.name))
+  return {
+    ...item,
+    year,
+    yearLabel: year || '真题',
+    cityKey: city?.key || 'all',
+    cityName: city?.name || '江苏',
+    typeKey: type?.key || item.dimension || '',
+    typeName: type?.name || '结构化面试',
+    title: `${year || '江苏'} · ${city?.name || '江苏'} · ${category.value.shortTitle} · ${type?.name || '结构化面试'}`
+  }
+}
+
+async function loadQuestions() {
+  loading.value = true
+  try {
+    const res = await getQuestions({
+      province: 'jiangsu',
+      position: positionCode.value,
+      current: 1,
+      page: 1,
+      pageSize: 1000
+    })
+    allItems.value = (Array.isArray(res?.list) ? res.list : []).map(normalizeQuestion)
+  } catch (error) {
+    allItems.value = []
+    uni.showToast({ title: error?.message || '江苏题库加载失败', icon: 'none' })
+  } finally {
+    loading.value = false
+  }
+}
+
+function goPractice(item) {
+  if (!item?.id) return
+  uni.navigateTo({ url: `/pages/exam/prepare?source=jiangsu&mode=free&questionId=${encodeURIComponent(item.id)}` })
 }
 </script>
 

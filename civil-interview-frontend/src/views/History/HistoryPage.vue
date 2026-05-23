@@ -1,6 +1,9 @@
 <template>
   <div class="history-page page-container">
-    <h2>历史记录</h2>
+    <div class="history-page__header">
+      <a-button @click="goBack">返回</a-button>
+      <h2>历史记录</h2>
+    </div>
 
     <!-- 筛选 -->
     <div class="card" style="padding: 12px 16px; margin-bottom: 12px">
@@ -66,6 +69,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useHistoryStore } from '@/stores/history'
 import { formatDate } from '@/utils/formatter'
 import { GRADE_CONFIG } from '@/utils/constants'
@@ -74,6 +78,7 @@ import ScoreRing from '@/components/common/ScoreRing.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 
 const historyStore = useHistoryStore()
+const router = useRouter()
 const dateRange = ref(null)
 const provinceFilter = ref('all')
 
@@ -87,6 +92,14 @@ function barColor(dim) {
   if (ratio >= 0.6) return '#1B5FAA'
   if (ratio >= 0.4) return '#D48806'
   return '#CF1322'
+}
+
+function goBack() {
+  if (window.history.length > 1) {
+    router.back()
+    return
+  }
+  router.push('/profile')
 }
 
 onMounted(() => {
@@ -124,10 +137,17 @@ function onPageChange(page) {
 <style lang="less" scoped>
 @import '@/styles/variables.less';
 
+.history-page__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
 .history-page h2 {
   font-size: @font-size-xl;
   color: @text-primary;
-  margin-bottom: 16px;
+  margin: 0;
 }
 
 .history-item {

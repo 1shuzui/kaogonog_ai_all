@@ -16,6 +16,7 @@ PROVINCES = [
     {"code": "zhejiang", "name": "浙江"},
     {"code": "sichuan", "name": "四川"},
     {"code": "jiangsu", "name": "江苏"},
+    {"code": "anhui", "name": "安徽"},
     {"code": "henan", "name": "河南"},
     {"code": "shandong", "name": "山东"},
     {"code": "hubei", "name": "湖北"},

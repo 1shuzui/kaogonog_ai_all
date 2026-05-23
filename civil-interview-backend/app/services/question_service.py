@@ -177,6 +177,9 @@ PROVINCE_ALIASES = {
     "四川": "sichuan",
     "jiangsu": "jiangsu",
     "江苏": "jiangsu",
+    "anhui": "anhui",
+    "安徽": "anhui",
+    "安徽消防": "anhui",
     "henan": "henan",
     "河南": "henan",
     "shandong": "shandong",
@@ -560,6 +563,8 @@ def _question_matches_position(question: Question, position: str) -> bool:
     position_tags = meta.get("positionTags") if isinstance(meta.get("positionTags"), list) else []
     if position in position_tags:
         return True
+    if position.startswith("jiangsu_") and any(str(tag).startswith("jiangsu_") for tag in position_tags):
+        return False
 
     haystack = " ".join(
         [

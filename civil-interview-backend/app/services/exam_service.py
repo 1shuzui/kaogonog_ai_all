@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List
 
 from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.entities import Exam, ExamAnswer, HistoryRecord, Question
@@ -129,7 +130,18 @@ def complete_exam(db: Session, exam_id: str) -> dict:
     record.province = province
     record.dimensions = dimensions
     record.completed_at = exam.end_time
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        if "history_records.exam_id" not in str(exc) and "Duplicate entry" not in str(exc):
+            raise
+        record = db.query(HistoryRecord).filter(HistoryRecord.exam_id == exam_id).first()
+        exam = db.query(Exam).filter(Exam.id == exam_id).first()
+        if not record or not exam:
+            raise
+        question_count = int(record.question_count or 0)
+        avg = float(record.total_score or 0)
 
     return {
         "success": True,
