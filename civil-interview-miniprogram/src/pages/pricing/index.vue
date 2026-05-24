@@ -94,7 +94,8 @@ function compareVersion(versionA = '', versionB = '') {
 
 function canUseWechatVirtualPayment() {
   if (typeof wx === 'undefined' || typeof wx.requestVirtualPayment !== 'function') return false
-  const sdkVersion = wx.getSystemInfoSync?.().SDKVersion || ''
+  const appBaseInfo = typeof wx.getAppBaseInfo === 'function' ? wx.getAppBaseInfo() : {}
+  const sdkVersion = appBaseInfo.SDKVersion || ''
   return compareVersion(sdkVersion, '2.19.2') >= 0 || wx.canIUse?.('requestVirtualPayment') === true
 }
 

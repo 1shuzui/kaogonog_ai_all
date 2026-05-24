@@ -154,7 +154,11 @@ const DEFAULT_EXAM_QUESTION_COUNT = 5
 const JIANGSU_FULL_EXAM_TIMING_MODE = 'jiangsu_5_15'
 const MAX_FREE_QUESTION_COUNT = 10
 const STATE_REFRESH_TIMEOUT_MS = 6000
+const ENTRY_STATE_REFRESH_TIMEOUT_MS = 2500
+const ENTRY_ASR_STATUS_TIMEOUT_MS = 1500
 const ENTER_ROOM_TIMEOUT_MS = 10000
+const ACCESS_STATE_CACHE_MS = 30000
+const ASR_STATUS_CACHE_MS = 30000
 const count = ref(DEFAULT_EXAM_QUESTION_COUNT)
 const mode = ref('free')
 const mediaMode = ref('audio')
@@ -169,6 +173,10 @@ const source = ref('')
 const trial = ref(false)
 const trialStatus = ref(null)
 const asrStatus = ref(null)
+let accessRefreshedAt = 0
+let asrStatusRefreshedAt = 0
+let accessRefreshPromise = null
+let asrStatusRefreshPromise = null
 const hasFullAccess = computed(() => hasPremiumAccess(userStore, billingStore, subscriptionStore))
 const readonlyMode = computed(() => !trial.value && !hasFullAccess.value)
 const asrUnavailable = computed(() => asrStatus.value && asrStatus.value.ready === false)
@@ -307,7 +315,7 @@ onShow(() => {
   accessLoading.value = false
   enteringExam.value = false
   hideLoading()
-  refreshAccessState()
+  refreshAccessState({ force: true })
     .then(() => refreshFullExamSuites())
     .catch(() => null)
   refreshAsrStatus().catch(() => null)
@@ -338,44 +346,69 @@ function withTimeout(promise, timeoutMs, fallback = null) {
   })
 }
 
+function isFresh(timestamp, maxAgeMs) {
+  return timestamp > 0 && Date.now() - timestamp < maxAgeMs
+}
+
 async function refreshAccessState(options = {}) {
   if (!userStore.isAuthenticated) return false
   const timeoutMs = Number(options.timeout || STATE_REFRESH_TIMEOUT_MS)
-  accessLoading.value = true
-  try {
-    await withTimeout(
-      Promise.allSettled([
-        userStore.loadUserInfo(),
-        subscriptionStore.refresh({ skipErrorHandler: true })
-      ]),
-      timeoutMs,
-      null
-    )
-    if (hasFullAccess.value && trial.value) {
-      trial.value = false
-      count.value = DEFAULT_EXAM_QUESTION_COUNT
-    }
-    if (trial.value) {
-      trialStatus.value = await withTimeout(
-        getTrialStatus({ skipErrorHandler: true }),
-        timeoutMs,
-        null
-      )
-    }
+  const freshMs = Number(options.freshMs || ACCESS_STATE_CACHE_MS)
+  if (options.force !== true && isFresh(accessRefreshedAt, freshMs)) {
     return hasFullAccess.value
-  } finally {
-    accessLoading.value = false
   }
+  if (!accessRefreshPromise) {
+    accessLoading.value = true
+    accessRefreshPromise = (async () => {
+      try {
+        await Promise.allSettled([
+          userStore.loadUserInfo(),
+          subscriptionStore.refresh({ skipErrorHandler: true })
+        ])
+        if (hasFullAccess.value && trial.value) {
+          trial.value = false
+          count.value = DEFAULT_EXAM_QUESTION_COUNT
+        }
+        if (trial.value) {
+          trialStatus.value = await withTimeout(
+            getTrialStatus({ skipErrorHandler: true }),
+            timeoutMs,
+            null
+          )
+        }
+        accessRefreshedAt = Date.now()
+        return hasFullAccess.value
+      } finally {
+        accessLoading.value = false
+        accessRefreshPromise = null
+      }
+    })()
+  }
+  const result = await withTimeout(accessRefreshPromise, timeoutMs, null)
+  return result ?? hasFullAccess.value
 }
 
 async function refreshAsrStatus(options = {}) {
   if (!userStore.isAuthenticated) return
   const timeoutMs = Number(options.timeout || STATE_REFRESH_TIMEOUT_MS)
-  asrStatus.value = await withTimeout(
-    getAsrStatus({ skipErrorHandler: true }),
-    timeoutMs,
-    null
-  )
+  const freshMs = Number(options.freshMs || ASR_STATUS_CACHE_MS)
+  if (options.force !== true && isFresh(asrStatusRefreshedAt, freshMs)) {
+    return asrStatus.value
+  }
+  if (!asrStatusRefreshPromise) {
+    asrStatusRefreshPromise = getAsrStatus({ skipErrorHandler: true })
+      .then((status) => {
+        asrStatus.value = status
+        return status
+      })
+      .catch(() => asrStatus.value)
+      .finally(() => {
+        asrStatusRefreshedAt = Date.now()
+        asrStatusRefreshPromise = null
+      })
+  }
+  asrStatus.value = await withTimeout(asrStatusRefreshPromise, timeoutMs, asrStatus.value)
+  return asrStatus.value
 }
 
 function selectFreeMode() {
@@ -438,8 +471,10 @@ async function startPractice() {
   loading.value = true
   showLoading('检查考场')
   try {
-    await refreshAccessState({ timeout: STATE_REFRESH_TIMEOUT_MS }).catch(() => null)
-    await refreshAsrStatus({ timeout: STATE_REFRESH_TIMEOUT_MS }).catch(() => null)
+    await Promise.allSettled([
+      refreshAccessState({ timeout: ENTRY_STATE_REFRESH_TIMEOUT_MS }),
+      refreshAsrStatus({ timeout: ENTRY_ASR_STATUS_TIMEOUT_MS })
+    ])
     if (asrUnavailable.value) {
       toast('语音转写服务未就绪，请稍后重试')
       return

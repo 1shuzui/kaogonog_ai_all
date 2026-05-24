@@ -128,10 +128,20 @@
             <text class="floating-camera__status">{{ floatingCameraStatus }}</text>
             <text class="floating-camera__size">{{ cameraSizeText }}</text>
           </view>
-          <view v-if="cameraPlatformSupported" class="floating-camera__mask">
-            <text class="floating-camera__status">{{ floatingCameraStatus }}</text>
-            <text class="floating-camera__size">{{ cameraSizeText }}</text>
-          </view>
+          <cover-view
+            v-if="cameraPlatformSupported"
+            class="floating-camera__drag-layer"
+            @touchstart.stop="onCameraTouchStart"
+            @touchmove.stop.prevent="onCameraTouchMove"
+            @touchend.stop="onCameraTouchEnd"
+            @touchcancel.stop="onCameraTouchEnd"
+            @tap.stop="handleCameraTap"
+          >
+            <cover-view class="floating-camera__mask">
+              <cover-view class="floating-camera__status">{{ floatingCameraStatus }}</cover-view>
+              <cover-view class="floating-camera__size">{{ cameraSizeText }}</cover-view>
+            </cover-view>
+          </cover-view>
         </view>
 
         <view class="room-actions">
@@ -172,15 +182,6 @@
 
             <view v-if="finishingExam" class="analysis-status">
               <text>正在分析结果，请稍候</text>
-            </view>
-
-            <view class="media-toggle">
-              <view class="media-toggle__item" :class="{ 'media-toggle__item--active': !useVideoMode }" @tap="selectAudioMode">
-                <text>仅录音</text>
-              </view>
-              <view class="media-toggle__item" :class="{ 'media-toggle__item--active': useVideoMode }" @tap="selectVideoMode">
-                <text>录像+录音</text>
-              </view>
             </view>
 
             <view class="record-panel">
@@ -236,10 +237,20 @@
             <text class="floating-camera__status">{{ floatingCameraStatus }}</text>
             <text class="floating-camera__size">{{ cameraSizeText }}</text>
           </view>
-          <view v-if="cameraPlatformSupported" class="floating-camera__mask">
-            <text class="floating-camera__status">{{ floatingCameraStatus }}</text>
-            <text class="floating-camera__size">{{ cameraSizeText }}</text>
-          </view>
+          <cover-view
+            v-if="cameraPlatformSupported"
+            class="floating-camera__drag-layer"
+            @touchstart.stop="onCameraTouchStart"
+            @touchmove.stop.prevent="onCameraTouchMove"
+            @touchend.stop="onCameraTouchEnd"
+            @touchcancel.stop="onCameraTouchEnd"
+            @tap.stop="handleCameraTap"
+          >
+            <cover-view class="floating-camera__mask">
+              <cover-view class="floating-camera__status">{{ floatingCameraStatus }}</cover-view>
+              <cover-view class="floating-camera__size">{{ cameraSizeText }}</cover-view>
+            </cover-view>
+          </cover-view>
         </view>
 
         <view class="room-actions">
@@ -538,7 +549,9 @@ function startTimer() {
 
 function getWindowRect() {
   try {
-    const info = uni.getSystemInfoSync()
+    const info = typeof wx !== 'undefined' && typeof wx.getWindowInfo === 'function'
+      ? wx.getWindowInfo()
+      : {}
     return {
       width: Number(info.windowWidth || info.screenWidth || 375),
       height: Number(info.windowHeight || info.screenHeight || 667)
@@ -842,14 +855,6 @@ function stopVideoRecord(options = {}) {
 function onCameraError(error) {
   cameraError.value = error?.detail?.errMsg || error?.errMsg || '摄像头不可用，请检查授权'
   cameraAvailable.value = false
-}
-
-function selectAudioMode() {
-  examStore.setMediaMode('audio')
-}
-
-function selectVideoMode() {
-  examStore.setMediaMode('video')
 }
 
 function startVideoWithAudio() {
@@ -1354,6 +1359,15 @@ function goBackHome() {
   height: 100%;
 }
 
+.floating-camera__drag-layer {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
 .floating-camera__fallback {
   display: flex;
   flex-direction: column;
@@ -1370,6 +1384,7 @@ function goBackHome() {
   right: 0;
   bottom: 0;
   left: 0;
+  box-sizing: border-box;
   padding: 8rpx 10rpx;
   background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.72) 38%, rgba(0, 0, 0, 0.86) 100%);
 }
@@ -1432,30 +1447,6 @@ function goBackHome() {
   font-size: 31rpx;
   font-weight: 650;
   line-height: 1.75;
-}
-
-.exam-room--practice .media-toggle {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12rpx;
-  margin-bottom: 20rpx;
-}
-
-.exam-room--practice .media-toggle__item {
-  padding: 18rpx 14rpx;
-  border: 1rpx solid #d9e3ef;
-  border-radius: 14rpx;
-  background: #ffffff;
-  color: #2a3648;
-  font-size: 25rpx;
-  font-weight: 800;
-  text-align: center;
-}
-
-.exam-room--practice .media-toggle__item--active {
-  border-color: #1b5faa;
-  background: #e8f4fd;
-  color: #1b5faa;
 }
 
 .exam-room--practice .record-panel {
