@@ -2,10 +2,64 @@
   "profile": "hunan",
   "province": "湖南",
   "source_files": [
-    "湖南-2020-乡镇岗、遴选岗全.extracted.txt",
-    "湖南-监狱-2020.extracted.txt",
-    "湖南-税务系统补录-2020-816.extracted.txt",
-    "湖南-2020-通用岗.extracted.txt"
+    "湖南-2020-乡镇岗、遴选岗全.docx",
+    "湖南-监狱-2020.docx",
+    "湖南-税务系统补录-2020-816.doc",
+    "湖南-2020-通用岗.docx"
+  ],
+  "source_stats": [
+    {
+      "source": "湖南-2020-乡镇岗、遴选岗全.docx",
+      "sourceDocument": "湖南-2020-乡镇岗、遴选岗全.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 23,
+      "uniqueQuestionIdCount": 23,
+      "duplicateHeaderCount": 0,
+      "titleCount": 8,
+      "generatedQuestionCount": 23,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "湖南-监狱-2020.docx",
+      "sourceDocument": "湖南-监狱-2020.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "湖南-税务系统补录-2020-816.doc",
+      "sourceDocument": "湖南-税务系统补录-2020-816.doc",
+      "sourceDocumentType": "legacy_doc_extracted",
+      "legacyDocSource": true,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 0,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "湖南-2020-通用岗.docx",
+      "sourceDocument": "湖南-2020-通用岗.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 0,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    }
   ],
   "generated_question_count": 29,
   "generated_question_ids": [
@@ -42,20 +96,22 @@
   "duplicates": [
     {
       "question_id": "HN-20200919-01",
-      "kept": "湖南-2020-乡镇岗、遴选岗全.extracted.txt",
-      "discarded": "湖南-2020-通用岗.extracted.txt"
+      "kept": "湖南-2020-乡镇岗、遴选岗全.docx",
+      "discarded": "湖南-2020-通用岗.docx"
     },
     {
       "question_id": "HN-20200919-02",
-      "kept": "湖南-2020-乡镇岗、遴选岗全.extracted.txt",
-      "discarded": "湖南-2020-通用岗.extracted.txt"
+      "kept": "湖南-2020-乡镇岗、遴选岗全.docx",
+      "discarded": "湖南-2020-通用岗.docx"
     },
     {
       "question_id": "HN-20200919-03",
-      "kept": "湖南-2020-乡镇岗、遴选岗全.extracted.txt",
-      "discarded": "湖南-2020-通用岗.extracted.txt"
+      "kept": "湖南-2020-乡镇岗、遴选岗全.docx",
+      "discarded": "湖南-2020-通用岗.docx"
     }
   ],
+  "skipped_blocks": [],
+  "parse_failures": [],
   "sample_generation": {
     "CS-20201212-01": {
       "high": {
@@ -68,13 +124,13 @@
         "effective_length": 1090
       },
       "mid": {
-        "score": 11.8,
+        "score": 11.7,
         "strategy": "template_analysis_mid_2",
         "count": 6,
         "trim_chars": null,
         "sanitization": "medium",
         "oral": false,
-        "effective_length": 265
+        "effective_length": 253
       },
       "low": {
         "score": 10.5,
@@ -155,13 +211,13 @@
         "effective_length": 1103
       },
       "mid": {
-        "score": 11.3,
+        "score": 11.2,
         "strategy": "template_analysis_mid_2",
         "count": 6,
         "trim_chars": null,
         "sanitization": "medium",
         "oral": false,
-        "effective_length": 265
+        "effective_length": 253
       },
       "low": {
         "score": 10.1,
@@ -185,12 +241,12 @@
       },
       "mid": {
         "score": 9.4,
-        "strategy": "template_interpersonal_mid_2",
+        "strategy": "template_interpersonal_mid_1",
         "count": 4,
         "trim_chars": null,
         "sanitization": "medium",
         "oral": false,
-        "effective_length": 179
+        "effective_length": 168
       },
       "low": {
         "score": 6.6,
@@ -233,7 +289,7 @@
     },
     "HN-20200816-01": {
       "high": {
-        "score": 29.2,
+        "score": 29.1,
         "strategy": "document",
         "count": 25,
         "trim_chars": null,
@@ -248,7 +304,7 @@
         "trim_chars": null,
         "sanitization": "medium",
         "oral": false,
-        "effective_length": 271
+        "effective_length": 268
       },
       "low": {
         "score": 8.5,
@@ -335,7 +391,7 @@
         "trim_chars": null,
         "sanitization": "medium",
         "oral": false,
-        "effective_length": 275
+        "effective_length": 272
       },
       "low": {
         "score": 12.1,
@@ -422,7 +478,7 @@
         "trim_chars": null,
         "sanitization": "medium",
         "oral": false,
-        "effective_length": 275
+        "effective_length": 272
       },
       "low": {
         "score": 8.9,
@@ -445,13 +501,13 @@
         "effective_length": 1639
       },
       "mid": {
-        "score": 8.2,
+        "score": 9.9,
         "strategy": "template_interpersonal_mid_2",
         "count": 4,
         "trim_chars": null,
         "sanitization": "medium",
         "oral": false,
-        "effective_length": 174
+        "effective_length": 167
       },
       "low": {
         "score": 7.0,
@@ -538,7 +594,7 @@
         "trim_chars": null,
         "sanitization": "medium",
         "oral": false,
-        "effective_length": 275
+        "effective_length": 272
       },
       "low": {
         "score": 21.3,
@@ -567,7 +623,7 @@
         "trim_chars": null,
         "sanitization": "medium",
         "oral": false,
-        "effective_length": 276
+        "effective_length": 273
       },
       "low": {
         "score": 10.7,
@@ -683,7 +739,7 @@
         "trim_chars": null,
         "sanitization": "medium",
         "oral": false,
-        "effective_length": 269
+        "effective_length": 266
       },
       "low": {
         "score": 10.8,
@@ -741,7 +797,7 @@
         "trim_chars": null,
         "sanitization": "medium",
         "oral": false,
-        "effective_length": 272
+        "effective_length": 269
       },
       "low": {
         "score": 10.0,
@@ -828,7 +884,7 @@
         "trim_chars": null,
         "sanitization": "medium",
         "oral": false,
-        "effective_length": 271
+        "effective_length": 268
       },
       "low": {
         "score": 8.6,
@@ -851,13 +907,13 @@
         "effective_length": 1254
       },
       "mid": {
-        "score": 11.4,
+        "score": 11.3,
         "strategy": "template_analysis_mid_2",
         "count": 6,
         "trim_chars": null,
         "sanitization": "medium",
         "oral": false,
-        "effective_length": 269
+        "effective_length": 257
       },
       "low": {
         "score": 10.1,

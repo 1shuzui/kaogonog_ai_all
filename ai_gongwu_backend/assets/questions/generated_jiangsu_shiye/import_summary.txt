@@ -2,7 +2,22 @@
   "profile": "jiangsu_shiye",
   "province": "江苏",
   "source_files": [
-    "2017-2025江苏事业单位真题题库.extracted.txt"
+    "2017-2025江苏事业单位真题题库.docx"
+  ],
+  "source_stats": [
+    {
+      "source": "2017-2025江苏事业单位真题题库.docx",
+      "sourceDocument": "2017-2025江苏事业单位真题题库.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 342,
+      "uniqueQuestionIdCount": 282,
+      "duplicateHeaderCount": 60,
+      "titleCount": 103,
+      "generatedQuestionCount": 282,
+      "skippedBlockCount": 60,
+      "parseFailureCount": 0
+    }
   ],
   "generated_question_count": 282,
   "generated_question_ids": [
@@ -293,361 +308,361 @@
   "skipped_blocks": [
     {
       "question_id": "JS-CZ-LY20240427-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-CZ-LY20240427-01 缺少题干",
       "block_length": 50
     },
     {
       "question_id": "JS-CZ-LY20240427-02",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-CZ-LY20240427-02 缺少题干",
       "block_length": 52
     },
     {
       "question_id": "JS-CZ-LY20240427-03",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-CZ-LY20240427-03 缺少题干",
       "block_length": 88
     },
     {
       "question_id": "JS-YZ-GL20240928-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-YZ-GL20240928-01 缺少题干",
       "block_length": 50
     },
     {
       "question_id": "JS-YZ-GL20240928-02",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-YZ-GL20240928-02 缺少题干",
       "block_length": 50
     },
     {
       "question_id": "JS-YZ-GL20240928-03",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-YZ-GL20240928-03 缺少题干",
       "block_length": 89
     },
     {
       "question_id": "JS-TZ-HL20240921-XW-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-TZ-HL20240921-XW-01 缺少题干",
       "block_length": 48
     },
     {
       "question_id": "JS-TZ-HL20240921-XW-02",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-TZ-HL20240921-XW-02 缺少题干",
       "block_length": 53
     },
     {
       "question_id": "JS-TZ-HL20240921-XW-03",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-TZ-HL20240921-XW-03 缺少题干",
       "block_length": 91
     },
     {
       "question_id": "JS-TZ-HL20240721-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-TZ-HL20240721-01 缺少题干",
       "block_length": 121
     },
     {
       "question_id": "JS-TZ-20240728-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-TZ-20240728-01 缺少题干",
       "block_length": 115
     },
     {
       "question_id": "JS-SQ-SH20240622-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-SQ-SH20240622-01 缺少题干",
       "block_length": 121
     },
     {
       "question_id": "JS-SZ-SS20240615-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-SZ-SS20240615-01 缺少题干",
       "block_length": 121
     },
     {
       "question_id": "JS-HA-JH20240608-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-HA-JH20240608-01 缺少题干",
       "block_length": 121
     },
     {
       "question_id": "JS-YC-DF20240601-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-YC-DF20240601-01 缺少题干",
       "block_length": 121
     },
     {
       "question_id": "JS-YC-BH20240526-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-YC-BH20240526-01 缺少题干",
       "block_length": 121
     },
     {
       "question_id": "JS-SY-TK20240526-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-SY-TK20240526-01 缺少题干",
       "block_length": 121
     },
     {
       "question_id": "JS-SS-DSJ20240525-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-SS-DSJ20240525-01 缺少题干",
       "block_length": 124
     },
     {
       "question_id": "JS-JT-20240519-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-JT-20240519-01 缺少题干",
       "block_length": 115
     },
     {
       "question_id": "JS-HA-XY-20240512-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-HA-XY-20240512-01 缺少题干",
       "block_length": 124
     },
     {
       "question_id": "JS-SCJG-20240518-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-SCJG-20240518-01 缺少题干",
       "block_length": 121
     },
     {
       "question_id": "JS-NT-RG-20240518-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-NT-RG-20240518-01 缺少题干",
       "block_length": 124
     },
     {
       "question_id": "JS-SQ-SY-20240427-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-SQ-SY-20240427-01 缺少题干",
       "block_length": 125
     },
     {
       "question_id": "JS-ZJ-DG-20240414-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-ZJ-DG-20240414-01 缺少题干",
       "block_length": 124
     },
     {
       "question_id": "JS-YC-XS-20231217-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-YC-XS-20231217-01 缺少题干",
       "block_length": 125
     },
     {
       "question_id": "JS-YC-XS-20230528-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-YC-XS-20230528-01 缺少题干",
       "block_length": 124
     },
     {
       "question_id": "JS-WX-LX-20230729-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-WX-LX-20230729-01 缺少题干",
       "block_length": 124
     },
     {
       "question_id": "JS-XZ-TS-20230826-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-XZ-TS-20230826-01 缺少题干",
       "block_length": 124
     },
     {
       "question_id": "JS-LYG-DH-20230526-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-LYG-DH-20230526-01 缺少题干",
       "block_length": 127
     },
     {
       "question_id": "JS-SQ-SY-20231216-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-SQ-SY-20231216-01 缺少题干",
       "block_length": 124
     },
     {
       "question_id": "JS-TX-WS-20231119-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-TX-WS-20231119-01 缺少题干",
       "block_length": 124
     },
     {
       "question_id": "JS-JT-20230514-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-JT-20230514-01 缺少题干",
       "block_length": 115
     },
     {
       "question_id": "JS-SQ-SY-20231021-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-SQ-SY-20231021-01 缺少题干",
       "block_length": 124
     },
     {
       "question_id": "JS-CZ-LY-20231104-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-CZ-LY-20231104-01 缺少题干",
       "block_length": 124
     },
     {
       "question_id": "JS-HA-HY-20230611-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-HA-HY-20230611-01 缺少题干",
       "block_length": 124
     },
     {
       "question_id": "JS-SW-20230529-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-SW-20230529-01 缺少题干",
       "block_length": 115
     },
     {
       "question_id": "JS-NJ-GH-202301-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-NJ-GH-202301-01 缺少题干",
       "block_length": 118
     },
     {
       "question_id": "JS-YC-BH-20230520-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-YC-BH-20230520-01 缺少题干",
       "block_length": 124
     },
     {
       "question_id": "JS-YC-DF-20230917-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-YC-DF-20230917-01 缺少题干",
       "block_length": 124
     },
     {
       "question_id": "JS-TZ-XH-20230715-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-TZ-XH-20230715-01 缺少题干",
       "block_length": 124
     },
     {
       "question_id": "JS-TZ-HL-20230715-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-TZ-HL-20230715-01 缺少题干",
       "block_length": 124
     },
     {
       "question_id": "JS-TZ-JJ-20230715-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-TZ-JJ-20230715-01 缺少题干",
       "block_length": 124
     },
     {
       "question_id": "JS-TZ-TX-20230715-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-TZ-TX-20230715-01 缺少题干",
       "block_length": 124
     },
     {
       "question_id": "JS-LYG-KFQ-20230225-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-LYG-KFQ-20230225-01 缺少题干",
       "block_length": 130
     },
     {
       "question_id": "JS-SQ-SH-20230715-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-SQ-SH-20230715-01 缺少题干",
       "block_length": 125
     },
     {
       "question_id": "JS-SQ-SY-20230729-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-SQ-SY-20230729-01 缺少题干",
       "block_length": 125
     },
     {
       "question_id": "JS-SY-TK-20230521-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-SY-TK-20230521-01 缺少题干",
       "block_length": 125
     },
     {
       "question_id": "JS-SHENGJI-TK-20230520-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-SHENGJI-TK-20230520-01 缺少题干",
       "block_length": 140
     },
     {
       "question_id": "JS-YC-SY-20230513-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-YC-SY-20230513-01 缺少题干",
       "block_length": 125
     },
     {
       "question_id": "JS-YC-FN-20220731-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-YC-FN-20220731-01 缺少题干",
       "block_length": 125
     },
     {
       "question_id": "JS-YC-DF-20220104-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-YC-DF-20220104-01 缺少题干",
       "block_length": 125
     },
     {
       "question_id": "JS-TZ-HL-20221030-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-TZ-HL-20221030-01 缺少题干",
       "block_length": 125
     },
     {
       "question_id": "JS-SQ-SY-20221224-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-SQ-SY-20221224-01 缺少题干",
       "block_length": 125
     },
     {
       "question_id": "JS-LYG-HZ-20220813-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-LYG-HZ-20220813-01 缺少题干",
       "block_length": 128
     },
     {
       "question_id": "JS-WX-20220904-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-WX-20220904-01 缺少题干",
       "block_length": 116
     },
     {
       "question_id": "JS-TZ-XH-20220917-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-TZ-XH-20220917-01 缺少题干",
       "block_length": 125
     },
     {
       "question_id": "JS-JT-20220731-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-JT-20220731-01 缺少题干",
       "block_length": 118
     },
     {
       "question_id": "JS-SY-20220731-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-SY-20220731-01 缺少题干",
       "block_length": 116
     },
     {
       "question_id": "JS-SY-20220730-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-SY-20220730-01 缺少题干",
       "block_length": 116
     },
     {
       "question_id": "JS-WX-YX-20210605-01",
-      "source": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "source": "2017-2025江苏事业单位真题题库.docx",
       "reason": "JS-WX-YX-20210605-01 缺少题干",
       "block_length": 125
     }

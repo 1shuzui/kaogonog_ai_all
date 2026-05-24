@@ -1,24 +1,24 @@
 {
   "id": "AHXF-20220311-02",
   "type": "综合分析·漫画题",
-  "province": "安徽消防",
+  "province": "安徽",
   "fullScore": 24.0,
   "question": "：漫画题：两个人指着地上的物体，一个说是鸭子，一个说是兔子。根据漫画请你谈谈感想。",
   "dimensions": [
     {
-      "name": "①漫画寓意理解",
+      "name": "漫画寓意理解",
       "score": 6.0
     },
     {
-      "name": "②辩证分析能力",
+      "name": "辩证分析能力",
       "score": 8.0
     },
     {
-      "name": "③结合消防工作",
+      "name": "结合消防工作",
       "score": 8.0
     },
     {
-      "name": "④语言逻辑",
+      "name": "语言逻辑",
       "score": 2.0
     }
   ],
@@ -47,16 +47,26 @@
   ],
   "penaltyKeywords": [],
   "scoringCriteria": [
-    "①漫画寓意理解（6分）：角度不同、结论不同",
-    "②辩证分析能力（8分）：全面、客观、实事求是、换位思考",
-    "③结合消防工作（8分）：灾情研判、科学决策、实战应用",
-    "④语言逻辑（2分）：条理清晰、表述规范。"
+    "漫画寓意理解（6分）：角度不同、结论不同",
+    "辩证分析能力（8分）：全面、客观、实事求是、换位思考",
+    "结合消防工作（8分）：灾情研判、科学决策、实战应用",
+    "语言逻辑（2分）：条理清晰、表述规范。"
   ],
   "deductionRules": [
     "①漫画寓意理解错误、肤浅：扣6分",
     "②未结合消防工作、脱离岗位实际：扣6–8分；③观点片面、缺乏辩证思维：扣4–6分；④内容空洞、无实际启示：扣3–5分；⑤逻辑混乱、表述口语化：扣2分"
   ],
   "sourceDocument": "2020-2025第二批次完全版.docx",
+  "sourceDocumentType": "docx_xml",
+  "suiteId": "AHXF-20220311",
+  "suiteKey": "AHXF-20220311",
+  "suiteName": "2022年3月11日安徽消防救援队伍面试题",
+  "sourceTitleRaw": "2022年3月11日安徽消防救援队伍面试题（小程序极致详尽满分版）",
+  "examDate": "2022-03-11",
+  "position": "",
+  "batch": "第二批次",
+  "questionNo": 2,
+  "questionScore": 24.0,
   "referenceAnswer": "这幅漫画看似简单，却蕴含深刻的认识论、方法论、工作法，对消防救援工作具有极强指导意义。 第一，视角决定判断，立场影响结论。同一物体，站在不同角度观察，会得出完全不同结果。这启示我们：观察事物、分析问题、开展工作，绝不能主观片面、先入为主、以偏概全，必须多角度、全方位、客观公正看待。 第二，坚持实事求是，一切从实际出发。无论日常工作、执法检查、群众沟通，还是灾情处置，都必须先调研、再研判、再决策，深入现场、掌握实情、精准把握，不凭想象、不凭经验、不主观臆断。 第三，学会换位思考，提升沟通能力。在群众工作、跨部门协作、联合演练中，要多站在对方立场理解诉求、尊重差异、凝聚共识，做到换位思考、有效沟通、协同发力。 第四，消防救援必须科学研判、精准处置。作为消防救援人员，面对灾情必须实地勘察、精准研判、科学决策，确保指挥精准、处置高效、群众安全，坚决杜绝因判断失误导致处置失当、风险扩大。",
   "tags": [
     "安徽消防",
@@ -108,20 +118,24 @@
     {
       "label": "程序化中档参考答案",
       "sample_path": "assets/regression_samples/generated_anhui/AHXF-20220311-02/reference_mid.txt",
-      "expected_min": 9.2,
-      "expected_max": 13.2,
-      "llmExpectedMin": 10.7,
-      "llmExpectedMax": 14.7,
+      "expected_min": 8.5,
+      "expected_max": 12.6,
+      "llmExpectedMin": 10.1,
+      "llmExpectedMax": 14.1,
       "notes": "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=6，截断=none，关键词削弱=medium。"
     },
     {
       "label": "程序化低档参考答案",
       "sample_path": "assets/regression_samples/generated_anhui/AHXF-20220311-02/reference_low.txt",
-      "expected_min": 6.2,
-      "expected_max": 10.2,
-      "llmExpectedMin": 5.4,
-      "llmExpectedMax": 10.2,
+      "expected_min": 5.5,
+      "expected_max": 9.6,
+      "llmExpectedMin": 0.0,
+      "llmExpectedMax": 9.6,
       "notes": "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
     }
-  ]
+  ],
+  "answerScoreTotal": 97.0,
+  "appearanceScore": 3.0,
+  "suiteTotalScore": 100.0,
+  "totalScore": 100.0
 }

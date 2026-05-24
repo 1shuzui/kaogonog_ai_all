@@ -40,6 +40,24 @@
           <text>{{ userStore.selectedProvinceName }}</text>
         </view>
       </picker>
+      <view class="setting-block">
+        <view class="setting-block__head">
+          <text>注重题型</text>
+          <text>{{ preferredQuestionLabel }}</text>
+        </view>
+        <view class="preference-chip-grid">
+          <view
+            v-for="item in preferredQuestionOptions"
+            :key="item.key"
+            class="preference-chip"
+            :class="{ 'preference-chip--active': isPreferredQuestionSelected(item.key) }"
+            @tap="togglePreferredQuestion(item.key)"
+          >
+            <text>{{ item.name }}</text>
+          </view>
+        </view>
+        <text class="setting-hint">可留空，留空时系统按随机题型练习。</text>
+      </view>
       <view class="setting-slider">
         <text>准备时间 {{ preferences.defaultPrepTime }} 秒</text>
         <slider :value="preferences.defaultPrepTime" min="30" max="300" step="10" activeColor="#1b5faa" @change="onPrepChange" />
@@ -109,7 +127,7 @@ import { useBillingStore } from '../../stores/billing'
 import { useFavoritesStore } from '../../stores/favorites'
 import { useHistoryStore } from '../../stores/history'
 import { useUserStore } from '../../stores/user'
-import { PROVINCES } from '../../utils/constants'
+import { PROVINCES, QUESTION_CATEGORIES } from '../../utils/constants'
 import { logger } from '../../utils/logger'
 import { requireLogin, toast } from '../../utils/navigation'
 
@@ -120,7 +138,9 @@ const favoritesStore = useFavoritesStore()
 const preferences = reactive({
   defaultPrepTime: 90,
   defaultAnswerTime: 180,
-  enableAudio: true
+  enableAudio: true,
+  preferredQuestionDimensions: [],
+  practicePreferenceConfirmed: false
 })
 const profileLoading = ref(false)
 const profileError = ref('')
@@ -131,6 +151,14 @@ const initial = computed(() => safeDisplayName.value.slice(0, 1).toUpperCase() |
 const provinceOptions = computed(() => userStore.provinces.length ? userStore.provinces : PROVINCES)
 const provinceNames = computed(() => provinceOptions.value.map((item) => item.name))
 const provinceIndex = computed(() => Math.max(0, provinceOptions.value.findIndex((item) => item.code === userStore.selectedProvince)))
+const preferredQuestionOptions = QUESTION_CATEGORIES.filter((item) => item.key)
+const preferredQuestionLabel = computed(() => {
+  if (!preferences.preferredQuestionDimensions.length) return '随机'
+  const names = preferences.preferredQuestionDimensions
+    .map((key) => preferredQuestionOptions.find((item) => item.key === key)?.name)
+    .filter(Boolean)
+  return names.join('、') || '随机'
+})
 const safePlanTitle = computed(() => {
   if (userStore.isAdmin) return '管理员完整权限'
   return billingStore.plan?.title || '试用版'
@@ -188,10 +216,18 @@ function getErrorMessage(error, fallback = '同步失败') {
 }
 
 function normalizePagePreferences(raw = {}) {
+  const validDimensions = new Set(preferredQuestionOptions.map((item) => item.key))
+  const preferredQuestionDimensions = Array.isArray(raw.preferredQuestionDimensions)
+    ? raw.preferredQuestionDimensions
+      .map((item) => String(item || '').trim())
+      .filter((item, index, list) => validDimensions.has(item) && list.indexOf(item) === index)
+    : []
   return {
     defaultPrepTime: Math.max(30, Number(raw.defaultPrepTime || preferences.defaultPrepTime || 90)),
     defaultAnswerTime: Math.max(60, Number(raw.defaultAnswerTime || preferences.defaultAnswerTime || 180)),
-    enableAudio: raw.enableAudio !== false && raw.enableVideo !== false
+    enableAudio: raw.enableAudio !== false && raw.enableVideo !== false,
+    preferredQuestionDimensions,
+    practicePreferenceConfirmed: raw.practicePreferenceConfirmed === true
   }
 }
 
@@ -263,8 +299,24 @@ function onAnswerChange(event) {
   preferences.defaultAnswerTime = Number(event.detail.value)
 }
 
+function isPreferredQuestionSelected(key) {
+  return preferences.preferredQuestionDimensions.includes(key)
+}
+
+function togglePreferredQuestion(key) {
+  if (!key) return
+  if (isPreferredQuestionSelected(key)) {
+    preferences.preferredQuestionDimensions = preferences.preferredQuestionDimensions.filter((item) => item !== key)
+    return
+  }
+  preferences.preferredQuestionDimensions = [...preferences.preferredQuestionDimensions, key]
+}
+
 async function savePreferences() {
-  await userStore.savePreferences({ ...preferences })
+  await userStore.savePreferences({
+    ...preferences,
+    practicePreferenceConfirmed: true
+  })
   toast('设置已保存', 'success')
 }
 
@@ -433,6 +485,60 @@ function logout() {
 .setting-row text:last-child {
   color: #1b5faa;
   font-weight: 600;
+}
+
+.setting-block {
+  padding: 22rpx 0;
+  border-bottom: 1rpx solid #eef2f6;
+}
+
+.setting-block__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16rpx;
+  color: #2a3648;
+  font-size: 27rpx;
+}
+
+.setting-block__head text:last-child {
+  overflow: hidden;
+  max-width: 430rpx;
+  color: #1b5faa;
+  font-weight: 700;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preference-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 18rpx;
+}
+
+.preference-chip {
+  padding: 12rpx 18rpx;
+  border: 1rpx solid #d9e3ef;
+  border-radius: 999rpx;
+  background: #ffffff;
+  color: #2a3648;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.preference-chip--active {
+  border-color: #1b5faa;
+  background: #e8f4fd;
+  color: #1b5faa;
+}
+
+.setting-hint {
+  display: block;
+  margin-top: 14rpx;
+  color: #8a96a8;
+  font-size: 22rpx;
+  line-height: 1.5;
 }
 
 .balance-card {

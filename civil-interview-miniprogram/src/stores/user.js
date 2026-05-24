@@ -6,6 +6,7 @@ import {
   DEFAULT_PREFERENCES,
   PREFERENCES_STORAGE_KEY,
   PROVINCE_STORAGE_KEY,
+  QUESTION_CATEGORIES,
   PROVINCES,
   TOKEN_STORAGE_KEY,
   USERNAME_STORAGE_KEY
@@ -54,10 +55,18 @@ function normalizePreferences(preferences = {}) {
     ...DEFAULT_PREFERENCES,
     ...(preferences || {})
   }
+  const validQuestionDimensions = new Set(QUESTION_CATEGORIES.map((item) => item.key).filter(Boolean))
+  const preferredQuestionDimensions = Array.isArray(merged.preferredQuestionDimensions)
+    ? merged.preferredQuestionDimensions
+      .map((item) => String(item || '').trim())
+      .filter((item, index, list) => validQuestionDimensions.has(item) && list.indexOf(item) === index)
+    : []
   return {
     defaultPrepTime: Math.max(30, Number(merged.defaultPrepTime) || DEFAULT_PREFERENCES.defaultPrepTime),
     defaultAnswerTime: Math.max(60, Number(merged.defaultAnswerTime) || DEFAULT_PREFERENCES.defaultAnswerTime),
-    enableAudio: merged.enableAudio !== false
+    enableAudio: merged.enableAudio !== false && merged.enableVideo !== false,
+    preferredQuestionDimensions,
+    practicePreferenceConfirmed: merged.practicePreferenceConfirmed === true
   }
 }
 

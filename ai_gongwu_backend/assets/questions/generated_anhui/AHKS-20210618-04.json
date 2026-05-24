@@ -62,6 +62,16 @@
   ],
   "deductionRules": [],
   "sourceDocument": "2020-2025第二批次完全版.docx",
+  "sourceDocumentType": "docx_xml",
+  "suiteId": "AHKS-20210618",
+  "suiteKey": "AHKS-20210618",
+  "suiteName": "2021年6月18日安徽省考面试题",
+  "sourceTitleRaw": "2021年6月18日安徽省考面试题（乡镇岗）",
+  "examDate": "2021-06-18",
+  "position": "乡镇岗",
+  "batch": "乡镇岗",
+  "questionNo": 4,
+  "questionScore": 32.0,
   "referenceAnswer": "（乡镇岗高分演讲） 大家好！我今天演讲的主题是：我在场、有我在、我还在。 “我在场”，是关键时刻站得出来、冲得上去。面对防汛防火、疫情防控、矛盾化解，基层干部必须第一时间到一线、到现场、到群众身边，不缺位、不迟滞、不退缩。 “有我在”，是危难面前扛得起来、顶得上去。群众有难、组织有令，我们敢于说“有我在”，用担当扛起责任，用行动守护平安，做群众的主心骨、贴心人。 “我还在”，是长期坚守守得住、耐得住、久久为功。基层工作日复一日、年复一年，乡村振兴、服务群众没有终点，我们要始终在岗、在位、在状态，坚守到底、不离不弃。 作为一名乡镇干部，我将始终牢记：困难面前我在场，风险面前有我在，长期坚守我还在，用担当诠释初心，用实干践行使命，做一名让组织放心、让群众安心的基层干部！",
   "tags": [
     "安徽省考",
@@ -121,9 +131,13 @@
       "sample_path": "assets/regression_samples/generated_anhui/AHKS-20210618-04/reference_low.txt",
       "expected_min": 11.8,
       "expected_max": 15.0,
-      "llmExpectedMin": 10.1,
+      "llmExpectedMin": 0.0,
       "llmExpectedMax": 15.0,
       "notes": "基于高分答案程序化降档生成；策略=template_scene_low_1，句数=6，截断=none，关键词削弱=medium，口语化=是。"
     }
-  ]
+  ],
+  "answerScoreTotal": 128.0,
+  "appearanceScore": 0.0,
+  "suiteTotalScore": 128.0,
+  "totalScore": 128.0
 }

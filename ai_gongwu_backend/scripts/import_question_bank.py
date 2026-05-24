@@ -7,10 +7,12 @@ import argparse
 import json
 import re
 import sys
+import zipfile
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from xml.etree import ElementTree
 
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
@@ -108,16 +110,16 @@ IMPORT_PROFILES = {
         summary_path=BACKEND_ROOT / "assets" / "questions" / "generated_hunan" / "import_summary.txt",
         regression_sample_base_path="assets/regression_samples/generated_hunan",
         source_files=(
-            REPO_ROOT / "湖南-2020-乡镇岗、遴选岗全.extracted.txt",
-            REPO_ROOT / "湖南-监狱-2020.extracted.txt",
-            REPO_ROOT / "湖南-税务系统补录-2020-816.extracted.txt",
-            REPO_ROOT / "湖南-2020-通用岗.extracted.txt",
+            REPO_ROOT / "湖南-2020-乡镇岗、遴选岗全.docx",
+            REPO_ROOT / "湖南-监狱-2020.docx",
+            REPO_ROOT / "湖南-税务系统补录-2020-816.doc",
+            REPO_ROOT / "湖南-2020-通用岗.docx",
         ),
         source_priority={
-            "湖南-2020-乡镇岗、遴选岗全.extracted.txt": 100,
-            "湖南-监狱-2020.extracted.txt": 90,
-            "湖南-税务系统补录-2020-816.extracted.txt": 80,
-            "湖南-2020-通用岗.extracted.txt": 70,
+            "湖南-2020-乡镇岗、遴选岗全.docx": 100,
+            "湖南-监狱-2020.docx": 90,
+            "湖南-税务系统补录-2020-816.doc": 80,
+            "湖南-2020-通用岗.docx": 70,
         },
     ),
     "anhui": ImportProfile(
@@ -128,10 +130,10 @@ IMPORT_PROFILES = {
         summary_path=BACKEND_ROOT / "assets" / "questions" / "generated_anhui" / "import_summary.txt",
         regression_sample_base_path="assets/regression_samples/generated_anhui",
         source_files=(
-            REPO_ROOT / "2020-2025第二批次完全版.extracted.txt",
+            REPO_ROOT / "2020-2025第二批次完全版.docx",
         ),
         source_priority={
-            "2020-2025第二批次完全版.extracted.txt": 100,
+            "2020-2025第二批次完全版.docx": 100,
         },
     ),
     "jiangsu_shiye": ImportProfile(
@@ -142,10 +144,10 @@ IMPORT_PROFILES = {
         summary_path=BACKEND_ROOT / "assets" / "questions" / "generated_jiangsu_shiye" / "import_summary.txt",
         regression_sample_base_path="assets/regression_samples/generated_jiangsu_shiye",
         source_files=(
-            REPO_ROOT / "2017-2025江苏事业单位真题题库.extracted.txt",
+            REPO_ROOT / "2017-2025江苏事业单位真题题库.docx",
         ),
         source_priority={
-            "2017-2025江苏事业单位真题题库.extracted.txt": 100,
+            "2017-2025江苏事业单位真题题库.docx": 100,
         },
     ),
 }
@@ -233,6 +235,20 @@ SECTION_PATTERN = re.compile(
 )
 QUESTION_ID_PATTERN = re.compile(r"题号[:：]\s*([^\n（(]+)")
 HEADER_PATTERN = re.compile(r"题号[:：]\s*([^\n（(]+)(?:（([^）]+)）)?")
+WORD_NAMESPACE = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+CHINESE_DATE_PATTERN = re.compile(r"(20\d{2})年(\d{1,2})月(\d{1,2})日")
+COMPACT_DATE_PATTERN = re.compile(r"(20\d{2})(\d{2})(\d{2})")
+DATE_LEADING_SUITE_TITLE_PATTERN = re.compile(
+    r"20\d{2}年\d{1,2}月\d{1,2}日[^\n]{0,120}?(?:面试(?:真)?题|面试题库|面试真题)[^\n]{0,80}"
+)
+DATE_IN_PARENS_SUITE_TITLE_PATTERN = re.compile(
+    r"[\u4e00-\u9fffA-Za-z0-9·、/（）() -]{0,80}?(?:面试(?:真)?题|面试题库|面试真题)[^\n]{0,80}?"
+    r"[（(][^）)]*20\d{2}年\d{1,2}月\d{1,2}日[^）)]*[）)]"
+)
+SUITE_TITLE_PATTERNS = (
+    DATE_LEADING_SUITE_TITLE_PATTERN,
+    DATE_IN_PARENS_SUITE_TITLE_PATTERN,
+)
 FIELD_PATTERNS = {
     "type": [
         r"题型[:：]\s*([^；。\n]+)",
@@ -408,6 +424,21 @@ ensure_utf8_stdio()
 
 
 @dataclass
+class QuestionBlockContext:
+    """题号块对应的套题上下文。"""
+
+    block: str
+    suite_id: str = ""
+    suite_key: str = ""
+    suite_name: str = ""
+    source_title_raw: str = ""
+    exam_date: str = ""
+    position: str = ""
+    batch: str = ""
+    source_document_type: str = ""
+
+
+@dataclass
 class ParsedQuestion:
     """单道题在导入阶段的临时结构。"""
 
@@ -458,7 +489,7 @@ def normalize_source_text(raw_text: str, source_name: str) -> str:
     text = re.sub(r"\n+", "\n", text)
 
     # `.doc` 粗提取结果会把题号拆成多行，这里先补回正常 question_id。
-    if source_name == "湖南-税务系统补录-2020-816.extracted.txt":
+    if source_name in {"湖南-税务系统补录-2020-816.extracted.txt", "湖南-税务系统补录-2020-816.doc"}:
         text = re.sub(
             r"题号：\s*HN\s*\n\s*20200816\s*\n\s*0?([1-9])",
             lambda match: f"题号：HN-20200816-0{match.group(1)}",
@@ -516,8 +547,49 @@ def normalize_source_text(raw_text: str, source_name: str) -> str:
     return text
 
 
+def extract_docx_text(input_path: str | Path) -> str:
+    """从 .docx XML 中提取段落文本，避免依赖手工维护的中间文本。"""
+
+    docx_path = Path(input_path)
+    with zipfile.ZipFile(docx_path) as archive:
+        root = ElementTree.fromstring(archive.read("word/document.xml"))
+
+    lines: list[str] = []
+    for paragraph in root.findall(".//w:p", WORD_NAMESPACE):
+        parts = [node.text or "" for node in paragraph.findall(".//w:t", WORD_NAMESPACE)]
+        line = "".join(parts).strip()
+        if line:
+            lines.append(line)
+    return "\n".join(lines)
+
+
+def source_extracted_text_path(source_path: Path) -> Path:
+    """定位 legacy .doc 或兼容模式下的 .extracted.txt 兜底文件。"""
+
+    if source_path.name.endswith(".extracted.txt"):
+        return source_path
+    return source_path.with_suffix(".extracted.txt")
+
+
+def read_source_text(source_path: Path) -> tuple[str, str]:
+    """读取导入源文本，并返回读取方式说明。"""
+
+    suffix = source_path.suffix.lower()
+    if suffix == ".docx":
+        return extract_docx_text(source_path), "docx_xml"
+    if suffix == ".doc":
+        fallback = source_extracted_text_path(source_path)
+        if not fallback.exists():
+            raise FileNotFoundError(f"legacy .doc 需要先生成提取文本: {fallback}")
+        return fallback.read_text(encoding="utf-8", errors="ignore"), "legacy_doc_extracted"
+    return source_path.read_text(encoding="utf-8", errors="ignore"), "extracted_txt"
+
+
 def infer_source_document(source_path: Path) -> str:
     """把 extracted 文本映射回用户真正提供的源文档名。"""
+
+    if source_path.suffix.lower() in {".docx", ".doc"}:
+        return source_path.name
 
     stem = source_path.name.removesuffix(".extracted.txt")
     for suffix in (".docx", ".doc"):
@@ -525,6 +597,134 @@ def infer_source_document(source_path: Path) -> str:
         if candidate.exists():
             return candidate.name
     return source_path.name
+
+
+def parse_chinese_exam_date(text: str) -> str:
+    """把中文日期提取为 YYYY-MM-DD。"""
+
+    match = CHINESE_DATE_PATTERN.search(str(text or ""))
+    if not match:
+        return ""
+    year, month, day = match.groups()
+    return f"{int(year):04d}-{int(month):02d}-{int(day):02d}"
+
+
+def parse_compact_exam_date(text: str) -> str:
+    """从题号中的 20250705 这类日期提取 YYYY-MM-DD。"""
+
+    match = COMPACT_DATE_PATTERN.search(str(text or ""))
+    if not match:
+        return ""
+    year, month, day = match.groups()
+    return f"{int(year):04d}-{int(month):02d}-{int(day):02d}"
+
+
+def format_exam_date_zh(exam_date: str) -> str:
+    """把 YYYY-MM-DD 转回中文日期。"""
+
+    match = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})", str(exam_date or ""))
+    if not match:
+        return ""
+    year, month, day = match.groups()
+    return f"{int(year)}年{int(month)}月{int(day)}日"
+
+
+def clean_suite_title(raw_title: str, default_province: str = "") -> str:
+    """清洗真实套题标题，保留可读主体并去掉模板噪声。"""
+
+    raw = re.sub(r"\s+", "", str(raw_title or "").strip())
+    if not raw:
+        return ""
+
+    exam_date = parse_chinese_exam_date(raw)
+    if raw.startswith("20") and exam_date:
+        title = re.split(r"[（(｜|]", raw, maxsplit=1)[0]
+        title = title.replace("面试真题", "面试题")
+        return title.strip("：:；;，,。 ")
+
+    if "面试题库" in raw and exam_date:
+        position = infer_suite_position(raw)
+        date_zh = format_exam_date_zh(exam_date)
+        province = default_province or DEFAULT_PROVINCE
+        if province == "湖南":
+            suffix = f"{position}面试题" if position else "面试题"
+            return f"{date_zh}湖南省考{suffix}"
+        return f"{date_zh}{province}面试题"
+
+    return raw.strip("：:；;，,。 ")
+
+
+def infer_suite_position(text: str) -> str:
+    """从标题/文件名中提取岗位或批次性质。"""
+
+    value = str(text or "")
+    candidates = (
+        "税务系统补录",
+        "省直监狱岗位",
+        "监狱岗",
+        "乡镇岗",
+        "遴选岗",
+        "通用岗",
+        "普通岗",
+        "综合管理岗",
+        "事业单位",
+        "省考",
+    )
+    found: list[str] = []
+    for candidate in candidates:
+        if candidate in value and candidate not in found:
+            found.append(candidate)
+    if "乡镇岗、遴选岗" in value and "乡镇岗/遴选岗" not in found:
+        found.append("乡镇岗/遴选岗")
+    return "、".join(item for item in found if item not in {"省考"})[:40]
+
+
+def infer_suite_batch(text: str) -> str:
+    """从标题里提取批次类信息。"""
+
+    value = str(text or "")
+    match = re.search(r"(第一批次|第二批次|第三批次|补录|统考|遴选|普通|乡镇岗|通用岗|监狱岗)", value)
+    return match.group(1) if match else ""
+
+
+def title_candidates_from_segment(segment: str) -> list[str]:
+    """在题号前置片段里找可能的套题标题行。"""
+
+    candidates: list[str] = []
+    seen: set[str] = set()
+    for raw_line in str(segment or "").splitlines():
+        line = raw_line.strip()
+        if not line or "题号" in line or len(line) > 180:
+            continue
+        for pattern in SUITE_TITLE_PATTERNS:
+            match = pattern.search(line)
+            if not match:
+                continue
+            title = match.group(0).strip()
+            date_match = CHINESE_DATE_PATTERN.match(title)
+            if date_match and title[date_match.end():].startswith("、"):
+                continue
+            if title and title not in seen:
+                candidates.append(title)
+                seen.add(title)
+    return candidates
+
+
+def infer_suite_title_from_source(source_path: Path, question_id: str) -> tuple[str, str, str, str]:
+    """缺少标题行时，根据源文件和题号给套题一个真实可读的兜底标题。"""
+
+    source_document = infer_source_document(source_path)
+    exam_date = parse_compact_exam_date(question_id)
+    date_zh = format_exam_date_zh(exam_date)
+    position = infer_suite_position(source_document)
+    batch = infer_suite_batch(source_document)
+    province = DEFAULT_PROVINCE
+    if not date_zh:
+        return "", "", position, batch
+    if province == "湖南" and "税务系统补录" in source_document:
+        return f"{date_zh}湖南省税务系统补录面试题", "", "税务系统补录", "补录"
+    suffix = f"{position}面试题" if position else "面试题"
+    return f"{date_zh}{province}{suffix}", "", position, batch
 
 
 def iter_question_blocks(text: str) -> list[str]:
@@ -537,6 +737,57 @@ def iter_question_blocks(text: str) -> list[str]:
         end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
         blocks.append(text[start:end].strip())
     return blocks
+
+
+def iter_question_blocks_with_context(text: str, source_path: Path, source_document_type: str = "") -> list[QuestionBlockContext]:
+    """按题号切分题目块，并附带最近的真实套题标题。"""
+
+    matches = list(QUESTION_ID_PATTERN.finditer(text))
+    contexts: list[QuestionBlockContext] = []
+    active_raw_title = ""
+    active_suite_name = ""
+    active_exam_date = ""
+    active_position = ""
+    active_batch = ""
+    cursor = 0
+
+    for index, match in enumerate(matches):
+        segment_before_question = text[cursor:match.start()]
+        candidates = title_candidates_from_segment(segment_before_question)
+        if candidates:
+            active_raw_title = candidates[-1]
+            active_suite_name = clean_suite_title(active_raw_title, DEFAULT_PROVINCE)
+            active_exam_date = parse_chinese_exam_date(active_raw_title)
+            active_position = infer_suite_position(active_raw_title)
+            active_batch = infer_suite_batch(active_raw_title)
+
+        question_id = normalize_question_id(match.group(1))
+        suite_key = question_id.rsplit("-", 1)[0] if "-" in question_id else question_id
+        fallback_name, fallback_raw, fallback_position, fallback_batch = infer_suite_title_from_source(source_path, question_id)
+        suite_name = active_suite_name or fallback_name
+        source_title_raw = active_raw_title or fallback_raw
+        exam_date = active_exam_date or parse_compact_exam_date(question_id)
+        position = active_position or fallback_position
+        batch = active_batch or fallback_batch
+
+        start = match.start()
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+        contexts.append(
+            QuestionBlockContext(
+                block=text[start:end].strip(),
+                suite_id=suite_key,
+                suite_key=suite_key,
+                suite_name=suite_name,
+                source_title_raw=source_title_raw,
+                exam_date=exam_date,
+                position=position,
+                batch=batch,
+                source_document_type=source_document_type,
+            )
+        )
+        cursor = match.end()
+
+    return contexts
 
 
 def canonical_section_name(raw_name: str) -> str:
@@ -3643,7 +3894,20 @@ def clean_reference_answer_section(text: str) -> str:
     return re.sub(r"^(?:核心采分)?基准答案\s*[：:]?\s*", "", text.strip())
 
 
-def parse_question_block(block: str, source_path: Path) -> ParsedQuestion:
+def infer_question_no(question_id: str) -> int | None:
+    """从题号后缀中提取套题内题序。"""
+
+    match = re.search(r"-(\d{1,3})$", str(question_id or ""))
+    if not match:
+        return None
+    return int(match.group(1))
+
+
+def parse_question_block(
+    block: str,
+    source_path: Path,
+    context: QuestionBlockContext | None = None,
+) -> ParsedQuestion:
     """把单个题目块解析成 QuestionDefinition 所需的字典。"""
 
     header_match = HEADER_PATTERN.search(block)
@@ -3682,6 +3946,13 @@ def parse_question_block(block: str, source_path: Path) -> ParsedQuestion:
 
     source_document = infer_source_document(source_path)
     province = resolve_question_province(extract_field(ai_text, FIELD_PATTERNS["province"]))
+    suite_key = context.suite_key if context else (question_id.rsplit("-", 1)[0] if "-" in question_id else question_id)
+    suite_name = context.suite_name if context else ""
+    source_title_raw = context.source_title_raw if context else ""
+    exam_date = context.exam_date if context else parse_compact_exam_date(question_id)
+    position = (context.position if context else "") or infer_suite_position(source_title_raw or source_document)
+    batch = (context.batch if context else "") or infer_suite_batch(source_title_raw or source_document)
+    question_no = infer_question_no(question_id)
     question_type = clean_question_type(
         extract_field(ai_text, FIELD_PATTERNS["type"]) or sections.get("题型定位", ""),
         header_description,
@@ -3707,6 +3978,16 @@ def parse_question_block(block: str, source_path: Path) -> ParsedQuestion:
         "scoringCriteria": scoring_criteria,
         "deductionRules": deduction_rules,
         "sourceDocument": source_document,
+        "sourceDocumentType": context.source_document_type if context else "",
+        "suiteId": suite_key,
+        "suiteKey": suite_key,
+        "suiteName": suite_name,
+        "sourceTitleRaw": source_title_raw,
+        "examDate": exam_date,
+        "position": position,
+        "batch": batch,
+        "questionNo": question_no,
+        "questionScore": full_score,
         "referenceAnswer": reference_answer,
         "tags": build_tags(
             sections.get("检索标签", ""),
@@ -3718,6 +3999,15 @@ def parse_question_block(block: str, source_path: Path) -> ParsedQuestion:
         "_meta": {
             "headerDescription": header_description,
             "sourceText": source_path.name,
+            "suiteId": suite_key,
+            "suiteKey": suite_key,
+            "suiteName": suite_name,
+            "sourceTitleRaw": source_title_raw,
+            "examDate": exam_date,
+            "position": position,
+            "batch": batch,
+            "questionNo": question_no,
+            "questionScore": full_score,
         },
     }
     return ParsedQuestion(data=data, source_path=source_path, block_length=len(block))
@@ -3755,6 +4045,44 @@ def prepare_output_dirs() -> None:
     for directory in sorted(SAMPLE_OUTPUT_DIR.glob("*"), reverse=True):
         if directory.is_dir():
             directory.rmdir()
+
+
+def apply_suite_score_totals(parsed_questions: dict[str, ParsedQuestion]) -> None:
+    """按套题汇总答题分和仪态分，回写到每道题元数据。"""
+
+    grouped: dict[str, list[ParsedQuestion]] = {}
+    for parsed in parsed_questions.values():
+        suite_key = str(parsed.data.get("suiteKey") or parsed.data.get("suiteId") or "").strip()
+        if not suite_key:
+            continue
+        grouped.setdefault(suite_key, []).append(parsed)
+
+    for suite_key, items in grouped.items():
+        answer_score_total = round(
+            sum(float(item.data.get("questionScore") or item.data.get("fullScore") or 0) for item in items),
+            1,
+        )
+        total_score = max(100.0, answer_score_total)
+        appearance_score = round(max(0.0, total_score - answer_score_total), 1)
+        for item in items:
+            item.data["suiteId"] = suite_key
+            item.data["suiteKey"] = suite_key
+            item.data["answerScoreTotal"] = answer_score_total
+            item.data["appearanceScore"] = appearance_score
+            item.data["suiteTotalScore"] = total_score
+            item.data["totalScore"] = total_score
+            meta = item.data.get("_meta")
+            if isinstance(meta, dict):
+                meta.update(
+                    {
+                        "suiteId": suite_key,
+                        "suiteKey": suite_key,
+                        "answerScoreTotal": answer_score_total,
+                        "appearanceScore": appearance_score,
+                        "suiteTotalScore": total_score,
+                        "totalScore": total_score,
+                    }
+                )
 
 
 def write_question_files(parsed_questions: dict[str, ParsedQuestion]) -> dict[str, dict[str, Any]]:
@@ -3795,6 +4123,7 @@ def write_summary(
     sample_generation_summary: dict[str, dict[str, Any]],
     skipped_blocks: list[dict] | None = None,
     parse_failures: list[dict] | None = None,
+    source_stats: list[dict] | None = None,
 ) -> None:
     """输出导入摘要，便于核对。"""
 
@@ -3802,6 +4131,7 @@ def write_summary(
         "profile": ACTIVE_PROFILE.name,
         "province": DEFAULT_PROVINCE,
         "source_files": [path.name for path in SOURCE_FILES],
+        "source_stats": source_stats or [],
         "generated_question_count": len(parsed_questions),
         "generated_question_ids": sorted(parsed_questions),
         "duplicates": duplicates,
@@ -3825,18 +4155,44 @@ def run_profile_import(profile_name: str | ImportProfile) -> int:
     duplicates: list[dict] = []
     skipped_blocks: list[dict] = []
     parse_failures: list[dict] = []
+    source_stats: list[dict] = []
 
     for source_path in SOURCE_FILES:
         if not source_path.exists():
             raise FileNotFoundError(f"未找到源文件: {source_path}")
 
+        raw_text, source_document_type = read_source_text(source_path)
         normalized_text = normalize_source_text(
-            source_path.read_text(encoding="utf-8", errors="ignore"),
+            raw_text,
             source_path.name,
         )
-        for block in iter_question_blocks(normalized_text):
+        contexts = iter_question_blocks_with_context(normalized_text, source_path, source_document_type)
+        source_skipped_start = len(skipped_blocks)
+        source_failures_start = len(parse_failures)
+        source_generated_ids: set[str] = set()
+        source_header_ids = [
+            normalize_question_id(match.group(1))
+            for match in QUESTION_ID_PATTERN.finditer(normalized_text)
+        ]
+        source_stats.append(
+            {
+                "source": source_path.name,
+                "sourceDocument": infer_source_document(source_path),
+                "sourceDocumentType": source_document_type,
+                "legacyDocSource": source_document_type == "legacy_doc_extracted",
+                "questionHeaderCount": len(source_header_ids),
+                "uniqueQuestionIdCount": len(set(source_header_ids)),
+                "duplicateHeaderCount": max(0, len(source_header_ids) - len(set(source_header_ids))),
+                "titleCount": len(title_candidates_from_segment(normalized_text)),
+                "generatedQuestionCount": 0,
+                "skippedBlockCount": 0,
+                "parseFailureCount": 0,
+            }
+        )
+        for context in contexts:
+            block = context.block
             try:
-                parsed = parse_question_block(block, source_path)
+                parsed = parse_question_block(block, source_path, context)
             except Exception as exc:
                 header_match = HEADER_PATTERN.search(block)
                 question_id = normalize_question_id(header_match.group(1)) if header_match else ""
@@ -3855,6 +4211,7 @@ def run_profile_import(profile_name: str | ImportProfile) -> int:
             existing = parsed_questions.get(question_id)
             if existing is None:
                 parsed_questions[question_id] = parsed
+                source_generated_ids.add(question_id)
                 continue
 
             replace = should_replace(existing, parsed)
@@ -3867,12 +4224,25 @@ def run_profile_import(profile_name: str | ImportProfile) -> int:
             )
             if replace:
                 parsed_questions[question_id] = parsed
+                source_generated_ids.add(question_id)
+
+        source_stats[-1]["generatedQuestionCount"] = len(source_generated_ids)
+        source_stats[-1]["skippedBlockCount"] = len(skipped_blocks) - source_skipped_start
+        source_stats[-1]["parseFailureCount"] = len(parse_failures) - source_failures_start
 
     if not parsed_questions:
         raise RuntimeError("未解析到任何有效题目")
 
+    apply_suite_score_totals(parsed_questions)
     sample_generation_summary = write_question_files(parsed_questions)
-    write_summary(parsed_questions, duplicates, sample_generation_summary, skipped_blocks, parse_failures)
+    write_summary(
+        parsed_questions,
+        duplicates,
+        sample_generation_summary,
+        skipped_blocks,
+        parse_failures,
+        source_stats,
+    )
 
     print(f"[{ACTIVE_PROFILE.name}] 导入完成，共生成 {len(parsed_questions)} 道题。")
     print(f"跳过空题块: {len(skipped_blocks)}，解析失败: {len(parse_failures)}")

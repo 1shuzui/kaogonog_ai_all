@@ -4,11 +4,15 @@
   "questions": [
     {
       "suiteId": "AH-SYDW-2026-001",
+      "suiteKey": "AH-SYDW-2026-001",
       "suiteName": "2026年安徽事业单位面试全真模拟卷一",
       "examDate": "2026-01-01",
       "batch": "第一批次",
       "province": "安徽",
       "position": "综合管理岗",
+      "answerScoreTotal": 95,
+      "appearanceScore": 5,
+      "suiteTotalScore": 100,
       "totalScore": 100,
       "questionNo": 1,
       "id": "AH-SYDW-20260101-01",
@@ -100,6 +104,8 @@
         "全真模拟"
       ],
       "sourceDocument": "2026安徽事业单位面试真题.docx",
+      "sourceTitleRaw": "2026年安徽事业单位面试全真模拟卷一",
+      "sourcePage": "第1页",
       "scoreBands": [
         {
           "label": "严重偏离",
@@ -146,11 +152,15 @@
     },
     {
       "suiteId": "AH-SYDW-2026-001",
+      "suiteKey": "AH-SYDW-2026-001",
       "suiteName": "2026年安徽事业单位面试全真模拟卷一",
       "examDate": "2026-01-01",
       "batch": "第一批次",
       "province": "安徽",
       "position": "综合管理岗",
+      "answerScoreTotal": 95,
+      "appearanceScore": 5,
+      "suiteTotalScore": 100,
       "totalScore": 100,
       "questionNo": 2,
       "id": "AH-SYDW-20260101-02",
@@ -215,11 +225,15 @@
         "组织管理",
         "全真模拟"
       ],
-      "sourceDocument": "2026安徽事业单位面试真题.docx"
+      "sourceDocument": "2026安徽事业单位面试真题.docx",
+      "sourceTitleRaw": "2026年安徽事业单位面试全真模拟卷一",
+      "sourcePage": "第1页",
+      "notes": "同一 suiteId/suiteKey 的题目会组成一套全真模拟卷。"
     }
   ],
   "importChecklist": [
     "每道题必须有 id、province、question、type、fullScore/questionScore。",
+    "真实套题标题必须单独成行，并放在本套题第一道题号前，脚本会优先提取该行作为 suiteName。",
     "套题内 suiteId 必须一致，questionNo 不重复且从 1 开始递增。",
     "dimensions 或 scoringPoints 的分值合计建议等于 questionScore。",
     "关键词请使用数组；Excel 模板中用中文分号分隔。",

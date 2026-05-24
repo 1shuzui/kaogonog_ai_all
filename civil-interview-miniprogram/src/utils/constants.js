@@ -8,7 +8,9 @@ export const BILLING_STORAGE_KEY = 'civil_mini_billing_state'
 export const DEFAULT_PREFERENCES = {
   defaultPrepTime: 90,
   defaultAnswerTime: 180,
-  enableAudio: true
+  enableAudio: true,
+  preferredQuestionDimensions: [],
+  practicePreferenceConfirmed: false
 }
 
 export const PROVINCES = [
@@ -125,6 +127,28 @@ export const DIMENSION_FALLBACKS = [
   { name: '逻辑结构', key: 'logic', score: 0, maxScore: 15 },
   { name: '语言表达', key: 'expression', score: 0, maxScore: 15 }
 ]
+
+export const DIMENSION_TIPS = {
+  '行政思维': '多练依法行政、政策执行和公共管理类题目，作答中体现规则意识、程序意识和治理效能。',
+  '法治思维': '多练依法行政、政策执行和公共管理类题目，作答中体现规则意识、程序意识和治理效能。',
+  '实务落地': '多使用步骤化表达，结合实际场景提出可执行、可复盘的措施。',
+  '逻辑结构': '优先使用总分总、是什么-为什么-怎么办等框架，让论点层次更清楚。',
+  '语言表达': '控制语速和口头禅，使用规范政务表达，并注意作答时间。',
+  '综合分析': '全面看待问题，兼顾积极意义、潜在风险和改进方向。',
+  '应急应变': '抓住稳定局面、了解情况、分类处理、总结预防的基本框架。'
+}
+
+export const DIMENSION_KEY_BY_NAME = {
+  行政思维: 'legal',
+  法治思维: 'legal',
+  实务落地: 'practical',
+  逻辑结构: 'logic',
+  语言表达: 'expression',
+  综合分析: 'analysis',
+  应急应变: 'emergency'
+}
+
+export const WEAK_THRESHOLD = 60
 
 export function getProvinceName(code) {
   return PROVINCES.find((item) => item.code === code)?.name || '国考'

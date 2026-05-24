@@ -32,6 +32,16 @@ DEFAULT_PREFERENCES = {
     "defaultPrepTime": 90,
     "defaultAnswerTime": 180,
     "enableVideo": True,
+    "preferredQuestionDimensions": [],
+    "practicePreferenceConfirmed": False,
+}
+VALID_PREFERRED_QUESTION_DIMENSIONS = {
+    "analysis",
+    "practical",
+    "emergency",
+    "logic",
+    "expression",
+    "legal",
 }
 
 
@@ -52,6 +62,19 @@ def _normalize_preferences(prefs: dict | None) -> dict:
             if key in DEFAULT_PREFERENCES and value is not None
         }
     )
+    raw_dimensions = merged.get("preferredQuestionDimensions")
+    if isinstance(raw_dimensions, str):
+        raw_dimensions = [item.strip() for item in raw_dimensions.split(",")]
+    if not isinstance(raw_dimensions, list):
+        raw_dimensions = []
+    seen_dimensions = set()
+    merged["preferredQuestionDimensions"] = [
+        item
+        for item in (str(value).strip() for value in raw_dimensions)
+        if item in VALID_PREFERRED_QUESTION_DIMENSIONS
+        and not (item in seen_dimensions or seen_dimensions.add(item))
+    ]
+    merged["practicePreferenceConfirmed"] = bool(merged.get("practicePreferenceConfirmed"))
     merged["billing"] = normalize_billing_state(raw_preferences.get("billing"))
     return merged
 

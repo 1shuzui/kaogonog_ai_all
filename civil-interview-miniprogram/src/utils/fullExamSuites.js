@@ -50,6 +50,14 @@ function firstPositiveNumber(...values) {
   return 0
 }
 
+function firstString(...values) {
+  for (const value of values) {
+    const text = String(value || '').trim()
+    if (text) return text
+  }
+  return ''
+}
+
 function sumDimensionScores(dimensions = []) {
   if (!Array.isArray(dimensions)) return 0
   return dimensions.reduce((sum, item) => (
@@ -67,6 +75,8 @@ function getQuestionStem(raw = {}) {
 
 function getQuestionScore(raw = {}) {
   return firstPositiveNumber(
+    raw.questionScore,
+    raw.question_score,
     raw.assignedScore,
     raw.questionMaxScore,
     raw.fullScore,
@@ -82,6 +92,35 @@ function getSourceDocument(raw = {}) {
   return String(raw.sourceDocument || raw.source_document || raw.source || '').trim()
 }
 
+function getQuestionMeta(raw = {}) {
+  const meta = raw?.keywords?._meta
+  return meta && typeof meta === 'object' ? meta : {}
+}
+
+function getSuiteName(raw = {}) {
+  const meta = getQuestionMeta(raw)
+  return firstString(raw.suiteName, raw.fullExamSuiteTitle, raw.suiteTitle, meta.suiteName, meta.fullExamSuiteTitle)
+}
+
+function getSuiteKey(raw = {}) {
+  const meta = getQuestionMeta(raw)
+  return firstString(raw.suiteKey, raw.fullExamSuiteKey, raw.suiteId, raw.fullExamSuiteId, meta.suiteKey, meta.suiteId, extractSuiteKey(getQuestionId(raw)))
+}
+
+function getExamDate(raw = {}) {
+  const meta = getQuestionMeta(raw)
+  return firstString(raw.examDate, raw.exam_date, meta.examDate)
+}
+
+function getSuiteNumber(raw = {}, ...keys) {
+  const meta = getQuestionMeta(raw)
+  for (const key of keys) {
+    const value = firstPositiveNumber(raw[key], meta[key])
+    if (value > 0) return value
+  }
+  return 0
+}
+
 function extractSuiteKey(questionId = '') {
   const id = String(questionId || '').trim()
   const match = id.match(/^(.*)-(\d{2,})$/)
@@ -93,9 +132,15 @@ function extractQuestionOrder(questionId = '') {
   return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER
 }
 
+function getQuestionOrder(raw = {}) {
+  const meta = getQuestionMeta(raw)
+  const explicit = firstPositiveNumber(raw.questionNo, raw.question_no, raw.fullExamQuestionNumber, meta.questionNo)
+  return explicit > 0 ? explicit : extractQuestionOrder(getQuestionId(raw))
+}
+
 function isCompleteNumberedSuite(questions = []) {
   if (questions.length < MIN_SUITE_QUESTION_COUNT) return false
-  const orders = questions.map((item) => extractQuestionOrder(getQuestionId(item)))
+  const orders = questions.map((item) => getQuestionOrder(item))
   if (orders.some((order) => !Number.isFinite(order) || order === Number.MAX_SAFE_INTEGER)) return false
   const unique = new Set(orders)
   if (unique.size !== orders.length) return false
@@ -107,7 +152,9 @@ function buildSuiteTitle(province, suiteKey) {
   return `${provinceName}真题套卷 ${suiteKey}`
 }
 
-function buildSortKey(suiteKey = '') {
+function buildSortKey(suiteKey = '', examDate = '') {
+  const normalizedDate = String(examDate || '').replace(/\D/g, '')
+  if (/^20\d{6}$/.test(normalizedDate)) return normalizedDate
   const dateMatch = String(suiteKey).match(/20\d{2}(?:\d{2})?(?:\d{2})?/)
   return dateMatch ? dateMatch[0] : suiteKey
 }
@@ -144,6 +191,7 @@ export function normalizeFullExamQuestion(raw = {}, suite = {}, index = 0) {
   const stem = getQuestionStem(raw)
   const questionId = getQuestionId(raw)
   const questionCount = Array.isArray(suite.questions) ? suite.questions.length : 0
+  const questionNumber = getQuestionOrder(raw)
 
   return {
     ...raw,
@@ -164,7 +212,13 @@ export function normalizeFullExamQuestion(raw = {}, suite = {}, index = 0) {
     questionSourceLabel: suite.title || '',
     fullExamSuiteId: suite.id || '',
     fullExamSuiteTitle: suite.title || '',
-    fullExamQuestionNumber: index + 1,
+    suiteId: raw.suiteId || suite.suiteKey || '',
+    suiteKey: raw.suiteKey || suite.suiteKey || '',
+    suiteName: raw.suiteName || suite.title || '',
+    examDate: raw.examDate || suite.examDate || '',
+    questionNo: questionNumber === Number.MAX_SAFE_INTEGER ? index + 1 : questionNumber,
+    questionScore: assignedScore,
+    fullExamQuestionNumber: questionNumber === Number.MAX_SAFE_INTEGER ? index + 1 : questionNumber,
     fullExamQuestionCount: questionCount,
     fullExamAnswerScoreTotal: suite.answerScoreTotal || 0,
     fullExamAppearanceScore: suite.appearanceScore || 0,
@@ -180,8 +234,7 @@ export function buildFullExamSuitesFromQuestions(questions = [], province = '') 
   const groups = new Map()
 
   for (const question of list) {
-    const questionId = getQuestionId(question)
-    const suiteKey = extractSuiteKey(questionId)
+    const suiteKey = getSuiteKey(question)
     if (!suiteKey) continue
 
     const questionProvince = normalizeProvinceCode(question?.province || question?.provinceCode || question?.province_code || requestedProvince)
@@ -191,12 +244,22 @@ export function buildFullExamSuitesFromQuestions(questions = [], province = '') 
       groups.set(suiteKey, {
         suiteKey,
         province: questionProvince,
+        suiteName: getSuiteName(question),
+        examDate: getExamDate(question),
+        answerScoreTotal: getSuiteNumber(question, 'answerScoreTotal', 'fullExamAnswerScoreTotal'),
+        appearanceScore: getSuiteNumber(question, 'appearanceScore', 'fullExamAppearanceScore'),
+        totalScore: getSuiteNumber(question, 'suiteTotalScore', 'totalScore', 'fullExamTotalScore'),
         sourceDocument: getSourceDocument(question),
         questions: []
       })
     }
 
     const group = groups.get(suiteKey)
+    if (!group.suiteName) group.suiteName = getSuiteName(question)
+    if (!group.examDate) group.examDate = getExamDate(question)
+    if (!group.answerScoreTotal) group.answerScoreTotal = getSuiteNumber(question, 'answerScoreTotal', 'fullExamAnswerScoreTotal')
+    if (!group.appearanceScore) group.appearanceScore = getSuiteNumber(question, 'appearanceScore', 'fullExamAppearanceScore')
+    if (!group.totalScore) group.totalScore = getSuiteNumber(question, 'suiteTotalScore', 'totalScore', 'fullExamTotalScore')
     if (!group.sourceDocument) group.sourceDocument = getSourceDocument(question)
     group.questions.push(question)
   }
@@ -204,27 +267,30 @@ export function buildFullExamSuitesFromQuestions(questions = [], province = '') 
   return [...groups.values()]
     .map((group) => {
       const orderedQuestions = [...group.questions].sort((a, b) => {
-        const order = extractQuestionOrder(getQuestionId(a)) - extractQuestionOrder(getQuestionId(b))
+        const order = getQuestionOrder(a) - getQuestionOrder(b)
         if (order !== 0) return order
         return getQuestionId(a).localeCompare(getQuestionId(b))
       })
 
       if (!isCompleteNumberedSuite(orderedQuestions)) return null
 
-      const answerScoreTotal = orderedQuestions.reduce((sum, item) => sum + getQuestionScore(item), 0)
-      const totalScore = Math.max(100, Math.ceil(answerScoreTotal))
+      const calculatedAnswerScoreTotal = orderedQuestions.reduce((sum, item) => sum + getQuestionScore(item), 0)
+      const answerScoreTotal = group.answerScoreTotal || calculatedAnswerScoreTotal
+      const totalScore = group.totalScore || Math.max(100, Math.ceil(answerScoreTotal))
       const suite = {
         id: `${group.province}-${group.suiteKey}`,
         suiteKey: group.suiteKey,
         province: group.province,
-        title: buildSuiteTitle(group.province, group.suiteKey),
+        title: group.suiteName || buildSuiteTitle(group.province, group.suiteKey),
+        suiteName: group.suiteName || '',
+        examDate: group.examDate || '',
         sourceDocument: group.sourceDocument,
         timingMode: group.province === 'jiangsu' ? JIANGSU_FULL_EXAM_TIMING_MODE : '',
         answerScoreTotal,
         totalScore,
-        appearanceScore: Math.max(0, totalScore - answerScoreTotal),
+        appearanceScore: group.appearanceScore || Math.max(0, totalScore - answerScoreTotal),
         questions: orderedQuestions,
-        sortKey: buildSortKey(group.suiteKey)
+        sortKey: buildSortKey(group.suiteKey, group.examDate)
       }
 
       return {

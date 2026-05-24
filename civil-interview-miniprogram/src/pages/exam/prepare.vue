@@ -163,6 +163,7 @@ const count = ref(DEFAULT_EXAM_QUESTION_COUNT)
 const mode = ref('free')
 const mediaMode = ref('audio')
 const selectedDimensions = ref(['random'])
+const questionTypeTouched = ref(false)
 const selectedFullExamSuiteId = ref('')
 const fullExamSuites = ref([])
 const fullExamSuitesLoading = ref(false)
@@ -173,6 +174,7 @@ const source = ref('')
 const trial = ref(false)
 const trialStatus = ref(null)
 const asrStatus = ref(null)
+const recommendedQuestionId = ref('')
 let accessRefreshedAt = 0
 let asrStatusRefreshedAt = 0
 let accessRefreshPromise = null
@@ -241,6 +243,10 @@ watch(() => userStore.selectedProvince, () => {
   refreshFullExamSuites().catch(() => null)
 }, { immediate: true })
 
+watch(() => userStore.preferences?.preferredQuestionDimensions, () => {
+  applyPreferredQuestionDimensions()
+}, { immediate: true, deep: true })
+
 function applyUserPracticePreferencesToQuestions(questions = []) {
   const prefs = userStore.preferences || {}
   const prepTime = Number(prefs.defaultPrepTime || 0)
@@ -280,6 +286,7 @@ async function refreshFullExamSuites() {
 
 onLoad((query) => {
   source.value = String(query?.source || '')
+  recommendedQuestionId.value = String(query?.questionId || '').trim()
   if (fixedPracticeEntry.value) {
     mode.value = 'free'
     count.value = 1
@@ -413,11 +420,23 @@ async function refreshAsrStatus(options = {}) {
 
 function selectFreeMode() {
   mode.value = 'free'
+  applyPreferredQuestionDimensions()
 }
 
 function selectFullExamMode() {
   if (fixedPracticeEntry.value) return
   mode.value = 'fullExam'
+}
+
+function applyPreferredQuestionDimensions() {
+  if (questionTypeTouched.value || !showPracticeConfig.value) return
+  const validKeys = new Set(questionCategoryOptions.map((item) => item.key).filter((item) => item && item !== RANDOM_DIMENSION_KEY))
+  const preferred = Array.isArray(userStore.preferences?.preferredQuestionDimensions)
+    ? userStore.preferences.preferredQuestionDimensions
+      .map((item) => String(item || '').trim())
+      .filter((item, index, list) => validKeys.has(item) && list.indexOf(item) === index)
+    : []
+  selectedDimensions.value = preferred.length ? preferred : [RANDOM_DIMENSION_KEY]
 }
 
 function onFullExamSuiteChange(event) {
@@ -448,6 +467,7 @@ function isTypeSelected(key) {
 }
 
 function toggleQuestionType(key) {
+  questionTypeTouched.value = true
   if (key === RANDOM_DIMENSION_KEY) {
     if (selectedSpecificDimensions.value.length) return
     selectedDimensions.value = [RANDOM_DIMENSION_KEY]
@@ -522,11 +542,13 @@ async function startPractice() {
       questions = await withTimeout(
         mode.value === 'fullExam'
           ? loadFullExamSuiteQuestions(selectedFullExamSuite.value, getQuestionById)
-          : questionBankStore.fetchRandom({
-            province: userStore.selectedProvince,
-            count: count.value,
-            dimension: selectedDimensionParam.value
-          }),
+          : recommendedQuestionId.value
+            ? getQuestionById(recommendedQuestionId.value).then((question) => (question?.id ? [question] : []))
+            : questionBankStore.fetchRandom({
+              province: userStore.selectedProvince,
+              count: count.value,
+              dimension: selectedDimensionParam.value
+            }),
         ENTER_ROOM_TIMEOUT_MS,
         []
       )
@@ -540,7 +562,7 @@ async function startPractice() {
       toast('当前套题题目加载不完整，请切换其他套卷后重试')
       return
     }
-    const targetCount = trial.value ? 1 : mode.value === 'fullExam' ? questions.length : count.value
+    const targetCount = trial.value || recommendedQuestionId.value ? 1 : mode.value === 'fullExam' ? questions.length : count.value
     const preparedQuestions = applyFullExamTimingMode(applyUserPracticePreferencesToQuestions(questions.slice(0, targetCount)))
     examStore.setMediaMode(mediaMode.value)
     await examStore.startFromQuestions(preparedQuestions, trial.value ? 'trial' : mode.value)

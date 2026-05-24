@@ -90,6 +90,18 @@ def _build_question_meta(
     tags = _split_tags(item.get("tags"))
     source_document = str(item.get("sourceDocument") or source_name or "").strip()
     origin_file = str(asset_path or source_name or "").strip()
+    item_meta = item.get("_meta") if isinstance(item.get("_meta"), dict) else {}
+    keyword_meta = {}
+    if isinstance(item.get("keywords"), dict) and isinstance(item["keywords"].get("_meta"), dict):
+        keyword_meta = item["keywords"].get("_meta") or {}
+
+    def metadata_value(*keys: str):
+        for key in keys:
+            for source in (item, item_meta, keyword_meta):
+                value = source.get(key) if isinstance(source, dict) else None
+                if value not in ("", [], None):
+                    return value
+        return None
 
     meta = {
         "source": source_kind,
@@ -115,6 +127,20 @@ def _build_question_meta(
         "bonusKeywords": _split_keyword_list(item.get("bonusKeywords")),
         "penaltyKeywords": _split_keyword_list(item.get("penaltyKeywords")),
         "questionType": str(item.get("type") or "").strip(),
+        "suiteId": metadata_value("suiteId", "fullExamSuiteId"),
+        "suiteKey": metadata_value("suiteKey", "fullExamSuiteKey", "suiteId"),
+        "suiteName": metadata_value("suiteName", "fullExamSuiteTitle"),
+        "sourceTitleRaw": metadata_value("sourceTitleRaw"),
+        "examDate": metadata_value("examDate"),
+        "position": metadata_value("position"),
+        "batch": metadata_value("batch"),
+        "questionNo": metadata_value("questionNo", "fullExamQuestionNumber"),
+        "questionScore": metadata_value("questionScore", "fullScore", "questionMaxScore"),
+        "answerScoreTotal": metadata_value("answerScoreTotal", "fullExamAnswerScoreTotal"),
+        "appearanceScore": metadata_value("appearanceScore", "fullExamAppearanceScore"),
+        "suiteTotalScore": metadata_value("suiteTotalScore", "totalScore", "fullExamTotalScore"),
+        "totalScore": metadata_value("totalScore", "suiteTotalScore", "fullExamTotalScore"),
+        "sourceDocumentType": metadata_value("sourceDocumentType"),
     }
     return {key: value for key, value in meta.items() if value not in ("", [], None)}
 
@@ -141,6 +167,20 @@ def _q_to_dict(q: Question) -> dict:
             "positionTags": meta.get("positionTags", []),
             "tags": meta.get("tags", []),
             "hasReferenceAnswer": bool(meta.get("referenceAnswer")),
+            "suiteId": meta.get("suiteId", ""),
+            "suiteKey": meta.get("suiteKey", ""),
+            "suiteName": meta.get("suiteName", ""),
+            "sourceTitleRaw": meta.get("sourceTitleRaw", ""),
+            "examDate": meta.get("examDate", ""),
+            "position": meta.get("position", ""),
+            "batch": meta.get("batch", ""),
+            "questionNo": meta.get("questionNo"),
+            "questionScore": meta.get("questionScore"),
+            "fullScore": meta.get("questionScore"),
+            "answerScoreTotal": meta.get("answerScoreTotal"),
+            "appearanceScore": meta.get("appearanceScore"),
+            "suiteTotalScore": meta.get("suiteTotalScore") or meta.get("totalScore"),
+            "totalScore": meta.get("totalScore") or meta.get("suiteTotalScore"),
         })
     return payload
 

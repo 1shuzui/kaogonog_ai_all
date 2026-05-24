@@ -10,19 +10,19 @@
       "score": 4.0
     },
     {
-      "name": "、回应群众",
+      "name": "回应群众",
       "score": 3.0
     },
     {
-      "name": "、汇报上级",
+      "name": "汇报上级",
       "score": 3.0
     },
     {
-      "name": "、自查反思",
+      "name": "自查反思",
       "score": 3.0
     },
     {
-      "name": "流程执行",
+      "name": "长效机制",
       "score": 3.0
     }
   ],
@@ -50,11 +50,11 @@
   ],
   "penaltyKeywords": [],
   "scoringCriteria": [
-    "快速纠错（4分）",
-    "、回应群众（3分）",
-    "、汇报上级（3分）",
-    "、自查反思（3分）",
-    "、长效机制（3分）"
+    "快速纠错（4分）、",
+    "回应群众（3分）、",
+    "汇报上级（3分）、",
+    "自查反思（3分）、",
+    "长效机制（3分）。"
   ],
   "deductionRules": [
     "处置迟缓、不控源头：扣3—4分",
@@ -63,6 +63,16 @@
     "-无长效机制、屡犯不改：扣2—3分"
   ],
   "sourceDocument": "2020-2025第二批次完全版.docx",
+  "sourceDocumentType": "docx_xml",
+  "suiteId": "AHGWY-20210709",
+  "suiteKey": "AHGWY-20210709",
+  "suiteName": "2021年7月9日安徽省考面试题",
+  "sourceTitleRaw": "2021年7月9日安徽省考面试题（非乡镇岗）",
+  "examDate": "2021-07-09",
+  "position": "乡镇岗",
+  "batch": "乡镇岗",
+  "questionNo": 3,
+  "questionScore": 16.0,
   "referenceAnswer": "（安徽政务实务·无AI味） 面对政务信息错误、转载扩散、群众咨询、上级过问，我会快速反应、规范处置、及时回应、全面整改，维护单位形象与政务公信力。 第一，立即更正错误、管控源头。第一时间修改本网站错误内容，迅速联系各转载平台，说明情况请求立即更正或撤稿，坚决防止影响扩大。 第二，耐心回应群众咨询。对来电群众诚恳致歉，说明错误情况与整改措施，耐心解释、消除疑虑，体现政务服务温度。 第三，如实向上级领导汇报。第一时间向上级报告事件经过、错误原因、处置措施、整改进展，不隐瞒、不拖延，落实上级指示。 第四，全面自查、深刻反思。查找审核、校对、发布环节漏洞，明确是单人审核、疏忽大意导致，认真吸取教训。 第五，健全长效机制、杜绝再犯。严格落实政务信息三审三校制度，实行双人校对、责任到人、审核留痕，强化业务规范，确保信息发布零差错。 第六，及时向本单位领导汇报处置全过程，提出完善建议，推动工作规范化。",
   "tags": [
     "安徽省考",
@@ -112,7 +122,7 @@
     {
       "label": "程序化中档参考答案",
       "sample_path": "assets/regression_samples/generated_anhui/AHGWY-20210709-03/reference_mid.txt",
-      "expected_min": 9.5,
+      "expected_min": 9.3,
       "expected_max": 13.1,
       "llmExpectedMin": 9.6,
       "llmExpectedMax": 13.1,
@@ -123,9 +133,13 @@
       "sample_path": "assets/regression_samples/generated_anhui/AHGWY-20210709-03/reference_low.txt",
       "expected_min": 4.1,
       "expected_max": 9.1,
-      "llmExpectedMin": 3.8,
+      "llmExpectedMin": 0.0,
       "llmExpectedMax": 9.1,
       "notes": "基于高分答案程序化降档生成；策略=spread，句数=6，截断=90，关键词削弱=heavy，口语化=否。"
     }
-  ]
+  ],
+  "answerScoreTotal": 96.0,
+  "appearanceScore": 4.0,
+  "suiteTotalScore": 100.0,
+  "totalScore": 100.0
 }

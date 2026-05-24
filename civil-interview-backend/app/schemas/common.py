@@ -71,6 +71,8 @@ class UserPreferencesUpdate(BaseModel):
     defaultPrepTime: Optional[int] = None
     defaultAnswerTime: Optional[int] = None
     enableVideo: Optional[bool] = None
+    preferredQuestionDimensions: Optional[List[str]] = None
+    practicePreferenceConfirmed: Optional[bool] = None
 
 
 class UserProvinceUpdate(BaseModel):
