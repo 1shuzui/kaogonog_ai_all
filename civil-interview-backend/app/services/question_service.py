@@ -185,6 +185,33 @@ def _q_to_dict(q: Question) -> dict:
     return payload
 
 
+def _question_quality_warnings(scoring_points, keywords: dict | None) -> list[str]:
+    warnings: list[str] = []
+    points = scoring_points if isinstance(scoring_points, list) else []
+    valid_points = [
+        item for item in points
+        if isinstance(item, dict) and str(item.get("content") or "").strip()
+    ]
+    score_total = 0.0
+    for item in valid_points:
+        try:
+            score_total += float(item.get("score") or 0)
+        except (TypeError, ValueError):
+            continue
+    keyword_data = keywords if isinstance(keywords, dict) else {}
+    scoring_keywords = keyword_data.get("scoring") if isinstance(keyword_data.get("scoring"), list) else []
+
+    if len(valid_points) < 3:
+        warnings.append("采分点少于 3 个，评分会更依赖通用模型判断，建议继续完善。")
+    if score_total <= 0:
+        warnings.append("采分点总分为 0，建议为每个采分点设置分值。")
+    if score_total > 120:
+        warnings.append("采分点总分偏高，请确认是否符合题目满分。")
+    if not [item for item in scoring_keywords if str(item).strip()]:
+        warnings.append("缺少得分关键词，规则兜底评分稳定性会下降。")
+    return warnings
+
+
 def _normalize_keywords(keywords: dict | None, meta: dict | None = None) -> dict:
     base = {"scoring": [], "deducting": [], "bonus": []}
     merged_meta: dict = {}
@@ -861,6 +888,7 @@ def get_question(db: Session, question_id: str) -> dict:
 
 
 def create_question(db: Session, data: QuestionCreate) -> dict:
+    warnings = _question_quality_warnings(data.scoringPoints, data.keywords)
     q = Question(
         id=f"q_{uuid.uuid4().hex[:8]}",
         stem=data.stem,
@@ -877,7 +905,10 @@ def create_question(db: Session, data: QuestionCreate) -> dict:
     db.add(q)
     db.commit()
     db.refresh(q)
-    return _q_to_dict(q)
+    result = _q_to_dict(q)
+    result["qualityWarnings"] = warnings
+    result["scoringStability"] = "weak" if warnings else "ready"
+    return result
 
 
 def update_question(db: Session, question_id: str, data: QuestionUpdate) -> dict:
@@ -887,6 +918,7 @@ def update_question(db: Session, question_id: str, data: QuestionUpdate) -> dict
     source = _question_meta_from_keywords(q.keywords).get("source", "")
     if source in {"local_asset", "seed"}:
         raise HTTPException(status_code=403, detail="标准题库为只读模式，不支持编辑")
+    warnings = _question_quality_warnings(data.scoringPoints, data.keywords)
     q.stem = data.stem
     q.dimension = data.dimension
     q.province = data.province
@@ -896,7 +928,10 @@ def update_question(db: Session, question_id: str, data: QuestionUpdate) -> dict
     q.keywords = _normalize_keywords(data.keywords, _question_meta_from_keywords(q.keywords))
     db.commit()
     db.refresh(q)
-    return _q_to_dict(q)
+    result = _q_to_dict(q)
+    result["qualityWarnings"] = warnings
+    result["scoringStability"] = "weak" if warnings else "ready"
+    return result
 
 
 def delete_question(db: Session, question_id: str) -> dict:

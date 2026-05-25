@@ -2,7 +2,8 @@ import { request } from './request'
 
 function normalizeFocusAnalysis(response = {}) {
   const focusAreas = Array.isArray(response?.focusAreas) ? response.focusAreas : []
-  if (!focusAreas.length || response?.coreFocus) return response
+  if (response?.coreFocus) return response
+  if (!focusAreas.length) return { ...response, coreFocus: [], highFreqTypes: [], strategy: [] }
 
   const priorityToWeight = {
     high: 35,

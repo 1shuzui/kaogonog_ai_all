@@ -72,6 +72,11 @@
         <span class="menu-item__label">余额与退款</span>
         <RightOutlined class="menu-item__arrow" />
       </div>
+      <div v-if="userStore.isAdmin" class="card menu-item" @click="$router.push('/admin/targeted-focus')">
+        <ControlOutlined class="menu-item__icon" />
+        <span class="menu-item__label">定向重点维护</span>
+        <RightOutlined class="menu-item__arrow" />
+      </div>
       <div class="card menu-item" @click="$router.push('/profile/account')">
         <SettingOutlined class="menu-item__icon" />
         <span class="menu-item__label">账号管理</span>
@@ -128,6 +133,7 @@ import {
   HistoryOutlined,
   StarOutlined,
   SettingOutlined,
+  ControlOutlined,
   UndoOutlined,
   WalletOutlined,
   RightOutlined

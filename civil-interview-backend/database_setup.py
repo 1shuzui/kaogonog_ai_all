@@ -103,6 +103,22 @@ TABLE_STATEMENTS = [
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     """,
     """
+    CREATE TABLE IF NOT EXISTS targeted_focus_configs (
+        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+        province VARCHAR(50) NOT NULL DEFAULT 'national',
+        position VARCHAR(80) NOT NULL DEFAULT 'general',
+        auto_result JSON NULL,
+        published_result JSON NULL,
+        publish_mode VARCHAR(20) NOT NULL DEFAULT 'auto',
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        updated_by VARCHAR(100) NULL DEFAULT '',
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_tfc_province_position (province, position),
+        INDEX idx_tfc_active (is_active)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    """,
+    """
     CREATE TABLE IF NOT EXISTS exam_answers (
         id BIGINT PRIMARY KEY AUTO_INCREMENT,
         exam_id VARCHAR(100) NOT NULL,

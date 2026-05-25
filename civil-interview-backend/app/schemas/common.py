@@ -185,6 +185,16 @@ class FocusAnalysisRequest(BaseModel):
     province: str = "national"
     position: str = "general"
 
+class TargetedFocusAdminRequest(FocusAnalysisRequest):
+    pass
+
+class TargetedFocusConfigUpdate(BaseModel):
+    province: str = "national"
+    position: str = "general"
+    publishedResult: Dict[str, Any] = Field(default_factory=dict, validation_alias=AliasChoices("publishedResult", "published_result"))
+    publishMode: str = Field(default="manual", validation_alias=AliasChoices("publishMode", "publish_mode"))
+    isActive: bool = Field(default=True, validation_alias=AliasChoices("isActive", "is_active"))
+
 class GenerateQuestionsRequest(BaseModel):
     province: str = "national"
     position: str = "general"

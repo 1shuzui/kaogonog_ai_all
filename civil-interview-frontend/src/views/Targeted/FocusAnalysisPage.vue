@@ -13,7 +13,7 @@
     </div>
 
     <a-spin :spinning="targetedStore.focusLoading" tip="AI正在分析面试重点...">
-      <template v-if="focusData">
+      <template v-if="hasFocusContent">
         <!-- 核心考察能力 -->
         <div class="card focus-section">
           <h3><AimOutlined /> 核心考察能力</h3>
@@ -90,7 +90,10 @@
         </div>
       </template>
 
-      <EmptyState v-else-if="!targetedStore.focusLoading" text="暂无分析数据，请返回选择省份和岗位" />
+      <EmptyState
+        v-else-if="!targetedStore.focusLoading"
+        :text="focusEmptyText"
+      />
     </a-spin>
   </div>
 </template>
@@ -117,6 +120,14 @@ const primaryColor = '#1B5FAA'
 
 const focusData = computed(() => targetedStore.focusData)
 const hasFullAccess = computed(() => hasPremiumAccess(userStore, billingStore))
+const hasFocusContent = computed(() => (
+  Array.isArray(focusData.value?.coreFocus) && focusData.value.coreFocus.length
+) || (
+  Array.isArray(focusData.value?.highFreqTypes) && focusData.value.highFreqTypes.length
+) || (
+  Array.isArray(focusData.value?.strategy) && focusData.value.strategy.length
+))
+const focusEmptyText = computed(() => focusData.value?.message || '暂无足够题库数据，请返回调整省份或岗位方向。')
 
 const provinceName = computed(() => {
   const p = PROVINCES.find(p => p.code === targetedStore.selectedProvince)

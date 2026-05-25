@@ -51,6 +51,27 @@ class Question(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
+class TargetedFocusConfig(Base):
+    __tablename__ = "targeted_focus_configs"
+    __table_args__ = (
+        Index("uq_targeted_focus_province_position", "province", "position", unique=True),
+    )
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    province = Column(String(32), nullable=False, default="national")
+    position = Column(String(64), nullable=False, default="general")
+    auto_result = Column(JSON, default=dict)
+    published_result = Column(JSON, default=dict)
+    publish_mode = Column(String(20), nullable=False, default="auto")
+    is_active = Column(Boolean, nullable=False, default=True)
+    updated_by = Column(String(64), default="")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
 class Exam(Base):
     __tablename__ = "exams"
     id = Column(String(32), primary_key=True, default=lambda: gen_id("exam_"))

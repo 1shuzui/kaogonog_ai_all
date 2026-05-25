@@ -2,11 +2,28 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.access import ensure_paid_access
+from app.core.access import ensure_admin_access
 from app.core.security import get_current_user
 from app.db.session import get_db
-from app.schemas.common import AuthUser, FocusAnalysisRequest, GenerateQuestionsRequest, TrainingGenerateRequest
+from app.schemas.common import (
+    AuthUser,
+    FocusAnalysisRequest,
+    GenerateQuestionsRequest,
+    TargetedFocusAdminRequest,
+    TargetedFocusConfigUpdate,
+    TrainingGenerateRequest,
+)
 from app.core.ai import PROVINCE_NAMES, POSITION_NAMES, DIMENSION_NAMES
 from app.services.question_service import generate_questions_by_position, generate_training_questions
+from app.services.targeted_focus_service import (
+    analyze_focus_config,
+    disable_focus_config,
+    get_focus_analysis,
+    get_focus_config,
+    list_focus_configs,
+    publish_focus_config,
+    update_focus_config,
+)
 
 router = APIRouter(tags=["targeted_training"])
 
@@ -24,55 +41,6 @@ POSITIONS = [
     {"id": "prison", "name": "监狱系统"},
 ]
 
-FOCUS_AREAS = {
-    "tax": [
-        {"type": "analysis", "label": "税务稽查政策理解", "description": "准确理解税法法规，合理应用", "priority": "high"},
-        {"type": "practical", "label": "纳税人服务优化", "description": "提升纳税服务体验", "priority": "medium"},
-        {"type": "legal", "label": "法规遵从与执法边界", "description": "严格依法办事", "priority": "high"},
-    ],
-    "general": [
-        {"type": "analysis", "label": "政策分析", "description": "全面分析政策背景与影响", "priority": "high"},
-        {"type": "practical", "label": "工作落实", "description": "将政策落到实处", "priority": "medium"},
-        {"type": "emergency", "label": "应急处置", "description": "突发情况快速响应", "priority": "medium"},
-    ],
-    "prison": [
-        {"type": "analysis", "label": "监管安全底线", "description": "围绕监狱系统安全稳定与底线思维作答", "priority": "high"},
-        {"type": "practical", "label": "教育改造落地", "description": "体现教育改造、人文关怀和流程执行能力", "priority": "high"},
-        {"type": "legal", "label": "依法履职意识", "description": "强调依法管理、公正执法和制度执行", "priority": "medium"},
-    ],
-    "jiangsu_a": [
-        {"type": "analysis", "label": "江苏省情与公共治理", "description": "围绕省属和13市事业单位治理场景，体现政策理解与综合研判", "priority": "high"},
-        {"type": "practical", "label": "综合协调与任务推进", "description": "突出跨部门协同、资源统筹和工作闭环", "priority": "high"},
-        {"type": "logic", "label": "机关沟通与群众服务", "description": "兼顾同事协作、群众诉求和服务效能", "priority": "medium"},
-    ],
-    "jiangsu_b": [
-        {"type": "analysis", "label": "社科政策理解", "description": "结合法律、经济、会计等专业背景分析公共事务", "priority": "high"},
-        {"type": "legal", "label": "依法履职与规范意识", "description": "突出规则边界、程序意识和风险防控", "priority": "high"},
-        {"type": "practical", "label": "专业能力落地", "description": "把专业判断转化为可执行的管理建议", "priority": "medium"},
-    ],
-    "jiangsu_c": [
-        {"type": "analysis", "label": "技术服务公共治理", "description": "结合计算机、工程、农技等方向回应事业单位实际问题", "priority": "high"},
-        {"type": "practical", "label": "项目实施与现场管理", "description": "体现流程控制、质量安全和协同推进", "priority": "high"},
-        {"type": "emergency", "label": "技术风险处置", "description": "面对系统故障、工程风险或农业生产问题能快速研判", "priority": "medium"},
-    ],
-    "jiangsu_d": [
-        {"type": "analysis", "label": "教育政策与育人理念", "description": "围绕立德树人、教育公平和校园治理展开分析", "priority": "high"},
-        {"type": "logic", "label": "师生家校沟通", "description": "处理学生、家长、同事之间的沟通协调问题", "priority": "high"},
-        {"type": "practical", "label": "教学活动组织", "description": "体现班级管理、活动策划和安全责任", "priority": "medium"},
-    ],
-    "jiangsu_e": [
-        {"type": "analysis", "label": "医疗卫生公共服务", "description": "围绕基层医疗、公共卫生和健康服务能力展开", "priority": "high"},
-        {"type": "logic", "label": "医患沟通与服务温度", "description": "面对患者诉求和现场矛盾体现沟通安抚能力", "priority": "high"},
-        {"type": "emergency", "label": "卫生应急处置", "description": "能在突发公共卫生或医疗现场问题中快速响应", "priority": "medium"},
-    ],
-    "jiangsu_worker": [
-        {"type": "practical", "label": "服务规范与技能保障", "description": "突出岗位技能、流程规范和服务质量", "priority": "high"},
-        {"type": "logic", "label": "一线协作沟通", "description": "在保障服务中处理群众、同事和管理要求之间的关系", "priority": "medium"},
-        {"type": "emergency", "label": "现场问题处置", "description": "面对设备、秩序或服务异常能及时处置", "priority": "medium"},
-    ],
-}
-
-
 @router.get("/positions")
 def get_positions():
     return POSITIONS
@@ -81,14 +49,68 @@ def get_positions():
 @router.post("/targeted/focus")
 async def get_focus(data: FocusAnalysisRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     ensure_paid_access(current_user, detail="定向备考需付费开通后使用")
-    focus_list = FOCUS_AREAS.get(data.position, FOCUS_AREAS["general"])
-    province_name = PROVINCE_NAMES.get(data.province, data.province)
-    position_name = POSITION_NAMES.get(data.position, data.position)
-    return {
-        "province": data.province, "provinceName": province_name,
-        "position": data.position, "positionName": position_name,
-        "focusAreas": focus_list,
-    }
+    return get_focus_analysis(db, data.province, data.position)
+
+
+@router.get("/targeted/focus/admin")
+def list_focus_admin(
+    province: str = "",
+    position: str = "",
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin_access(current_user)
+    if province and position:
+        return get_focus_config(db, province, position)
+    return {"list": list_focus_configs(db, province=province, position=position)}
+
+
+@router.post("/targeted/focus/admin/analyze")
+def analyze_focus_admin(
+    data: TargetedFocusAdminRequest,
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin_access(current_user)
+    return analyze_focus_config(db, data.province, data.position, current_user.username)
+
+
+@router.put("/targeted/focus/admin/{config_id}")
+def update_focus_admin(
+    config_id: int,
+    data: TargetedFocusConfigUpdate,
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin_access(current_user)
+    return update_focus_config(
+        db,
+        config_id,
+        published_result=data.publishedResult,
+        publish_mode=data.publishMode,
+        is_active=data.isActive,
+        username=current_user.username,
+    )
+
+
+@router.post("/targeted/focus/admin/{config_id}/publish")
+def publish_focus_admin(
+    config_id: int,
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin_access(current_user)
+    return publish_focus_config(db, config_id, current_user.username)
+
+
+@router.post("/targeted/focus/admin/{config_id}/disable")
+def disable_focus_admin(
+    config_id: int,
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ensure_admin_access(current_user)
+    return disable_focus_config(db, config_id, current_user.username)
 
 
 @router.post("/targeted/generate")

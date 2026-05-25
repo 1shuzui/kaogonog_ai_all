@@ -3,9 +3,10 @@ import { getQuestionTypeName } from '@/utils/constants'
 
 function normalizeFocusAnalysis(response = {}) {
   const focusAreas = Array.isArray(response?.focusAreas) ? response.focusAreas : []
-  if (!focusAreas.length || response?.coreFocus) {
+  if (response?.coreFocus) {
     return response
   }
+  if (!focusAreas.length) return { ...response, coreFocus: [], highFreqTypes: [], hotTopics: [], strategy: [] }
 
   const priorityToWeight = {
     high: 35,
@@ -48,4 +49,24 @@ export async function getFocusAnalysis(data) {
 export async function generateQuestions(data) {
   const response = await http.post('/targeted/generate', data)
   return Array.isArray(response?.questions) ? response.questions : []
+}
+
+export async function getFocusAdmin(params) {
+  return http.get('/targeted/focus/admin', { params })
+}
+
+export async function analyzeFocusAdmin(data) {
+  return http.post('/targeted/focus/admin/analyze', data)
+}
+
+export async function updateFocusAdmin(id, data) {
+  return http.put(`/targeted/focus/admin/${id}`, data)
+}
+
+export async function publishFocusAdmin(id) {
+  return http.post(`/targeted/focus/admin/${id}/publish`)
+}
+
+export async function disableFocusAdmin(id) {
+  return http.post(`/targeted/focus/admin/${id}/disable`)
 }

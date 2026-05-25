@@ -8,7 +8,7 @@
       <text class="loading-card__desc">请稍候，系统正在根据省份和岗位整理核心考点。</text>
     </view>
 
-    <view v-else-if="targetedStore.focusData" class="focus">
+    <view v-else-if="hasFocusContent" class="focus">
       <view v-if="coreFocus.length" class="card">
         <view class="section-head">
           <text class="section-title">核心能力权重</text>
@@ -43,7 +43,7 @@
       </view>
     </view>
     <view v-else class="card">
-      <EmptyState title="暂无分析结果" desc="请回到定向备面页选择方向后再试。" />
+      <EmptyState title="暂无分析结果" :desc="focusEmptyText" />
     </view>
 
     <button class="primary-button" :disabled="readonlyMode" :loading="targetedStore.focusLoading" @tap="loadFocus">刷新分析</button>
@@ -70,6 +70,8 @@ const readonlyMode = computed(() => !hasFullAccess.value)
 const coreFocus = computed(() => Array.isArray(targetedStore.focusData?.coreFocus) ? targetedStore.focusData.coreFocus : [])
 const highFreqTypes = computed(() => Array.isArray(targetedStore.focusData?.highFreqTypes) ? targetedStore.focusData.highFreqTypes : [])
 const strategy = computed(() => Array.isArray(targetedStore.focusData?.strategy) ? targetedStore.focusData.strategy : [])
+const hasFocusContent = computed(() => coreFocus.value.length || highFreqTypes.value.length || strategy.value.length)
+const focusEmptyText = computed(() => targetedStore.focusData?.message || '当前省份和岗位暂无足够题库数据，请返回调整方向后再试。')
 
 onLoad(async (options = {}) => {
   if (!requireLogin()) return
