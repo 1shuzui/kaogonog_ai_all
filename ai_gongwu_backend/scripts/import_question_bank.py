@@ -3903,6 +3903,21 @@ def infer_question_no(question_id: str) -> int | None:
     return int(match.group(1))
 
 
+def has_counted_appearance_score(text: str) -> bool:
+    """判断文档里的仪态分是否计入整套总分。"""
+
+    value = str(text or "")
+    if "仪态分" not in value:
+        return False
+    for match in re.finditer("仪态分", value):
+        window = value[max(0, match.start() - 40): match.end() + 80]
+        if "不计入" in window:
+            return False
+        if "计入" in window or "最终总分" in window:
+            return True
+    return True
+
+
 def parse_question_block(
     block: str,
     source_path: Path,
@@ -3988,6 +4003,7 @@ def parse_question_block(
         "batch": batch,
         "questionNo": question_no,
         "questionScore": full_score,
+        "hasAppearanceScore": has_counted_appearance_score(block),
         "referenceAnswer": reference_answer,
         "tags": build_tags(
             sections.get("检索标签", ""),
@@ -4008,6 +4024,7 @@ def parse_question_block(
             "batch": batch,
             "questionNo": question_no,
             "questionScore": full_score,
+            "hasAppearanceScore": has_counted_appearance_score(block),
         },
     }
     return ParsedQuestion(data=data, source_path=source_path, block_length=len(block))
@@ -4062,11 +4079,13 @@ def apply_suite_score_totals(parsed_questions: dict[str, ParsedQuestion]) -> Non
             sum(float(item.data.get("questionScore") or item.data.get("fullScore") or 0) for item in items),
             1,
         )
-        total_score = max(100.0, answer_score_total)
-        appearance_score = round(max(0.0, total_score - answer_score_total), 1)
+        has_appearance_score = any(bool(item.data.get("hasAppearanceScore")) for item in items)
+        total_score = max(100.0, answer_score_total) if has_appearance_score else answer_score_total
+        appearance_score = round(max(0.0, total_score - answer_score_total), 1) if has_appearance_score else 0.0
         for item in items:
             item.data["suiteId"] = suite_key
             item.data["suiteKey"] = suite_key
+            item.data["hasAppearanceScore"] = has_appearance_score
             item.data["answerScoreTotal"] = answer_score_total
             item.data["appearanceScore"] = appearance_score
             item.data["suiteTotalScore"] = total_score
@@ -4077,6 +4096,7 @@ def apply_suite_score_totals(parsed_questions: dict[str, ParsedQuestion]) -> Non
                     {
                         "suiteId": suite_key,
                         "suiteKey": suite_key,
+                        "hasAppearanceScore": has_appearance_score,
                         "answerScoreTotal": answer_score_total,
                         "appearanceScore": appearance_score,
                         "suiteTotalScore": total_score,

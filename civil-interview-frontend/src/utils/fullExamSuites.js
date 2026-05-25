@@ -121,6 +121,16 @@ function getSuiteNumber(raw = {}, ...keys) {
   return 0
 }
 
+function hasExplicitSuiteNumber(raw = {}, ...keys) {
+  const meta = getQuestionMeta(raw)
+  return keys.some((key) => {
+    const rawValue = raw[key]
+    const metaValue = meta[key]
+    return rawValue !== undefined && rawValue !== null && rawValue !== ''
+      || metaValue !== undefined && metaValue !== null && metaValue !== ''
+  })
+}
+
 function extractSuiteKey(questionId = '') {
   const id = String(questionId || '').trim()
   const match = id.match(/^(.*)-(\d{2,})$/)
@@ -249,6 +259,8 @@ export function buildFullExamSuitesFromQuestions(questions = [], province = '') 
         answerScoreTotal: getSuiteNumber(question, 'answerScoreTotal', 'fullExamAnswerScoreTotal'),
         appearanceScore: getSuiteNumber(question, 'appearanceScore', 'fullExamAppearanceScore'),
         totalScore: getSuiteNumber(question, 'suiteTotalScore', 'totalScore', 'fullExamTotalScore'),
+        hasExplicitTotalScore: hasExplicitSuiteNumber(question, 'suiteTotalScore', 'totalScore', 'fullExamTotalScore'),
+        hasExplicitAppearanceScore: hasExplicitSuiteNumber(question, 'appearanceScore', 'fullExamAppearanceScore'),
         sourceDocument: getSourceDocument(question),
         questions: []
       })
@@ -260,6 +272,8 @@ export function buildFullExamSuitesFromQuestions(questions = [], province = '') 
     if (!group.answerScoreTotal) group.answerScoreTotal = getSuiteNumber(question, 'answerScoreTotal', 'fullExamAnswerScoreTotal')
     if (!group.appearanceScore) group.appearanceScore = getSuiteNumber(question, 'appearanceScore', 'fullExamAppearanceScore')
     if (!group.totalScore) group.totalScore = getSuiteNumber(question, 'suiteTotalScore', 'totalScore', 'fullExamTotalScore')
+    group.hasExplicitTotalScore = group.hasExplicitTotalScore || hasExplicitSuiteNumber(question, 'suiteTotalScore', 'totalScore', 'fullExamTotalScore')
+    group.hasExplicitAppearanceScore = group.hasExplicitAppearanceScore || hasExplicitSuiteNumber(question, 'appearanceScore', 'fullExamAppearanceScore')
     if (!group.sourceDocument) group.sourceDocument = getSourceDocument(question)
     group.questions.push(question)
   }
@@ -276,7 +290,12 @@ export function buildFullExamSuitesFromQuestions(questions = [], province = '') 
 
       const calculatedAnswerScoreTotal = orderedQuestions.reduce((sum, item) => sum + getQuestionScore(item), 0)
       const answerScoreTotal = group.answerScoreTotal || calculatedAnswerScoreTotal
-      const totalScore = group.totalScore || Math.max(100, Math.ceil(answerScoreTotal))
+      const totalScore = group.totalScore || Math.ceil(answerScoreTotal)
+      const appearanceScore = group.hasExplicitAppearanceScore
+        ? group.appearanceScore
+        : group.hasExplicitTotalScore
+          ? Math.max(0, totalScore - answerScoreTotal)
+          : 0
       const suite = {
         id: `${group.province}-${group.suiteKey}`,
         suiteKey: group.suiteKey,
@@ -288,7 +307,7 @@ export function buildFullExamSuitesFromQuestions(questions = [], province = '') 
         timingMode: group.province === 'jiangsu' ? JIANGSU_FULL_EXAM_TIMING_MODE : '',
         answerScoreTotal,
         totalScore,
-        appearanceScore: group.appearanceScore || Math.max(0, totalScore - answerScoreTotal),
+        appearanceScore,
         questions: orderedQuestions,
         sortKey: buildSortKey(group.suiteKey, group.examDate)
       }
