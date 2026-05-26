@@ -34,3 +34,6 @@ civil-interview-backend/*.db-shm
 civil-interview-backend/*.db-wal
 civil-interview-backend/storage/
 civil-interview-backend/uploads/
+
+
+修改指导文件/
