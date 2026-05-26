@@ -12,6 +12,7 @@ from app.schemas.common import AuthUser, UserProfileUpdate, UserPasswordUpdate
 PROVINCES = [
     {"code": "national", "name": "国家公务员考试"},
     {"code": "beijing", "name": "北京"},
+    {"code": "shanghai", "name": "上海"},
     {"code": "guangdong", "name": "广东"},
     {"code": "zhejiang", "name": "浙江"},
     {"code": "sichuan", "name": "四川"},
@@ -21,6 +22,8 @@ PROVINCES = [
     {"code": "shandong", "name": "山东"},
     {"code": "hubei", "name": "湖北"},
     {"code": "hunan", "name": "湖南"},
+    {"code": "hebei", "name": "河北"},
+    {"code": "fujian", "name": "福建"},
     {"code": "liaoning", "name": "辽宁"},
     {"code": "shanxi", "name": "陕西"},
 ]
@@ -32,6 +35,7 @@ DEFAULT_PREFERENCES = {
     "defaultPrepTime": 90,
     "defaultAnswerTime": 180,
     "enableVideo": True,
+    "enableAudio": True,
     "preferredQuestionDimensions": [],
     "practicePreferenceConfirmed": False,
 }
@@ -75,6 +79,8 @@ def _normalize_preferences(prefs: dict | None) -> dict:
         and not (item in seen_dimensions or seen_dimensions.add(item))
     ]
     merged["practicePreferenceConfirmed"] = bool(merged.get("practicePreferenceConfirmed"))
+    merged["enableAudio"] = merged.get("enableAudio") is not False and merged.get("enableVideo") is not False
+    merged["enableVideo"] = bool(merged.get("enableVideo"))
     merged["billing"] = normalize_billing_state(raw_preferences.get("billing"))
     return merged
 

@@ -13,8 +13,19 @@ const GUEST_STORAGE_SCOPE = 'guest'
 const DEFAULT_PREFERENCES = {
   defaultPrepTime: 90,
   defaultAnswerTime: 180,
-  enableVideo: true
+  enableVideo: true,
+  preferredQuestionDimensions: [],
+  practicePreferenceConfirmed: false
 }
+
+const VALID_PREFERRED_QUESTION_DIMENSIONS = new Set([
+  'analysis',
+  'practical',
+  'emergency',
+  'logic',
+  'expression',
+  'legal'
+])
 
 function normalizeProvinceCode(code = '') {
   const normalized = String(code || '').trim()
@@ -29,11 +40,21 @@ function normalizePreferences(preferences) {
   }
   const prep = Number(merged.defaultPrepTime)
   const answer = Number(merged.defaultAnswerTime)
+  const rawDimensions = Array.isArray(merged.preferredQuestionDimensions)
+    ? merged.preferredQuestionDimensions
+    : typeof merged.preferredQuestionDimensions === 'string'
+      ? merged.preferredQuestionDimensions.split(',')
+      : []
+  const preferredQuestionDimensions = rawDimensions
+    .map((item) => String(item || '').trim())
+    .filter((item, index, list) => VALID_PREFERRED_QUESTION_DIMENSIONS.has(item) && list.indexOf(item) === index)
 
   return {
     defaultPrepTime: Number.isFinite(prep) && prep > 0 ? prep : DEFAULT_PREFERENCES.defaultPrepTime,
     defaultAnswerTime: Number.isFinite(answer) && answer > 0 ? answer : DEFAULT_PREFERENCES.defaultAnswerTime,
-    enableVideo: typeof merged.enableVideo === 'boolean' ? merged.enableVideo : DEFAULT_PREFERENCES.enableVideo
+    enableVideo: typeof merged.enableVideo === 'boolean' ? merged.enableVideo : DEFAULT_PREFERENCES.enableVideo,
+    preferredQuestionDimensions,
+    practicePreferenceConfirmed: merged.practicePreferenceConfirmed === true
   }
 }
 

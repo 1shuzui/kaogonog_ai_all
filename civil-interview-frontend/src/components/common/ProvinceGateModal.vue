@@ -11,13 +11,14 @@
     <div class="province-gate">
       <div class="province-gate__header">
         <span class="province-gate__eyebrow">首次进入设置</span>
-        <h2>请先选择你的备考省份</h2>
+        <h2>请先设置练习偏好</h2>
         <p>
-          后续的随机抽题、定向备面、题库筛选都会优先按这个省份展示，
-          你也可以在右上角或个人中心随时修改。
+          后续的随机抽题、定向备面、题库筛选会优先按这个省份和题型展示；
+          题型不选时系统会随机练习，也可以在个人中心随时修改。
         </p>
       </div>
 
+      <div class="province-gate__section-title">备考地区</div>
       <div class="province-gate__grid">
         <button
           v-for="item in options"
@@ -31,9 +32,23 @@
         </button>
       </div>
 
+      <div class="province-gate__section-title">注重题型</div>
+      <div class="province-gate__type-grid">
+        <button
+          v-for="item in preferredQuestionOptions"
+          :key="item.key"
+          type="button"
+          class="province-gate__chip"
+          :class="{ 'is-active': selectedDimensions.includes(item.key) }"
+          @click="toggleDimension(item.key)"
+        >
+          {{ item.name }}
+        </button>
+      </div>
+
       <div class="province-gate__footer">
-        <span class="province-gate__hint">建议按你当前主要备考地区选择</span>
-        <a-button type="primary" size="large" :disabled="!selectedProvince" @click="confirmProvince">
+        <span class="province-gate__hint">题型可暂不选择，留空代表随机</span>
+        <a-button type="primary" size="large" :loading="saving" :disabled="!selectedProvince || saving" @click="confirmProvince">
           确认并进入
         </a-button>
       </div>
@@ -45,7 +60,7 @@
 import { computed, ref, watch } from 'vue'
 import { message } from 'ant-design-vue'
 import { useUserStore } from '@/stores/user'
-import { PROVINCES } from '@/utils/constants'
+import { QUESTION_CATEGORIES, PROVINCES } from '@/utils/constants'
 
 const props = defineProps({
   open: {
@@ -56,6 +71,7 @@ const props = defineProps({
 
 const emit = defineEmits(['confirmed'])
 const userStore = useUserStore()
+const saving = ref(false)
 
 function isExplicitProvince(code = '') {
   const normalized = String(code || '').trim()
@@ -72,6 +88,8 @@ const selectedProvince = ref(
     ? userStore.selectedProvince
     : ''
 )
+const selectedDimensions = ref([])
+const preferredQuestionOptions = computed(() => QUESTION_CATEGORIES.filter((item) => item.key))
 
 watch(
   () => props.open,
@@ -80,18 +98,40 @@ watch(
       selectedProvince.value = userStore.hasConfirmedProvinceSelection && isExplicitProvince(userStore.selectedProvince)
         ? userStore.selectedProvince
         : ''
+      selectedDimensions.value = Array.isArray(userStore.preferences?.preferredQuestionDimensions)
+        ? [...userStore.preferences.preferredQuestionDimensions]
+        : []
     }
   }
 )
 
-async function confirmProvince() {
-  if (!isExplicitProvince(selectedProvince.value)) return
-  const result = await userStore.confirmProvinceSelection(selectedProvince.value)
-  if (result?.success === false) {
-    message.error('省份保存失败，请稍后重试')
+function toggleDimension(key) {
+  if (!key) return
+  if (selectedDimensions.value.includes(key)) {
+    selectedDimensions.value = selectedDimensions.value.filter((item) => item !== key)
     return
   }
-  emit('confirmed', selectedProvince.value)
+  selectedDimensions.value = [...selectedDimensions.value, key]
+}
+
+async function confirmProvince() {
+  if (!isExplicitProvince(selectedProvince.value) || saving.value) return
+  saving.value = true
+  try {
+    const result = await userStore.confirmProvinceSelection(selectedProvince.value)
+    if (result?.success === false) {
+      message.error('偏好保存失败，请稍后重试')
+      return
+    }
+    await userStore.savePreferences({
+      ...userStore.preferences,
+      preferredQuestionDimensions: selectedDimensions.value,
+      practicePreferenceConfirmed: true
+    })
+    emit('confirmed', selectedProvince.value)
+  } finally {
+    saving.value = false
+  }
 }
 </script>
 
@@ -134,6 +174,18 @@ async function confirmProvince() {
   gap: 10px;
 }
 
+.province-gate__section-title {
+  color: @text-primary;
+  font-size: @font-size-base;
+  font-weight: 700;
+}
+
+.province-gate__type-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .province-gate__chip {
   min-height: 46px;
   padding: 0 12px;
@@ -169,6 +221,10 @@ async function confirmProvince() {
 
 @media (max-width: 768px) {
   .province-gate__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .province-gate__type-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

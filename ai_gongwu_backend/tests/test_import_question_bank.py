@@ -6,6 +6,7 @@ from pathlib import Path
 from scripts.extract_docx_text import extract_docx_text
 from scripts.import_question_bank import (
     activate_profile,
+    build_classification_metadata,
     build_runtime_profile,
     build_interpersonal_template_texts,
     detect_template_family,
@@ -97,11 +98,82 @@ class ImportQuestionBankNormalizationTestCase(unittest.TestCase):
 
             self.assertEqual(parsed["province"], "江苏")
             self.assertEqual(parsed["fullScore"], 24.0)
+            self.assertEqual(parsed["examCategory"], "事业单位考试")
+            self.assertEqual(parsed["questionTypeCategory"], "综合分析")
+            self.assertEqual(parsed.get("positionType", ""), "")
+            self.assertEqual(parsed.get("portalTags", []), [])
+            self.assertEqual(parsed["reviewStatus"], "需人工复核")
+            self.assertIn("缺少真实中文套题名", parsed["reviewReason"])
             self.assertTrue(parsed["referenceAnswer"].startswith("各位考官"))
             self.assertEqual(
                 [item["name"] for item in parsed["dimensions"]],
                 ["核心认知与政治站位", "传承内涵与破弊举措", "语言表达", "创新思维"],
             )
+        finally:
+            activate_profile(original_profile)
+
+    def test_classification_keeps_real_source_separate_from_display_portals(self):
+        original_profile = activate_profile("hunan")
+        try:
+            activate_profile("jiangsu_shiye")
+            jiangsu_medical = build_classification_metadata(
+                source_document="2017-2025江苏事业单位真题题库.docx",
+                province="江苏",
+                suite_name="2025年7月5日江苏省连云港市连云区事业单位面试题",
+                source_title_raw="2025年7月5日江苏省连云港市连云区事业单位面试题",
+                position="护理岗",
+                batch="",
+                question_type="岗位认知·医疗服务",
+                question_text="医院窗口服务中有群众投诉，你作为护理岗工作人员怎么办？",
+                question_no=1,
+                question_score=25,
+                suite_key="JS-LYG-LYQ20250705",
+            )
+
+            self.assertEqual(jiangsu_medical["examCategory"], "事业单位考试")
+            self.assertEqual(jiangsu_medical["examSubcategory"], "江苏省")
+            self.assertIn("医疗卫生面试", jiangsu_medical["portalTags"])
+            self.assertNotEqual(jiangsu_medical["examCategory"], "医疗卫生面试")
+
+            activate_profile("anhui")
+            anhui = build_classification_metadata(
+                source_document="2020-2025第二批次完全版.docx",
+                province="安徽",
+                suite_name="2025年5月17日安徽省公务员面试题",
+                source_title_raw="2025年5月17日安徽省公务员面试题",
+                position="综合管理类",
+                batch="",
+                question_type="综合分析",
+                question_text="请结合基层治理谈看法，材料中提到B类事项清单。",
+                question_no=1,
+                question_score=25,
+                suite_key="AHGWY-20250517",
+            )
+
+            self.assertEqual(anhui["examCategory"], "省级公务员考试")
+            self.assertEqual(anhui["examSubcategory"], "安徽省")
+            self.assertNotIn("江苏", anhui.get("positionType", ""))
+            self.assertNotIn("B类", anhui.get("positionType", ""))
+
+            activate_profile("hunan")
+            hunan_prison = build_classification_metadata(
+                source_document="湖南-监狱-2020.docx",
+                province="湖南",
+                suite_name="2020年9月19日湖南省考省直监狱岗位面试题",
+                source_title_raw="2020年9月19日湖南省考省直监狱岗位面试题",
+                position="省直监狱岗位",
+                batch="监狱岗",
+                question_type="应急应变",
+                question_text="监狱管理中遇到突发情况，你会如何处置？",
+                question_no=1,
+                question_score=25,
+                suite_key="HN-20200919-JY",
+            )
+
+            self.assertEqual(hunan_prison["examCategory"], "省级公务员考试")
+            self.assertEqual(hunan_prison["examSubcategory"], "湖南省")
+            self.assertEqual(hunan_prison["system"], "监狱系统")
+            self.assertNotIn("法检书记员面试", hunan_prison["portalTags"])
         finally:
             activate_profile(original_profile)
 

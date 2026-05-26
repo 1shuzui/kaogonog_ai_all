@@ -36,13 +36,97 @@ POSITION_ALIASES = {
     "finance": ("银保监", "金融监管"),
     "diplomacy": ("外交",),
     "prison": ("监狱", "狱警"),
-    "jiangsu_a": ("A类", "综合管理岗", "综合管理", "省属", "事业单位"),
-    "jiangsu_b": ("B类", "社会科学专技岗", "法律", "经济", "会计", "社科"),
-    "jiangsu_c": ("C类", "自然科学专技岗", "计算机", "工程", "农技", "自然科学"),
-    "jiangsu_d": ("D类", "中小学教师岗", "教师", "教育教学", "班级管理"),
-    "jiangsu_e": ("E类", "医疗卫生岗", "医疗", "卫生", "医患沟通", "公共卫生"),
+    "jiangsu_a": ("A类", "A 类"),
+    "jiangsu_b": ("B类", "B 类"),
+    "jiangsu_c": ("C类", "C 类"),
+    "jiangsu_d": ("D类", "D 类"),
+    "jiangsu_e": ("E类", "E 类"),
     "jiangsu_worker": ("工勤技能岗", "工勤", "技能保障", "服务规范"),
+    "bank": ("银行", "农商行", "城商行", "柜面", "客户经理"),
+    "medical": ("医疗", "卫生", "医师", "护理", "药师", "医技"),
 }
+
+QUESTION_TYPE_CATEGORY_RULES = (
+    ("综合分析", ("综合分析", "社会现象", "政策理解", "观点", "漫画", "寓言", "名言", "现象", "分析")),
+    ("组织管理", ("组织", "计划", "调研", "宣传", "活动", "接待", "工作落实", "协调", "推进")),
+    ("应急应变", ("应急", "突发", "危机", "舆情", "处置", "投诉", "冲突")),
+    ("人际沟通", ("人际", "沟通", "劝导", "同事", "领导", "群众", "关系")),
+    ("情景模拟", ("情景模拟", "现场模拟", "模拟", "演讲", "发言", "串词", "宣讲")),
+    ("岗位认知", ("职业认知", "岗位认知", "自我认知", "报考动机", "价值观", "岗位匹配")),
+)
+
+SYSTEM_RULES = (
+    ("税务系统", ("税务", "税收", "纳税")),
+    ("海关系统", ("海关",)),
+    ("公安系统", ("公安", "民警", "交警", "铁路公安")),
+    ("法院系统", ("法院", "法官")),
+    ("检察系统", ("检察院", "检察官", "检察")),
+    ("市场监管", ("市场监管", "市监")),
+    ("监狱系统", ("监狱", "狱警")),
+    ("金融监管系统", ("金融监管", "银保监", "证监")),
+    ("银行系统", ("银行", "农商行", "城商行")),
+    ("医疗卫生系统", ("医疗", "卫生", "护理", "医师", "药师", "医技")),
+)
+
+POSITION_TYPE_RULES = (
+    ("A类综合管理岗", ("A类", "A 类")),
+    ("B类社会科学专技岗", ("B类", "B 类")),
+    ("C类自然科学专技岗", ("C类", "C 类")),
+    ("D类中小学教师岗", ("D类", "D 类")),
+    ("E类医疗卫生岗", ("E类", "E 类")),
+    ("综合管理岗", ("综合管理", "通用岗", "普通岗")),
+    ("乡镇岗", ("乡镇岗", "乡镇")),
+    ("遴选岗", ("遴选",)),
+    ("监狱岗", ("监狱岗", "省直监狱")),
+    ("税务系统补录", ("税务系统补录", "补录")),
+    ("书记员", ("书记员",)),
+    ("医师岗", ("医师",)),
+    ("护理岗", ("护理",)),
+    ("医技岗", ("医技", "检验", "影像")),
+    ("药师岗", ("药师",)),
+    ("银行岗", ("银行", "柜面", "客户经理")),
+)
+
+PORTAL_TAG_RULES = (
+    ("银行招考面试", ("银行招考", "银行面试", "银行", "农商行", "城商行", "柜面", "客户经理")),
+    ("医疗卫生面试", ("医疗卫生", "医疗", "卫生", "护理", "医师", "药师", "医技", "医院", "医患")),
+    ("法检书记员面试", ("法检", "书记员", "法院书记员", "检察院书记员")),
+)
+
+INTERVIEW_FORMAT_RULES = (
+    ("结构化小组", ("结构化小组",)),
+    ("结构化+追问", ("结构化+追问", "追问")),
+    ("结构化+视频", ("结构化+视频", "视频题")),
+    ("结构化+专业题", ("专业题", "专业知识")),
+    ("结构化+专业答辩", ("专业答辩",)),
+    ("结构化+病例分析", ("病例分析",)),
+    ("结构化+实操考核", ("实操考核", "设备操作")),
+    ("无领导小组讨论", ("无领导",)),
+    ("半结构化", ("半结构化",)),
+    ("结构化面试", ("结构化", "面试题")),
+)
+
+PROVINCE_SUFFIX_MUNICIPALITIES = {"北京", "上海", "天津", "重庆"}
+CLASSIFICATION_META_KEYS = (
+    "examCategory",
+    "examSubcategory",
+    "city",
+    "district",
+    "system",
+    "agency",
+    "positionType",
+    "jobLevel",
+    "interviewFormat",
+    "questionTypeCategory",
+    "portalTags",
+    "displayPortals",
+    "classificationSource",
+    "classificationConfidence",
+    "reviewStatus",
+    "reviewReason",
+    "hasCompleteSuiteLevel",
+    "hasAppearanceScore",
+)
 
 
 def _normalize_stem_key(text: str | None) -> str:
@@ -68,6 +152,193 @@ def _question_meta_from_keywords(keywords: dict | None) -> dict:
 
 def _question_source_label(source: str) -> str:
     return QUESTION_SOURCE_LABELS.get(source, source or "未知来源")
+
+
+def _first_rule_match(text: str, rules) -> str:
+    for label, aliases in rules:
+        if any(alias in text for alias in aliases):
+            return label
+    return ""
+
+
+def _all_rule_matches(text: str, rules) -> list[str]:
+    matches: list[str] = []
+    for label, aliases in rules:
+        if any(alias in text for alias in aliases) and label not in matches:
+            matches.append(label)
+    return matches
+
+
+def _is_jiangsu_civil_service_category(position_type: str) -> bool:
+    return str(position_type or "").startswith(("A类", "B类", "C类", "D类", "E类"))
+
+
+def _infer_position_type(text: str, exam_category: str, province: str, fallback: str = "") -> str:
+    matched = _first_rule_match(text, POSITION_TYPE_RULES)
+    if _is_jiangsu_civil_service_category(matched):
+        if exam_category == "省级公务员考试" and _normalize_province_label(province) == "江苏省":
+            return matched
+        return fallback if fallback and fallback not in {"省考", "事业单位"} else ""
+    return matched or (fallback if fallback not in {"省考", "事业单位"} else "")
+
+
+def _normalize_province_label(value: str) -> str:
+    province = re.sub(r"\s+", "", str(value or "").strip())
+    if not province:
+        return ""
+    if province in PROVINCE_SUFFIX_MUNICIPALITIES or province.endswith(("省", "市", "区")):
+        return province
+    if province in {"内蒙古", "广西", "西藏", "宁夏", "新疆"}:
+        suffix = {
+            "内蒙古": "自治区",
+            "广西": "壮族自治区",
+            "西藏": "自治区",
+            "宁夏": "回族自治区",
+            "新疆": "维吾尔自治区",
+        }[province]
+        return f"{province}{suffix}"
+    return f"{province}省"
+
+
+def _province_label_from_code(value: str) -> str:
+    raw = str(value or "").strip()
+    if raw in PROVINCE_NAMES:
+        return PROVINCE_NAMES[raw]
+    return raw
+
+
+def _infer_region_parts(text: str, province: str) -> tuple[str, str]:
+    value = re.sub(r"\s+", "", str(text or ""))
+    province_name = _normalize_province_label(province)
+    city = ""
+    district = ""
+    if province_name:
+        match = re.search(
+            rf"{re.escape(province_name)}(?P<city>[\u4e00-\u9fff]{{2,12}}市)?(?P<district>[\u4e00-\u9fff]{{2,12}}(?:区|县|市))?",
+            value,
+        )
+        if match:
+            city = match.group("city") or ""
+            district = match.group("district") or ""
+    if not city:
+        match = re.search(r"([\u4e00-\u9fff]{2,12}市)", value)
+        city = match.group(1) if match else ""
+    if not district:
+        match = re.search(r"([\u4e00-\u9fff]{2,12}(?:区|县))", value)
+        district = match.group(1) if match else ""
+    return city, district
+
+
+def _infer_agency(text: str) -> str:
+    value = re.sub(r"\s+", "", str(text or ""))
+    for pattern in (
+        r"([\u4e00-\u9fff]{2,20}(?:厅|局|委|办|院|行|中心|学校|医院))",
+        r"(中央[\u4e00-\u9fff]{2,20}(?:机关|部门))",
+    ):
+        match = re.search(pattern, value)
+        if match:
+            agency = match.group(1)
+            if agency not in {"事业单位", "公务员考试"}:
+                return agency
+    return ""
+
+
+def _infer_job_level(text: str) -> str:
+    for label, aliases in (
+        ("中央机关", ("中央", "中央国家行政机关", "中央党群机关")),
+        ("省直", ("省直", "省属")),
+        ("市属", ("市属", "市直")),
+        ("县乡", ("县乡", "区县", "县级")),
+        ("乡镇基层", ("乡镇", "基层", "村", "社区")),
+    ):
+        if any(alias in text for alias in aliases):
+            return label
+    return ""
+
+
+def _infer_exam_category(text: str, province: str) -> tuple[str, str, str]:
+    province_name = _normalize_province_label(province)
+    if any(token in text for token in ("国考", "国家公务员", "中央国家行政机关", "中央党群机关", "海关系统", "铁路公安")):
+        return "国家公务员考试", "中央/国家直属系统", "source_title"
+    if "事业单位" in text:
+        return "事业单位考试", province_name or province, "suite_title"
+    if any(token in text for token in ("银行招考", "农商行", "城商行", "银行面试")):
+        return "银行招考面试", province_name or province, "source_title"
+    if any(token in text for token in ("医疗卫生", "医师岗", "护理岗", "药师岗", "医技岗")):
+        return "医疗卫生面试", province_name or province, "source_title"
+    if any(token in text for token in ("法检", "书记员", "法院", "检察院")):
+        return "法检书记员面试", province_name or province, "source_title"
+    if any(token in text for token in ("省考", "省属公务员", "省级公务员", "公务员")):
+        return "省级公务员考试", province_name or province, "source_title"
+    return "", province_name or province, "unresolved"
+
+
+def _infer_question_type_category(question_type: str, stem: str = "") -> str:
+    return _first_rule_match(f"{question_type} {stem}", QUESTION_TYPE_CATEGORY_RULES) or "综合分析"
+
+
+def _infer_classification_meta(item: dict, existing: dict, source_document: str) -> dict:
+    text = " ".join(
+        str(value or "")
+        for value in (
+            existing.get("suiteName"),
+            existing.get("sourceTitleRaw"),
+            source_document,
+            existing.get("position"),
+            existing.get("batch"),
+            item.get("type"),
+            item.get("stem"),
+            item.get("question"),
+        )
+    )
+    province_label = _province_label_from_code(str(item.get("province") or existing.get("province") or ""))
+    exam_category, exam_subcategory, classification_source = _infer_exam_category(text, province_label)
+    city, district = _infer_region_parts(text, province_label)
+    question_no = existing.get("questionNo")
+    question_score = existing.get("questionScore") or item.get("fullScore")
+    review_reasons: list[str] = []
+    if not exam_category:
+        review_reasons.append("未能识别一级考试大类")
+    if not existing.get("suiteName"):
+        review_reasons.append("缺少真实中文套题名")
+    if not question_no:
+        review_reasons.append("缺少套题内题序")
+    if not question_score:
+        review_reasons.append("缺少单题分值")
+    if not _first_rule_match(text, INTERVIEW_FORMAT_RULES):
+        review_reasons.append("未明确面试形式")
+    if any(token in text for token in ("国企招聘", "特岗", "定岗特选", "强村行动")):
+        review_reasons.append("标题含非标准事业单位/特殊招聘表述，需人工确认分类")
+
+    if not review_reasons:
+        confidence = "high"
+        review_status = "已确认"
+    elif exam_category and existing.get("suiteName") and question_no:
+        confidence = "medium"
+        review_status = "待确认"
+    else:
+        confidence = "low"
+        review_status = "需人工复核"
+
+    return {
+        "examCategory": exam_category,
+        "examSubcategory": exam_subcategory,
+        "city": city,
+        "district": district,
+        "system": _first_rule_match(text, SYSTEM_RULES),
+        "agency": _infer_agency(text),
+        "positionType": _infer_position_type(text, exam_category, province_label, str(existing.get("position") or "")),
+        "jobLevel": _infer_job_level(text),
+        "interviewFormat": _first_rule_match(text, INTERVIEW_FORMAT_RULES),
+        "questionTypeCategory": _infer_question_type_category(str(item.get("type") or existing.get("questionType") or ""), str(item.get("stem") or item.get("question") or "")),
+        "portalTags": _all_rule_matches(text, PORTAL_TAG_RULES),
+        "displayPortals": _all_rule_matches(text, PORTAL_TAG_RULES),
+        "classificationSource": classification_source,
+        "classificationConfidence": confidence,
+        "reviewStatus": review_status,
+        "reviewReason": "；".join(review_reasons),
+        "hasCompleteSuiteLevel": bool(existing.get("suiteKey") and existing.get("suiteName") and question_no),
+    }
 
 
 def _infer_position_tags(*values) -> list[str]:
@@ -142,6 +413,13 @@ def _build_question_meta(
         "totalScore": metadata_value("totalScore", "suiteTotalScore", "fullExamTotalScore"),
         "sourceDocumentType": metadata_value("sourceDocumentType"),
     }
+    classification_meta = _infer_classification_meta(item, meta, source_document)
+    for key in CLASSIFICATION_META_KEYS:
+        value = metadata_value(key)
+        if value in ("", [], None):
+            value = classification_meta.get(key)
+        if value not in ("", [], None):
+            meta[key] = value
     return {key: value for key, value in meta.items() if value not in ("", [], None)}
 
 
@@ -181,6 +459,24 @@ def _q_to_dict(q: Question) -> dict:
             "appearanceScore": meta.get("appearanceScore"),
             "suiteTotalScore": meta.get("suiteTotalScore") or meta.get("totalScore"),
             "totalScore": meta.get("totalScore") or meta.get("suiteTotalScore"),
+            "hasAppearanceScore": meta.get("hasAppearanceScore"),
+            "examCategory": meta.get("examCategory", ""),
+            "examSubcategory": meta.get("examSubcategory", ""),
+            "city": meta.get("city", ""),
+            "district": meta.get("district", ""),
+            "system": meta.get("system", ""),
+            "agency": meta.get("agency", ""),
+            "positionType": meta.get("positionType", ""),
+            "jobLevel": meta.get("jobLevel", ""),
+            "interviewFormat": meta.get("interviewFormat", ""),
+            "questionTypeCategory": meta.get("questionTypeCategory", ""),
+            "portalTags": meta.get("portalTags", []),
+            "displayPortals": meta.get("displayPortals", meta.get("portalTags", [])),
+            "classificationSource": meta.get("classificationSource", ""),
+            "classificationConfidence": meta.get("classificationConfidence", ""),
+            "reviewStatus": meta.get("reviewStatus", ""),
+            "reviewReason": meta.get("reviewReason", ""),
+            "hasCompleteSuiteLevel": meta.get("hasCompleteSuiteLevel"),
         })
     return payload
 
@@ -200,6 +496,33 @@ def _normalize_keywords(keywords: dict | None, meta: dict | None = None) -> dict
     if merged_meta:
         base["_meta"] = merged_meta
     return base
+
+
+def _question_input_meta(data) -> dict:
+    """Collect optional suite/classification fields from admin import/edit payloads."""
+
+    fields = (
+        "suiteId",
+        "suiteKey",
+        "suiteName",
+        "examDate",
+        "batch",
+        "position",
+        "questionNo",
+        "questionScore",
+        "answerScoreTotal",
+        "appearanceScore",
+        "suiteTotalScore",
+        "totalScore",
+        "hasAppearanceScore",
+        *CLASSIFICATION_META_KEYS,
+    )
+    result: dict = {}
+    for field in fields:
+        value = getattr(data, field, None)
+        if value not in ("", [], None):
+            result[field] = value
+    return result
 
 
 PROVINCE_CODE_BY_NAME = {name: code for code, name in PROVINCE_NAMES.items()}
@@ -629,17 +952,37 @@ def _question_matches_position(question: Question, position: str) -> bool:
         return True
     meta = _question_meta_from_keywords(question.keywords)
     position_tags = meta.get("positionTags") if isinstance(meta.get("positionTags"), list) else []
+    portal_tags = meta.get("portalTags") if isinstance(meta.get("portalTags"), list) else []
+    display_portals = meta.get("displayPortals") if isinstance(meta.get("displayPortals"), list) else []
     if position in position_tags:
         return True
+    if position == "medical" and "医疗卫生面试" in {*portal_tags, *display_portals}:
+        return True
+    if position == "bank" and "银行招考面试" in {*portal_tags, *display_portals}:
+        return True
+    if position in {"court", "procurate"} and "法检书记员面试" in {*portal_tags, *display_portals}:
+        return True
     if position.startswith("jiangsu_") and any(str(tag).startswith("jiangsu_") for tag in position_tags):
+        return False
+    if position.startswith("jiangsu_"):
         return False
 
     haystack = " ".join(
         [
             question.stem,
             meta.get("sourceDocument", ""),
+            meta.get("suiteName", ""),
+            meta.get("examCategory", ""),
+            meta.get("examSubcategory", ""),
+            meta.get("system", ""),
+            meta.get("agency", ""),
+            meta.get("positionType", ""),
+            meta.get("jobLevel", ""),
             " ".join(meta.get("tags", []) if isinstance(meta.get("tags"), list) else []),
             meta.get("questionType", ""),
+            meta.get("questionTypeCategory", ""),
+            " ".join(portal_tags),
+            " ".join(display_portals),
         ]
     )
     return any(alias in haystack for alias in POSITION_ALIASES.get(position, ()))
@@ -871,7 +1214,11 @@ def create_question(db: Session, data: QuestionCreate) -> dict:
         scoring_points=data.scoringPoints,
         keywords=_normalize_keywords(
             data.keywords,
-            {"source": "manual", "sourceLabel": _question_source_label("manual")},
+            {
+                "source": "manual",
+                "sourceLabel": _question_source_label("manual"),
+                **_question_input_meta(data),
+            },
         ),
     )
     db.add(q)
@@ -893,7 +1240,13 @@ def update_question(db: Session, question_id: str, data: QuestionUpdate) -> dict
     q.prep_time = data.prepTime
     q.answer_time = data.answerTime
     q.scoring_points = data.scoringPoints
-    q.keywords = _normalize_keywords(data.keywords, _question_meta_from_keywords(q.keywords))
+    q.keywords = _normalize_keywords(
+        data.keywords,
+        {
+            **_question_meta_from_keywords(q.keywords),
+            **_question_input_meta(data),
+        },
+    )
     db.commit()
     db.refresh(q)
     return _q_to_dict(q)
@@ -944,55 +1297,178 @@ def import_questions(db: Session, content: bytes, filename: str) -> dict:
             headers = [str(h).strip().lower() if h else "" for h in rows[0]]
             col = {}
             mapping = {
+                "id": ["id", "题目id", "题号"],
+                "suiteId": ["suiteid", "套题id"],
+                "suiteKey": ["suitekey", "套题key"],
+                "suiteName": ["suitename", "套题名称"],
+                "examDate": ["examdate", "考试日期"],
+                "batch": ["batch", "批次"],
                 "stem": ["题干", "stem"],
+                "question": ["question", "题目"],
+                "type": ["type", "题型"],
                 "dimension": ["所属维度", "dimension"],
                 "province": ["省份", "province"],
+                "position": ["position", "岗位", "岗位/类别"],
+                "questionNo": ["questionno", "题序"],
+                "questionScore": ["questionscore", "题目分值", "单题分值"],
+                "fullScore": ["fullscore", "满分"],
+                "answerScoreTotal": ["answerscoretotal", "答题总分"],
+                "appearanceScore": ["appearancescore", "仪态分"],
+                "suiteTotalScore": ["suitetotalscore", "套题总分"],
+                "totalScore": ["totalscore", "总分"],
+                "hasAppearanceScore": ["hasappearancescore", "是否有仪态分"],
+                "examCategory": ["examcategory", "考试大类"],
+                "examSubcategory": ["examsubcategory", "二级分类"],
+                "city": ["city", "城市"],
+                "district": ["district", "区县"],
+                "system": ["system", "系统"],
+                "agency": ["agency", "单位"],
+                "positionType": ["positiontype", "岗位类别"],
+                "jobLevel": ["joblevel", "招录层级"],
+                "interviewFormat": ["interviewformat", "面试形式"],
+                "questionTypeCategory": ["questiontypecategory", "题型维度"],
+                "classificationConfidence": ["classificationconfidence", "分类置信度"],
+                "reviewStatus": ["reviewstatus", "复核状态"],
+                "reviewReason": ["reviewreason", "复核原因"],
+                "portalTags": ["portaltags", "特色入口", "展示入口"],
+                "displayPortals": ["displayportals", "展示入口"],
                 "prepTime": ["准备时间", "preptime"],
                 "answerTime": ["作答时间", "answertime"],
+                "dimensions": ["dimensions_json", "dimensions", "评分维度"],
                 "scoringPoints": ["采分点", "scoringpoints"],
                 "scoringKeywords": ["得分关键词", "scoringkeywords"],
+                "coreKeywords": ["corekeywords", "核心关键词"],
+                "strongKeywords": ["strongkeywords", "强关联关键词"],
+                "weakKeywords": ["weakkeywords", "弱关联关键词"],
                 "deductingKeywords": ["扣分关键词", "deductingkeywords"],
                 "bonusKeywords": ["加分关键词", "bonuskeywords"],
+                "penaltyKeywords": ["penaltykeywords", "扣分关键词"],
+                "tags": ["tags", "标签"],
+                "sourceDocument": ["sourcedocument", "来源文档"],
+                "sourceTitleRaw": ["sourcetitleraw", "原始标题"],
             }
             for field, aliases in mapping.items():
                 for i, h in enumerate(headers):
                     if h in aliases:
                         col[field] = i
                         break
-            if "stem" not in col:
-                raise HTTPException(status_code=400, detail="Excel 缺少题干列")
+            if "stem" not in col and "question" not in col:
+                raise HTTPException(status_code=400, detail="Excel 缺少题干/题目列")
             for row in rows[1:]:
                 try:
-                    stem = str(row[col["stem"]]).strip() if row[col["stem"]] else ""
+                    def row_value(field: str, default: str = ""):
+                        if field not in col:
+                            return default
+                        value = row[col[field]]
+                        return default if value is None else value
+
+                    stem = str(row_value("stem", "") or row_value("question", "")).strip()
                     if not stem:
                         failed += 1
                         continue
+
+                    def split_cell_list(value):
+                        if value in ("", None):
+                            return []
+                        text = str(value).strip()
+                        if not text:
+                            return []
+                        if text.startswith("["):
+                            try:
+                                parsed = json.loads(text)
+                                return parsed if isinstance(parsed, list) else []
+                            except Exception:
+                                return []
+                        return [item.strip() for item in re.split(r"[；;，,、\n]+", text) if item.strip()]
+
+                    def parse_json_cell(value, fallback):
+                        if value in ("", None):
+                            return fallback
+                        text = str(value).strip()
+                        if not text:
+                            return fallback
+                        if text.startswith("[") or text.startswith("{"):
+                            try:
+                                return json.loads(text)
+                            except Exception:
+                                return fallback
+                        return fallback
+
+                    def numeric_cell(field: str, default=0):
+                        value = row_value(field, "")
+                        if value in ("", None):
+                            return default
+                        try:
+                            number = float(value)
+                            return int(number) if number.is_integer() else number
+                        except Exception:
+                            return default
+
+                    def bool_cell(field: str):
+                        value = str(row_value(field, "")).strip().lower()
+                        if not value:
+                            return None
+                        return value in {"1", "true", "yes", "y", "有", "是"}
+
                     kw = {"scoring": [], "deducting": [], "bonus": []}
                     for ktype, kcol in [("scoring", "scoringKeywords"), ("deducting", "deductingKeywords"), ("bonus", "bonusKeywords")]:
-                        if kcol in col and row[col[kcol]]:
-                            val = str(row[col[kcol]]).strip()
-                            kw[ktype] = json.loads(val) if val.startswith("[") else [w.strip() for w in val.split(",") if w.strip()]
+                        kw[ktype] = split_cell_list(row_value(kcol, ""))
+                    kw["scoring"] = _unique_preserve_order(
+                        kw["scoring"]
+                        + split_cell_list(row_value("coreKeywords", ""))
+                        + split_cell_list(row_value("strongKeywords", ""))
+                        + split_cell_list(row_value("weakKeywords", ""))
+                    )
+                    kw["deducting"] = _unique_preserve_order(
+                        kw["deducting"] + split_cell_list(row_value("penaltyKeywords", ""))
+                    )
                     sp = []
-                    if "scoringPoints" in col and row[col["scoringPoints"]]:
-                        val = str(row[col["scoringPoints"]]).strip()
-                        if val.startswith("["):
-                            sp = json.loads(val)
+                    if "scoringPoints" in col and row_value("scoringPoints", ""):
+                        sp = parse_json_cell(row_value("scoringPoints"), [])
+                    dimensions = parse_json_cell(row_value("dimensions", ""), [])
+                    stem_value = stem or str(row_value("question", "")).strip()
+                    has_appearance = bool_cell("hasAppearanceScore")
+                    meta = {
+                        "source": "imported_file",
+                        "sourceLabel": _question_source_label("imported_file"),
+                        "originFile": filename,
+                        "tags": split_cell_list(row_value("tags", "")),
+                        "sourceDocument": str(row_value("sourceDocument", filename)).strip(),
+                        "sourceTitleRaw": str(row_value("sourceTitleRaw", "")).strip(),
+                    }
+                    for field in (
+                        "suiteId", "suiteKey", "suiteName", "examDate", "batch", "position",
+                        "examCategory", "examSubcategory", "city", "district", "system", "agency",
+                        "positionType", "jobLevel", "interviewFormat", "questionTypeCategory",
+                        "classificationConfidence", "reviewStatus", "reviewReason",
+                    ):
+                        value = str(row_value(field, "")).strip()
+                        if value:
+                            meta[field] = value
+                    portal_tags = split_cell_list(row_value("portalTags", "")) or split_cell_list(row_value("displayPortals", ""))
+                    if portal_tags:
+                        meta["portalTags"] = portal_tags
+                        meta["displayPortals"] = portal_tags
+                    for field in (
+                        "questionNo", "questionScore", "answerScoreTotal", "appearanceScore",
+                        "suiteTotalScore", "totalScore",
+                    ):
+                        value = numeric_cell(field, None)
+                        if value is not None:
+                            meta[field] = value
+                    if has_appearance is not None:
+                        meta["hasAppearanceScore"] = has_appearance
                     imported_item = {
-                        "id": "",
-                        "stem": stem,
-                        "dimension": _normalize_dimension(str(row[col["dimension"]]).strip() if "dimension" in col and row[col["dimension"]] else "analysis"),
-                        "province": _normalize_province(str(row[col["province"]]).strip() if "province" in col and row[col["province"]] else "national"),
-                        "prepTime": int(row[col["prepTime"]]) if "prepTime" in col and row[col["prepTime"]] else 90,
-                        "answerTime": int(row[col["answerTime"]]) if "answerTime" in col and row[col["answerTime"]] else 180,
-                        "scoringPoints": sp,
-                        "keywords": _normalize_keywords(
-                            kw,
-                            {
-                                "source": "imported_file",
-                                "sourceLabel": _question_source_label("imported_file"),
-                                "originFile": filename,
-                            },
-                        ),
+                        "id": str(row_value("id", "")).strip(),
+                        "stem": stem_value,
+                        "type": str(row_value("type", "")).strip(),
+                        "dimension": _normalize_dimension(str(row_value("dimension", "analysis")).strip(), str(row_value("type", "")).strip(), stem_value),
+                        "province": _normalize_province(str(row_value("province", "national")).strip()),
+                        "prepTime": int(numeric_cell("prepTime", 90) or 90),
+                        "answerTime": int(numeric_cell("answerTime", 180) or 180),
+                        "scoringPoints": sp or _normalize_scoring_points([], dimensions, None),
+                        "dimensions": dimensions,
+                        "keywords": _normalize_keywords(kw, meta),
                     }
                     _upsert_normalized_question(db, imported_item)
                     imported += 1

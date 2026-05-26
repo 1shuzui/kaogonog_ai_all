@@ -14,6 +14,11 @@
 
     <a-spin :spinning="targetedStore.focusLoading" tip="AI正在分析面试重点...">
       <template v-if="focusData">
+        <EmptyState
+          v-if="isEmptyFocus"
+          :text="focusData.emptyMessage || '暂无足够题库数据，请管理员补充该地区/岗位真题或发布重点词条后再生成分析。'"
+        />
+        <template v-else>
         <!-- 核心考察能力 -->
         <div class="card focus-section">
           <h3><AimOutlined /> 核心考察能力</h3>
@@ -88,6 +93,7 @@
             <span>{{ question.stem }}</span>
           </div>
         </div>
+        </template>
       </template>
 
       <EmptyState v-else-if="!targetedStore.focusLoading" text="暂无分析数据，请返回选择省份和岗位" />
@@ -117,6 +123,9 @@ const primaryColor = '#1B5FAA'
 
 const focusData = computed(() => targetedStore.focusData)
 const hasFullAccess = computed(() => hasPremiumAccess(userStore, billingStore))
+const isEmptyFocus = computed(() => (
+  focusData.value?.isFallback === true || Number(focusData.value?.questionCount || 0) <= 0
+))
 
 const provinceName = computed(() => {
   const p = PROVINCES.find(p => p.code === targetedStore.selectedProvince)
@@ -162,6 +171,10 @@ onMounted(async () => {
 })
 
 async function generateTargetedPractice() {
+  if (isEmptyFocus.value) {
+    message.warning(focusData.value?.emptyMessage || '暂无足够题库数据，请管理员补充后再练习。')
+    return
+  }
   await userStore.loadUserInfo().catch(() => null)
   if (!hasFullAccess.value) {
     billingStore.openPaywall(route.fullPath, '定向备考')

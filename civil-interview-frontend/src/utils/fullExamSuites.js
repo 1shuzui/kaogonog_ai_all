@@ -112,6 +112,15 @@ function getExamDate(raw = {}) {
   return firstString(raw.examDate, raw.exam_date, meta.examDate)
 }
 
+function getMetaString(raw = {}, ...keys) {
+  const meta = getQuestionMeta(raw)
+  for (const key of keys) {
+    const text = firstString(raw[key], meta[key])
+    if (text) return text
+  }
+  return ''
+}
+
 function getSuiteNumber(raw = {}, ...keys) {
   const meta = getQuestionMeta(raw)
   for (const key of keys) {
@@ -129,6 +138,27 @@ function hasExplicitSuiteNumber(raw = {}, ...keys) {
     return rawValue !== undefined && rawValue !== null && rawValue !== ''
       || metaValue !== undefined && metaValue !== null && metaValue !== ''
   })
+}
+
+function hasExplicitBoolean(raw = {}, ...keys) {
+  const meta = getQuestionMeta(raw)
+  return keys.some((key) => (
+    raw[key] !== undefined && raw[key] !== null && raw[key] !== ''
+  ) || (
+    meta[key] !== undefined && meta[key] !== null && meta[key] !== ''
+  ))
+}
+
+function getBooleanValue(raw = {}, ...keys) {
+  const meta = getQuestionMeta(raw)
+  for (const key of keys) {
+    const value = raw[key] !== undefined ? raw[key] : meta[key]
+    if (typeof value === 'boolean') return value
+    if (typeof value === 'string' && value.trim()) {
+      return ['1', 'true', 'yes', '有', '是'].includes(value.trim().toLowerCase())
+    }
+  }
+  return false
 }
 
 function extractSuiteKey(questionId = '') {
@@ -226,6 +256,18 @@ export function normalizeFullExamQuestion(raw = {}, suite = {}, index = 0) {
     suiteKey: raw.suiteKey || suite.suiteKey || '',
     suiteName: raw.suiteName || suite.title || '',
     examDate: raw.examDate || suite.examDate || '',
+    examCategory: raw.examCategory || suite.examCategory || '',
+    examSubcategory: raw.examSubcategory || suite.examSubcategory || '',
+    system: raw.system || suite.system || '',
+    positionType: raw.positionType || suite.positionType || '',
+    interviewFormat: raw.interviewFormat || suite.interviewFormat || '',
+    questionTypeCategory: raw.questionTypeCategory || '',
+    portalTags: Array.isArray(raw.portalTags) ? raw.portalTags : (Array.isArray(suite.portalTags) ? suite.portalTags : []),
+    displayPortals: Array.isArray(raw.displayPortals) ? raw.displayPortals : (Array.isArray(suite.displayPortals) ? suite.displayPortals : []),
+    classificationConfidence: raw.classificationConfidence || '',
+    reviewStatus: raw.reviewStatus || '',
+    reviewReason: raw.reviewReason || '',
+    hasAppearanceScore: raw.hasAppearanceScore ?? suite.hasAppearanceScore ?? false,
     questionNo: questionNumber === Number.MAX_SAFE_INTEGER ? index + 1 : questionNumber,
     questionScore: assignedScore,
     fullExamQuestionNumber: questionNumber === Number.MAX_SAFE_INTEGER ? index + 1 : questionNumber,
@@ -261,6 +303,15 @@ export function buildFullExamSuitesFromQuestions(questions = [], province = '') 
         totalScore: getSuiteNumber(question, 'suiteTotalScore', 'totalScore', 'fullExamTotalScore'),
         hasExplicitTotalScore: hasExplicitSuiteNumber(question, 'suiteTotalScore', 'totalScore', 'fullExamTotalScore'),
         hasExplicitAppearanceScore: hasExplicitSuiteNumber(question, 'appearanceScore', 'fullExamAppearanceScore'),
+        hasExplicitAppearanceFlag: hasExplicitBoolean(question, 'hasAppearanceScore'),
+        hasAppearanceScore: getBooleanValue(question, 'hasAppearanceScore'),
+        examCategory: getMetaString(question, 'examCategory'),
+        examSubcategory: getMetaString(question, 'examSubcategory'),
+        system: getMetaString(question, 'system'),
+        positionType: getMetaString(question, 'positionType'),
+        interviewFormat: getMetaString(question, 'interviewFormat'),
+        portalTags: Array.isArray(question?.portalTags) ? question.portalTags : [],
+        displayPortals: Array.isArray(question?.displayPortals) ? question.displayPortals : [],
         sourceDocument: getSourceDocument(question),
         questions: []
       })
@@ -274,6 +325,19 @@ export function buildFullExamSuitesFromQuestions(questions = [], province = '') 
     if (!group.totalScore) group.totalScore = getSuiteNumber(question, 'suiteTotalScore', 'totalScore', 'fullExamTotalScore')
     group.hasExplicitTotalScore = group.hasExplicitTotalScore || hasExplicitSuiteNumber(question, 'suiteTotalScore', 'totalScore', 'fullExamTotalScore')
     group.hasExplicitAppearanceScore = group.hasExplicitAppearanceScore || hasExplicitSuiteNumber(question, 'appearanceScore', 'fullExamAppearanceScore')
+    group.hasExplicitAppearanceFlag = group.hasExplicitAppearanceFlag || hasExplicitBoolean(question, 'hasAppearanceScore')
+    group.hasAppearanceScore = group.hasAppearanceScore || getBooleanValue(question, 'hasAppearanceScore')
+    if (!group.examCategory) group.examCategory = getMetaString(question, 'examCategory')
+    if (!group.examSubcategory) group.examSubcategory = getMetaString(question, 'examSubcategory')
+    if (!group.system) group.system = getMetaString(question, 'system')
+    if (!group.positionType) group.positionType = getMetaString(question, 'positionType')
+    if (!group.interviewFormat) group.interviewFormat = getMetaString(question, 'interviewFormat')
+    if (Array.isArray(question?.portalTags)) {
+      group.portalTags = [...new Set([...group.portalTags, ...question.portalTags])]
+    }
+    if (Array.isArray(question?.displayPortals)) {
+      group.displayPortals = [...new Set([...group.displayPortals, ...question.displayPortals])]
+    }
     if (!group.sourceDocument) group.sourceDocument = getSourceDocument(question)
     group.questions.push(question)
   }
@@ -293,9 +357,12 @@ export function buildFullExamSuitesFromQuestions(questions = [], province = '') 
       const totalScore = group.totalScore || Math.ceil(answerScoreTotal)
       const appearanceScore = group.hasExplicitAppearanceScore
         ? group.appearanceScore
-        : group.hasExplicitTotalScore
+        : (group.hasExplicitAppearanceFlag && !group.hasAppearanceScore)
+          ? 0
+          : group.hasExplicitTotalScore
           ? Math.max(0, totalScore - answerScoreTotal)
           : 0
+      const hasAppearanceScore = group.hasExplicitAppearanceFlag ? group.hasAppearanceScore : appearanceScore > 0
       const suite = {
         id: `${group.province}-${group.suiteKey}`,
         suiteKey: group.suiteKey,
@@ -303,11 +370,19 @@ export function buildFullExamSuitesFromQuestions(questions = [], province = '') 
         title: group.suiteName || buildSuiteTitle(group.province, group.suiteKey),
         suiteName: group.suiteName || '',
         examDate: group.examDate || '',
+        examCategory: group.examCategory || '',
+        examSubcategory: group.examSubcategory || '',
+        system: group.system || '',
+        positionType: group.positionType || '',
+        interviewFormat: group.interviewFormat || '',
+        portalTags: group.portalTags || [],
+        displayPortals: group.displayPortals || [],
         sourceDocument: group.sourceDocument,
         timingMode: group.province === 'jiangsu' ? JIANGSU_FULL_EXAM_TIMING_MODE : '',
         answerScoreTotal,
         totalScore,
         appearanceScore,
+        hasAppearanceScore,
         questions: orderedQuestions,
         sortKey: buildSortKey(group.suiteKey, group.examDate)
       }

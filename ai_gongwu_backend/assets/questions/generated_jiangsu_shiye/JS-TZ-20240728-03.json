@@ -57,6 +57,27 @@
   ],
   "sourceDocument": "2017-2025江苏事业单位真题题库.docx",
   "sourceDocumentType": "docx_xml",
+  "examCategory": "事业单位考试",
+  "examSubcategory": "江苏省",
+  "city": "泰州市",
+  "district": "",
+  "system": "医疗卫生系统",
+  "agency": "低保残障人士家庭免费进行",
+  "positionType": "护理岗",
+  "jobLevel": "",
+  "interviewFormat": "结构化面试",
+  "questionTypeCategory": "组织管理",
+  "portalTags": [
+    "医疗卫生面试"
+  ],
+  "displayPortals": [
+    "医疗卫生面试"
+  ],
+  "classificationSource": "profile_default",
+  "classificationConfidence": "high",
+  "reviewStatus": "已确认",
+  "reviewReason": "",
+  "hasCompleteSuiteLevel": true,
   "suiteId": "JS-TZ-20240728",
   "suiteKey": "JS-TZ-20240728",
   "suiteName": "2024年7月28日江苏省泰州市事业单位面试题",

@@ -422,6 +422,74 @@ from app.services.scoring.calculator import (
 
 ensure_utf8_stdio()
 
+QUESTION_TYPE_CATEGORY_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("综合分析", ("综合分析", "社会现象", "政策理解", "观点", "漫画", "寓言", "名言", "现象", "分析")),
+    ("组织管理", ("组织", "计划", "调研", "宣传", "活动", "接待", "工作落实", "协调", "推进")),
+    ("应急应变", ("应急", "突发", "危机", "舆情", "处置", "投诉", "冲突")),
+    ("人际沟通", ("人际", "沟通", "劝导", "同事", "领导", "群众", "关系")),
+    ("情景模拟", ("情景模拟", "现场模拟", "模拟", "演讲", "发言", "串词", "宣讲")),
+    ("岗位认知", ("职业认知", "岗位认知", "自我认知", "报考动机", "价值观", "岗位匹配")),
+)
+
+SYSTEM_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("税务系统", ("税务", "税收", "纳税")),
+    ("海关系统", ("海关",)),
+    ("公安系统", ("公安", "民警", "交警", "铁路公安")),
+    ("法院系统", ("法院", "法官")),
+    ("检察系统", ("检察院", "检察官", "检察")),
+    ("市场监管", ("市场监管", "市监")),
+    ("监狱系统", ("监狱", "狱警")),
+    ("金融监管系统", ("金融监管", "银保监", "证监")),
+    ("银行系统", ("银行", "农商行", "城商行")),
+    ("医疗卫生系统", ("医疗", "卫生", "护理", "医师", "药师", "医技")),
+)
+
+POSITION_TYPE_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("A类综合管理岗", ("A类", "A 类")),
+    ("B类社会科学专技岗", ("B类", "B 类")),
+    ("C类自然科学专技岗", ("C类", "C 类")),
+    ("D类中小学教师岗", ("D类", "D 类")),
+    ("E类医疗卫生岗", ("E类", "E 类")),
+    ("综合管理岗", ("综合管理", "通用岗", "普通岗")),
+    ("乡镇岗", ("乡镇岗", "乡镇")),
+    ("遴选岗", ("遴选",)),
+    ("监狱岗", ("监狱岗", "省直监狱")),
+    ("税务系统补录", ("税务系统补录", "补录")),
+    ("书记员", ("书记员",)),
+    ("医师岗", ("医师",)),
+    ("护理岗", ("护理",)),
+    ("医技岗", ("医技", "检验", "影像")),
+    ("药师岗", ("药师",)),
+    ("银行岗", ("银行", "柜面", "客户经理")),
+)
+
+PORTAL_TAG_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("银行招考面试", ("银行招考", "银行面试", "银行", "农商行", "城商行", "柜面", "客户经理")),
+    ("医疗卫生面试", ("医疗卫生", "医疗", "卫生", "护理", "医师", "药师", "医技", "医院", "医患")),
+    ("法检书记员面试", ("法检", "书记员", "法院书记员", "检察院书记员")),
+)
+
+PROFILE_EXAM_CATEGORY_DEFAULTS = {
+    "jiangsu_shiye": ("事业单位考试", "profile_default"),
+    "anhui": ("省级公务员考试", "profile_default"),
+    "hunan": ("省级公务员考试", "profile_default"),
+}
+
+INTERVIEW_FORMAT_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("结构化小组", ("结构化小组",)),
+    ("结构化+追问", ("结构化+追问", "追问")),
+    ("结构化+视频", ("结构化+视频", "视频题")),
+    ("结构化+专业题", ("专业题", "专业知识")),
+    ("结构化+专业答辩", ("专业答辩",)),
+    ("结构化+病例分析", ("病例分析",)),
+    ("结构化+实操考核", ("实操考核", "设备操作")),
+    ("无领导小组讨论", ("无领导",)),
+    ("半结构化", ("半结构化",)),
+    ("结构化面试", ("结构化", "面试题")),
+)
+
+PROVINCE_SUFFIX_MUNICIPALITIES = {"北京", "上海", "天津", "重庆"}
+
 
 @dataclass
 class QuestionBlockContext:
@@ -460,6 +528,240 @@ class GeneratedSample:
     trim_chars: int | None
     sanitization: str
     oral: bool = False
+
+
+def _first_rule_match(text: str, rules: tuple[tuple[str, tuple[str, ...]], ...]) -> str:
+    """按规则表返回第一个命中的分类名称。"""
+
+    for label, aliases in rules:
+        if any(alias in text for alias in aliases):
+            return label
+    return ""
+
+
+def _all_rule_matches(text: str, rules: tuple[tuple[str, tuple[str, ...]], ...]) -> list[str]:
+    """按规则表返回所有命中的分类名称，用于特色展示入口。"""
+
+    matches: list[str] = []
+    for label, aliases in rules:
+        if any(alias in text for alias in aliases) and label not in matches:
+            matches.append(label)
+    return matches
+
+
+def _is_jiangsu_civil_service_category(position_type: str) -> bool:
+    return str(position_type or "").startswith(("A类", "B类", "C类", "D类", "E类"))
+
+
+def infer_position_type(text: str, exam_category: str, province: str, fallback: str = "") -> str:
+    """岗位类别只在对应考试体系内使用；特色入口另存 portalTags。"""
+
+    value = str(text or "")
+    matched = _first_rule_match(value, POSITION_TYPE_RULES)
+    if _is_jiangsu_civil_service_category(matched):
+        if exam_category == "省级公务员考试" and normalize_province_label(province) == "江苏省":
+            return matched
+        return fallback if fallback and fallback not in {"省考", "事业单位"} else ""
+    return matched or (fallback if fallback not in {"省考", "事业单位"} else "")
+
+
+def normalize_province_label(value: str) -> str:
+    """把省份/直辖市名称整理成展示用全称。"""
+
+    province = re.sub(r"\s+", "", str(value or "").strip())
+    if not province:
+        return ""
+    if province in PROVINCE_SUFFIX_MUNICIPALITIES or province.endswith(("省", "市", "区")):
+        return province
+    if province in {"内蒙古", "广西", "西藏", "宁夏", "新疆"}:
+        suffix = {
+            "内蒙古": "自治区",
+            "广西": "壮族自治区",
+            "西藏": "自治区",
+            "宁夏": "回族自治区",
+            "新疆": "维吾尔自治区",
+        }[province]
+        return f"{province}{suffix}"
+    return f"{province}省"
+
+
+def infer_region_parts(text: str, province: str) -> tuple[str, str]:
+    """从套题标题里抽取城市和区县，抽不到则留空。"""
+
+    value = re.sub(r"\s+", "", str(text or ""))
+    province_name = normalize_province_label(province)
+    city = ""
+    district = ""
+    if province_name:
+        pattern = rf"{re.escape(province_name)}(?P<city>[\u4e00-\u9fff]{{2,12}}市)?(?P<district>[\u4e00-\u9fff]{{2,12}}(?:区|县|市))?"
+        match = re.search(pattern, value)
+        if match:
+            city = match.group("city") or ""
+            district = match.group("district") or ""
+    if not city:
+        match = re.search(r"([\u4e00-\u9fff]{2,12}市)", value)
+        city = match.group(1) if match else ""
+    if not district:
+        match = re.search(r"([\u4e00-\u9fff]{2,12}(?:区|县))", value)
+        district = match.group(1) if match else ""
+    return city, district
+
+
+def infer_agency(text: str) -> str:
+    """抽取具体机关/单位名称，抽不到留空。"""
+
+    value = re.sub(r"\s+", "", str(text or ""))
+    for pattern in (
+        r"([\u4e00-\u9fff]{2,20}(?:厅|局|委|办|院|行|中心|学校|医院))",
+        r"(中央[\u4e00-\u9fff]{2,20}(?:机关|部门))",
+    ):
+        match = re.search(pattern, value)
+        if match:
+            agency = match.group(1)
+            if agency not in {"事业单位", "公务员考试"}:
+                return agency
+    return ""
+
+
+def infer_job_level(text: str) -> str:
+    """识别招录层级。"""
+
+    value = str(text or "")
+    for label, aliases in (
+        ("中央机关", ("中央", "中央国家行政机关", "中央党群机关")),
+        ("省直", ("省直", "省属")),
+        ("市属", ("市属", "市直")),
+        ("县乡", ("县乡", "区县", "县级")),
+        ("乡镇基层", ("乡镇", "基层", "村", "社区")),
+    ):
+        if any(alias in value for alias in aliases):
+            return label
+    return ""
+
+
+def infer_exam_category(
+    *,
+    text: str,
+    source_document: str,
+    default_province: str,
+) -> tuple[str, str, str]:
+    """识别一级考试大类、二级分类和分类依据。"""
+
+    value = f"{text} {source_document}"
+    province_name = normalize_province_label(default_province)
+    profile_default = PROFILE_EXAM_CATEGORY_DEFAULTS.get(ACTIVE_PROFILE.name)
+    if profile_default:
+        return profile_default[0], province_name or default_province, profile_default[1]
+    if any(token in value for token in ("国考", "国家公务员", "中央国家行政机关", "中央党群机关", "海关系统", "铁路公安")):
+        return "国家公务员考试", "中央/国家直属系统", "source_title"
+    if "事业单位" in value:
+        return "事业单位考试", province_name or default_province, "suite_title"
+    if any(token in value for token in ("银行招考", "农商行", "城商行", "银行面试")):
+        return "银行招考面试", province_name or default_province, "source_title"
+    if any(token in value for token in ("医疗卫生", "医师岗", "护理岗", "药师岗", "医技岗")):
+        return "医疗卫生面试", province_name or default_province, "source_title"
+    if any(token in value for token in ("法检", "书记员", "法院", "检察院")):
+        return "法检书记员面试", province_name or default_province, "source_title"
+    if any(token in value for token in ("省考", "省属公务员", "省级公务员", "公务员")):
+        return "省级公务员考试", province_name or default_province, "source_title"
+    return "", province_name or default_province, "unresolved"
+
+
+def infer_question_type_category(question_type: str, question_text: str = "") -> str:
+    """把详细题型归入六类能力题型之一。"""
+
+    text = f"{question_type} {question_text}"
+    return _first_rule_match(text, QUESTION_TYPE_CATEGORY_RULES) or "综合分析"
+
+
+def build_classification_metadata(
+    *,
+    source_document: str,
+    province: str,
+    suite_name: str,
+    source_title_raw: str,
+    position: str,
+    batch: str,
+    question_type: str,
+    question_text: str,
+    question_no: int | None,
+    question_score: float | int | None,
+    suite_key: str,
+) -> dict[str, Any]:
+    """根据真实来源和上下文生成多层级考试分类元数据。"""
+
+    evidence_text = " ".join(
+        str(value or "")
+        for value in (
+            suite_name,
+            source_title_raw,
+            source_document,
+            position,
+            batch,
+            question_type,
+            question_text[:120],
+        )
+    )
+    exam_category, exam_subcategory, classification_source = infer_exam_category(
+        text=evidence_text,
+        source_document=source_document,
+        default_province=province,
+    )
+    city, district = infer_region_parts(evidence_text, province)
+    system = _first_rule_match(evidence_text, SYSTEM_RULES)
+    position_type = infer_position_type(evidence_text, exam_category, province, position)
+    interview_format = _first_rule_match(evidence_text, INTERVIEW_FORMAT_RULES)
+    question_type_category = infer_question_type_category(question_type, question_text)
+    agency = infer_agency(evidence_text)
+    job_level = infer_job_level(evidence_text)
+    portal_tags = _all_rule_matches(evidence_text, PORTAL_TAG_RULES)
+    display_portals = list(portal_tags)
+
+    review_reasons: list[str] = []
+    if not exam_category:
+        review_reasons.append("未能识别一级考试大类")
+    if not suite_name:
+        review_reasons.append("缺少真实中文套题名")
+    if not question_no:
+        review_reasons.append("缺少套题内题序")
+    if not question_score:
+        review_reasons.append("缺少单题分值")
+    if not interview_format:
+        review_reasons.append("未明确面试形式")
+    if exam_category == "事业单位考试" and not position_type:
+        review_reasons.append("事业单位岗位类别未明确")
+    if any(token in evidence_text for token in ("国企招聘", "特岗", "定岗特选", "强村行动")):
+        review_reasons.append("标题含非标准事业单位/特殊招聘表述，需人工确认分类")
+
+    if not review_reasons:
+        confidence = "high"
+        review_status = "已确认"
+    elif exam_category and suite_name and question_no:
+        confidence = "medium"
+        review_status = "待确认"
+    else:
+        confidence = "low"
+        review_status = "需人工复核"
+
+    return {
+        "examCategory": exam_category,
+        "examSubcategory": exam_subcategory,
+        "city": city,
+        "district": district,
+        "system": system,
+        "agency": agency,
+        "positionType": position_type,
+        "jobLevel": job_level,
+        "interviewFormat": interview_format,
+        "questionTypeCategory": question_type_category,
+        "portalTags": portal_tags,
+        "displayPortals": display_portals,
+        "classificationSource": classification_source,
+        "classificationConfidence": confidence,
+        "reviewStatus": review_status,
+        "reviewReason": "；".join(review_reasons),
+        "hasCompleteSuiteLevel": bool(suite_key and suite_name and question_no),
+    }
 
 
 def normalize_question_id(raw_id: str) -> str:
@@ -3977,6 +4279,19 @@ def parse_question_block(
     weak_keywords = split_list(extract_field(ai_text, FIELD_PATTERNS["weak_keywords"]))
     bonus_keywords = split_list(extract_field(ai_text, FIELD_PATTERNS["bonus_keywords"]))
     penalty_keywords = split_list(extract_field(ai_text, FIELD_PATTERNS["penalty_keywords"]))
+    classification_meta = build_classification_metadata(
+        source_document=source_document,
+        province=province,
+        suite_name=suite_name,
+        source_title_raw=source_title_raw,
+        position=position,
+        batch=batch,
+        question_type=question_type,
+        question_text=question_text,
+        question_no=question_no,
+        question_score=full_score,
+        suite_key=suite_key,
+    )
 
     data = {
         "id": question_id,
@@ -3994,6 +4309,7 @@ def parse_question_block(
         "deductionRules": deduction_rules,
         "sourceDocument": source_document,
         "sourceDocumentType": context.source_document_type if context else "",
+        **classification_meta,
         "suiteId": suite_key,
         "suiteKey": suite_key,
         "suiteName": suite_name,
@@ -4015,6 +4331,7 @@ def parse_question_block(
         "_meta": {
             "headerDescription": header_description,
             "sourceText": source_path.name,
+            **classification_meta,
             "suiteId": suite_key,
             "suiteKey": suite_key,
             "suiteName": suite_name,

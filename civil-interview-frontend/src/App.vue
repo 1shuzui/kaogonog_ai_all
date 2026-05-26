@@ -44,7 +44,9 @@ const showProvinceGate = computed(() => {
   if (!userStore.isAuthenticated) return false
   if (layout.value === 'blank') return false
   if (route.name === 'NotFound') return false
-  return !userStore.hasConfirmedProvinceSelection || !hasResolvedProvince.value
+  return !userStore.hasConfirmedProvinceSelection
+    || !hasResolvedProvince.value
+    || userStore.preferences?.practicePreferenceConfirmed !== true
 })
 const isProvinceGateBlocking = computed(() => showProvinceGate.value && layout.value !== 'blank')
 const shouldRenderRouteContent = computed(() => !isProvinceGateBlocking.value)

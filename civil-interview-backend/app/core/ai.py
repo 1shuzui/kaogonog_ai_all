@@ -349,6 +349,7 @@ async def transcribe_audio_file(audio_bytes: bytes, filename: str = "answer.webm
 PROVINCE_NAMES = {
     "national": "国家公务员考试",
     "beijing": "北京",
+    "shanghai": "上海",
     "guangdong": "广东",
     "zhejiang": "浙江",
     "sichuan": "四川",
@@ -358,6 +359,8 @@ PROVINCE_NAMES = {
     "shandong": "山东",
     "hubei": "湖北",
     "hunan": "湖南",
+    "hebei": "河北",
+    "fujian": "福建",
     "liaoning": "辽宁",
     "shanxi": "陕西",
 }
@@ -383,6 +386,8 @@ POSITION_NAMES = {
     "finance": "银保监会",
     "diplomacy": "外交系统",
     "prison": "监狱系统",
+    "bank": "银行招考",
+    "medical": "医疗卫生",
     "jiangsu_a": "A类 · 综合管理岗",
     "jiangsu_b": "B类 · 社会科学专技岗",
     "jiangsu_c": "C类 · 自然科学专技岗",

@@ -72,6 +72,27 @@
   ],
   "sourceDocument": "2020-2025第二批次完全版.docx",
   "sourceDocumentType": "docx_xml",
+  "examCategory": "省级公务员考试",
+  "examSubcategory": "安徽省",
+  "city": "",
+  "district": "",
+  "system": "医疗卫生系统",
+  "agency": "你怎么办",
+  "positionType": "",
+  "jobLevel": "乡镇基层",
+  "interviewFormat": "结构化面试",
+  "questionTypeCategory": "组织管理",
+  "portalTags": [
+    "医疗卫生面试"
+  ],
+  "displayPortals": [
+    "医疗卫生面试"
+  ],
+  "classificationSource": "profile_default",
+  "classificationConfidence": "high",
+  "reviewStatus": "已确认",
+  "reviewReason": "",
+  "hasCompleteSuiteLevel": true,
   "suiteId": "AHXDS-20210720",
   "suiteKey": "AHXDS-20210720",
   "suiteName": "2021年7月20日安徽省选调生面试题",

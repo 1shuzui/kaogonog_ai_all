@@ -8,6 +8,10 @@
       <text class="loading-card__desc">请稍候，系统正在根据省份和岗位整理核心考点。</text>
     </view>
 
+    <view v-else-if="isEmptyFocus" class="card">
+      <EmptyState title="暂无足够题库数据" :desc="targetedStore.focusData?.emptyMessage || '请管理员补充该地区/岗位真题或发布重点词条后再生成分析。'" />
+    </view>
+
     <view v-else-if="targetedStore.focusData" class="focus">
       <view v-if="coreFocus.length" class="card">
         <view class="section-head">
@@ -70,6 +74,9 @@ const readonlyMode = computed(() => !hasFullAccess.value)
 const coreFocus = computed(() => Array.isArray(targetedStore.focusData?.coreFocus) ? targetedStore.focusData.coreFocus : [])
 const highFreqTypes = computed(() => Array.isArray(targetedStore.focusData?.highFreqTypes) ? targetedStore.focusData.highFreqTypes : [])
 const strategy = computed(() => Array.isArray(targetedStore.focusData?.strategy) ? targetedStore.focusData.strategy : [])
+const isEmptyFocus = computed(() => (
+  targetedStore.focusData?.isFallback === true || Number(targetedStore.focusData?.questionCount || 0) <= 0
+))
 
 onLoad(async (options = {}) => {
   if (!requireLogin()) return

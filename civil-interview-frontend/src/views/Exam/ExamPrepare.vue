@@ -204,6 +204,7 @@ const examMode = ref('free')
 const enteringExam = ref(false)
 const questionCount = ref(5)
 const dimensionFilters = ref(['random'])
+const questionTypeTouched = ref(false)
 const asrStatus = ref(null)
 const selectedFullExamSuiteId = ref('')
 const fullExamSuites = ref([])
@@ -232,8 +233,8 @@ const questionCategoryOptions = [
   { key: 'practical', name: '组织管理' },
   { key: 'emergency', name: '应急应变' },
   { key: 'logic', name: '人际沟通' },
-  { key: 'expression', name: '现场模拟' },
-  { key: 'legal', name: '职业认知' }
+  { key: 'expression', name: '情景模拟' },
+  { key: 'legal', name: '岗位认知' }
 ]
 
 const hasFullAccess = computed(() => hasPremiumAccess(userStore, billingStore))
@@ -282,10 +283,26 @@ watch(() => userStore.selectedProvince, () => {
   refreshFullExamSuites().catch(() => null)
 }, { immediate: true })
 
+watch(() => userStore.preferences?.preferredQuestionDimensions, () => {
+  applyPreferredQuestionDimensions()
+}, { immediate: true, deep: true })
+
 function handleDimensionFiltersChange(values = []) {
+  questionTypeTouched.value = true
   const selected = Array.isArray(values) ? values.filter(Boolean) : []
   const specific = selected.filter((item) => item !== RANDOM_DIMENSION_KEY)
   dimensionFilters.value = specific.length ? specific : [RANDOM_DIMENSION_KEY]
+}
+
+function applyPreferredQuestionDimensions() {
+  if (questionTypeTouched.value || !showPracticeConfig.value) return
+  const validKeys = new Set(questionCategoryOptions.map((item) => item.key).filter((item) => item && item !== RANDOM_DIMENSION_KEY))
+  const preferred = Array.isArray(userStore.preferences?.preferredQuestionDimensions)
+    ? userStore.preferences.preferredQuestionDimensions
+      .map((item) => String(item || '').trim())
+      .filter((item, index, list) => validKeys.has(item) && list.indexOf(item) === index)
+    : []
+  dimensionFilters.value = preferred.length ? preferred : [RANDOM_DIMENSION_KEY]
 }
 
 function applyUserPracticePreferencesToQuestions(questions = []) {

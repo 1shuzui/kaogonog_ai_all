@@ -75,6 +75,27 @@
   ],
   "sourceDocument": "2020-2025第二批次完全版.docx",
   "sourceDocumentType": "docx_xml",
+  "examCategory": "省级公务员考试",
+  "examSubcategory": "安徽省",
+  "city": "",
+  "district": "",
+  "system": "公安系统",
+  "agency": "执法为民类因为举办",
+  "positionType": "",
+  "jobLevel": "",
+  "interviewFormat": "结构化面试",
+  "questionTypeCategory": "组织管理",
+  "portalTags": [
+    "医疗卫生面试"
+  ],
+  "displayPortals": [
+    "医疗卫生面试"
+  ],
+  "classificationSource": "profile_default",
+  "classificationConfidence": "high",
+  "reviewStatus": "已确认",
+  "reviewReason": "",
+  "hasCompleteSuiteLevel": true,
   "suiteId": "AHZF-20250518",
   "suiteKey": "AHZF-20250518",
   "suiteName": "2025年5月18日安徽省考面试题",

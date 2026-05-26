@@ -71,6 +71,7 @@ class UserPreferencesUpdate(BaseModel):
     defaultPrepTime: Optional[int] = None
     defaultAnswerTime: Optional[int] = None
     enableVideo: Optional[bool] = None
+    enableAudio: Optional[bool] = None
     preferredQuestionDimensions: Optional[List[str]] = None
     practicePreferenceConfirmed: Optional[bool] = None
 
@@ -96,6 +97,34 @@ class QuestionCreate(BaseModel):
     answerTime: int = 180
     scoringPoints: List[Dict] = []
     keywords: Dict = Field(default_factory=lambda: {"scoring": [], "deducting": [], "bonus": []})
+    suiteId: Optional[str] = None
+    suiteKey: Optional[str] = None
+    suiteName: Optional[str] = None
+    examDate: Optional[str] = None
+    batch: Optional[str] = None
+    position: Optional[str] = None
+    questionNo: Optional[int] = None
+    questionScore: Optional[float] = None
+    answerScoreTotal: Optional[float] = None
+    appearanceScore: Optional[float] = None
+    suiteTotalScore: Optional[float] = None
+    totalScore: Optional[float] = None
+    hasAppearanceScore: Optional[bool] = None
+    examCategory: Optional[str] = None
+    examSubcategory: Optional[str] = None
+    city: Optional[str] = None
+    district: Optional[str] = None
+    system: Optional[str] = None
+    agency: Optional[str] = None
+    positionType: Optional[str] = None
+    jobLevel: Optional[str] = None
+    interviewFormat: Optional[str] = None
+    questionTypeCategory: Optional[str] = None
+    portalTags: Optional[List[str]] = None
+    displayPortals: Optional[List[str]] = None
+    classificationConfidence: Optional[str] = None
+    reviewStatus: Optional[str] = None
+    reviewReason: Optional[str] = None
 
 class QuestionUpdate(QuestionCreate):
     pass

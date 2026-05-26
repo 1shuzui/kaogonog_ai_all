@@ -38,8 +38,8 @@ export const QUESTION_CATEGORIES = [
   { key: 'practical', name: '组织管理' },
   { key: 'emergency', name: '应急应变' },
   { key: 'logic', name: '人际沟通' },
-  { key: 'expression', name: '现场模拟' },
-  { key: 'legal', name: '职业认知' }
+  { key: 'expression', name: '情景模拟' },
+  { key: 'legal', name: '岗位认知' }
 ]
 
 export const TRAINING_CATEGORIES = [
@@ -109,7 +109,16 @@ export const POSITION_SYSTEMS = [
   { code: 'general', name: '综合管理' },
   { code: 'township', name: '乡镇基层' },
   { code: 'finance', name: '银保监会' },
-  { code: 'diplomacy', name: '外交系统' }
+  { code: 'diplomacy', name: '外交系统' },
+  { code: 'prison', name: '监狱系统' },
+  { code: 'bank', name: '银行招考' },
+  { code: 'medical', name: '医疗卫生' },
+  { code: 'jiangsu_a', name: '江苏A类综合管理岗' },
+  { code: 'jiangsu_b', name: '江苏B类社会科学专技岗' },
+  { code: 'jiangsu_c', name: '江苏C类自然科学专技岗' },
+  { code: 'jiangsu_d', name: '江苏D类中小学教师岗' },
+  { code: 'jiangsu_e', name: '江苏E类医疗卫生岗' },
+  { code: 'jiangsu_worker', name: '江苏工勤技能岗' }
 ]
 
 export const GRADE_CONFIG = {

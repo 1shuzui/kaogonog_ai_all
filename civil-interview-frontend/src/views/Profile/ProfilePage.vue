@@ -98,6 +98,18 @@
           <a-slider v-model:value="preferences.defaultAnswerTime" :min="60" :max="600" :step="10" />
           <span class="pref-value">{{ preferences.defaultAnswerTime }}s</span>
         </a-form-item>
+        <a-form-item label="注重题型">
+          <a-select
+            v-model:value="preferences.preferredQuestionDimensions"
+            mode="multiple"
+            placeholder="不选则随机"
+            :max-tag-count="3"
+          >
+            <a-select-option v-for="item in questionTypeOptions" :key="item.key" :value="item.key">
+              {{ item.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
       </a-form>
       <a-button type="primary" @click="savePreferences">保存设置</a-button>
     </div>
@@ -138,6 +150,7 @@ import { useFavoritesStore } from '@/stores/favorites'
 import { useBillingStore } from '@/stores/billing'
 import SupportCenterPanel from '@/components/common/SupportCenterPanel.vue'
 import { message } from 'ant-design-vue'
+import { QUESTION_CATEGORIES } from '@/utils/constants'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -148,8 +161,11 @@ const billingStore = useBillingStore()
 const preferences = reactive({
   defaultPrepTime: 90,
   defaultAnswerTime: 180,
-  enableVideo: true
+  enableVideo: true,
+  preferredQuestionDimensions: [],
+  practicePreferenceConfirmed: false
 })
+const questionTypeOptions = QUESTION_CATEGORIES.filter((item) => item.key)
 
 const userInitial = computed(() => {
   const name = userStore.userInfo?.name || userStore.username || '考'
@@ -195,7 +211,10 @@ function onProvinceChange(code) {
 }
 
 async function savePreferences() {
-  await userStore.savePreferences({ ...preferences })
+  await userStore.savePreferences({
+    ...preferences,
+    practicePreferenceConfirmed: true
+  })
   message.success('设置已保存')
 }
 
