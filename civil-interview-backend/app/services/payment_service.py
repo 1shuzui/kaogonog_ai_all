@@ -15,14 +15,7 @@ from app.schemas.common import (
     RefundBalanceStatsRequest,
 )
 from app.services.wechat_pay_service import wechat_pay_service
-
-
-def _get_user(db: Session, current_user: AuthUser) -> User:
-    user = db.query(User).filter(User.username == current_user.username).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="用户不存在")
-    return user
-
+from app.services.user_service import get_user_or_404
 
 def _get_package_or_404(db: Session, package_code: str) -> SubscriptionPackage:
     package = db.query(SubscriptionPackage).filter(
@@ -77,7 +70,7 @@ def _sync_order_amount_to_virtual_goods_price(order: PaymentOrder, pay_payload: 
 
 
 def create_payment_order(db: Session, current_user: AuthUser, data: PaymentOrderCreateRequest) -> dict:
-    _get_user(db, current_user)
+    get_user_or_404(db, current_user.username)
     package = _get_package_or_404(db, data.packageCode)
     order = PaymentOrder(
         order_no=f"PAY{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}{uuid.uuid4().hex[:6]}",
@@ -109,7 +102,7 @@ def create_payment_order(db: Session, current_user: AuthUser, data: PaymentOrder
 
 
 def list_payment_orders(db: Session, current_user: AuthUser) -> dict:
-    _get_user(db, current_user)
+    get_user_or_404(db, current_user.username)
     orders = db.query(PaymentOrder).filter(
         PaymentOrder.username == current_user.username,
     ).order_by(PaymentOrder.created_at.desc(), PaymentOrder.id.desc()).all()
@@ -408,7 +401,7 @@ def _ensure_subscription_for_paid_order(db: Session, order: PaymentOrder, packag
 
 
 def confirm_virtual_payment_order(db: Session, current_user: AuthUser, order_no: str, data: PaymentVirtualConfirmRequest) -> dict:
-    user = _get_user(db, current_user)
+    user = get_user_or_404(db, current_user.username)
     order = db.query(PaymentOrder).filter(
         PaymentOrder.order_no == order_no,
         PaymentOrder.username == current_user.username,

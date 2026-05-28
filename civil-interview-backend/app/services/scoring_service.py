@@ -16,7 +16,7 @@ from app.core.config import settings
 from app.core.redis_cache import cache_get_json, cache_set_json
 from app.core.video_analysis import analyze_video_behavior
 from app.models.entities import Question, Exam, ExamAnswer
-from two_stage_scoring import (
+from app.services.two_stage_scoring import (
     build_evidence_extraction_prompt,
     build_evidence_based_scoring_prompt,
     validate_evidence,

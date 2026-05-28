@@ -690,7 +690,7 @@ def build_classification_metadata(
 ) -> dict[str, Any]:
     """根据真实来源和上下文生成多层级考试分类元数据。"""
 
-    evidence_text = " ".join(
+    source_evidence_text = " ".join(
         str(value or "")
         for value in (
             suite_name,
@@ -698,23 +698,21 @@ def build_classification_metadata(
             source_document,
             position,
             batch,
-            question_type,
-            question_text[:120],
         )
     )
     exam_category, exam_subcategory, classification_source = infer_exam_category(
-        text=evidence_text,
+        text=source_evidence_text,
         source_document=source_document,
         default_province=province,
     )
-    city, district = infer_region_parts(evidence_text, province)
-    system = _first_rule_match(evidence_text, SYSTEM_RULES)
-    position_type = infer_position_type(evidence_text, exam_category, province, position)
-    interview_format = _first_rule_match(evidence_text, INTERVIEW_FORMAT_RULES)
+    city, district = infer_region_parts(source_evidence_text, province)
+    system = _first_rule_match(source_evidence_text, SYSTEM_RULES)
+    position_type = infer_position_type(source_evidence_text, exam_category, province, position)
+    interview_format = _first_rule_match(source_evidence_text, INTERVIEW_FORMAT_RULES)
     question_type_category = infer_question_type_category(question_type, question_text)
-    agency = infer_agency(evidence_text)
-    job_level = infer_job_level(evidence_text)
-    portal_tags = _all_rule_matches(evidence_text, PORTAL_TAG_RULES)
+    agency = infer_agency(source_evidence_text)
+    job_level = infer_job_level(source_evidence_text)
+    portal_tags = _all_rule_matches(source_evidence_text, PORTAL_TAG_RULES)
     display_portals = list(portal_tags)
 
     review_reasons: list[str] = []
@@ -730,7 +728,7 @@ def build_classification_metadata(
         review_reasons.append("未明确面试形式")
     if exam_category == "事业单位考试" and not position_type:
         review_reasons.append("事业单位岗位类别未明确")
-    if any(token in evidence_text for token in ("国企招聘", "特岗", "定岗特选", "强村行动")):
+    if any(token in source_evidence_text for token in ("国企招聘", "特岗", "定岗特选", "强村行动")):
         review_reasons.append("标题含非标准事业单位/特殊招聘表述，需人工确认分类")
 
     if not review_reasons:

@@ -45,6 +45,18 @@ export async function getFocusAnalysis(data) {
   return normalizeFocusAnalysis(response)
 }
 
+export async function getFocusAdminConfig(data) {
+  return http.get('/targeted/focus/admin', { params: data })
+}
+
+export async function saveFocusAdminConfig(data) {
+  return http.put('/targeted/focus/admin', data)
+}
+
+export async function disableFocusAdminConfig(data) {
+  return http.post('/targeted/focus/admin/disable', data)
+}
+
 export async function generateQuestions(data) {
   const response = await http.post('/targeted/generate', data)
   return Array.isArray(response?.questions) ? response.questions : []

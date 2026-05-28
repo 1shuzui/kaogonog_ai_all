@@ -110,7 +110,6 @@
         >
           <div class="question-card__top">
             <span class="question-card__index">第 {{ index + 1 }} 题</span>
-            <span v-if="questionScoreLabel(question)" class="question-card__score">{{ questionScoreLabel(question) }}</span>
             <span class="question-card__status">{{ questionStatusText(index) }}</span>
           </div>
           <QuestionMetaTags :question="question" emphasis compact basic-only />
@@ -601,27 +600,6 @@ function questionStatusText(index) {
   if (isAnsweredQuestion(index)) return '已作答'
   if (index === examStore.answers.length) return examStarted.value ? '当前作答位' : '待开始'
   return '可预览'
-}
-
-function normalizeScoreText(value) {
-  const score = Number(value)
-  if (!Number.isFinite(score) || score <= 0) return ''
-  return Number.isInteger(score) ? String(score) : score.toFixed(1).replace(/\.0$/, '')
-}
-
-function questionScoreLabel(question = {}) {
-  const directScore = [
-    question.assignedScore,
-    question.questionMaxScore,
-    question.fullScore,
-    question.full_score
-  ].map((value) => Number(value)).find((value) => Number.isFinite(value) && value > 0)
-  if (directScore) return `${normalizeScoreText(directScore)} 分`
-
-  const pointsTotal = Array.isArray(question.scoringPoints)
-    ? question.scoringPoints.reduce((sum, point) => sum + (Number(point?.score || point?.points || 0) || 0), 0)
-    : 0
-  return pointsTotal > 0 ? `${normalizeScoreText(pointsTotal)} 分` : ''
 }
 
 function questionCardClass(index) {
@@ -1626,20 +1604,14 @@ async function exitExam() {
 }
 
 .question-card__index,
-.question-card__score,
 .question-card__status,
 .question-card__meta {
   font-size: @font-size-xs;
   color: rgba(90, 58, 34, 0.78);
 }
 
-.question-card__score {
-  margin-left: auto;
-  font-weight: 700;
-  color: #8a5620;
-}
-
 .question-card__status {
+  margin-left: auto;
   padding: 4px 8px;
   border-radius: 999px;
   background: rgba(95, 62, 36, 0.08);

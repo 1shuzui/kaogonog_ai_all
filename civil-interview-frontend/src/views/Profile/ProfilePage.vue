@@ -72,6 +72,11 @@
         <span class="menu-item__label">余额与退款</span>
         <RightOutlined class="menu-item__arrow" />
       </div>
+      <div v-if="userStore.isAdmin" class="card menu-item" @click="$router.push('/admin/targeted')">
+        <AimOutlined class="menu-item__icon" />
+        <span class="menu-item__label">定向入口管理</span>
+        <RightOutlined class="menu-item__arrow" />
+      </div>
       <div class="card menu-item" @click="$router.push('/profile/account')">
         <SettingOutlined class="menu-item__icon" />
         <span class="menu-item__label">账号管理</span>
@@ -142,6 +147,7 @@ import {
   SettingOutlined,
   UndoOutlined,
   WalletOutlined,
+  AimOutlined,
   RightOutlined
 } from '@ant-design/icons-vue'
 import { useUserStore } from '@/stores/user'

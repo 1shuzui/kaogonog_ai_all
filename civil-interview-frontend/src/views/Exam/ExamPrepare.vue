@@ -89,7 +89,7 @@
             </a-radio>
             <a-radio value="fullExam" class="mode-radio">
               <span class="mode-label">全真模拟</span>
-              <span class="mode-desc">按真题套卷连续作答，保留每题赋分和整套总分</span>
+              <span class="mode-desc">按真题套卷连续作答，保留真实题序和考试节奏</span>
             </a-radio>
           </a-space>
         </a-radio-group>
@@ -307,12 +307,17 @@ function applyPreferredQuestionDimensions() {
 
 function applyUserPracticePreferencesToQuestions(questions = []) {
   const prefs = userStore.preferences || {}
+  const target = source.value === 'targeted' ? (targetedStore.selectionPayload || {}) : {}
+  const targetPrepTime = Number(target.prepTime || 0)
+  const targetAnswerTime = Number(target.answerTime || 0)
   const prepTime = Number(prefs.defaultPrepTime || 0)
   const answerTime = Number(prefs.defaultAnswerTime || 0)
   return questions.map((question) => ({
     ...question,
-    prepTime: prepTime || Number(question?.prepTime || 90),
-    answerTime: answerTime || Number(question?.answerTime || 180)
+    prepTime: targetPrepTime || prepTime || Number(question?.prepTime || 90),
+    answerTime: targetAnswerTime || answerTime || Number(question?.answerTime || 180),
+    timingMode: target.timingMode || question?.timingMode || '',
+    interviewFormat: target.interviewFormat || question?.interviewFormat || ''
   }))
 }
 

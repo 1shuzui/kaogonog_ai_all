@@ -228,6 +228,24 @@ TABLE_STATEMENTS = [
         INDEX idx_ur_usage_type (usage_type)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     """,
+    """
+    CREATE TABLE IF NOT EXISTS targeted_focus_configs (
+        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+        target_key VARCHAR(255) NOT NULL UNIQUE,
+        target_code VARCHAR(100) NULL DEFAULT '',
+        target_name VARCHAR(255) NULL DEFAULT '',
+        province VARCHAR(64) NULL DEFAULT '',
+        position VARCHAR(64) NULL DEFAULT '',
+        payload JSON NULL,
+        enabled BOOLEAN NOT NULL DEFAULT TRUE,
+        updated_by VARCHAR(100) NULL DEFAULT '',
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_tfc_code (target_code),
+        INDEX idx_tfc_province_position (province, position),
+        INDEX idx_tfc_enabled (enabled)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    """,
 ]
 
 
@@ -299,6 +317,29 @@ def ensure_schema_updates(conn, database: str) -> None:
         _add_column_if_missing(cur, database, "history_records", "max_score", "max_score FLOAT NOT NULL DEFAULT 100")
         _add_column_if_missing(cur, database, "history_records", "grade", "grade VARCHAR(4) NOT NULL DEFAULT 'B'")
         _add_column_if_missing(cur, database, "history_records", "dimensions", "dimensions JSON NULL")
+        _add_column_if_missing(cur, database, "targeted_focus_configs", "target_key", "target_key VARCHAR(255) NULL")
+        _add_column_if_missing(cur, database, "targeted_focus_configs", "target_code", "target_code VARCHAR(100) DEFAULT ''")
+        _add_column_if_missing(cur, database, "targeted_focus_configs", "target_name", "target_name VARCHAR(255) DEFAULT ''")
+        _add_column_if_missing(cur, database, "targeted_focus_configs", "payload", "payload JSON NULL")
+        _add_column_if_missing(cur, database, "targeted_focus_configs", "enabled", "enabled BOOLEAN NOT NULL DEFAULT TRUE")
+        cur.execute(
+            """
+            UPDATE targeted_focus_configs
+            SET target_key = CONCAT('legacy:', province, '|', position, '|', id)
+            WHERE target_key IS NULL OR target_key = ''
+            """
+        )
+        cur.execute("ALTER TABLE targeted_focus_configs MODIFY COLUMN target_key VARCHAR(255) NOT NULL")
+        cur.execute(
+            """
+            SELECT COUNT(*) AS cnt
+            FROM information_schema.STATISTICS
+            WHERE TABLE_SCHEMA = %s AND TABLE_NAME = 'targeted_focus_configs' AND INDEX_NAME = 'uq_tfc_target_key'
+            """,
+            (database,),
+        )
+        if cur.fetchone()["cnt"] == 0:
+            cur.execute("CREATE UNIQUE INDEX uq_tfc_target_key ON targeted_focus_configs (target_key)")
 
 
 def create_tables(config: dict):

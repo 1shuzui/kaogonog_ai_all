@@ -179,11 +179,11 @@ export const POSITION_SYSTEMS = [
   { code: 'prison', name: '监狱系统' },
   { code: 'bank', name: '银行招考' },
   { code: 'medical', name: '医疗卫生' },
-  { code: 'jiangsu_a', name: '江苏A类综合管理岗' },
-  { code: 'jiangsu_b', name: '江苏B类社会科学专技岗' },
-  { code: 'jiangsu_c', name: '江苏C类自然科学专技岗' },
-  { code: 'jiangsu_d', name: '江苏D类中小学教师岗' },
-  { code: 'jiangsu_e', name: '江苏E类医疗卫生岗' },
+  { code: 'jiangsu_a', name: '江苏综合管理岗' },
+  { code: 'jiangsu_b', name: '江苏社会科学专技岗' },
+  { code: 'jiangsu_c', name: '江苏自然科学专技岗' },
+  { code: 'jiangsu_d', name: '江苏中小学教师岗' },
+  { code: 'jiangsu_e', name: '江苏医疗卫生岗' },
   { code: 'jiangsu_worker', name: '江苏工勤技能岗' }
 ]
 

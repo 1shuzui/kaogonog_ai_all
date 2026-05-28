@@ -64,7 +64,14 @@ const form = reactive({
   dimension: 'analysis',
   province: 'national',
   prepTime: 90,
-  answerTime: 180
+  answerTime: 180,
+  position: '',
+  examCategory: '',
+  examSubcategory: '',
+  system: '',
+  positionType: '',
+  portalTags: [],
+  displayPortals: []
 })
 const categoryOptions = QUESTION_CATEGORIES.filter((item) => item.key)
 const categoryNames = computed(() => categoryOptions.map((item) => item.name))
@@ -78,6 +85,7 @@ const isEdit = computed(() => !!questionId.value)
 
 onLoad((query) => {
   questionId.value = query?.id || ''
+  if (!questionId.value) applyTargetDefaultsFromQuery(query || {})
 })
 
 onShow(async () => {
@@ -143,6 +151,13 @@ async function loadQuestion() {
     form.province = question?.province || 'national'
     form.prepTime = Number(question?.prepTime || 90)
     form.answerTime = Number(question?.answerTime || 180)
+    form.position = question?.position || ''
+    form.examCategory = question?.examCategory || ''
+    form.examSubcategory = question?.examSubcategory || ''
+    form.system = question?.system || ''
+    form.positionType = question?.positionType || ''
+    form.portalTags = Array.isArray(question?.portalTags) ? question.portalTags : []
+    form.displayPortals = Array.isArray(question?.displayPortals) ? question.displayPortals : []
     scoringText.value = scoringToText(question?.scoringPoints || [])
     keywordText.value = Array.isArray(question?.keywords?.scoring) ? question.keywords.scoring.join('，') : ''
   } catch (error) {
@@ -152,15 +167,35 @@ async function loadQuestion() {
   }
 }
 
+function applyTargetDefaultsFromQuery(query = {}) {
+  const portalTag = String(query.portalTag || query.displayPortal || '').trim()
+  form.province = String(query.province || form.province || 'national')
+  form.position = String(query.position || '')
+  form.examCategory = String(query.examCategory || '')
+  form.examSubcategory = String(query.examSubcategory || '')
+  form.system = String(query.system || '')
+  form.positionType = String(query.positionType || '')
+  form.portalTags = portalTag ? [portalTag] : []
+  form.displayPortals = portalTag ? [portalTag] : []
+}
+
 function buildPayload() {
+  const portalTags = Array.isArray(form.portalTags) ? form.portalTags.filter(Boolean) : []
   return {
     stem: form.stem.trim(),
     dimension: form.dimension || 'analysis',
-    province: form.province || 'national',
+    province: form.province === 'all' ? 'national' : form.province || 'national',
     prepTime: Math.max(30, Number(form.prepTime || 90)),
     answerTime: Math.max(60, Number(form.answerTime || 180)),
     scoringPoints: parseScoringPoints(),
-    keywords: parseKeywords()
+    keywords: parseKeywords(),
+    position: form.position || '',
+    examCategory: form.examCategory || '',
+    examSubcategory: form.examSubcategory || '',
+    system: form.system || '',
+    positionType: form.positionType || '',
+    portalTags,
+    displayPortals: portalTags
   }
 }
 

@@ -8,7 +8,6 @@ from app.schemas.common import (
     UserPasswordUpdate,
     UserPreferencesUpdate,
     UserProfileUpdate,
-    UserProvinceUpdate,
     UserTermsAgreementRequest,
 )
 from app.services.user_service import (
@@ -20,7 +19,6 @@ from app.services.user_service import (
     record_terms_agreement,
     update_preferences,
     update_user_profile,
-    update_user_province,
 )
 
 router = APIRouter(prefix="/user", tags=["user"])
@@ -30,10 +28,6 @@ router = APIRouter(prefix="/user", tags=["user"])
 def user_info(current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     return get_user_info(db, current_user)
 
-
-@router.get("/me")
-def user_me(current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
-    return get_user_info(db, current_user)
 
 
 @router.put("/profile")
@@ -55,10 +49,6 @@ def update_prefs(data: UserPreferencesUpdate, current_user: AuthUser = Depends(g
 def provinces():
     return get_provinces()
 
-
-@router.put("/province")
-def update_province(data: UserProvinceUpdate, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
-    return update_user_province(db, current_user.username, data.province)
 
 
 @router.get("/terms-status")

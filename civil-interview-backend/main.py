@@ -79,6 +79,43 @@ def ensure_question_indexes() -> None:
         logger.warning("Question index sync skipped: %s", exc)
 
 
+def ensure_targeted_focus_config_schema() -> None:
+    column_specs = {
+        "target_key": "ALTER TABLE targeted_focus_configs ADD COLUMN target_key VARCHAR(255) NULL",
+        "target_code": "ALTER TABLE targeted_focus_configs ADD COLUMN target_code VARCHAR(100) NULL DEFAULT ''",
+        "target_name": "ALTER TABLE targeted_focus_configs ADD COLUMN target_name VARCHAR(255) NULL DEFAULT ''",
+        "payload": "ALTER TABLE targeted_focus_configs ADD COLUMN payload JSON NULL",
+        "enabled": "ALTER TABLE targeted_focus_configs ADD COLUMN enabled BOOLEAN NOT NULL DEFAULT TRUE",
+    }
+    try:
+        inspector = inspect(engine)
+        if not inspector.has_table("targeted_focus_configs"):
+            return
+        existing_columns = {item.get("name") for item in inspector.get_columns("targeted_focus_configs")}
+        with engine.begin() as conn:
+            for column, sql in column_specs.items():
+                if column not in existing_columns:
+                    conn.execute(text(sql))
+                    logger.info("Added targeted focus config column: %s", column)
+
+            refreshed = inspect(engine)
+            existing_indexes = {item.get("name") for item in refreshed.get_indexes("targeted_focus_configs")}
+            if "uq_tfc_target_key" not in existing_indexes:
+                conn.execute(text(
+                    "UPDATE targeted_focus_configs "
+                    "SET target_key = CONCAT('legacy:', province, '|', position, '|', id) "
+                    "WHERE target_key IS NULL OR target_key = ''"
+                ))
+                conn.execute(text("ALTER TABLE targeted_focus_configs MODIFY COLUMN target_key VARCHAR(255) NOT NULL"))
+                conn.execute(text("CREATE UNIQUE INDEX uq_tfc_target_key ON targeted_focus_configs (target_key)"))
+            if "idx_tfc_code" not in existing_indexes:
+                conn.execute(text("CREATE INDEX idx_tfc_code ON targeted_focus_configs (target_code)"))
+            if "idx_tfc_enabled" not in existing_indexes:
+                conn.execute(text("CREATE INDEX idx_tfc_enabled ON targeted_focus_configs (enabled)"))
+    except Exception as exc:
+        logger.warning("Targeted focus config schema sync skipped: %s", exc)
+
+
 # ── app factory ──────────────────────────────────────────────────────────────
 app = FastAPI(
     title="公务员面试练习平台 API",
@@ -101,6 +138,7 @@ app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 async def startup():
     Base.metadata.create_all(bind=engine)
     ensure_question_indexes()
+    ensure_targeted_focus_config_schema()
     logger.info(f"Database tables ready ({settings.database_url.split(':')[0]})")
     # Auto-seed if DB is empty
     try:

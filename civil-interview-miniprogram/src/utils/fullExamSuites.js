@@ -402,8 +402,8 @@ export function buildFullExamSuitesFromQuestions(questions = [], province = '') 
 
 export function getFullExamSuiteSummary(suite) {
   if (!suite) return ''
-  const appearanceText = suite.appearanceScore > 0 ? `，仪态 ${suite.appearanceScore} 分` : ''
-  return `${suite.questions.length} 题，答题分 ${suite.answerScoreTotal} 分${appearanceText}，总分 ${suite.totalScore} 分`
+  const appearanceText = suite.hasAppearanceScore ? '，含仪态评分' : '，不含仪态评分'
+  return `${suite.questions.length} 题，按真实套题节奏作答${appearanceText}`
 }
 
 export async function fetchFullExamSuites(getQuestions, province, options = {}) {

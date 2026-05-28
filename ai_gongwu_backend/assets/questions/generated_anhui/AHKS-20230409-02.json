@@ -79,18 +79,14 @@
   "examSubcategory": "安徽省",
   "city": "",
   "district": "",
-  "system": "医疗卫生系统",
-  "agency": "活动组织为办",
+  "system": "",
+  "agency": "",
   "positionType": "乡镇岗",
   "jobLevel": "乡镇基层",
   "interviewFormat": "结构化面试",
   "questionTypeCategory": "组织管理",
-  "portalTags": [
-    "医疗卫生面试"
-  ],
-  "displayPortals": [
-    "医疗卫生面试"
-  ],
+  "portalTags": [],
+  "displayPortals": [],
   "classificationSource": "profile_default",
   "classificationConfidence": "high",
   "reviewStatus": "已确认",

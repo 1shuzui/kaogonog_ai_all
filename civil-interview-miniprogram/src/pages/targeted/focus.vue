@@ -1,7 +1,11 @@
 <template>
   <view class="page">
     <text class="page-title">重点分析</text>
-    <text class="page-desc">根据省份和岗位系统整理高频考点、能力重点和备考策略。</text>
+    <text class="page-desc">根据真实考试方向整理高频考点、能力重点和备考策略。</text>
+
+    <view v-if="selectionTags.length" class="selection-card">
+      <text v-for="tag in selectionTags" :key="tag" class="selection-tag">{{ tag }}</text>
+    </view>
 
     <view v-if="targetedStore.focusLoading" class="card loading-card">
       <text class="loading-card__title">AI正在分析面试重点...</text>
@@ -9,7 +13,7 @@
     </view>
 
     <view v-else-if="isEmptyFocus" class="card">
-      <EmptyState title="暂无足够题库数据" :desc="targetedStore.focusData?.emptyMessage || '请管理员补充该地区/岗位真题或发布重点词条后再生成分析。'" />
+      <EmptyState title="暂无足够题库数据" :desc="targetedStore.focusData?.emptyMessage || '请选择已有真实题库的考试方向后再试。'" />
     </view>
 
     <view v-else-if="targetedStore.focusData" class="focus">
@@ -74,6 +78,15 @@ const readonlyMode = computed(() => !hasFullAccess.value)
 const coreFocus = computed(() => Array.isArray(targetedStore.focusData?.coreFocus) ? targetedStore.focusData.coreFocus : [])
 const highFreqTypes = computed(() => Array.isArray(targetedStore.focusData?.highFreqTypes) ? targetedStore.focusData.highFreqTypes : [])
 const strategy = computed(() => Array.isArray(targetedStore.focusData?.strategy) ? targetedStore.focusData.strategy : [])
+const selectionTags = computed(() => {
+  const payload = targetedStore.selectedTarget || targetedStore.selectionPayload || {}
+  return [
+    payload.examCategory,
+    payload.examSubcategory,
+    payload.system || payload.positionType || payload.portalTag,
+    payload.targetName
+  ].filter((item, index, array) => item && array.indexOf(item) === index)
+})
 const isEmptyFocus = computed(() => (
   targetedStore.focusData?.isFallback === true || Number(targetedStore.focusData?.questionCount || 0) <= 0
 ))
@@ -83,7 +96,7 @@ onLoad(async (options = {}) => {
   applyRouteSelection(options)
   await refreshAccessState().catch(() => null)
   if (!targetedStore.hasSelection) {
-    toast('请先选择省份和岗位系统')
+    toast('请先选择考试方向')
     uni.navigateBack()
     return
   }
@@ -91,9 +104,27 @@ onLoad(async (options = {}) => {
 })
 
 function applyRouteSelection(options = {}) {
-  const province = String(options.province || '').trim()
-  const position = String(options.position || '').trim()
-  if (province && position) targetedStore.setSelection(province, position)
+  const payload = {}
+  ;[
+    'province',
+    'position',
+    'examCategory',
+    'examSubcategory',
+    'system',
+    'positionType',
+    'portalTag',
+    'displayPortal',
+    'targetCode',
+    'targetName'
+  ].forEach((key) => {
+    const value = String(options[key] || '').trim()
+    if (value) payload[key] = value
+  })
+  if (payload.targetCode || payload.examCategory || payload.targetName) {
+    targetedStore.setTarget(payload)
+    return
+  }
+  if (payload.province) targetedStore.setSelection(payload.province, payload.position || '')
 }
 
 async function refreshAccessState() {
@@ -107,7 +138,7 @@ async function refreshAccessState() {
 async function loadFocus() {
   if (readonlyMode.value) return
   if (!targetedStore.hasSelection) {
-    toast('请先选择省份和岗位系统')
+    toast('请先选择考试方向')
     uni.navigateBack()
     return
   }
@@ -125,6 +156,22 @@ async function loadFocus() {
 <style scoped>
 .focus-row {
   margin-bottom: 24rpx;
+}
+
+.selection-card {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin: 8rpx 0 24rpx;
+}
+
+.selection-tag {
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  background: #eaf3fc;
+  color: #1b5faa;
+  font-size: 23rpx;
+  font-weight: 600;
 }
 
 .focus-row:last-child {

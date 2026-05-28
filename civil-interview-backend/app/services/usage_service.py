@@ -6,15 +6,9 @@ from sqlalchemy.orm import Session
 from app.models.entities import Exam, UsageRecord, User, UserSubscription
 from app.schemas.common import AuthUser, UsageReportRequest
 from app.services.subscription_service import _ensure_daily_reset, _latest_subscription, _sync_user_preferences_subscription
+from app.services.user_service import get_user_or_404
 
 DEFAULT_TRIAL_TOTAL_MINUTES = 180
-
-
-def _get_user(db: Session, current_user: AuthUser) -> User:
-    user = db.query(User).filter(User.username == current_user.username).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="用户不存在")
-    return user
 
 
 def _ensure_default_trial_subscription(db: Session, username: str) -> UserSubscription:
@@ -44,7 +38,7 @@ def _ensure_default_trial_subscription(db: Session, username: str) -> UserSubscr
 
 
 def report_usage(db: Session, current_user: AuthUser, data: UsageReportRequest) -> dict:
-    user = _get_user(db, current_user)
+    user = get_user_or_404(db, current_user.username)
     exam = db.query(Exam).filter(Exam.id == data.examId, Exam.user_id == current_user.username).first()
     if not exam:
         raise HTTPException(status_code=404, detail="考试未找到")

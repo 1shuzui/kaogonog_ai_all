@@ -37,6 +37,43 @@
         :message="categoryReviewMessage"
       />
 
+      <a-divider>考试分类与定向入口</a-divider>
+
+      <a-row :gutter="12">
+        <a-col :span="12">
+          <a-form-item label="考试大类">
+            <a-input v-model:value="form.examCategory" placeholder="如：省级公务员考试、事业单位考试" />
+          </a-form-item>
+        </a-col>
+        <a-col :span="12">
+          <a-form-item label="二级分类">
+            <a-input v-model:value="form.examSubcategory" placeholder="如：安徽省、江苏省" />
+          </a-form-item>
+        </a-col>
+      </a-row>
+
+      <a-row :gutter="12">
+        <a-col :span="8">
+          <a-form-item label="系统">
+            <a-input v-model:value="form.system" placeholder="如：监狱系统、税务系统" />
+          </a-form-item>
+        </a-col>
+        <a-col :span="8">
+          <a-form-item label="岗位类别">
+            <a-input v-model:value="form.positionType" placeholder="如：乡镇岗、综合管理岗" />
+          </a-form-item>
+        </a-col>
+        <a-col :span="8">
+          <a-form-item label="岗位码">
+            <a-input v-model:value="form.position" placeholder="如：township、prison" />
+          </a-form-item>
+        </a-col>
+      </a-row>
+
+      <a-form-item label="展示入口标签">
+        <a-select v-model:value="form.portalTags" mode="tags" placeholder="如：医疗卫生面试、银行招考面试" />
+      </a-form-item>
+
       <a-row :gutter="12">
         <a-col :span="12">
           <a-form-item label="准备时间(秒)">
@@ -133,7 +170,14 @@ const form = reactive({
     scoring: [],
     deducting: [],
     bonus: []
-  }
+  },
+  examCategory: '',
+  examSubcategory: '',
+  system: '',
+  positionType: '',
+  position: '',
+  portalTags: [],
+  displayPortals: []
 })
 
 onMounted(async () => {
@@ -156,11 +200,35 @@ onMounted(async () => {
           scoring: q.keywords?.scoring || [],
           deducting: q.keywords?.deducting || [],
           bonus: q.keywords?.bonus || []
-        }
+        },
+        examCategory: q.examCategory || '',
+        examSubcategory: q.examSubcategory || '',
+        system: q.system || '',
+        positionType: q.positionType || '',
+        position: q.position || '',
+        portalTags: Array.isArray(q.portalTags) ? q.portalTags : [],
+        displayPortals: Array.isArray(q.displayPortals) ? q.displayPortals : []
       })
     }
+  } else {
+    applyTargetDefaultsFromRoute()
   }
 })
+
+function applyTargetDefaultsFromRoute() {
+  const query = route.query || {}
+  const portalTag = String(query.portalTag || query.displayPortal || '').trim()
+  Object.assign(form, {
+    province: String(query.province === 'all' ? 'national' : query.province || form.province || 'national'),
+    examCategory: String(query.examCategory || ''),
+    examSubcategory: String(query.examSubcategory || ''),
+    system: String(query.system || ''),
+    positionType: String(query.positionType || ''),
+    position: String(query.position || ''),
+    portalTags: portalTag ? [portalTag] : [],
+    displayPortals: portalTag ? [portalTag] : []
+  })
+}
 
 function addPoint() {
   form.scoringPoints.push({ content: '', score: 5 })
@@ -177,7 +245,13 @@ async function onSave() {
   }
   saving.value = true
   try {
-    const payload = { ...form, categoryReviewStatus: 'confirmed' }
+    const portalTags = Array.isArray(form.portalTags) ? form.portalTags.filter(Boolean) : []
+    const payload = {
+      ...form,
+      portalTags,
+      displayPortals: portalTags,
+      categoryReviewStatus: 'confirmed'
+    }
     if (isEdit) {
       await bankStore.editQuestion(route.params.id, payload)
     } else {

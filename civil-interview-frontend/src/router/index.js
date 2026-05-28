@@ -137,6 +137,12 @@ const routes = [
     meta: { title: '余额与退款', layout: 'simple', requiresAdmin: true }
   },
   {
+    path: '/admin/targeted',
+    name: 'TargetedAdmin',
+    component: () => import('@/views/Targeted/TargetedAdminPage.vue'),
+    meta: { title: '定向入口管理', layout: 'simple', requiresAdmin: true }
+  },
+  {
     path: '/support',
     name: 'SupportDesk',
     component: () => import('@/views/Support/SupportDeskPage.vue'),

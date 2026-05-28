@@ -115,6 +115,12 @@
       }
     },
     {
+      "path": "pages/admin/targeted",
+      "style": {
+        "navigationBarTitleText": "定向入口管理"
+      }
+    },
+    {
       "path": "pages/admin/question-edit",
       "style": {
         "navigationBarTitleText": "题目编辑"

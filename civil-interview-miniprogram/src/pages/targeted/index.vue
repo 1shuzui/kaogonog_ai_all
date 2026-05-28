@@ -1,51 +1,46 @@
 <template>
   <view class="page page--tab">
     <text class="page-title">定向备面</text>
-    <text class="page-desc">选择省份与岗位系统，生成更贴近报考方向的训练题。</text>
+    <text class="page-desc">按真实考试体系、地区来源和岗位方向选择，生成更贴近报考方向的训练题。</text>
 
     <view v-if="readonlyMode" class="card access-card">
       <view class="section-head">
         <text class="section-title">定向备面未开通</text>
       </view>
-      <text class="access-card__desc">选择省份和岗位系统后，开通套餐即可生成定向训练题并查看面试重点；也可以先体验 1 道试用题。</text>
+      <text class="access-card__desc">选择考试方向后，开通套餐即可生成定向训练题并查看面试重点；也可以先体验 1 道试用题。</text>
       <view class="access-card__actions">
         <button class="secondary-button" @tap="startTrial">试用 1 题</button>
         <button class="primary-button" @tap="goPricing">开通套餐</button>
       </view>
     </view>
 
-    <view class="card">
+    <view class="card picker-card">
       <view class="section-head">
-        <text class="section-title">选择省份</text>
+        <text class="section-title">选择考试方向</text>
       </view>
-      <view class="chip-row">
-        <view
-          v-for="province in PROVINCES"
-          :key="province.code"
-          class="chip"
-          :class="{ 'chip--active': selectedProvince === province.code }"
-          @tap="selectedProvince = province.code"
-        >
-          {{ province.name }}
+      <picker :range="categoryNames" :value="categoryIndex" @change="onCategoryPickerChange">
+        <view class="picker-row">
+          <text>考试体系</text>
+          <text class="picker-row__value">{{ selectedCategoryName }}</text>
         </view>
-      </view>
-    </view>
-
-    <view class="card">
-      <view class="section-head">
-        <text class="section-title">选择岗位系统</text>
-      </view>
-      <view class="chip-row">
-        <view
-          v-for="position in currentPositionSystems"
-          :key="position.code"
-          class="chip"
-          :class="{ 'chip--active': selectedPosition === position.code }"
-          @tap="selectedPosition = position.code"
-        >
-          <text class="chip__name">{{ position.name }}</text>
-          <text v-if="position.desc" class="chip__desc">{{ position.desc }}</text>
+      </picker>
+      <picker :range="regionNames" :value="regionIndex" @change="onRegionPickerChange">
+        <view class="picker-row">
+          <text>{{ regionLevelLabel }}</text>
+          <text class="picker-row__value">{{ selectedRegionName }}</text>
         </view>
+      </picker>
+      <picker v-if="hasDirectionLevel" :range="directionNames" :value="directionIndex" @change="onDirectionPickerChange">
+        <view class="picker-row picker-row--last">
+          <text>{{ directionLevelLabel }}</text>
+          <text class="picker-row__value">{{ selectedDirectionName }}</text>
+        </view>
+      </picker>
+      <text v-if="activeTarget" class="picker-summary">
+        当前选择：{{ selectedPathLabel }}
+      </text>
+      <view v-if="selectedModeHints.length" class="mode-hints">
+        <text v-for="hint in selectedModeHints" :key="hint" class="mode-hint">{{ hint }}</text>
       </view>
     </view>
 
@@ -81,8 +76,7 @@ import { useSubscriptionStore } from '../../stores/subscription'
 import { useTargetedStore } from '../../stores/targeted'
 import { useUserStore } from '../../stores/user'
 import { hasPremiumAccess } from '../../utils/access'
-import { POSITION_SYSTEMS, PROVINCES } from '../../utils/constants'
-import { JIANGSU_TARGETED_POSITIONS } from '../../utils/jiangsuJobs'
+import { mergeTargetPayload } from '../../utils/targetedOptions'
 import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
 
 const billingStore = useBillingStore()
@@ -90,28 +84,117 @@ const subscriptionStore = useSubscriptionStore()
 const targetedStore = useTargetedStore()
 const examStore = useExamStore()
 const userStore = useUserStore()
-const selectedProvince = ref(targetedStore.selectedProvince || userStore.selectedProvince || 'national')
-const selectedPosition = ref(targetedStore.selectedPosition || 'general')
-const currentPositionSystems = computed(() => (
-  selectedProvince.value === 'jiangsu' ? JIANGSU_TARGETED_POSITIONS : POSITION_SYSTEMS
+const selectedCategoryId = ref('')
+const selectedRegionId = ref('')
+const selectedTargetCode = ref('')
+const positionTree = computed(() => targetedStore.positionTree || [])
+const selectedCategory = computed(() => positionTree.value.find((item) => item.id === selectedCategoryId.value) || positionTree.value[0] || null)
+const levelLabels = computed(() => selectedCategory.value?.levelLabels || {})
+const regionLevelLabel = computed(() => levelLabels.value.region || '地区 / 来源')
+const directionLevelLabel = computed(() => levelLabels.value.direction || '方向')
+const currentRegions = computed(() => selectedCategory.value?.children || [])
+const selectedRegion = computed(() => currentRegions.value.find((item) => item.id === selectedRegionId.value) || currentRegions.value[0] || null)
+const currentDirections = computed(() => selectedRegion.value?.directions || [])
+const hasDirectionLevel = computed(() => currentDirections.value.length > 0)
+const selectedDirection = computed(() => currentDirections.value.find((item) => item.id === selectedTargetCode.value) || currentDirections.value[0] || null)
+const categoryNames = computed(() => positionTree.value.map((item) => item.name))
+const regionNames = computed(() => currentRegions.value.map((item) => item.name))
+const directionNames = computed(() => currentDirections.value.map((item) => item.name))
+const categoryIndex = computed(() => Math.max(0, positionTree.value.findIndex((item) => item.id === selectedCategoryId.value)))
+const regionIndex = computed(() => Math.max(0, currentRegions.value.findIndex((item) => item.id === selectedRegionId.value)))
+const directionIndex = computed(() => Math.max(0, currentDirections.value.findIndex((item) => item.id === selectedTargetCode.value)))
+const selectedCategoryName = computed(() => selectedCategory.value?.name || '请选择')
+const selectedRegionName = computed(() => selectedRegion.value?.name || '请选择')
+const selectedDirectionName = computed(() => selectedDirection.value?.name || '请选择')
+const activeTarget = computed(() => (
+  selectedCategory.value && selectedRegion.value && (!hasDirectionLevel.value || selectedDirection.value)
+    ? mergeTargetPayload(selectedCategory.value, selectedRegion.value, selectedDirection.value || {})
+    : null
 ))
-const canProceed = computed(() => !!selectedProvince.value && !!selectedPosition.value)
+const selectedPathLabel = computed(() => [
+  selectedCategoryName.value,
+  selectedRegionName.value,
+  hasDirectionLevel.value ? selectedDirectionName.value : ''
+].filter((item) => item && item !== '请选择').join(' / '))
+const selectedModeHints = computed(() => {
+  const target = activeTarget.value || {}
+  return [
+    target.interviewFormat ? `形式：${target.interviewFormat}` : '',
+    target.questionCount ? `题量：${target.questionCount}题` : '',
+    target.timingMode ? `计时：${target.timingMode}` : '',
+    target.questionTypeScope ? `题型：${target.questionTypeScope}` : ''
+  ].filter(Boolean)
+})
+const canProceed = computed(() => !!activeTarget.value?.targetCode)
 const hasFullAccess = computed(() => hasPremiumAccess(userStore, billingStore, subscriptionStore))
 const readonlyMode = computed(() => !hasFullAccess.value)
 
-function getDefaultPositionCode() {
-  if (selectedProvince.value === 'jiangsu') return JIANGSU_TARGETED_POSITIONS[0]?.code || ''
-  return POSITION_SYSTEMS.find((item) => item.code === 'general')?.code || POSITION_SYSTEMS[0]?.code || ''
+function findSelectionLocation(targetCode) {
+  for (const category of positionTree.value) {
+    for (const region of category.children || []) {
+      if ((!region.directions?.length) && (region.id === targetCode || region.code === targetCode)) {
+        return { category, region, direction: null }
+      }
+      for (const direction of region.directions || []) {
+        if (direction.id === targetCode || direction.code === targetCode) {
+          return { category, region, direction }
+        }
+      }
+    }
+  }
+  return null
 }
 
-watch(selectedProvince, () => {
-  if (!currentPositionSystems.value.some((item) => item.code === selectedPosition.value)) {
-    selectedPosition.value = getDefaultPositionCode()
+function applyLocation(location) {
+  if (!location) return
+  selectedCategoryId.value = location.category.id
+  selectedRegionId.value = location.region.id
+  selectedTargetCode.value = location.direction?.id || location.direction?.code || ''
+}
+
+function selectCategory(category) {
+  const region = category?.children?.[0]
+  const direction = region?.directions?.[0]
+  applyLocation(category && region ? { category, region, direction: direction || null } : null)
+}
+
+function selectRegion(region) {
+  const direction = region?.directions?.[0]
+  applyLocation(selectedCategory.value && region ? { category: selectedCategory.value, region, direction: direction || null } : null)
+}
+
+function selectDirection(direction) {
+  if (!direction) return
+  selectedTargetCode.value = direction.id || direction.code
+}
+
+function onCategoryPickerChange(event) {
+  selectCategory(positionTree.value[Number(event.detail.value)])
+}
+
+function onRegionPickerChange(event) {
+  selectRegion(currentRegions.value[Number(event.detail.value)])
+}
+
+function onDirectionPickerChange(event) {
+  selectDirection(currentDirections.value[Number(event.detail.value)])
+}
+
+function initializeSelection() {
+  const code = targetedStore.selectedTarget?.targetCode
+  const location = findSelectionLocation(code) || findSelectionLocation(selectedTargetCode.value)
+  if (location) {
+    applyLocation(location)
+    return
   }
-}, { immediate: true })
+  selectCategory(positionTree.value[0])
+}
+
+watch(positionTree, initializeSelection, { immediate: true })
 
 onShow(() => {
   if (!requireLogin()) return
+  targetedStore.fetchPositionTree().then(initializeSelection).catch(initializeSelection)
   refreshAccessState().catch(() => null)
 })
 
@@ -124,13 +207,15 @@ async function refreshAccessState() {
 }
 
 function syncSelection() {
-  targetedStore.setSelection(selectedProvince.value, selectedPosition.value)
+  if (activeTarget.value) targetedStore.setTarget(activeTarget.value)
 }
 
 function buildFocusUrl() {
-  const province = encodeURIComponent(selectedProvince.value || '')
-  const position = encodeURIComponent(selectedPosition.value || '')
-  return `/pages/targeted/focus?province=${province}&position=${position}`
+  const query = Object.entries(activeTarget.value || {})
+    .filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== '')
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+    .join('&')
+  return `/pages/targeted/focus${query ? `?${query}` : ''}`
 }
 
 function goFocus() {
@@ -143,7 +228,7 @@ function goFocus() {
 async function generate() {
   if (readonlyMode.value) return
   if (!canProceed.value) {
-    toast('请先选择省份和岗位系统')
+    toast('请先选择考试方向')
     return
   }
   await refreshAccessState().catch(() => null)
@@ -156,12 +241,8 @@ async function generate() {
   try {
     const questions = await targetedStore.fetchGeneratedQuestions(5)
     if (!questions.length) {
-      toast('暂未生成题目')
+      toast('暂无匹配题目，请选择已有真实题库的考试方向')
       return
-    }
-    const fallbackCount = questions.filter((item) => item?.isProvinceFallback).length
-    if (fallbackCount) {
-      toast(`当前省份定向题不足，已补充 ${fallbackCount} 道国考题`)
     }
   } catch (error) {
     toast(error?.message || '生成失败')
@@ -175,10 +256,13 @@ async function startQuestion(question) {
   showLoading('创建考场')
   try {
     const prefs = userStore.preferences || {}
+    const target = activeTarget.value || {}
     await examStore.startFromQuestions([{
       ...question,
-      prepTime: Number(prefs.defaultPrepTime || question?.prepTime || 90),
-      answerTime: Number(prefs.defaultAnswerTime || question?.answerTime || 180)
+      prepTime: Number(target.prepTime || prefs.defaultPrepTime || question?.prepTime || 90),
+      answerTime: Number(target.answerTime || prefs.defaultAnswerTime || question?.answerTime || 180),
+      timingMode: target.timingMode || question?.timingMode || '',
+      interviewFormat: target.interviewFormat || question?.interviewFormat || ''
     }], 'targeted')
     uni.navigateTo({ url: '/pages/exam/room' })
   } catch (error) {
@@ -224,21 +308,57 @@ function startTrial() {
   margin-bottom: 28rpx;
 }
 
-.chip {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4rpx;
-}
-
-.chip__name,
-.chip__desc {
+.picker-row,
+.picker-row__value,
+.picker-summary {
   display: block;
 }
 
-.chip__desc {
-  font-size: 21rpx;
+.picker-card {
+  padding-bottom: 18rpx;
+}
+
+.picker-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 24rpx;
+  padding: 22rpx 0;
+  border-bottom: 1rpx solid #eef2f6;
+  color: #2a3648;
+  font-size: 27rpx;
+}
+
+.picker-row--last {
+  border-bottom: 0;
+}
+
+.picker-row__value {
+  max-width: 440rpx;
+  color: #1b5faa;
+  text-align: right;
+}
+
+.picker-summary {
+  margin-top: 12rpx;
+  color: #6f7c8f;
+  font-size: 23rpx;
+  line-height: 1.5;
+}
+
+.mode-hints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-top: 14rpx;
+}
+
+.mode-hint {
+  display: inline-flex;
+  padding: 8rpx 12rpx;
+  border-radius: 8rpx;
+  background: #eef6ff;
+  color: #1b5faa;
+  font-size: 22rpx;
   line-height: 1.25;
-  opacity: 0.78;
 }
 </style>

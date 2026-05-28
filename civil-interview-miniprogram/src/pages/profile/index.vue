@@ -113,7 +113,6 @@
         <text class="section-title">关于</text>
       </view>
       <text class="about-text">公考面试AI智能测评系统小程序端 v1.0.0</text>
-      <text class="about-text about-text--muted">与网页端并行，复用现有业务后端接口。</text>
     </view>
 
     <button class="secondary-button danger-button" @tap="logout">退出登录</button>

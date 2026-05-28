@@ -988,6 +988,40 @@ def _question_matches_position(question: Question, position: str) -> bool:
     return any(alias in haystack for alias in POSITION_ALIASES.get(position, ()))
 
 
+def _question_matches_target_filters(question: Question, target_filters: dict | None = None) -> bool:
+    if not target_filters:
+        return True
+    meta = _question_meta_from_keywords(question.keywords)
+
+    def clean(value) -> str:
+        return str(value or "").strip()
+
+    for field in ("examCategory", "examSubcategory", "system", "positionType"):
+        expected = clean(target_filters.get(field))
+        if expected and clean(meta.get(field)) != expected:
+            return False
+
+    portal_tag = clean(target_filters.get("portalTag"))
+    display_portal = clean(target_filters.get("displayPortal"))
+    if portal_tag:
+        portal_tags = meta.get("portalTags") if isinstance(meta.get("portalTags"), list) else []
+        display_portals = meta.get("displayPortals") if isinstance(meta.get("displayPortals"), list) else []
+        if portal_tag not in {*portal_tags, *display_portals}:
+            return False
+    if display_portal:
+        display_portals = meta.get("displayPortals") if isinstance(meta.get("displayPortals"), list) else []
+        portal_tags = meta.get("portalTags") if isinstance(meta.get("portalTags"), list) else []
+        if display_portal not in {*display_portals, *portal_tags}:
+            return False
+    return True
+
+
+def _apply_target_filters(questions: list[Question], target_filters: dict | None = None) -> list[Question]:
+    if not target_filters:
+        return questions
+    return [question for question in questions if _question_matches_target_filters(question, target_filters)]
+
+
 def _apply_position_filter(questions: list[Question], position: str) -> list[Question]:
     if not position:
         return questions
@@ -1048,25 +1082,26 @@ def _question_prefers_local_source(question: Question) -> bool:
     return meta.get("source") in {"local_asset", "imported_file", "manual", "seed"}
 
 
-def _choose_targeted_bank_questions(db: Session, province: str, position: str, count: int) -> list[dict]:
-    questions = _question_base_query(db, province=province).all()
-    exact = _fetch_position_candidates(db, province=province, position=position)
-    exact_ids = {question.id for question in exact}
-    fallback = [question for question in questions if question.id not in exact_ids]
+def _choose_targeted_bank_questions(
+    db: Session,
+    province: str,
+    position: str,
+    count: int,
+    target_filters: dict | None = None,
+) -> list[dict]:
+    if position:
+        matched = _fetch_position_candidates(db, province=province, position=position)
+    else:
+        matched = _question_base_query(db, province=province).limit(max(count * 20, 200)).all()
+    matched = _apply_target_filters(matched, target_filters)
 
-    exact_local = [question for question in exact if _question_prefers_local_source(question)]
-    exact_other = [question for question in exact if question not in exact_local]
-    fallback_local = [question for question in fallback if _question_prefers_local_source(question)]
-    fallback_other = [question for question in fallback if question not in fallback_local]
+    local_items = [question for question in matched if _question_prefers_local_source(question)]
+    other_items = [question for question in matched if question not in local_items]
 
-    for bucket in (exact_local, exact_other, fallback_local, fallback_other):
+    for bucket in (local_items, other_items):
         random.shuffle(bucket)
 
-    picked = exact_local + exact_other
-    if len(picked) < count:
-        picked.extend(fallback_local[: count - len(picked)])
-    if len(picked) < count:
-        picked.extend(fallback_other[: count - len(picked)])
+    picked = (local_items + other_items)[:count]
 
     return [
         {
@@ -1492,6 +1527,7 @@ async def generate_questions_by_position(
     position: str,
     count: int = 5,
     source_mode: str = "local",
+    target_filters: dict | None = None,
 ) -> List[dict]:
     count = min(count, 10)
     sync_curated_question_assets(db)
@@ -1512,11 +1548,11 @@ async def generate_questions_by_position(
                 "generationSource": "fallback_bank",
                 "generationFallbackReason": fallback_reason,
             }
-            for item in _choose_targeted_bank_questions(db, province, position, count)
+            for item in _choose_targeted_bank_questions(db, province, position, count, target_filters)
         ]
 
     if normalized_mode == "hybrid":
-        local_items = _choose_targeted_bank_questions(db, province, position, count)
+        local_items = _choose_targeted_bank_questions(db, province, position, count, target_filters)
         if len(local_items) >= count:
             return local_items[:count]
         generated = await _generate_targeted_questions_with_llm(
@@ -1527,7 +1563,7 @@ async def generate_questions_by_position(
         )
         return local_items + generated
 
-    return _choose_targeted_bank_questions(db, province, position, count)
+    return _choose_targeted_bank_questions(db, province, position, count, target_filters)
 
 
 async def generate_training_questions(

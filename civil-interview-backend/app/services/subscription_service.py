@@ -6,15 +6,11 @@ from sqlalchemy.orm import Session
 from app.models.entities import User, UserSubscription
 from app.schemas.common import AuthUser
 
+from app.services.user_service import get_user_or_404
+
+
 DEFAULT_TRIAL_TOTAL_MINUTES = 180
 ACTIVE_SUBSCRIPTION_PREF_KEY = "activeSubscriptionId"
-
-
-def _get_user(db: Session, current_user: AuthUser) -> User:
-    user = db.query(User).filter(User.username == current_user.username).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="用户不存在")
-    return user
 
 
 def _ensure_daily_reset(subscription: UserSubscription) -> None:
@@ -176,7 +172,7 @@ def _sync_user_preferences_subscription(
 
 
 def get_subscription_status(db: Session, current_user: AuthUser) -> dict:
-    user = _get_user(db, current_user)
+    user = get_user_or_404(db, current_user.username)
     subscriptions = _list_user_subscriptions(db, user.username)
     subscription = _select_subscription(user, subscriptions)
     entitlements = [_serialize_subscription(item, int(subscription.id or 0) if subscription else 0) for item in subscriptions]
@@ -210,7 +206,7 @@ def _select_subscription(user: User, subscriptions: list[UserSubscription]) -> U
 
 
 def switch_subscription(db: Session, current_user: AuthUser, subscription_id: int) -> dict:
-    user = _get_user(db, current_user)
+    user = get_user_or_404(db, current_user.username)
     subscriptions = _list_user_subscriptions(db, user.username)
     subscription = next((item for item in subscriptions if int(item.id or 0) == int(subscription_id or 0)), None)
     if not subscription:

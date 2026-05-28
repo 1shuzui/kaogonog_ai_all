@@ -8,15 +8,14 @@
     </div>
 
     <div class="focus-selection card">
-      <span class="focus-tag">{{ provinceName }}</span>
-      <span class="focus-tag">{{ positionName }}</span>
+      <span v-for="tag in selectionTags" :key="tag" class="focus-tag">{{ tag }}</span>
     </div>
 
     <a-spin :spinning="targetedStore.focusLoading" tip="AI正在分析面试重点...">
       <template v-if="focusData">
         <EmptyState
           v-if="isEmptyFocus"
-          :text="focusData.emptyMessage || '暂无足够题库数据，请管理员补充该地区/岗位真题或发布重点词条后再生成分析。'"
+          :text="focusData.emptyMessage || '暂无足够题库数据，请选择已有真实题库的考试方向后再试。'"
         />
         <template v-else>
         <!-- 核心考察能力 -->
@@ -96,7 +95,7 @@
         </template>
       </template>
 
-      <EmptyState v-else-if="!targetedStore.focusLoading" text="暂无分析数据，请返回选择省份和岗位" />
+      <EmptyState v-else-if="!targetedStore.focusLoading" text="暂无分析数据，请返回选择考试方向" />
     </a-spin>
   </div>
 </template>
@@ -110,8 +109,6 @@ import { useTargetedStore } from '@/stores/targeted'
 import { useUserStore } from '@/stores/user'
 import { useBillingStore } from '@/stores/billing'
 import { hasPremiumAccess } from '@/utils/access'
-import { PROVINCES, POSITION_SYSTEMS } from '@/utils/constants'
-import { getJiangsuTargetedPosition } from '@/utils/jiangsuJobs'
 import EmptyState from '@/components/common/EmptyState.vue'
 
 const router = useRouter()
@@ -126,17 +123,14 @@ const hasFullAccess = computed(() => hasPremiumAccess(userStore, billingStore))
 const isEmptyFocus = computed(() => (
   focusData.value?.isFallback === true || Number(focusData.value?.questionCount || 0) <= 0
 ))
-
-const provinceName = computed(() => {
-  const p = PROVINCES.find(p => p.code === targetedStore.selectedProvince)
-  return p ? p.name : targetedStore.selectedProvince
-})
-
-const positionName = computed(() => {
-  const jiangsuPosition = getJiangsuTargetedPosition(targetedStore.selectedPosition)
-  if (jiangsuPosition) return jiangsuPosition.name
-  const p = POSITION_SYSTEMS.find(p => p.code === targetedStore.selectedPosition)
-  return p ? p.name : targetedStore.selectedPosition
+const selectionTags = computed(() => {
+  const payload = targetedStore.selectedTarget || targetedStore.selectionPayload || {}
+  return [
+    payload.examCategory,
+    payload.examSubcategory,
+    payload.system || payload.positionType || payload.portalTag,
+    payload.targetName
+  ].filter((item, index, array) => item && array.indexOf(item) === index)
 })
 
 function freqColor(freq) {
@@ -146,10 +140,27 @@ function freqColor(freq) {
 }
 
 function hydrateSelectionFromRoute() {
-  const province = typeof route.query.province === 'string' ? route.query.province : ''
-  const position = typeof route.query.position === 'string' ? route.query.position : ''
-  if (province && position) {
-    targetedStore.setSelection(province, position)
+  const payload = {}
+  ;[
+    'province',
+    'position',
+    'examCategory',
+    'examSubcategory',
+    'system',
+    'positionType',
+    'portalTag',
+    'displayPortal',
+    'targetCode',
+    'targetName'
+  ].forEach((key) => {
+    if (typeof route.query[key] === 'string') payload[key] = route.query[key]
+  })
+  if (payload.targetCode || payload.examCategory || payload.targetName) {
+    targetedStore.setTarget(payload)
+    return
+  }
+  if (payload.province) {
+    targetedStore.setSelection(payload.province, payload.position || '')
   }
 }
 
@@ -172,7 +183,7 @@ onMounted(async () => {
 
 async function generateTargetedPractice() {
   if (isEmptyFocus.value) {
-    message.warning(focusData.value?.emptyMessage || '暂无足够题库数据，请管理员补充后再练习。')
+    message.warning(focusData.value?.emptyMessage || '暂无足够题库数据，请选择已有真实题库的考试方向后再练习。')
     return
   }
   await userStore.loadUserInfo().catch(() => null)
@@ -185,7 +196,7 @@ async function generateTargetedPractice() {
   if (questions?.length) {
     message.success('题目已生成，请在下方核对后开始练习。')
   } else {
-    message.warning('题库中暂无匹配题目，请返回调整省份或岗位系统。')
+    message.warning('题库中暂无匹配题目，请返回调整考试方向。')
   }
 }
 

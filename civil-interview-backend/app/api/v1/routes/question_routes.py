@@ -13,7 +13,7 @@ from app.schemas.common import AuthUser, QuestionCreate, QuestionUpdate
 from app.services.question_service import (
     list_questions, get_random_questions, get_question,
     create_question, update_question, delete_question,
-    import_questions, generate_questions_by_position, generate_training_questions,
+    import_questions, generate_training_questions,
 )
 
 router = APIRouter(prefix="/questions", tags=["questions"])
@@ -71,13 +71,3 @@ async def import_qs(file: UploadFile = File(...), db: Session = Depends(get_db),
     return import_questions(db, content, file.filename or "")
 
 
-@router.post("/generate")
-async def generate_qs(data: dict, db: Session = Depends(get_db), current_user: AuthUser = Depends(get_current_user)):
-    ensure_admin_access(current_user)
-    return await generate_questions_by_position(
-        db,
-        data.get("province", "national"),
-        data.get("position", "general"),
-        data.get("count", 5),
-        data.get("sourceMode", "local"),
-    )

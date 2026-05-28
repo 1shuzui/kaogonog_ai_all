@@ -92,15 +92,6 @@ export const useBillingStore = defineStore('billing', {
   },
 
   actions: {
-    activate(planType) {
-      this.planType = planType
-      this.activatedAt = Date.now()
-      this.isPaid = planType === 'hourly' || planType === 'monthly'
-      this.planName = PLANS[planType]?.title || ''
-      this.status = this.isPaid ? 'active' : 'trial'
-      uni.setStorageSync(BILLING_STORAGE_KEY, JSON.stringify(this.$state))
-    },
-
     applyBackendState(rawBilling = {}, permissions = {}) {
       const billing = rawBilling && typeof rawBilling === 'object' ? rawBilling : {}
       const planType = String(billing.planType || this.planType || 'trial')
@@ -127,21 +118,5 @@ export const useBillingStore = defineStore('billing', {
       uni.setStorageSync(BILLING_STORAGE_KEY, JSON.stringify(this.$state))
     },
 
-    reset() {
-      this.planType = 'trial'
-      this.activatedAt = 0
-      this.isPaid = false
-      this.planName = ''
-      this.status = ''
-      this.remainingSeconds = 0
-      this.remainingMinutes = 0
-      this.remainingDailyMinutes = 0
-      this.dailyLimitMinutes = 0
-      this.usedMinutes = 0
-      this.totalMinutes = 0
-      this.monthlyExpireAt = 0
-      this.orderHistory = []
-      uni.setStorageSync(BILLING_STORAGE_KEY, JSON.stringify(this.$state))
-    }
   }
 })

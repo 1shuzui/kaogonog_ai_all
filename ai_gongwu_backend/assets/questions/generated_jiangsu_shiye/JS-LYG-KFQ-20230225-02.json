@@ -54,20 +54,16 @@
   "sourceDocumentType": "docx_xml",
   "examCategory": "事业单位考试",
   "examSubcategory": "江苏省",
-  "city": "你区承接了市",
+  "city": "",
   "district": "连云港经济技术开发区",
-  "system": "医疗卫生系统",
-  "agency": "核心适配连云港经济技术开发区住建局",
+  "system": "",
+  "agency": "",
   "positionType": "",
   "jobLevel": "",
   "interviewFormat": "结构化面试",
   "questionTypeCategory": "组织管理",
-  "portalTags": [
-    "医疗卫生面试"
-  ],
-  "displayPortals": [
-    "医疗卫生面试"
-  ],
+  "portalTags": [],
+  "displayPortals": [],
   "classificationSource": "profile_default",
   "classificationConfidence": "medium",
   "reviewStatus": "待确认",

@@ -6,6 +6,9 @@ from sqlalchemy.orm import Session
 from app.models.entities import Question, User, UserSubscription
 from app.schemas.common import AuthUser
 
+from app.services.user_service import get_user_or_404
+
+
 DEFAULT_TRIAL_TOTAL_MINUTES = 180
 
 
@@ -28,13 +31,6 @@ def _pick_trial_question(db: Session) -> Question | None:
         tagged.sort(key=lambda item: item.id)
         return tagged[0]
     return db.query(Question).order_by(Question.created_at.asc(), Question.id.asc()).first()
-
-
-def _get_user(db: Session, current_user: AuthUser) -> User:
-    user = db.query(User).filter(User.username == current_user.username).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="用户不存在")
-    return user
 
 
 def _get_or_create_trial_subscription(db: Session, username: str) -> UserSubscription:
@@ -83,7 +79,7 @@ def _sync_preferences_trial(user: User, subscription: UserSubscription):
 
 
 def get_trial_status(db: Session, current_user: AuthUser) -> dict:
-    user = _get_user(db, current_user)
+    user = get_user_or_404(db, current_user.username)
     subscription = _get_or_create_trial_subscription(db, user.username)
     trial_completed = bool(subscription.trial_completed)
     trial_question = _pick_trial_question(db)
@@ -99,7 +95,7 @@ def get_trial_status(db: Session, current_user: AuthUser) -> dict:
 
 
 def get_trial_question(db: Session, current_user: AuthUser) -> dict:
-    _get_user(db, current_user)
+    get_user_or_404(db, current_user.username)
     question = _pick_trial_question(db)
     if not question:
         return {}
@@ -115,7 +111,7 @@ def get_trial_question(db: Session, current_user: AuthUser) -> dict:
 
 
 def complete_trial(db: Session, current_user: AuthUser) -> dict:
-    user = _get_user(db, current_user)
+    user = get_user_or_404(db, current_user.username)
     subscription = _get_or_create_trial_subscription(db, user.username)
     subscription.is_trial = True
     subscription.trial_completed = True

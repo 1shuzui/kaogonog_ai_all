@@ -31,12 +31,6 @@ function normalizeFocusAnalysis(response = {}) {
   }
 }
 
-export function getPositions() {
-  return request({
-    url: '/positions'
-  })
-}
-
 export async function getFocusAnalysis(data) {
   const response = await request({
     url: '/targeted/focus',

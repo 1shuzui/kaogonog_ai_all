@@ -212,13 +212,39 @@ class EvaluateRequest(BaseModel):
 # ===== Targeted =====
 class FocusAnalysisRequest(BaseModel):
     province: str = "national"
-    position: str = "general"
+    position: str = ""
+    examCategory: Optional[str] = Field(default="", validation_alias=AliasChoices("examCategory", "exam_category"))
+    examSubcategory: Optional[str] = Field(default="", validation_alias=AliasChoices("examSubcategory", "exam_subcategory"))
+    system: Optional[str] = ""
+    positionType: Optional[str] = Field(default="", validation_alias=AliasChoices("positionType", "position_type"))
+    portalTag: Optional[str] = Field(default="", validation_alias=AliasChoices("portalTag", "portal_tag"))
+    displayPortal: Optional[str] = Field(default="", validation_alias=AliasChoices("displayPortal", "display_portal"))
+    targetCode: Optional[str] = Field(default="", validation_alias=AliasChoices("targetCode", "target_code"))
+    targetName: Optional[str] = Field(default="", validation_alias=AliasChoices("targetName", "target_name"))
+    interviewFormat: Optional[str] = Field(default="", validation_alias=AliasChoices("interviewFormat", "interview_format"))
+    timingMode: Optional[str] = Field(default="", validation_alias=AliasChoices("timingMode", "timing_mode"))
+    questionCount: Optional[str | int] = Field(default="", validation_alias=AliasChoices("questionCount", "question_count"))
+    prepTime: Optional[int] = Field(default=None, validation_alias=AliasChoices("prepTime", "prep_time"))
+    answerTime: Optional[int] = Field(default=None, validation_alias=AliasChoices("answerTime", "answer_time"))
 
 class GenerateQuestionsRequest(BaseModel):
     province: str = "national"
-    position: str = "general"
+    position: str = ""
     count: int = 5
     sourceMode: str = "local"
+    examCategory: Optional[str] = Field(default="", validation_alias=AliasChoices("examCategory", "exam_category"))
+    examSubcategory: Optional[str] = Field(default="", validation_alias=AliasChoices("examSubcategory", "exam_subcategory"))
+    system: Optional[str] = ""
+    positionType: Optional[str] = Field(default="", validation_alias=AliasChoices("positionType", "position_type"))
+    portalTag: Optional[str] = Field(default="", validation_alias=AliasChoices("portalTag", "portal_tag"))
+    displayPortal: Optional[str] = Field(default="", validation_alias=AliasChoices("displayPortal", "display_portal"))
+    targetCode: Optional[str] = Field(default="", validation_alias=AliasChoices("targetCode", "target_code"))
+    targetName: Optional[str] = Field(default="", validation_alias=AliasChoices("targetName", "target_name"))
+    interviewFormat: Optional[str] = Field(default="", validation_alias=AliasChoices("interviewFormat", "interview_format"))
+    timingMode: Optional[str] = Field(default="", validation_alias=AliasChoices("timingMode", "timing_mode"))
+    questionCount: Optional[str | int] = Field(default="", validation_alias=AliasChoices("questionCount", "question_count"))
+    prepTime: Optional[int] = Field(default=None, validation_alias=AliasChoices("prepTime", "prep_time"))
+    answerTime: Optional[int] = Field(default=None, validation_alias=AliasChoices("answerTime", "answer_time"))
 
 class TrainingGenerateRequest(BaseModel):
     dimension: str

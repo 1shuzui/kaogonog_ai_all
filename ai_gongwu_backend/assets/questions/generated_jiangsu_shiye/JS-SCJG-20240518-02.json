@@ -54,15 +54,11 @@
   "system": "市场监管",
   "agency": "日江苏省市场监督管理局",
   "positionType": "",
-  "jobLevel": "省直",
+  "jobLevel": "",
   "interviewFormat": "结构化面试",
   "questionTypeCategory": "组织管理",
-  "portalTags": [
-    "医疗卫生面试"
-  ],
-  "displayPortals": [
-    "医疗卫生面试"
-  ],
+  "portalTags": [],
+  "displayPortals": [],
   "classificationSource": "profile_default",
   "classificationConfidence": "medium",
   "reviewStatus": "待确认",

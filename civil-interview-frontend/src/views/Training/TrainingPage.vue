@@ -15,7 +15,7 @@
         </div>
         <div class="dimension-card__info">
           <h4>{{ dim.name }}</h4>
-          <p class="dimension-card__score">单题满分 {{ dim.maxScore }} 分</p>
+          <p class="dimension-card__score">专项题型集中训练</p>
           <div class="dimension-card__progress" v-if="getProgress(dim.key).attempts > 0">
             <span class="progress-label">练习 {{ getProgress(dim.key).attempts }} 次</span>
             <span class="progress-best">最佳 {{ getProgress(dim.key).bestScore }} 分</span>

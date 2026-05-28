@@ -1,4 +1,4 @@
-import { request, uploadFile } from './request'
+import { request } from './request'
 
 export function getQuestions(params = {}) {
   return request({
@@ -43,10 +43,3 @@ export function deleteQuestion(id) {
   })
 }
 
-export function importQuestions(filePath) {
-  return uploadFile({
-    url: '/questions/import',
-    filePath,
-    name: 'file'
-  })
-}

@@ -147,6 +147,25 @@ class SupportFeedback(Base):
     )
 
 
+class TargetedFocusConfig(Base):
+    __tablename__ = "targeted_focus_configs"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    target_key = Column(String(255), unique=True, nullable=False, index=True)
+    target_code = Column(String(100), default="", index=True)
+    target_name = Column(String(255), default="")
+    province = Column(String(64), default="", index=True)
+    position = Column(String(64), default="", index=True)
+    payload = Column(JSON, default=dict)
+    enabled = Column(Boolean, nullable=False, default=True, index=True)
+    updated_by = Column(String(64), default="")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
 class UserSubscription(Base):
     __tablename__ = "user_subscriptions"
     id = Column(Integer, primary_key=True, autoincrement=True)

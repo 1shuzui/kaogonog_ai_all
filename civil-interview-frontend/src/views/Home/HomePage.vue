@@ -27,7 +27,7 @@
           <p>岗位优先，按报考热度进入对应题库。</p>
         </div>
         <a-button type="primary" ghost @click="$router.push('/jiangsu-jobs/a')">
-          A类优先刷
+          综合管理岗优先刷
         </a-button>
       </div>
 

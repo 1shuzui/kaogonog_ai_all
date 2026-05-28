@@ -51,18 +51,14 @@
   "examSubcategory": "江苏省",
   "city": "宿迁市",
   "district": "沭阳县",
-  "system": "医疗卫生系统",
-  "agency": "必须办",
+  "system": "",
+  "agency": "",
   "positionType": "",
   "jobLevel": "",
   "interviewFormat": "结构化面试",
   "questionTypeCategory": "组织管理",
-  "portalTags": [
-    "医疗卫生面试"
-  ],
-  "displayPortals": [
-    "医疗卫生面试"
-  ],
+  "portalTags": [],
+  "displayPortals": [],
   "classificationSource": "profile_default",
   "classificationConfidence": "medium",
   "reviewStatus": "待确认",

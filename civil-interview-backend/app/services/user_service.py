@@ -49,7 +49,7 @@ VALID_PREFERRED_QUESTION_DIMENSIONS = {
 }
 
 
-def _get_user_or_404(db: Session, username: str) -> User:
+def get_user_or_404(db: Session, username: str) -> User:
     user = db.query(User).filter(User.username == username).first()
     if not user:
         raise HTTPException(status_code=404, detail="用户未找到")
@@ -86,7 +86,7 @@ def _normalize_preferences(prefs: dict | None) -> dict:
 
 
 def get_user_info(db: Session, current_user: AuthUser) -> dict:
-    user = _get_user_or_404(db, current_user.username)
+    user = get_user_or_404(db, current_user.username)
     normalized_preferences = _normalize_preferences(user.preferences)
     raw_preferences = user.preferences if isinstance(user.preferences, dict) else {}
     wechat_mini = raw_preferences.get("wechatMiniProgram") if isinstance(raw_preferences.get("wechatMiniProgram"), dict) else {}
@@ -119,7 +119,7 @@ def get_user_info(db: Session, current_user: AuthUser) -> dict:
 
 
 def update_user_profile(db: Session, current_user: AuthUser, data: UserProfileUpdate) -> dict:
-    user = _get_user_or_404(db, current_user.username)
+    user = get_user_or_404(db, current_user.username)
     if data.full_name is not None:
         user.full_name = data.full_name
     if data.email is not None:
@@ -135,7 +135,7 @@ def update_user_profile(db: Session, current_user: AuthUser, data: UserProfileUp
 
 
 def change_password(db: Session, current_user: AuthUser, data: UserPasswordUpdate) -> dict:
-    user = _get_user_or_404(db, current_user.username)
+    user = get_user_or_404(db, current_user.username)
     if not verify_password(data.old_password, user.hashed_password):
         raise HTTPException(status_code=400, detail="原密码错误")
     user.hashed_password = get_password_hash(data.new_password)
@@ -144,7 +144,7 @@ def change_password(db: Session, current_user: AuthUser, data: UserPasswordUpdat
 
 
 def update_preferences(db: Session, current_user: AuthUser, prefs: dict) -> dict:
-    user = _get_user_or_404(db, current_user.username)
+    user = get_user_or_404(db, current_user.username)
     current = dict(user.preferences) if isinstance(user.preferences, dict) else {}
     incoming = dict(prefs) if isinstance(prefs, dict) else {}
     user.preferences = _normalize_preferences({**current, **incoming})
@@ -159,14 +159,14 @@ def get_provinces() -> list:
 def update_user_province(db: Session, username: str, province: str) -> dict:
     if province not in VALID_PROVINCES:
         raise HTTPException(status_code=400, detail="无效的省份代码")
-    user = _get_user_or_404(db, username)
+    user = get_user_or_404(db, username)
     user.province = province
     db.commit()
     return {"success": True, "province": province, "message": "省份已更新"}
 
 
 def get_terms_status(db: Session, username: str) -> dict:
-    user = _get_user_or_404(db, username)
+    user = get_user_or_404(db, username)
     agreed_version = user.agreed_terms_version or ""
     return {
         "hasAgreed": agreed_version == LATEST_TERMS_VERSION,
@@ -181,7 +181,7 @@ def record_terms_agreement(db: Session, username: str, version: str) -> dict:
     version = str(version or "").strip()
     if not version:
         raise HTTPException(status_code=400, detail="协议版本不能为空")
-    user = _get_user_or_404(db, username)
+    user = get_user_or_404(db, username)
     user.agreed_terms_version = version
     user.agreed_terms_at = datetime.now(timezone.utc)
     db.commit()
@@ -202,7 +202,7 @@ def check_device_risk(db: Session, username: str, device_id: str) -> dict:
             "warning": "未提供设备标识，无法完成设备风险检测",
         }
 
-    user = _get_user_or_404(db, username)
+    user = get_user_or_404(db, username)
     history = user.login_device_history if isinstance(user.login_device_history, list) else []
     existing_ids = {
         str(item.get("deviceId"))

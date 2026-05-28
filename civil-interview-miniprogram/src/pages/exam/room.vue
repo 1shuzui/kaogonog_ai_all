@@ -29,7 +29,6 @@
                 <view class="question-tags">
                   <text class="question-tag">{{ provinceLabel(item) }}</text>
                   <text class="question-tag question-tag--blue">{{ categoryLabel(item) }}</text>
-                  <text v-if="questionScoreLabel(item)" class="question-tag question-tag--score">{{ questionScoreLabel(item) }}</text>
                   <text v-if="index === examStore.currentIndex" class="question-tag question-tag--active">当前作答</text>
                 </view>
                 <scroll-view scroll-y show-scrollbar class="question-book__stem-scroll">
@@ -163,7 +162,6 @@
             <view class="question-tags">
               <text class="question-tag">{{ provinceLabel(question) }}</text>
               <text class="question-tag question-tag--blue">{{ categoryLabel(question) }}</text>
-              <text v-if="questionScoreLabel(question)" class="question-tag question-tag--score">{{ questionScoreLabel(question) }}</text>
             </view>
             <text class="question-stem">{{ question.stem }}</text>
             <view v-if="isJiangsuReading" class="reading-list">
@@ -469,27 +467,6 @@ function provinceLabel(item = {}) {
 
 function categoryLabel(item = {}) {
   return getCategoryName(item?.dimension || item?.type || '')
-}
-
-function normalizeScoreText(value) {
-  const score = Number(value)
-  if (!Number.isFinite(score) || score <= 0) return ''
-  return Number.isInteger(score) ? String(score) : score.toFixed(1).replace(/\.0$/, '')
-}
-
-function questionScoreLabel(item = {}) {
-  const directScore = [
-    item.assignedScore,
-    item.questionMaxScore,
-    item.fullScore,
-    item.full_score
-  ].map((value) => Number(value)).find((value) => Number.isFinite(value) && value > 0)
-  if (directScore) return `${normalizeScoreText(directScore)} 分`
-
-  const pointsTotal = Array.isArray(item.scoringPoints)
-    ? item.scoringPoints.reduce((sum, point) => sum + (Number(point?.score || point?.points || 0) || 0), 0)
-    : 0
-  return pointsTotal > 0 ? `${normalizeScoreText(pointsTotal)} 分` : ''
 }
 
 function onQuestionBookChange(event) {
@@ -1219,11 +1196,6 @@ function goBackHome() {
 .question-tag--blue {
   background: #e8f4fd;
   color: #1b5faa;
-}
-
-.question-tag--score {
-  background: #fff6d8;
-  color: #8a5a00;
 }
 
 .reading-list {

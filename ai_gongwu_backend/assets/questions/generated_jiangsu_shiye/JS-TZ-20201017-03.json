@@ -65,18 +65,14 @@
   "examSubcategory": "江苏省",
   "city": "泰州市",
   "district": "",
-  "system": "市场监管",
+  "system": "",
   "agency": "",
   "positionType": "",
-  "jobLevel": "乡镇基层",
+  "jobLevel": "",
   "interviewFormat": "结构化面试",
   "questionTypeCategory": "组织管理",
-  "portalTags": [
-    "医疗卫生面试"
-  ],
-  "displayPortals": [
-    "医疗卫生面试"
-  ],
+  "portalTags": [],
+  "displayPortals": [],
   "classificationSource": "profile_default",
   "classificationConfidence": "medium",
   "reviewStatus": "待确认",

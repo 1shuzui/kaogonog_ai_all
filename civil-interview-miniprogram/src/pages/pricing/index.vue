@@ -169,10 +169,10 @@ function requestWechatVirtualPayment(payParams = {}) {
 }
 
 async function waitOrderPaid(orderNo) {
-  for (let index = 0; index < 5; index += 1) {
+  for (let index = 0; index < 8; index += 1) {
     const order = await getPaymentOrder(orderNo)
     if (order?.status === 'paid') return order
-    await new Promise((resolve) => setTimeout(resolve, 1200))
+    await new Promise((resolve) => setTimeout(resolve, 1500))
   }
   return null
 }
@@ -195,15 +195,23 @@ async function activate(plan) {
       throw new Error(order.payParams?.message || '小程序虚拟支付参数未就绪')
     }
     const payResult = await requestWechatVirtualPayment(order.payParams?.virtualPay || {})
-    await confirmVirtualPaymentOrder(order.orderNo, {
-      scene: 'mini_program_virtual',
-      payResult: 'success',
-      outTradeNo: order.payParams?.virtualPayMeta?.outTradeNo || order.orderNo,
-      rawResult: payResult || {}
-    }).catch(() => null)
+    try {
+      await confirmVirtualPaymentOrder(order.orderNo, {
+        scene: 'mini_program_virtual',
+        payResult: 'success',
+        outTradeNo: order.payParams?.virtualPayMeta?.outTradeNo || order.orderNo,
+        rawResult: payResult || {}
+      })
+    } catch {
+      toast('订单确认暂时失败，稍后将自动重试同步', 'warning')
+    }
     const paidOrder = await waitOrderPaid(order.orderNo)
     await userStore.loadUserInfo()
-    toast(paidOrder ? '支付成功，权益已同步' : '支付已提交，权益同步中', 'success')
+    if (paidOrder) {
+      toast('支付成功，权益已同步', 'success')
+    } else {
+      toast('支付已提交，权益同步中。如长时间未到账，请联系客服', 'warning')
+    }
   } catch (error) {
     toast(error?.message || '支付未完成，请稍后重试')
   } finally {

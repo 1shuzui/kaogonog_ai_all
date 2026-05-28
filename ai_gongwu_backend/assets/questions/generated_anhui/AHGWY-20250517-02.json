@@ -62,18 +62,14 @@
   "examSubcategory": "安徽省",
   "city": "",
   "district": "",
-  "system": "医疗卫生系统",
-  "agency": "我们下面执行就行",
+  "system": "",
+  "agency": "",
   "positionType": "",
   "jobLevel": "",
   "interviewFormat": "结构化面试",
   "questionTypeCategory": "综合分析",
-  "portalTags": [
-    "医疗卫生面试"
-  ],
-  "displayPortals": [
-    "医疗卫生面试"
-  ],
+  "portalTags": [],
+  "displayPortals": [],
   "classificationSource": "profile_default",
   "classificationConfidence": "high",
   "reviewStatus": "已确认",

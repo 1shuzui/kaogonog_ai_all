@@ -18,6 +18,13 @@
         </view>
         <text class="menu-item__arrow">›</text>
       </view>
+      <view class="menu-item card" @tap="goTargeted">
+        <view>
+          <text class="menu-item__title">定向入口管理</text>
+          <text class="menu-item__desc">按考试体系入口补充真实题目</text>
+        </view>
+        <text class="menu-item__arrow">›</text>
+      </view>
       <view class="menu-item card" @tap="goSupport">
         <view>
           <text class="menu-item__title">客服反馈后台</text>
@@ -52,6 +59,10 @@ function goRefunds() {
 
 function goQuestions() {
   uni.navigateTo({ url: '/pages/admin/questions' })
+}
+
+function goTargeted() {
+  uni.navigateTo({ url: '/pages/admin/targeted' })
 }
 
 function goSupport() {
