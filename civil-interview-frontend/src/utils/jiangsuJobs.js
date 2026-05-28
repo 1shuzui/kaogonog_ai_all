@@ -30,23 +30,13 @@ export const JIANGSU_JOB_CATEGORIES = [
     hot: '理工农技'
   },
   {
-    key: 'd',
-    code: 'D',
-    title: '中小学教师岗',
-    shortTitle: '中小学教师岗',
-    subtitle: '',
-    scope: '教师岗',
-    rank: 4,
-    hot: '教师专项'
-  },
-  {
     key: 'e',
     code: 'E',
     title: '医疗卫生岗',
     shortTitle: '医疗卫生岗',
     subtitle: '',
     scope: '医疗卫生',
-    rank: 5,
+    rank: 4,
     hot: '医疗岗专项'
   },
   {
@@ -56,7 +46,7 @@ export const JIANGSU_JOB_CATEGORIES = [
     shortTitle: '工勤',
     subtitle: '',
     scope: '工勤技能',
-    rank: 6,
+    rank: 5,
     hot: '技能岗'
   }
 ]

@@ -63,7 +63,7 @@
             <a-button type="primary" size="small" @click="startPractice(item)">
               开始刷题
             </a-button>
-            <a-button size="small" @click="$router.push({ path: '/bank', query: { province: 'jiangsu', examCategory: '事业单位统考', subcategory: category.title } })">去题库筛选</a-button>
+            <a-button size="small" @click="$router.push({ path: '/bank', query: { province: 'jiangsu', examCategory: '事业单位考试', position: 'jiangsu_' + category.key } })">去题库筛选</a-button>
           </div>
         </div>
       </div>
@@ -98,9 +98,7 @@ const filters = reactive({
 const loading = ref(false)
 const allItems = ref([])
 const listStatusText = computed(() => (loading.value ? '正在加载真实题库...' : `真实题库 · ${filteredItems.value.length} 题`))
-const emptyText = computed(() => category.value.key === 'd'
-  ? '当前江苏题库暂未收录教师岗真题，请先切换其他岗位或导入教师岗资料。'
-  : '暂无匹配题目，请调整筛选条件')
+const emptyText = computed(() => '暂无匹配题目，请调整筛选条件')
 const filteredItems = computed(() => allItems.value.filter((item) => {
   if (filters.city !== 'all' && item.cityKey !== filters.city) return false
   if (filters.year && item.year !== filters.year) return false
@@ -138,8 +136,8 @@ async function loadQuestions() {
   try {
     const res = await getQuestions({
       province: 'jiangsu',
-      examCategory: '事业单位统考',
-      subcategory: category.value.title,
+      examCategory: '事业单位考试',
+      position: 'jiangsu_' + category.value.key,
       current: 1,
       page: 1,
       pageSize: 1000

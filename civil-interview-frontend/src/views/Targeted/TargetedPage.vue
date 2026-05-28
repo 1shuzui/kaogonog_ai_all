@@ -50,6 +50,20 @@
         </a-select>
       </div>
 
+      <div class="targeted-picker__row">
+        <label>年份</label>
+        <a-select
+          v-model:value="selectedYears"
+          class="targeted-picker__select"
+          mode="multiple"
+          placeholder="不限年份（可多选）"
+          allow-clear
+          :max-tag-count="3"
+        >
+          <a-select-option v-for="y in YEAR_OPTIONS" :key="y" :value="y">{{ y }}</a-select-option>
+        </a-select>
+      </div>
+
       <div v-if="activeTarget" class="targeted-picker__summary">
         当前选择：{{ selectedPathLabel }}
         <div v-if="selectedModeHints.length" class="targeted-picker__meta">
@@ -126,6 +140,7 @@ import { hasPremiumAccess } from '@/utils/access'
 import { mergeTargetPayload } from '@/utils/targetedOptions'
 import QuestionMetaTags from '@/components/common/QuestionMetaTags.vue'
 import QuestionRichContent from '@/components/common/QuestionRichContent.vue'
+import { YEAR_OPTIONS } from '@/utils/constants'
 import { getScoringUnavailableMessage, isQuestionScoringSupported } from '@/utils/scoringSupport'
 
 const router = useRouter()
@@ -136,6 +151,7 @@ const billingStore = useBillingStore()
 const selectedCategoryId = ref('')
 const selectedRegionId = ref('')
 const selectedTargetCode = ref('')
+const selectedYears = ref([])
 const hasFullAccess = computed(() => hasPremiumAccess(userStore, billingStore))
 const positionTree = computed(() => targetedStore.positionTree || [])
 const selectedCategory = computed(() => positionTree.value.find((item) => item.id === selectedCategoryId.value) || positionTree.value[0] || null)
@@ -147,11 +163,16 @@ const selectedRegion = computed(() => currentRegions.value.find((item) => item.i
 const currentDirections = computed(() => selectedRegion.value?.directions || [])
 const hasDirectionLevel = computed(() => currentDirections.value.length > 0)
 const selectedDirection = computed(() => currentDirections.value.find((item) => item.id === selectedTargetCode.value) || currentDirections.value[0] || null)
-const activeTarget = computed(() => (
-  selectedCategory.value && selectedRegion.value && (!hasDirectionLevel.value || selectedDirection.value)
-    ? mergeTargetPayload(selectedCategory.value, selectedRegion.value, selectedDirection.value || {})
-    : null
-))
+const activeTarget = computed(() => {
+  if (!(selectedCategory.value && selectedRegion.value && (!hasDirectionLevel.value || selectedDirection.value))) {
+    return null
+  }
+  const merged = mergeTargetPayload(selectedCategory.value, selectedRegion.value, selectedDirection.value || {})
+  if (selectedYears.value.length) {
+    merged.year = selectedYears.value
+  }
+  return merged
+})
 const selectedPathLabel = computed(() => [
   selectedCategory.value?.name,
   selectedRegion.value?.name,
@@ -159,7 +180,11 @@ const selectedPathLabel = computed(() => [
 ].filter(Boolean).join(' / '))
 const selectedModeHints = computed(() => {
   const target = activeTarget.value || {}
+  const yearLabel = (Array.isArray(target.year) && target.year.length)
+    ? `年份：${target.year.join('、')}`
+    : (target.year ? `年份：${target.year}` : '')
   return [
+    yearLabel,
     target.interviewFormat ? `形式：${target.interviewFormat}` : '',
     target.questionCount ? `题量：${target.questionCount}题` : '',
     target.timingMode ? `计时：${target.timingMode}` : '',

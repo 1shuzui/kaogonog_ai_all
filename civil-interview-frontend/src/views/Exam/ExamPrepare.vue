@@ -430,9 +430,9 @@ async function ensureScoringReadyQuestions(questions, options = {}) {
   return resolved.slice(0, requiredCount || resolved.length)
 }
 
-onMounted(async () => {
-  await userStore.loadUserInfo().catch(() => null)
-  await refreshFullExamSuites().catch(() => null)
+onMounted(() => {
+  userStore.loadUserInfo().catch(() => null)
+  refreshFullExamSuites().catch(() => null)
   loadAsrStatus().catch(() => null)
   doPermissionCheck()
 })
