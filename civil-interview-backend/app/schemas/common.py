@@ -112,16 +112,14 @@ class QuestionCreate(BaseModel):
     hasAppearanceScore: Optional[bool] = None
     examCategory: Optional[str] = None
     examSubcategory: Optional[str] = None
-    city: Optional[str] = None
-    district: Optional[str] = None
-    system: Optional[str] = None
-    agency: Optional[str] = None
-    positionType: Optional[str] = None
-    jobLevel: Optional[str] = None
+    subcategory: Optional[str] = None
+    subcategory2: Optional[str] = None
     interviewFormat: Optional[str] = None
     questionTypeCategory: Optional[str] = None
-    portalTags: Optional[List[str]] = None
-    displayPortals: Optional[List[str]] = None
+    jobLevel: Optional[str] = None
+    year: Optional[List[str]] = None
+    timingMode: Optional[str] = None
+    questionCount: Optional[int | str] = None
     classificationConfidence: Optional[str] = None
     reviewStatus: Optional[str] = None
     reviewReason: Optional[str] = None
@@ -215,10 +213,9 @@ class FocusAnalysisRequest(BaseModel):
     position: str = ""
     examCategory: Optional[str] = Field(default="", validation_alias=AliasChoices("examCategory", "exam_category"))
     examSubcategory: Optional[str] = Field(default="", validation_alias=AliasChoices("examSubcategory", "exam_subcategory"))
-    system: Optional[str] = ""
-    positionType: Optional[str] = Field(default="", validation_alias=AliasChoices("positionType", "position_type"))
-    portalTag: Optional[str] = Field(default="", validation_alias=AliasChoices("portalTag", "portal_tag"))
-    displayPortal: Optional[str] = Field(default="", validation_alias=AliasChoices("displayPortal", "display_portal"))
+    subcategory: Optional[str] = ""
+    subcategory2: Optional[str] = ""
+    year: Optional[str | List[str]] = ""
     targetCode: Optional[str] = Field(default="", validation_alias=AliasChoices("targetCode", "target_code"))
     targetName: Optional[str] = Field(default="", validation_alias=AliasChoices("targetName", "target_name"))
     interviewFormat: Optional[str] = Field(default="", validation_alias=AliasChoices("interviewFormat", "interview_format"))
@@ -234,10 +231,9 @@ class GenerateQuestionsRequest(BaseModel):
     sourceMode: str = "local"
     examCategory: Optional[str] = Field(default="", validation_alias=AliasChoices("examCategory", "exam_category"))
     examSubcategory: Optional[str] = Field(default="", validation_alias=AliasChoices("examSubcategory", "exam_subcategory"))
-    system: Optional[str] = ""
-    positionType: Optional[str] = Field(default="", validation_alias=AliasChoices("positionType", "position_type"))
-    portalTag: Optional[str] = Field(default="", validation_alias=AliasChoices("portalTag", "portal_tag"))
-    displayPortal: Optional[str] = Field(default="", validation_alias=AliasChoices("displayPortal", "display_portal"))
+    subcategory: Optional[str] = ""
+    subcategory2: Optional[str] = ""
+    year: Optional[str | List[str]] = ""
     targetCode: Optional[str] = Field(default="", validation_alias=AliasChoices("targetCode", "target_code"))
     targetName: Optional[str] = Field(default="", validation_alias=AliasChoices("targetName", "target_name"))
     interviewFormat: Optional[str] = Field(default="", validation_alias=AliasChoices("interviewFormat", "interview_format"))

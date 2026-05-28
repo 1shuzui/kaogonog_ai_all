@@ -422,27 +422,36 @@ export async function fetchFullExamSuites(getQuestions, province, options = {}) 
 
 export async function loadFullExamSuiteQuestions(suite, getQuestionById) {
   if (!suite) return []
-  const loaded = []
   const questions = Array.isArray(suite.questions) ? suite.questions : []
 
-  for (let index = 0; index < questions.length; index += 1) {
-    const current = questions[index]
-    const questionId = getQuestionId(current)
-    const hasBody = !!getQuestionStem(current)
-    const hydrated = hasBody || typeof getQuestionById !== 'function'
-      ? current
-      : await getQuestionById(questionId)
+  const results = await Promise.allSettled(
+    questions.map(async (current, index) => {
+      const questionId = getQuestionId(current)
+      const hasBody = !!getQuestionStem(current)
+      const hydrated = hasBody || typeof getQuestionById !== 'function'
+        ? current
+        : await getQuestionById(questionId)
 
-    if (!hydrated?.id && !questionId) {
-      throw new Error(`套题题目加载失败：第 ${index + 1} 题`)
+      if (!hydrated?.id && !questionId) {
+        throw new Error(`套题题目加载失败：第 ${index + 1} 题`)
+      }
+
+      return normalizeFullExamQuestion({
+        ...current,
+        ...hydrated,
+        id: hydrated?.id || questionId
+      }, suite, index)
+    })
+  )
+
+  const loaded = []
+  for (const result of results) {
+    if (result.status === 'fulfilled') {
+      loaded.push(result.value)
     }
-
-    loaded.push(normalizeFullExamQuestion({
-      ...current,
-      ...hydrated,
-      id: hydrated?.id || questionId
-    }, suite, index))
   }
-
+  if (loaded.length !== questions.length) {
+    throw new Error('套题题目加载不完整，请切换其他套卷后重试')
+  }
   return loaded
 }

@@ -6,6 +6,8 @@ import io
 import logging
 import mimetypes
 import os
+import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import subprocess
 import tempfile
@@ -27,10 +29,20 @@ ASR_SIMPLIFIED_CHINESE_PROMPT = (
     "请将音频完整转写为简体中文普通话文本。"
     "保留考生原意，不要翻译成英文，不要输出繁体字，不要添加总结、标点说明或无关内容。"
 )
+LLM_MAX_RETRIES = 3
+LLM_RETRY_BACKOFF_BASE = 1.5
 _whisper_model = None
 
 # OpenAI-compatible client for the configured LLM provider
 _client: Optional[OpenAI] = None
+_executor: Optional[ThreadPoolExecutor] = None
+
+
+def _get_executor() -> ThreadPoolExecutor:
+    global _executor
+    if _executor is None:
+        _executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="llm")
+    return _executor
 
 
 def get_client() -> Optional[OpenAI]:
@@ -52,35 +64,45 @@ def call_llm_api(
     temperature: float = 0.1,
     max_tokens: int = 2000,
 ) -> Optional[Dict]:
-    """Synchronous LLM call (run via executor to avoid blocking)"""
+    """Synchronous LLM call with exponential backoff retry (run via executor to avoid blocking)"""
     import json
 
     client = get_client()
     if not client:
         logger.warning("No LLM_API_KEY configured, skipping LLM call")
         return None
-    try:
-        response = client.chat.completions.create(
-            model=settings.llm_model,
-            messages=[
-                {"role": "system", "content": system_msg},
-                {"role": "user", "content": prompt},
-            ],
-            temperature=temperature,
-            max_tokens=max_tokens,
-            timeout=settings.llm_timeout_seconds,
-        )
-        content = response.choices[0].message.content.strip()
-        if content.startswith("```json"):
-            content = content[7:]
-        if content.startswith("```"):
-            content = content[3:]
-        if content.endswith("```"):
-            content = content[:-3]
-        return json.loads(content.strip())
-    except Exception as e:
-        logger.error(f"LLM call failed: {e}")
-        return None
+
+    last_error = None
+    for attempt in range(LLM_MAX_RETRIES):
+        try:
+            response = client.chat.completions.create(
+                model=settings.llm_model,
+                messages=[
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=temperature,
+                max_tokens=max_tokens,
+                timeout=settings.llm_timeout_seconds,
+            )
+            content = response.choices[0].message.content.strip()
+            if content.startswith("```json"):
+                content = content[7:]
+            if content.startswith("```"):
+                content = content[3:]
+            if content.endswith("```"):
+                content = content[:-3]
+            return json.loads(content.strip())
+        except Exception as e:
+            last_error = e
+            if attempt < LLM_MAX_RETRIES - 1:
+                delay = LLM_RETRY_BACKOFF_BASE ** attempt
+                logger.warning("LLM call attempt %s/%s failed, retrying in %.1fs: %s", attempt + 1, LLM_MAX_RETRIES, delay, e)
+                time.sleep(delay)
+            else:
+                logger.error("LLM call failed after %s attempts: %s", LLM_MAX_RETRIES, e)
+
+    return None
 
 
 async def call_llm_api_async(
@@ -89,10 +111,10 @@ async def call_llm_api_async(
     temperature: float = 0.1,
     max_tokens: int = 2000,
 ) -> Optional[Dict]:
-    """Async wrapper to avoid blocking the event loop"""
+    """Async wrapper using a dedicated thread pool to avoid starving the default executor"""
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(
-        None, lambda: call_llm_api(prompt, system_msg, temperature, max_tokens)
+        _get_executor(), lambda: call_llm_api(prompt, system_msg, temperature, max_tokens)
     )
 
 

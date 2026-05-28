@@ -35,6 +35,14 @@ export function useMediaRecorder() {
   let durationTimer = null
   let startTime = 0
 
+  function setStream(externalStream) {
+    if (externalStream) {
+      stream.value = externalStream
+      hasVideo.value = externalStream.getVideoTracks().length > 0
+      error.value = ''
+    }
+  }
+
   async function initStream(opts = {}) {
     try {
       const enableVideo = opts.videoEnabled !== false
@@ -155,6 +163,7 @@ export function useMediaRecorder() {
     isPaused,
     duration,
     error,
+    setStream,
     initStream,
     startRecording,
     stopRecording,

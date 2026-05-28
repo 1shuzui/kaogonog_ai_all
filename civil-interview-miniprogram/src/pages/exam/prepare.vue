@@ -249,20 +249,22 @@ watch(() => userStore.preferences?.preferredQuestionDimensions, () => {
 
 function applyUserPracticePreferencesToQuestions(questions = []) {
   const prefs = userStore.preferences || {}
-  const prepTime = Number(prefs.defaultPrepTime || 0)
-  const answerTime = Number(prefs.defaultAnswerTime || 0)
+  const prefPrepTime = Number(prefs.defaultPrepTime || 0)
+  const prefAnswerTime = Number(prefs.defaultAnswerTime || 0)
   return questions.map((question) => ({
     ...question,
-    prepTime: prepTime || Number(question?.prepTime || 90),
-    answerTime: answerTime || Number(question?.answerTime || 180)
+    prepTime: Number(question?.prepTime) || prefPrepTime || 90,
+    answerTime: Number(question?.answerTime) || prefAnswerTime || 180,
+    timingMode: question?.timingMode || ''
   }))
 }
 
 function applyFullExamTimingMode(questions = []) {
   if (mode.value !== 'fullExam') return questions
+  const suiteTiming = selectedFullExamSuite.value?.timingMode || ''
   return questions.map((question) => ({
     ...question,
-    fullExamTimingMode: question?.fullExamTimingMode || (userStore.selectedProvince === 'jiangsu' ? JIANGSU_FULL_EXAM_TIMING_MODE : '')
+    fullExamTimingMode: question?.timingMode || suiteTiming || (userStore.selectedProvince === 'jiangsu' ? JIANGSU_FULL_EXAM_TIMING_MODE : '')
   }))
 }
 
@@ -491,9 +493,11 @@ async function startPractice() {
   loading.value = true
   showLoading('检查考场')
   try {
+    const accessFresh = isFresh(accessRefreshedAt, ENTRY_STATE_REFRESH_TIMEOUT_MS)
+    const asrFresh = isFresh(asrStatusRefreshedAt, ENTRY_ASR_STATUS_TIMEOUT_MS)
     await Promise.allSettled([
-      refreshAccessState({ timeout: ENTRY_STATE_REFRESH_TIMEOUT_MS }),
-      refreshAsrStatus({ timeout: ENTRY_ASR_STATUS_TIMEOUT_MS })
+      accessFresh ? Promise.resolve() : refreshAccessState({ timeout: ENTRY_STATE_REFRESH_TIMEOUT_MS }),
+      asrFresh ? Promise.resolve() : refreshAsrStatus({ timeout: ENTRY_ASR_STATUS_TIMEOUT_MS })
     ])
     if (asrUnavailable.value) {
       toast('语音转写服务未就绪，请稍后重试')
@@ -525,17 +529,10 @@ async function startPractice() {
       }
     } else {
       if (!userStore.isAdmin) {
-        const access = await withTimeout(
-          subscriptionStore.check(mode.value === 'fullExam' ? 'fullExam' : 'practice', { skipErrorHandler: true }),
-          ENTER_ROOM_TIMEOUT_MS,
-          { timeout: true }
-        )
-        if (access?.timeout) {
-          toast('套餐权限校验超时，请稍后重试')
-          return
-        }
-        if (access && access.allowed === false) {
-          toast(access.reason || '当前套餐额度不足')
+        const status = subscriptionStore.status
+        const remainingDaily = Math.max(0, Number(status.remainingDailyMinutes || 0))
+        if (!status.canUse || remainingDaily <= 0) {
+          toast('当前套餐额度不足')
           return
         }
       }

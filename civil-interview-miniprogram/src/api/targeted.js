@@ -40,6 +40,13 @@ export async function getFocusAnalysis(data) {
   return normalizeFocusAnalysis(response)
 }
 
+export async function getPositions() {
+  return request({
+    url: '/positions',
+    method: 'GET'
+  })
+}
+
 export async function generateQuestions(data) {
   const response = await request({
     url: '/targeted/generate',

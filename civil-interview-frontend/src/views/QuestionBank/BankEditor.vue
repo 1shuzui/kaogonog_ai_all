@@ -1,5 +1,5 @@
 <template>
-  <div class="bank-editor page-container">
+  <div class="bank-editor page-container-wide">
     <h2>{{ isEdit ? '编辑题目' : '新增题目' }}</h2>
 
     <a-form :model="form" layout="vertical" class="card" style="padding: 20px">
@@ -53,36 +53,55 @@
       </a-row>
 
       <a-row :gutter="12">
-        <a-col :span="8">
-          <a-form-item label="系统">
-            <a-input v-model:value="form.system" placeholder="如：监狱系统、税务系统" />
+        <a-col :span="12">
+          <a-form-item label="三级分类">
+            <a-input v-model:value="form.subcategory" placeholder="如：地级市、系统、岗位方向" />
           </a-form-item>
         </a-col>
-        <a-col :span="8">
-          <a-form-item label="岗位类别">
-            <a-input v-model:value="form.positionType" placeholder="如：乡镇岗、综合管理岗" />
-          </a-form-item>
-        </a-col>
-        <a-col :span="8">
-          <a-form-item label="岗位码">
-            <a-input v-model:value="form.position" placeholder="如：township、prison" />
+        <a-col :span="12">
+          <a-form-item label="四级分类">
+            <a-input v-model:value="form.subcategory2" placeholder="如：区县、具体单位" />
           </a-form-item>
         </a-col>
       </a-row>
 
-      <a-form-item label="展示入口标签">
-        <a-select v-model:value="form.portalTags" mode="tags" placeholder="如：医疗卫生面试、银行招考面试" />
-      </a-form-item>
-
       <a-row :gutter="12">
         <a-col :span="12">
+          <a-form-item label="面试形式">
+            <a-input v-model:value="form.interviewFormat" placeholder="如：15分钟包干、8+12" />
+          </a-form-item>
+        </a-col>
+        <a-col :span="12">
+          <a-form-item label="计时模式">
+            <a-input v-model:value="form.timingMode" placeholder="如：8分钟读题+12分钟答题" />
+          </a-form-item>
+        </a-col>
+      </a-row>
+
+      <a-row :gutter="12">
+        <a-col :span="8">
+          <a-form-item label="年份">
+            <a-select v-model:value="form.year" mode="multiple" placeholder="选择年份" allow-clear>
+              <a-select-option v-for="y in YEAR_OPTIONS" :key="y" :value="y">{{ y }}</a-select-option>
+            </a-select>
+          </a-form-item>
+        </a-col>
+        <a-col :span="8">
           <a-form-item label="准备时间(秒)">
             <a-input-number v-model:value="form.prepTime" :min="30" :max="300" style="width: 100%" />
           </a-form-item>
         </a-col>
-        <a-col :span="12">
+        <a-col :span="8">
           <a-form-item label="作答时间(秒)">
             <a-input-number v-model:value="form.answerTime" :min="60" :max="600" style="width: 100%" />
+          </a-form-item>
+        </a-col>
+      </a-row>
+
+      <a-row :gutter="12">
+        <a-col :span="12">
+          <a-form-item label="套题数量">
+            <a-input v-model:value="form.questionCount" placeholder="如：3、3-4" />
           </a-form-item>
         </a-col>
       </a-row>
@@ -136,7 +155,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import { useQuestionBankStore } from '@/stores/questionBank'
 import { getQuestionById } from '@/api/questionBank'
-import { PROVINCES } from '@/utils/constants'
+import { PROVINCES, YEAR_OPTIONS } from '@/utils/constants'
 import { message } from 'ant-design-vue'
 
 const route = useRoute()
@@ -173,11 +192,12 @@ const form = reactive({
   },
   examCategory: '',
   examSubcategory: '',
-  system: '',
-  positionType: '',
-  position: '',
-  portalTags: [],
-  displayPortals: []
+  subcategory: '',
+  subcategory2: '',
+  year: [],
+  interviewFormat: '',
+  timingMode: '',
+  questionCount: ''
 })
 
 onMounted(async () => {
@@ -203,11 +223,12 @@ onMounted(async () => {
         },
         examCategory: q.examCategory || '',
         examSubcategory: q.examSubcategory || '',
-        system: q.system || '',
-        positionType: q.positionType || '',
-        position: q.position || '',
-        portalTags: Array.isArray(q.portalTags) ? q.portalTags : [],
-        displayPortals: Array.isArray(q.displayPortals) ? q.displayPortals : []
+        subcategory: q.subcategory || '',
+        subcategory2: q.subcategory2 || '',
+        year: Array.isArray(q.year) ? q.year : (q.year ? String(q.year).split(',').filter(Boolean) : []),
+        interviewFormat: q.interviewFormat || '',
+        timingMode: q.timingMode || '',
+        questionCount: q.questionCount || ''
       })
     }
   } else {
@@ -217,16 +238,16 @@ onMounted(async () => {
 
 function applyTargetDefaultsFromRoute() {
   const query = route.query || {}
-  const portalTag = String(query.portalTag || query.displayPortal || '').trim()
   Object.assign(form, {
     province: String(query.province === 'all' ? 'national' : query.province || form.province || 'national'),
     examCategory: String(query.examCategory || ''),
     examSubcategory: String(query.examSubcategory || ''),
-    system: String(query.system || ''),
-    positionType: String(query.positionType || ''),
-    position: String(query.position || ''),
-    portalTags: portalTag ? [portalTag] : [],
-    displayPortals: portalTag ? [portalTag] : []
+    subcategory: String(query.subcategory || ''),
+    subcategory2: String(query.subcategory2 || ''),
+    year: query.year ? String(query.year).split(',').filter(Boolean) : [],
+    interviewFormat: String(query.interviewFormat || ''),
+    timingMode: String(query.timingMode || ''),
+    questionCount: String(query.questionCount || '')
   })
 }
 
@@ -245,11 +266,10 @@ async function onSave() {
   }
   saving.value = true
   try {
-    const portalTags = Array.isArray(form.portalTags) ? form.portalTags.filter(Boolean) : []
+    const year = Array.isArray(form.year) ? form.year.filter(Boolean).join(',') : ''
     const payload = {
       ...form,
-      portalTags,
-      displayPortals: portalTags,
+      year,
       categoryReviewStatus: 'confirmed'
     }
     if (isEdit) {
@@ -277,6 +297,12 @@ const categoryReviewMessage = computed(() => {
 
 <style lang="less" scoped>
 @import '@/styles/variables.less';
+
+.page-container-wide {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+}
 
 .bank-editor h2 {
   font-size: @font-size-xl;

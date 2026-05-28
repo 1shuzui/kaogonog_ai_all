@@ -440,7 +440,9 @@ onMounted(async () => {
 onUnmounted(() => {
   clearInterval(countdownTimer)
   clearInterval(waitTimer)
-  recorder.destroyStream()
+  if (!examStore.mediaStream) {
+    recorder.destroyStream()
+  }
   if (testBlobUrl.value) {
     URL.revokeObjectURL(testBlobUrl.value)
   }
@@ -449,10 +451,11 @@ onUnmounted(() => {
 async function doPermissionCheck() {
   currentStep.value = 0
   permissionError.value = ''
-  const ok = await checkBoth()
-  if (ok) {
+  const permissionStream = await checkBoth({ keepStream: true })
+  if (permissionStream) {
     videoEnabled.value = true
     currentStep.value = 1
+    recorder.setStream(permissionStream)
     await initRecorder()
     return
   }
@@ -481,7 +484,9 @@ async function tryMicOnly() {
 }
 
 async function initRecorder() {
-  await recorder.initStream({ videoEnabled: videoEnabled.value })
+  if (!recorder.stream.value) {
+    await recorder.initStream({ videoEnabled: videoEnabled.value })
+  }
 }
 
 function stepStatus(step) {
@@ -547,7 +552,6 @@ async function enterExam() {
       : freeQuestionCount
 
   try {
-    await userStore.loadUserInfo().catch(() => null)
     if (!isTrialEntry.value && !hasFullAccess.value) {
       billingStore.openPaywall(route.fullPath, examMode.value === 'fullExam' ? '全真模拟' : '专项练习')
       router.push('/')
@@ -620,7 +624,7 @@ async function enterExam() {
 
     questions = applyFullExamTimingMode(applyUserPracticePreferencesToQuestions(questions))
 
-    recorder.destroyStream()
+    examStore.storeStream(recorder.stream.value)
     examStore.setVideoEnabled(videoEnabled.value)
 
     if (examMode.value === 'fullExam') {

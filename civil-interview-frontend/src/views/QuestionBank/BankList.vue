@@ -27,15 +27,37 @@
         <a-space wrap>
           <ProvinceSelector v-model:value="provinceFilter" @change="onProvinceChange" />
           <a-select
-            v-if="showPositionFilter"
-            v-model:value="positionFilter"
-            placeholder="岗位系统"
+            v-model:value="examCategoryFilter"
+            placeholder="考试大类"
             allow-clear
-            style="width: 210px"
+            style="width: 140px"
+            @change="onExamCategoryChange"
           >
-            <a-select-option v-for="item in JIANGSU_TARGETED_POSITIONS" :key="item.code" :value="item.code">
+            <a-select-option v-for="item in EXAM_CATEGORIES" :key="item.code" :value="item.code">
               {{ item.name }}
             </a-select-option>
+          </a-select>
+          <a-input
+            v-model:value="subcategoryFilter"
+            :placeholder="subcategoryPlaceholder"
+            allow-clear
+            style="width: 130px"
+          />
+          <a-input
+            v-model:value="subcategory2Filter"
+            placeholder="四级分类"
+            allow-clear
+            style="width: 130px"
+          />
+          <a-select
+            v-model:value="yearFilter"
+            placeholder="年份"
+            mode="multiple"
+            allow-clear
+            style="width: 180px"
+            :max-tag-count="2"
+          >
+            <a-select-option v-for="y in YEAR_OPTIONS" :key="y" :value="y">{{ y }}</a-select-option>
           </a-select>
           <a-select
             v-model:value="dimensionFilter"
@@ -125,7 +147,7 @@
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { UploadOutlined, PlusOutlined } from '@ant-design/icons-vue'
 import { useQuestionBankStore } from '@/stores/questionBank'
 import { useBillingStore } from '@/stores/billing'
@@ -135,9 +157,10 @@ import QuestionMetaTags from '@/components/common/QuestionMetaTags.vue'
 import QuestionRichContent from '@/components/common/QuestionRichContent.vue'
 import { message } from 'ant-design-vue'
 import { useUserStore } from '@/stores/user'
-import { JIANGSU_TARGETED_POSITIONS } from '@/utils/jiangsuJobs'
+import { EXAM_CATEGORIES, SUBCATEGORY_LABELS, YEAR_OPTIONS } from '@/utils/constants'
 
 const router = useRouter()
+const route = useRoute()
 const bankStore = useQuestionBankStore()
 const billingStore = useBillingStore()
 const userStore = useUserStore()
@@ -149,11 +172,17 @@ const hasQuestionBankAccess = computed(() => (
   || userStore.userInfo?.permissions?.canAccessPremiumModules === true
 ))
 const provinceFilter = ref('all')
+const examCategoryFilter = ref('')
+const subcategoryFilter = ref('')
+const subcategory2Filter = ref('')
+const yearFilter = ref([])
 const dimensionFilter = ref(undefined)
-const positionFilter = ref(undefined)
 const categoryReviewFilter = ref(undefined)
 const keyword = ref('')
-const showPositionFilter = computed(() => provinceFilter.value === 'jiangsu')
+const subcategoryPlaceholder = computed(() => {
+  if (!examCategoryFilter.value) return '三级分类'
+  return SUBCATEGORY_LABELS[examCategoryFilter.value] || '三级分类'
+})
 const questionCategoryOptions = [
   { key: 'analysis', name: '综合分析' },
   { key: 'practical', name: '组织管理' },
@@ -165,16 +194,41 @@ const questionCategoryOptions = [
 
 onMounted(async () => {
   await userStore.loadUserInfo().catch(() => null)
-  provinceFilter.value = 'all'
-  bankStore.setFilters({ province: '', dimension: '', position: '', categoryReview: '', keyword: '' })
+
+  const q = route.query || {}
+  provinceFilter.value = q.province || 'all'
+  examCategoryFilter.value = q.examCategory || ''
+  subcategoryFilter.value = q.subcategory || ''
+  subcategory2Filter.value = q.subcategory2 || ''
+  yearFilter.value = q.year ? String(q.year).split(',').filter(Boolean) : []
+  dimensionFilter.value = q.dimension || undefined
+  categoryReviewFilter.value = q.categoryReview || undefined
+  keyword.value = q.keyword || ''
+
   if (hasQuestionBankAccess.value) {
+    bankStore.setFilters({
+      province: provinceFilter.value === 'all' ? '' : provinceFilter.value || '',
+      dimension: dimensionFilter.value || '',
+      examCategory: examCategoryFilter.value || '',
+      subcategory: subcategoryFilter.value || '',
+      subcategory2: subcategory2Filter.value || '',
+      year: (yearFilter.value || []).join(','),
+      categoryReview: categoryReviewFilter.value || '',
+      keyword: keyword.value
+    })
     bankStore.fetchQuestions({ page: 1 })
   }
 })
 
 function onProvinceChange(value) {
   provinceFilter.value = value
-  if (value !== 'jiangsu') positionFilter.value = undefined
+}
+
+function onExamCategoryChange(value) {
+  examCategoryFilter.value = value || ''
+  subcategoryFilter.value = ''
+  subcategory2Filter.value = ''
+  onFilterChange()
 }
 
 function onFilterChange() {
@@ -182,7 +236,10 @@ function onFilterChange() {
   bankStore.setFilters({
     province: provinceFilter.value === 'all' ? '' : provinceFilter.value || '',
     dimension: dimensionFilter.value || '',
-    position: showPositionFilter.value ? positionFilter.value || '' : '',
+    examCategory: examCategoryFilter.value || '',
+    subcategory: subcategoryFilter.value || '',
+    subcategory2: subcategory2Filter.value || '',
+    year: (yearFilter.value || []).join(','),
     categoryReview: categoryReviewFilter.value || '',
     keyword: keyword.value
   })

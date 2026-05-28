@@ -609,6 +609,57 @@ def _is_gibberish_answer(question: Question, transcript: str) -> bool:
     return False
 
 
+RULE_SCORING_CONFIG = {
+    "quality_base_offset": 0.04,
+    "quality_cap": 0.92,
+    "quality_dimension_bonus": 0.18,
+    "content_weights": {
+        "scoring": 0.24,
+        "core": 0.30,
+        "strong": 0.22,
+        "weak": 0.12,
+        "bonus": 0.12,
+    },
+    "content_fallback": {"reference_similarity": 0.7, "structure": 0.3, "structure_target": 4},
+    "structure_weights": {"hits": 0.45, "hits_target": 4, "sentences": 0.35, "sentences_target": 5, "actions": 0.20, "actions_target": 4},
+    "action_weights": {"hits": 0.65, "hits_target": 5, "structure": 0.35, "structure_target": 3},
+    "policy_target": 4,
+    "expression_weights": {
+        "length": 0.35, "length_target": 260,
+        "sentences": 0.20, "sentences_target": 5,
+        "unique_char": 0.25, "unique_char_target": 0.42,
+        "bigram": 0.20, "bigram_multiplier": 1.1,
+    },
+    "penalty_weights": {"keyword": 0.55, "repetition": 0.45},
+    "quality_weights": {
+        "content": 0.50,
+        "reference_similarity": 0.20,
+        "structure": 0.12,
+        "expression": 0.10,
+        "action": 0.04,
+        "policy": 0.04,
+        "penalty": -0.32,
+    },
+    "bigram_or_unique_cap": {"repeated_bigram_ratio": 0.72, "effective_length": 30, "unique_char_ratio": 0.15, "cap": 0.08},
+    "dimension_weights": {
+        "analysis": {"content": 0.55, "reference_similarity": 0.25, "structure": 0.10, "expression": 0.10, "action": 0.0, "policy": 0.0, "penalty": -0.35},
+        "practical": {"content": 0.45, "reference_similarity": 0.15, "structure": 0.20, "expression": 0.05, "action": 0.20, "policy": 0.0, "penalty": -0.35},
+        "emergency": {"content": 0.30, "reference_similarity": 0.15, "structure": 0.20, "expression": 0.10, "action": 0.25, "policy": 0.0, "penalty": -0.30},
+        "legal": {"content": 0.30, "reference_similarity": 0.20, "structure": 0.15, "expression": 0.10, "action": 0.0, "policy": 0.25, "penalty": -0.35},
+        "logic": {"content": 0.20, "reference_similarity": 0.15, "structure": 0.45, "expression": 0.20, "action": 0.0, "policy": 0.0, "penalty": -0.30},
+        "expression": {"content": 0.10, "reference_similarity": 0.05, "structure": 0.15, "expression_dim": 0.70, "action": 0.0, "policy": 0.0, "penalty": -0.25},
+    },
+    "dimension_bonus": 0.08,
+    "max_scores": {"analysis": 20, "practical": 20, "default": 15},
+    "short_answer": {
+        "no_cap_length": 40,
+        "very_short_length": 12, "very_short_cap": 6.0,
+        "short_length": 25, "short_cap": 12.0,
+    },
+    "grade_thresholds": {"A": 0.85, "B": 0.75, "C": 0.60},
+}
+
+
 def _build_rule_based_result(question: Question, transcript: str, reason: str) -> dict:
     meta = _question_meta(question)
     raw_text = str(transcript or "").strip()
@@ -639,12 +690,13 @@ def _build_rule_based_result(question: Question, transcript: str, reason: str) -
     )
     signal_count = keyword_signal_count + len(structure_hits) + len(action_hits) + len(policy_hits)
 
+    cw = RULE_SCORING_CONFIG["content_weights"]
     content_ratio = (
-        0.24 * _ratio(len(scoring_hits), len(meta["scoring_keywords"]))
-        + 0.30 * _ratio(len(core_hits), len(meta["core_keywords"]))
-        + 0.22 * _ratio(len(strong_hits), len(meta["strong_keywords"]))
-        + 0.12 * _ratio(len(weak_hits), len(meta["weak_keywords"]))
-        + 0.12 * _ratio(len(bonus_hits), len(meta["bonus_keywords"]))
+        cw["scoring"] * _ratio(len(scoring_hits), len(meta["scoring_keywords"]))
+        + cw["core"] * _ratio(len(core_hits), len(meta["core_keywords"]))
+        + cw["strong"] * _ratio(len(strong_hits), len(meta["strong_keywords"]))
+        + cw["weak"] * _ratio(len(weak_hits), len(meta["weak_keywords"]))
+        + cw["bonus"] * _ratio(len(bonus_hits), len(meta["bonus_keywords"]))
     )
     if not (
         meta["scoring_keywords"]
@@ -653,40 +705,48 @@ def _build_rule_based_result(question: Question, transcript: str, reason: str) -
         or meta["weak_keywords"]
         or meta["bonus_keywords"]
     ):
-        content_ratio = min(reference_similarity * 0.7 + _ratio(len(structure_hits), 4) * 0.3, 1.0)
+        fb = RULE_SCORING_CONFIG["content_fallback"]
+        content_ratio = min(reference_similarity * fb["reference_similarity"] + _ratio(len(structure_hits), fb["structure_target"]) * fb["structure"], 1.0)
 
+    sw = RULE_SCORING_CONFIG["structure_weights"]
     structure_ratio = _clip(
-        0.45 * _ratio(len(structure_hits), 4)
-        + 0.35 * _ratio(sentence_count, 5)
-        + 0.20 * _ratio(len(action_hits), 4)
+        sw["hits"] * _ratio(len(structure_hits), sw["hits_target"])
+        + sw["sentences"] * _ratio(sentence_count, sw["sentences_target"])
+        + sw["actions"] * _ratio(len(action_hits), sw["actions_target"])
     )
+    aw = RULE_SCORING_CONFIG["action_weights"]
     action_ratio = _clip(
-        0.65 * _ratio(len(action_hits), 5)
-        + 0.35 * _ratio(len(structure_hits), 3)
+        aw["hits"] * _ratio(len(action_hits), aw["hits_target"])
+        + aw["structure"] * _ratio(len(structure_hits), aw["structure_target"])
     )
-    policy_ratio = _clip(_ratio(len(policy_hits), 4))
+    policy_ratio = _clip(_ratio(len(policy_hits), RULE_SCORING_CONFIG["policy_target"]))
+    ew = RULE_SCORING_CONFIG["expression_weights"]
     expression_ratio = _clip(
-        0.35 * _ratio(effective_length, 260)
-        + 0.20 * _ratio(sentence_count, 5)
-        + 0.25 * _clip(unique_char_ratio / 0.42)
-        + 0.20 * _clip(1.0 - repeated_bigram_ratio * 1.1)
+        ew["length"] * _ratio(effective_length, ew["length_target"])
+        + ew["sentences"] * _ratio(sentence_count, ew["sentences_target"])
+        + ew["unique_char"] * _clip(unique_char_ratio / ew["unique_char_target"])
+        + ew["bigram"] * _clip(1.0 - repeated_bigram_ratio * ew["bigram_multiplier"])
     )
+    pw = RULE_SCORING_CONFIG["penalty_weights"]
     penalty_ratio = _clip(
-        0.55 * _ratio(len(penalty_hits), len(meta["penalty_keywords"]))
-        + 0.45 * repetition_penalty
+        pw["keyword"] * _ratio(len(penalty_hits), len(meta["penalty_keywords"]))
+        + pw["repetition"] * repetition_penalty
     )
 
+    qw = RULE_SCORING_CONFIG["quality_weights"]
+    cfg_cap = RULE_SCORING_CONFIG["quality_cap"]
     quality_ratio = _clip(
-        0.04
-        + 0.50 * content_ratio
-        + 0.20 * reference_similarity
-        + 0.12 * structure_ratio
-        + 0.10 * expression_ratio
-        + 0.04 * action_ratio
-        + 0.04 * policy_ratio
-        - 0.32 * penalty_ratio
-    , 0.0, 0.92)
+        RULE_SCORING_CONFIG["quality_base_offset"]
+        + qw["content"] * content_ratio
+        + qw["reference_similarity"] * reference_similarity
+        + qw["structure"] * structure_ratio
+        + qw["expression"] * expression_ratio
+        + qw["action"] * action_ratio
+        + qw["policy"] * policy_ratio
+        + qw["penalty"] * penalty_ratio
+    , 0.0, cfg_cap)
 
+    C = RULE_SCORING_CONFIG
     if effective_length < 25:
         quality_ratio = min(quality_ratio, 0.22)
     if signal_count == 0 and reference_similarity < 0.08:
@@ -697,27 +757,34 @@ def _build_rule_based_result(question: Question, transcript: str, reason: str) -
         quality_ratio = min(quality_ratio, 0.02 if effective_length < 80 else 0.05)
     if keyword_signal_count == 0 and not action_hits and not policy_hits and reference_similarity < 0.04 and effective_length < 40:
         quality_ratio = min(quality_ratio, 0.02)
-    if repeated_bigram_ratio > 0.72 or (effective_length >= 30 and unique_char_ratio < 0.15):
-        quality_ratio = min(quality_ratio, 0.08)
+    bc = C["bigram_or_unique_cap"]
+    if repeated_bigram_ratio > bc["repeated_bigram_ratio"] or (effective_length >= bc["effective_length"] and unique_char_ratio < bc["unique_char_ratio"]):
+        quality_ratio = min(quality_ratio, bc["cap"])
 
-    dimension_ratios = {
-        "analysis": _clip(0.55 * content_ratio + 0.25 * reference_similarity + 0.10 * structure_ratio + 0.10 * expression_ratio - 0.35 * penalty_ratio),
-        "practical": _clip(0.45 * content_ratio + 0.15 * reference_similarity + 0.20 * structure_ratio + 0.20 * action_ratio + 0.05 * expression_ratio - 0.35 * penalty_ratio),
-        "emergency": _clip(0.30 * content_ratio + 0.15 * reference_similarity + 0.20 * structure_ratio + 0.25 * action_ratio + 0.10 * expression_ratio - 0.30 * penalty_ratio),
-        "legal": _clip(0.30 * content_ratio + 0.20 * reference_similarity + 0.25 * policy_ratio + 0.15 * structure_ratio + 0.10 * expression_ratio - 0.35 * penalty_ratio),
-        "logic": _clip(0.20 * content_ratio + 0.15 * reference_similarity + 0.45 * structure_ratio + 0.20 * expression_ratio - 0.30 * penalty_ratio),
-        "expression": _clip(0.10 * content_ratio + 0.05 * reference_similarity + 0.15 * structure_ratio + 0.70 * expression_ratio - 0.25 * penalty_ratio),
-    }
+    dw = C["dimension_weights"]
+    dimension_ratios = {}
+    for dim_key, w in dw.items():
+        ratio = (
+            w["content"] * content_ratio
+            + w["reference_similarity"] * reference_similarity
+            + w["structure"] * structure_ratio
+            + w.get("expression", w.get("expression_dim", 0)) * expression_ratio
+            + w["action"] * action_ratio
+            + w["policy"] * policy_ratio
+            + w["penalty"] * penalty_ratio
+        )
+        dimension_ratios[dim_key] = _clip(ratio)
 
     if question.dimension in dimension_ratios:
-        dimension_ratios[question.dimension] = _clip(dimension_ratios[question.dimension] + 0.08)
+        dimension_ratios[question.dimension] = _clip(dimension_ratios[question.dimension] + C["dimension_bonus"])
 
     frontend_dims = []
     total_cap = quality_ratio * 100.0
     raw_total = 0.0
+    ms_cfg = C["max_scores"]
     for key, display_name in DIM_MAPPING.items():
-        max_score = 20 if key in ["analysis", "practical"] else 15
-        dim_ratio = min(dimension_ratios.get(key, 0.0), quality_ratio + 0.18)
+        max_score = ms_cfg.get(key, ms_cfg["default"])
+        dim_ratio = min(dimension_ratios.get(key, 0.0), quality_ratio + C["quality_dimension_bonus"])
         score = round(max_score * dim_ratio, 2)
         raw_total += score
         frontend_dims.append({
@@ -766,14 +833,15 @@ def _build_rule_based_result(question: Question, transcript: str, reason: str) -
 
 
 def _apply_short_answer_cap(result: dict, transcript: str) -> dict:
+    sa = RULE_SCORING_CONFIG["short_answer"]
     effective_length = _effective_transcript_length(transcript)
-    if effective_length >= 40:
+    if effective_length >= sa["no_cap_length"]:
         return result
 
-    if effective_length < 12:
-        cap = 6.0
-    elif effective_length < 25:
-        cap = 12.0
+    if effective_length < sa["very_short_length"]:
+        cap = sa["very_short_cap"]
+    elif effective_length < sa["short_length"]:
+        cap = sa["short_cap"]
     else:
         cap = 22.0
 
@@ -797,7 +865,8 @@ def _apply_short_answer_cap(result: dict, transcript: str) -> dict:
     result["aiComment"] = f"{comment}【系统收敛】有效作答字数较少，分数已按短答规则保守收敛。"
     total = result["totalScore"]
     max_score = float(result.get("maxScore", 100) or 100)
-    result["grade"] = "A" if total / max_score > 0.85 else "B" if total / max_score >= 0.75 else "C" if total / max_score >= 0.60 else "D"
+    gt = RULE_SCORING_CONFIG["grade_thresholds"]
+    result["grade"] = "A" if total / max_score > gt["A"] else "B" if total / max_score >= gt["B"] else "C" if total / max_score >= gt["C"] else "D"
     return result
 
 

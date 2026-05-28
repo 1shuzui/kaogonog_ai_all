@@ -6,7 +6,7 @@ export const useQuestionBankStore = defineStore('questionBank', {
     questions: [],
     loading: false,
     pagination: { current: 1, pageSize: 10, total: 0 },
-    filters: { keyword: '', dimension: '', province: 'national', position: '', categoryReview: '' }
+    filters: { keyword: '', dimension: '', province: 'national', position: '', subcategory: '', subcategory2: '', examCategory: '', year: '', categoryReview: '' }
   }),
 
   getters: {

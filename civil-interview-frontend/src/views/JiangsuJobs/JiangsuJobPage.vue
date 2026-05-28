@@ -63,7 +63,7 @@
             <a-button type="primary" size="small" @click="startPractice(item)">
               开始刷题
             </a-button>
-            <a-button size="small" @click="$router.push({ path: '/bank', query: { province: 'jiangsu', position: positionCode } })">去题库筛选</a-button>
+            <a-button size="small" @click="$router.push({ path: '/bank', query: { province: 'jiangsu', examCategory: '事业单位统考', subcategory: category.title } })">去题库筛选</a-button>
           </div>
         </div>
       </div>
@@ -91,13 +91,12 @@ const router = useRouter()
 const category = computed(() => getJiangsuJobCategory(String(route.params.category || 'a')))
 const categoryMeta = computed(() => [category.value.scope, category.value.subtitle].filter(Boolean).join(' · '))
 const filters = reactive({
-  city: 'all',
+  city: 'provincial',
   year: '',
   type: ''
 })
 const loading = ref(false)
 const allItems = ref([])
-const positionCode = computed(() => `jiangsu_${category.value.key}`)
 const listStatusText = computed(() => (loading.value ? '正在加载真实题库...' : `真实题库 · ${filteredItems.value.length} 题`))
 const emptyText = computed(() => category.value.key === 'd'
   ? '当前江苏题库暂未收录教师岗真题，请先切换其他岗位或导入教师岗资料。'
@@ -110,23 +109,27 @@ const filteredItems = computed(() => allItems.value.filter((item) => {
 }))
 
 function normalizeQuestion(item = {}) {
+  const meta = item.keywords?._meta || item.keywords || {}
+  const metaYear = Array.isArray(meta.year) ? meta.year[0] : (meta.year || '')
   const metaText = [
     item.sourceDocument,
     item.sourceFile,
     ...(Array.isArray(item.tags) ? item.tags : [])
   ].join(' ')
-  const year = String(metaText.match(/20\d{2}/)?.[0] || '')
-  const city = JIANGSU_CITY_FILTERS.find((option) => option.key !== 'all' && metaText.includes(option.name))
+  const year = metaYear || String(metaText.match(/20\d{2}/)?.[0] || '')
+  const city = JIANGSU_CITY_FILTERS.find((option) => option.key !== 'all' && (
+    metaText.includes(option.name) || meta.subcategory2 === option.name
+  ))
   const type = JIANGSU_QUESTION_TYPES.find((option) => item.dimension === option.key || metaText.includes(option.name))
   return {
     ...item,
     year,
     yearLabel: year || '真题',
     cityKey: city?.key || 'all',
-    cityName: city?.name || '江苏',
+    cityName: city?.name || meta.subcategory2 || '江苏',
     typeKey: type?.key || item.dimension || '',
     typeName: type?.name || '结构化面试',
-    title: `${year || '江苏'} · ${city?.name || '江苏'} · ${category.value.shortTitle} · ${type?.name || '结构化面试'}`
+    title: `${year || '江苏'} · ${city?.name || meta.subcategory2 || '江苏'} · ${category.value.shortTitle} · ${type?.name || '结构化面试'}`
   }
 }
 
@@ -135,7 +138,8 @@ async function loadQuestions() {
   try {
     const res = await getQuestions({
       province: 'jiangsu',
-      position: positionCode.value,
+      examCategory: '事业单位统考',
+      subcategory: category.value.title,
       current: 1,
       page: 1,
       pageSize: 1000
@@ -158,7 +162,7 @@ function startPractice(item) {
 }
 
 watch(() => route.params.category, () => {
-  filters.city = 'all'
+  filters.city = 'provincial'
   filters.year = ''
   filters.type = ''
   loadQuestions()

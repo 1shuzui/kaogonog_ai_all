@@ -68,6 +68,7 @@ export const useExamStore = defineStore('exam', {
     answers: [],
     deviceReady: false,
     videoEnabled: true,
+    mediaStream: null,
     fullExamMode: false,
     examStartTime: null,
     examElapsed: 0,
@@ -375,6 +376,7 @@ export const useExamStore = defineStore('exam', {
 
     exitExam() {
       answerProcessingTasks.clear()
+      this.destroyStream()
       this.status = EXAM_STATUS.IDLE
       this.examId = null
       this.questionList = []
@@ -395,6 +397,23 @@ export const useExamStore = defineStore('exam', {
 
     setVideoEnabled(enabled) {
       this.videoEnabled = enabled
+    },
+
+    storeStream(stream) {
+      this.mediaStream = stream
+    },
+
+    consumeStream() {
+      const stream = this.mediaStream
+      this.mediaStream = null
+      return stream
+    },
+
+    destroyStream() {
+      if (this.mediaStream) {
+        this.mediaStream.getTracks().forEach(t => t.stop())
+        this.mediaStream = null
+      }
     }
   }
 })

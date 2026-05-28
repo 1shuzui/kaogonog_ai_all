@@ -55,44 +55,6 @@ QUESTION_TYPE_CATEGORY_RULES = (
     ("岗位认知", ("职业认知", "岗位认知", "自我认知", "报考动机", "价值观", "岗位匹配")),
 )
 
-SYSTEM_RULES = (
-    ("税务系统", ("税务", "税收", "纳税")),
-    ("海关系统", ("海关",)),
-    ("公安系统", ("公安", "民警", "交警", "铁路公安")),
-    ("法院系统", ("法院", "法官")),
-    ("检察系统", ("检察院", "检察官", "检察")),
-    ("市场监管", ("市场监管", "市监")),
-    ("监狱系统", ("监狱", "狱警")),
-    ("金融监管系统", ("金融监管", "银保监", "证监")),
-    ("银行系统", ("银行", "农商行", "城商行")),
-    ("医疗卫生系统", ("医疗", "卫生", "护理", "医师", "药师", "医技")),
-)
-
-POSITION_TYPE_RULES = (
-    ("A类综合管理岗", ("A类", "A 类")),
-    ("B类社会科学专技岗", ("B类", "B 类")),
-    ("C类自然科学专技岗", ("C类", "C 类")),
-    ("D类中小学教师岗", ("D类", "D 类")),
-    ("E类医疗卫生岗", ("E类", "E 类")),
-    ("综合管理岗", ("综合管理", "通用岗", "普通岗")),
-    ("乡镇岗", ("乡镇岗", "乡镇")),
-    ("遴选岗", ("遴选",)),
-    ("监狱岗", ("监狱岗", "省直监狱")),
-    ("税务系统补录", ("税务系统补录", "补录")),
-    ("书记员", ("书记员",)),
-    ("医师岗", ("医师",)),
-    ("护理岗", ("护理",)),
-    ("医技岗", ("医技", "检验", "影像")),
-    ("药师岗", ("药师",)),
-    ("银行岗", ("银行", "柜面", "客户经理")),
-)
-
-PORTAL_TAG_RULES = (
-    ("银行招考面试", ("银行招考", "银行面试", "银行", "农商行", "城商行", "柜面", "客户经理")),
-    ("医疗卫生面试", ("医疗卫生", "医疗", "卫生", "护理", "医师", "药师", "医技", "医院", "医患")),
-    ("法检书记员面试", ("法检", "书记员", "法院书记员", "检察院书记员")),
-)
-
 INTERVIEW_FORMAT_RULES = (
     ("结构化小组", ("结构化小组",)),
     ("结构化+追问", ("结构化+追问", "追问")),
@@ -107,19 +69,18 @@ INTERVIEW_FORMAT_RULES = (
 )
 
 PROVINCE_SUFFIX_MUNICIPALITIES = {"北京", "上海", "天津", "重庆"}
+
 CLASSIFICATION_META_KEYS = (
     "examCategory",
     "examSubcategory",
-    "city",
-    "district",
-    "system",
-    "agency",
-    "positionType",
-    "jobLevel",
+    "subcategory",
+    "subcategory2",
     "interviewFormat",
     "questionTypeCategory",
-    "portalTags",
-    "displayPortals",
+    "jobLevel",
+    "year",
+    "timingMode",
+    "questionCount",
     "classificationSource",
     "classificationConfidence",
     "reviewStatus",
@@ -169,17 +130,31 @@ def _all_rule_matches(text: str, rules) -> list[str]:
     return matches
 
 
-def _is_jiangsu_civil_service_category(position_type: str) -> bool:
-    return str(position_type or "").startswith(("A类", "B类", "C类", "D类", "E类"))
+def _infer_subcategories(text: str, exam_category: str, province: str) -> tuple[str, str]:
+    """Infer subcategory (L3) and subcategory2 (L4) from text context.
 
-
-def _infer_position_type(text: str, exam_category: str, province: str, fallback: str = "") -> str:
-    matched = _first_rule_match(text, POSITION_TYPE_RULES)
-    if _is_jiangsu_civil_service_category(matched):
-        if exam_category == "省级公务员考试" and _normalize_province_label(province) == "江苏省":
-            return matched
-        return fallback if fallback and fallback not in {"省考", "事业单位"} else ""
-    return matched or (fallback if fallback not in {"省考", "事业单位"} else "")
+    subcategory captures city-level or system-level classification.
+    subcategory2 captures district/county-level or specific unit classification.
+    """
+    value = re.sub(r"\s+", "", str(text or ""))
+    province_name = _normalize_province_label(province)
+    subcategory = ""
+    subcategory2 = ""
+    if province_name:
+        match = re.search(
+            rf"{re.escape(province_name)}(?P<subcategory>[一-鿿]{{2,12}}市)?(?P<subcategory2>[一-鿿]{{2,12}}(?:区|县|市))?",
+            value,
+        )
+        if match:
+            subcategory = match.group("subcategory") or ""
+            subcategory2 = match.group("subcategory2") or ""
+    if not subcategory:
+        match = re.search(r"([一-鿿]{2,12}市)", value)
+        subcategory = match.group(1) if match else ""
+    if not subcategory2:
+        match = re.search(r"([一-鿿]{2,12}(?:区|县))", value)
+        subcategory2 = match.group(1) if match else ""
+    return subcategory, subcategory2
 
 
 def _normalize_province_label(value: str) -> str:
@@ -207,40 +182,6 @@ def _province_label_from_code(value: str) -> str:
     return raw
 
 
-def _infer_region_parts(text: str, province: str) -> tuple[str, str]:
-    value = re.sub(r"\s+", "", str(text or ""))
-    province_name = _normalize_province_label(province)
-    city = ""
-    district = ""
-    if province_name:
-        match = re.search(
-            rf"{re.escape(province_name)}(?P<city>[\u4e00-\u9fff]{{2,12}}市)?(?P<district>[\u4e00-\u9fff]{{2,12}}(?:区|县|市))?",
-            value,
-        )
-        if match:
-            city = match.group("city") or ""
-            district = match.group("district") or ""
-    if not city:
-        match = re.search(r"([\u4e00-\u9fff]{2,12}市)", value)
-        city = match.group(1) if match else ""
-    if not district:
-        match = re.search(r"([\u4e00-\u9fff]{2,12}(?:区|县))", value)
-        district = match.group(1) if match else ""
-    return city, district
-
-
-def _infer_agency(text: str) -> str:
-    value = re.sub(r"\s+", "", str(text or ""))
-    for pattern in (
-        r"([\u4e00-\u9fff]{2,20}(?:厅|局|委|办|院|行|中心|学校|医院))",
-        r"(中央[\u4e00-\u9fff]{2,20}(?:机关|部门))",
-    ):
-        match = re.search(pattern, value)
-        if match:
-            agency = match.group(1)
-            if agency not in {"事业单位", "公务员考试"}:
-                return agency
-    return ""
 
 
 def _infer_job_level(text: str) -> str:
@@ -293,7 +234,7 @@ def _infer_classification_meta(item: dict, existing: dict, source_document: str)
     )
     province_label = _province_label_from_code(str(item.get("province") or existing.get("province") or ""))
     exam_category, exam_subcategory, classification_source = _infer_exam_category(text, province_label)
-    city, district = _infer_region_parts(text, province_label)
+    subcategory, subcategory2 = _infer_subcategories(text, exam_category, province_label)
     question_no = existing.get("questionNo")
     question_score = existing.get("questionScore") or item.get("fullScore")
     review_reasons: list[str] = []
@@ -323,16 +264,11 @@ def _infer_classification_meta(item: dict, existing: dict, source_document: str)
     return {
         "examCategory": exam_category,
         "examSubcategory": exam_subcategory,
-        "city": city,
-        "district": district,
-        "system": _first_rule_match(text, SYSTEM_RULES),
-        "agency": _infer_agency(text),
-        "positionType": _infer_position_type(text, exam_category, province_label, str(existing.get("position") or "")),
-        "jobLevel": _infer_job_level(text),
+        "subcategory": subcategory,
+        "subcategory2": subcategory2,
         "interviewFormat": _first_rule_match(text, INTERVIEW_FORMAT_RULES),
         "questionTypeCategory": _infer_question_type_category(str(item.get("type") or existing.get("questionType") or ""), str(item.get("stem") or item.get("question") or "")),
-        "portalTags": _all_rule_matches(text, PORTAL_TAG_RULES),
-        "displayPortals": _all_rule_matches(text, PORTAL_TAG_RULES),
+        "jobLevel": _infer_job_level(text),
         "classificationSource": classification_source,
         "classificationConfidence": confidence,
         "reviewStatus": review_status,
@@ -462,16 +398,14 @@ def _q_to_dict(q: Question) -> dict:
             "hasAppearanceScore": meta.get("hasAppearanceScore"),
             "examCategory": meta.get("examCategory", ""),
             "examSubcategory": meta.get("examSubcategory", ""),
-            "city": meta.get("city", ""),
-            "district": meta.get("district", ""),
-            "system": meta.get("system", ""),
-            "agency": meta.get("agency", ""),
-            "positionType": meta.get("positionType", ""),
-            "jobLevel": meta.get("jobLevel", ""),
+            "subcategory": meta.get("subcategory", ""),
+            "subcategory2": meta.get("subcategory2", ""),
             "interviewFormat": meta.get("interviewFormat", ""),
             "questionTypeCategory": meta.get("questionTypeCategory", ""),
-            "portalTags": meta.get("portalTags", []),
-            "displayPortals": meta.get("displayPortals", meta.get("portalTags", [])),
+            "jobLevel": meta.get("jobLevel", ""),
+            "year": meta.get("year", []),
+            "timingMode": meta.get("timingMode", ""),
+            "questionCount": meta.get("questionCount"),
             "classificationSource": meta.get("classificationSource", ""),
             "classificationConfidence": meta.get("classificationConfidence", ""),
             "reviewStatus": meta.get("reviewStatus", ""),
@@ -952,15 +886,14 @@ def _question_matches_position(question: Question, position: str) -> bool:
         return True
     meta = _question_meta_from_keywords(question.keywords)
     position_tags = meta.get("positionTags") if isinstance(meta.get("positionTags"), list) else []
-    portal_tags = meta.get("portalTags") if isinstance(meta.get("portalTags"), list) else []
-    display_portals = meta.get("displayPortals") if isinstance(meta.get("displayPortals"), list) else []
     if position in position_tags:
         return True
-    if position == "medical" and "医疗卫生面试" in {*portal_tags, *display_portals}:
+    exam_category = str(meta.get("examCategory") or "")
+    if position == "medical" and "医疗卫生面试" in exam_category:
         return True
-    if position == "bank" and "银行招考面试" in {*portal_tags, *display_portals}:
+    if position == "bank" and "银行招考面试" in exam_category:
         return True
-    if position in {"court", "procurate"} and "法检书记员面试" in {*portal_tags, *display_portals}:
+    if position in {"court", "procurate"} and "法检书记员面试" in exam_category:
         return True
     if position.startswith("jiangsu_") and any(str(tag).startswith("jiangsu_") for tag in position_tags):
         return False
@@ -974,15 +907,12 @@ def _question_matches_position(question: Question, position: str) -> bool:
             meta.get("suiteName", ""),
             meta.get("examCategory", ""),
             meta.get("examSubcategory", ""),
-            meta.get("system", ""),
-            meta.get("agency", ""),
-            meta.get("positionType", ""),
+            meta.get("subcategory", ""),
+            meta.get("subcategory2", ""),
             meta.get("jobLevel", ""),
             " ".join(meta.get("tags", []) if isinstance(meta.get("tags"), list) else []),
             meta.get("questionType", ""),
             meta.get("questionTypeCategory", ""),
-            " ".join(portal_tags),
-            " ".join(display_portals),
         ]
     )
     return any(alias in haystack for alias in POSITION_ALIASES.get(position, ()))
@@ -996,23 +926,19 @@ def _question_matches_target_filters(question: Question, target_filters: dict | 
     def clean(value) -> str:
         return str(value or "").strip()
 
-    for field in ("examCategory", "examSubcategory", "system", "positionType"):
+    for field in ("examCategory", "examSubcategory", "subcategory", "subcategory2"):
         expected = clean(target_filters.get(field))
         if expected and clean(meta.get(field)) != expected:
             return False
 
-    portal_tag = clean(target_filters.get("portalTag"))
-    display_portal = clean(target_filters.get("displayPortal"))
-    if portal_tag:
-        portal_tags = meta.get("portalTags") if isinstance(meta.get("portalTags"), list) else []
-        display_portals = meta.get("displayPortals") if isinstance(meta.get("displayPortals"), list) else []
-        if portal_tag not in {*portal_tags, *display_portals}:
-            return False
-    if display_portal:
-        display_portals = meta.get("displayPortals") if isinstance(meta.get("displayPortals"), list) else []
-        portal_tags = meta.get("portalTags") if isinstance(meta.get("portalTags"), list) else []
-        if display_portal not in {*display_portals, *portal_tags}:
-            return False
+    year_filter = target_filters.get("year")
+    if year_filter:
+        year_values = set(str(y).strip() for y in (year_filter if isinstance(year_filter, list) else [year_filter]) if str(y).strip())
+        if year_values:
+            meta_year = meta.get("year")
+            meta_years = set(str(y).strip() for y in (meta_year if isinstance(meta_year, list) else []) if str(y).strip())
+            if meta_years and not (year_values & meta_years):
+                return False
     return True
 
 
@@ -1183,6 +1109,10 @@ def list_questions(
     dimension: str = "",
     province: str = "",
     position: str = "",
+    subcategory: str = "",
+    subcategory2: str = "",
+    examCategory: str = "",
+    year: str = "",
     current: int = 1,
     page_size: int = 10,
 ) -> dict:
@@ -1195,8 +1125,25 @@ def list_questions(
         query = query.filter(Question.dimension == dimension)
     if province and province != "all":
         query = query.filter(Question.province == province)
-    if position:
-        rows = _apply_position_filter(_position_prefilter_query(query, position).all(), position)
+    need_meta_filter = bool(subcategory or subcategory2 or examCategory or year or position)
+    if need_meta_filter:
+        if position:
+            rows = _apply_position_filter(_position_prefilter_query(query, position).all(), position)
+        else:
+            rows = query.all()
+        if subcategory:
+            rows = [q for q in rows if _question_meta_from_keywords(q.keywords).get("subcategory") == subcategory]
+        if subcategory2:
+            rows = [q for q in rows if _question_meta_from_keywords(q.keywords).get("subcategory2") == subcategory2]
+        if examCategory:
+            rows = [q for q in rows if _question_meta_from_keywords(q.keywords).get("examCategory") == examCategory]
+        if year:
+            year_set = set(str(y).strip() for y in year.split(",") if str(y).strip())
+            if year_set:
+                rows = [
+                    q for q in rows
+                    if year_set & set(str(y).strip() for y in (_question_meta_from_keywords(q.keywords).get("year") or []))
+                ]
         total = len(rows)
         start = (current - 1) * page_size
         rows = rows[start:start + page_size]
@@ -1354,19 +1301,17 @@ def import_questions(db: Session, content: bytes, filename: str) -> dict:
                 "hasAppearanceScore": ["hasappearancescore", "是否有仪态分"],
                 "examCategory": ["examcategory", "考试大类"],
                 "examSubcategory": ["examsubcategory", "二级分类"],
-                "city": ["city", "城市"],
-                "district": ["district", "区县"],
-                "system": ["system", "系统"],
-                "agency": ["agency", "单位"],
-                "positionType": ["positiontype", "岗位类别"],
-                "jobLevel": ["joblevel", "招录层级"],
+                "subcategory": ["subcategory", "三级分类"],
+                "subcategory2": ["subcategory2", "四级分类"],
                 "interviewFormat": ["interviewformat", "面试形式"],
                 "questionTypeCategory": ["questiontypecategory", "题型维度"],
+                "jobLevel": ["joblevel", "招录层级"],
+                "year": ["year", "年份"],
+                "timingMode": ["timingmode", "计时模式"],
+                "questionCount": ["questioncount", "套题数量"],
                 "classificationConfidence": ["classificationconfidence", "分类置信度"],
                 "reviewStatus": ["reviewstatus", "复核状态"],
                 "reviewReason": ["reviewreason", "复核原因"],
-                "portalTags": ["portaltags", "特色入口", "展示入口"],
-                "displayPortals": ["displayportals", "展示入口"],
                 "prepTime": ["准备时间", "preptime"],
                 "answerTime": ["作答时间", "answertime"],
                 "dimensions": ["dimensions_json", "dimensions", "评分维度"],
@@ -1473,17 +1418,17 @@ def import_questions(db: Session, content: bytes, filename: str) -> dict:
                     }
                     for field in (
                         "suiteId", "suiteKey", "suiteName", "examDate", "batch", "position",
-                        "examCategory", "examSubcategory", "city", "district", "system", "agency",
-                        "positionType", "jobLevel", "interviewFormat", "questionTypeCategory",
+                        "examCategory", "examSubcategory", "subcategory", "subcategory2",
+                        "interviewFormat", "questionTypeCategory", "jobLevel",
+                        "timingMode", "questionCount",
                         "classificationConfidence", "reviewStatus", "reviewReason",
                     ):
                         value = str(row_value(field, "")).strip()
                         if value:
                             meta[field] = value
-                    portal_tags = split_cell_list(row_value("portalTags", "")) or split_cell_list(row_value("displayPortals", ""))
-                    if portal_tags:
-                        meta["portalTags"] = portal_tags
-                        meta["displayPortals"] = portal_tags
+                    year_raw = row_value("year", "")
+                    if year_raw:
+                        meta["year"] = split_cell_list(year_raw)
                     for field in (
                         "questionNo", "questionScore", "answerScoreTotal", "appearanceScore",
                         "suiteTotalScore", "totalScore",

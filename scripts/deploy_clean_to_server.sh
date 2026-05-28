@@ -32,17 +32,27 @@ build_backend_artifact() {
   rm -rf "$artifact_dir"
   mkdir -p "$artifact_dir"
 
-  pyarmor gen -O "$obf_dir" -r \
-    "$backend_dir/main.py" \
-    "$backend_dir/app" \
-    "$backend_dir/database_setup.py" \
-    "$backend_dir/data_loader.py" \
-    "$backend_dir/keyword_matcher.py" \
-    "$backend_dir/llm_scorer.py" \
-    "$backend_dir/post_process.py" \
-    "$backend_dir/prompt_builder.py" \
-    "$backend_dir/seed.py" \
-    "$backend_dir/two_stage_scoring.py"
+  local pyarmor_inputs=(
+    "$backend_dir/main.py"
+    "$backend_dir/app"
+  )
+  local optional_script
+  for optional_script in \
+    database_setup.py \
+    data_loader.py \
+    keyword_matcher.py \
+    llm_scorer.py \
+    post_process.py \
+    prompt_builder.py \
+    seed.py \
+    two_stage_scoring.py
+  do
+    if [[ -f "$backend_dir/$optional_script" ]]; then
+      pyarmor_inputs+=("$backend_dir/$optional_script")
+    fi
+  done
+
+  pyarmor gen -O "$obf_dir" -r "${pyarmor_inputs[@]}"
 
   rsync -a "$obf_dir/" "$artifact_dir/"
   rm -rf "$obf_dir"

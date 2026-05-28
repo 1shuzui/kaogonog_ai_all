@@ -7,7 +7,7 @@ pandas
 openpyxl
 pydantic
 passlib[bcrypt]
-python-jose[cryptography]
+PyJWT>=2.8.0
 sqlalchemy
 pymysql
 cryptography

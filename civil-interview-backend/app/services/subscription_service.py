@@ -179,8 +179,11 @@ def get_subscription_status(db: Session, current_user: AuthUser) -> dict:
     if subscription and _get_active_subscription_preference(user) != int(subscription.id or 0):
         _set_active_subscription_preference(user, subscription)
         entitlements = [_serialize_subscription(item, int(subscription.id or 0)) for item in subscriptions]
+    prev_prefs = dict(user.preferences) if isinstance(user.preferences, dict) else {}
     snapshot = _sync_user_preferences_subscription(user, subscription, entitlements)
-    db.commit()
+    current_prefs = dict(user.preferences) if isinstance(user.preferences, dict) else {}
+    if prev_prefs.get("subscription") != current_prefs.get("subscription"):
+        db.commit()
     return snapshot
 
 

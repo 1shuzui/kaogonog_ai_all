@@ -128,7 +128,7 @@ const selectionTags = computed(() => {
   return [
     payload.examCategory,
     payload.examSubcategory,
-    payload.system || payload.positionType || payload.portalTag,
+    payload.subcategory || payload.subcategory2 || payload.positionType,
     payload.targetName
   ].filter((item, index, array) => item && array.indexOf(item) === index)
 })
@@ -146,10 +146,9 @@ function hydrateSelectionFromRoute() {
     'position',
     'examCategory',
     'examSubcategory',
-    'system',
+    'subcategory',
+    'subcategory2',
     'positionType',
-    'portalTag',
-    'displayPortal',
     'targetCode',
     'targetName'
   ].forEach((key) => {

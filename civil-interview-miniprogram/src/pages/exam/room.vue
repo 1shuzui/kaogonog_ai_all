@@ -143,12 +143,13 @@
           </cover-view>
         </view>
 
-        <view class="room-actions">
-          <button class="secondary-button" @tap="goBackHome">退出</button>
-          <button class="primary-button" :disabled="finishingExam" :loading="examStore.loading || finishingExam" @tap="submitAnswer">
-            {{ finishingExam ? '正在分析结果...' : examStore.isLastQuestion ? '提交并看结果' : '提交本题' }}
-          </button>
-        </view>
+        <RoomActions
+          :finishing="finishingExam"
+          :loading="examStore.loading"
+          :is-last-question="examStore.isLastQuestion"
+          @exit="goBackHome"
+          @submit="submitAnswer"
+        />
       </template>
 
       <template v-else>
@@ -251,12 +252,13 @@
           </cover-view>
         </view>
 
-        <view class="room-actions">
-          <button class="secondary-button" @tap="goBackHome">退出</button>
-          <button class="primary-button" :disabled="finishingExam" :loading="examStore.loading || finishingExam" @tap="submitAnswer">
-            {{ finishingExam ? '正在分析结果...' : examStore.isLastQuestion ? '提交并看结果' : '提交本题' }}
-          </button>
-        </view>
+        <RoomActions
+          :finishing="finishingExam"
+          :loading="examStore.loading"
+          :is-last-question="examStore.isLastQuestion"
+          @exit="goBackHome"
+          @submit="submitAnswer"
+        />
       </template>
     </view>
     <view v-else class="exam-room__empty">
@@ -273,6 +275,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { onHide, onLoad, onReady } from '@dcloudio/uni-app'
 import EmptyState from '../../components/EmptyState.vue'
+import RoomActions from '../../components/RoomActions.vue'
 import { completeTrial } from '../../api/trial'
 import { reportUsage } from '../../api/usage'
 import { useExamStore } from '../../stores/exam'

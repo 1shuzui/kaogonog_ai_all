@@ -58,9 +58,8 @@
           <div class="targeted-admin__tags">
             <a-tag v-if="selectedTarget.examCategory" color="blue">{{ selectedTarget.examCategory }}</a-tag>
             <a-tag v-if="selectedTarget.examSubcategory" color="cyan">{{ selectedTarget.examSubcategory }}</a-tag>
-            <a-tag v-if="selectedTarget.system" color="purple">{{ selectedTarget.system }}</a-tag>
-            <a-tag v-if="selectedTarget.positionType" color="orange">{{ selectedTarget.positionType }}</a-tag>
-            <a-tag v-if="selectedTarget.portalTag" color="gold">{{ selectedTarget.portalTag }}</a-tag>
+            <a-tag v-if="selectedTarget.subcategory" color="purple">{{ selectedTarget.subcategory }}</a-tag>
+            <a-tag v-if="selectedTarget.subcategory2" color="orange">{{ selectedTarget.subcategory2 }}</a-tag>
             <a-tag v-if="selectedTarget.interviewFormat" color="green">{{ selectedTarget.interviewFormat }}</a-tag>
             <a-tag v-if="selectedTarget.timingMode" color="lime">{{ selectedTarget.timingMode }}</a-tag>
           </div>
@@ -76,9 +75,11 @@
           <a-descriptions bordered size="small" :column="1">
             <a-descriptions-item label="入口编码">{{ selectedTarget.targetCode }}</a-descriptions-item>
             <a-descriptions-item label="省份">{{ selectedTarget.province || 'all' }}</a-descriptions-item>
-            <a-descriptions-item label="岗位码">{{ selectedTarget.position || '整类入口' }}</a-descriptions-item>
             <a-descriptions-item label="考试大类">{{ selectedTarget.examCategory || '-' }}</a-descriptions-item>
             <a-descriptions-item label="二级分类">{{ selectedTarget.examSubcategory || '-' }}</a-descriptions-item>
+            <a-descriptions-item label="三级分类">{{ selectedTarget.subcategory || '-' }}</a-descriptions-item>
+            <a-descriptions-item label="四级分类">{{ selectedTarget.subcategory2 || '-' }}</a-descriptions-item>
+            <a-descriptions-item label="年份">{{ selectedTarget.year || '-' }}</a-descriptions-item>
             <a-descriptions-item label="题量">{{ selectedTarget.questionCount ? `${selectedTarget.questionCount}题` : '-' }}</a-descriptions-item>
             <a-descriptions-item label="计时模式">{{ selectedTarget.timingMode || selectedTarget.interviewFormat || '-' }}</a-descriptions-item>
             <a-descriptions-item label="题型范围">{{ selectedTarget.questionTypeScope || '-' }}</a-descriptions-item>
@@ -447,7 +448,7 @@ async function copyPayload() {
 
 .targeted-admin__layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr);
+  grid-template-columns: minmax(0, 1.2fr) minmax(420px, 1fr);
   gap: 16px;
   align-items: start;
 }

@@ -1,7 +1,9 @@
 <template>
   <div class="targeted-page page-container">
-    <h2>定向备面</h2>
-    <p class="targeted-page__desc">按真实考试体系、地区来源和岗位方向选择，分析对应题库重点。</p>
+    <div class="targeted-hero card">
+      <h2>定向备面</h2>
+      <p class="targeted-hero__desc">按真实考试体系、地区来源和岗位方向选择，分析对应题库重点。</p>
+    </div>
 
     <div class="card targeted-picker">
       <div class="targeted-picker__row">
@@ -294,18 +296,23 @@ function startSinglePractice(question) {
 <style lang="less" scoped>
 @import '@/styles/variables.less';
 
-.targeted-page {
+.targeted-hero {
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid fade(@primary-color, 10%);
+  background: linear-gradient(135deg, #ffffff 0%, #edf7ff 100%);
+
   h2 {
-    font-size: @font-size-xl;
+    font-size: @font-size-xxl;
     color: @text-primary;
-    margin-bottom: 4px;
+    margin: 0 0 6px;
   }
 }
 
-.targeted-page__desc {
+.targeted-hero__desc {
   font-size: @font-size-sm;
   color: @text-secondary;
-  margin-bottom: 16px;
+  margin: 0;
 }
 
 .targeted-section {
@@ -419,7 +426,7 @@ function startSinglePractice(question) {
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 560px) {
   .targeted-picker__row {
     grid-template-columns: 1fr;
     gap: 6px;

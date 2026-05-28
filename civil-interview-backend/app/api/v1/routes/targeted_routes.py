@@ -158,6 +158,9 @@ def _direction(
     position: str = "",
     exam_category: str = "",
     exam_subcategory: str = "",
+    subcategory: str = "",
+    subcategory2: str = "",
+    year: str | list = "",
     **meta,
 ) -> dict:
     payload = {
@@ -170,6 +173,12 @@ def _direction(
         payload["examCategory"] = exam_category
     if exam_subcategory:
         payload["examSubcategory"] = exam_subcategory
+    if subcategory:
+        payload["subcategory"] = subcategory
+    if subcategory2:
+        payload["subcategory2"] = subcategory2
+    if year:
+        payload["year"] = year if isinstance(year, list) else [year]
     payload.update({key: value for key, value in meta.items() if value not in (None, "")})
     return payload
 
@@ -181,6 +190,9 @@ def _region(
     exam_category: str = "",
     exam_subcategory: str = "",
     directions: list[dict] | None = None,
+    subcategory: str = "",
+    subcategory2: str = "",
+    year: str | list = "",
     **meta,
 ) -> dict:
     payload = {
@@ -193,6 +205,12 @@ def _region(
         payload["examCategory"] = exam_category
     if exam_subcategory:
         payload["examSubcategory"] = exam_subcategory
+    if subcategory:
+        payload["subcategory"] = subcategory
+    if subcategory2:
+        payload["subcategory2"] = subcategory2
+    if year:
+        payload["year"] = year if isinstance(year, list) else [year]
     payload.update({key: value for key, value in meta.items() if value not in (None, "")})
     return payload
 
@@ -213,7 +231,7 @@ TARGETED_POSITION_TREE = [
                         "general",
                         "事业单位考试",
                         "江苏省",
-                        city=city,
+                        subcategory=city,
                         positionType=f"{city}事业单位",
                         interviewFormat="8+12",
                         questionCount=3,
@@ -224,11 +242,11 @@ TARGETED_POSITION_TREE = [
                     for code, city in JIANGSU_SIDW_CITY_DIRECTIONS
                 ],
                 _direction("js_sydw_suzhou", "苏州", "jiangsu", "general", "事业单位考试", "江苏省", positionType="苏州事业单位", interviewFormat="15分钟包干/7+8", questionCount=3, timingMode="15分钟包干或7分钟读题+8分钟答题"),
-                _direction("js_sydw_yancheng_city", "盐城市 / 市属", "jiangsu", "general", "事业单位考试", "江苏省", positionType="盐城市属事业单位", city="盐城市", interviewFormat="8+12", questionCount=3, prepTime=480, answerTime=720, timingMode="8分钟读题+12分钟答题"),
-                _direction("js_sydw_yancheng_dongtai", "盐城市 / 东台", "jiangsu", "general", "事业单位考试", "江苏省", positionType="东台事业单位", city="盐城市", district="东台", interviewFormat="10+12", questionCount=4, prepTime=600, answerTime=720, timingMode="10分钟读题+12分钟答题"),
-                _direction("js_sydw_yancheng_yandu_sheyang", "盐城市 / 盐都、射阳", "jiangsu", "general", "事业单位考试", "江苏省", positionType="盐都/射阳事业单位", city="盐城市", district="盐都/射阳", interviewFormat="8+12", questionCount=3, prepTime=480, answerTime=720, timingMode="8分钟读题+12分钟答题"),
-                _direction("js_sydw_yancheng_xiangshui_binhai", "盐城市 / 响水、滨海", "jiangsu", "general", "事业单位考试", "江苏省", positionType="响水/滨海事业单位", city="盐城市", district="响水/滨海", interviewFormat="8+8", questionCount=3, prepTime=480, answerTime=480, timingMode="8分钟读题+8分钟答题"),
-                _direction("js_sydw_yancheng_funinng_jianhu", "盐城市 / 阜宁、建湖", "jiangsu", "general", "事业单位考试", "江苏省", positionType="阜宁/建湖事业单位", city="盐城市", district="阜宁/建湖", interviewFormat="15分钟包干", questionCount=3, timingMode="15分钟包干"),
+                _direction("js_sydw_yancheng_city", "盐城市 / 市属", "jiangsu", "general", "事业单位考试", "江苏省", positionType="盐城市属事业单位", subcategory="盐城市", interviewFormat="8+12", questionCount=3, prepTime=480, answerTime=720, timingMode="8分钟读题+12分钟答题"),
+                _direction("js_sydw_yancheng_dongtai", "盐城市 / 东台", "jiangsu", "general", "事业单位考试", "江苏省", positionType="东台事业单位", subcategory="盐城市", subcategory2="东台", interviewFormat="10+12", questionCount=4, prepTime=600, answerTime=720, timingMode="10分钟读题+12分钟答题"),
+                _direction("js_sydw_yancheng_yandu_sheyang", "盐城市 / 盐都、射阳", "jiangsu", "general", "事业单位考试", "江苏省", positionType="盐都/射阳事业单位", subcategory="盐城市", subcategory2="盐都/射阳", interviewFormat="8+12", questionCount=3, prepTime=480, answerTime=720, timingMode="8分钟读题+12分钟答题"),
+                _direction("js_sydw_yancheng_xiangshui_binhai", "盐城市 / 响水、滨海", "jiangsu", "general", "事业单位考试", "江苏省", positionType="响水/滨海事业单位", subcategory="盐城市", subcategory2="响水/滨海", interviewFormat="8+8", questionCount=3, prepTime=480, answerTime=480, timingMode="8分钟读题+8分钟答题"),
+                _direction("js_sydw_yancheng_funinng_jianhu", "盐城市 / 阜宁、建湖", "jiangsu", "general", "事业单位考试", "江苏省", positionType="阜宁/建湖事业单位", subcategory="盐城市", subcategory2="阜宁/建湖", interviewFormat="15分钟包干", questionCount=3, timingMode="15分钟包干"),
             ]),
             _region("institution_anhui", "安徽省", "anhui", "事业单位考试", "安徽省", [
                 _direction("ah_sydw_provincial", "省直", "anhui", "general", "事业单位考试", "安徽省", positionType="省直事业单位", interviewFormat="15-20分钟包干", questionCount="3-4", timingMode="15-20分钟包干", questionTypeScope="综合分析/组织/应急/人际/岗位匹配", notes="各厅局单独命题"),
@@ -240,7 +258,7 @@ TARGETED_POSITION_TREE = [
                         "general",
                         "事业单位考试",
                         "安徽省",
-                        city=city,
+                        subcategory=city,
                         positionType=f"{city}事业单位",
                         interviewFormat="15分钟包干",
                         questionCount=3,
@@ -251,11 +269,11 @@ TARGETED_POSITION_TREE = [
             ]),
             _region("institution_shandong", "山东省", "shandong", "事业单位考试", "山东省", [
                 _direction("sd_sydw_provincial", "省属", "shandong", "general", "事业单位考试", "山东省", positionType="省属事业单位", interviewFormat="15分钟包干", questionCount=3, timingMode="15分钟包干", questionTypeScope="综合分析必考/应急/人际/组织", notes="聚焦山东本土"),
-                _direction("sd_sydw_jinan", "济南", "shandong", "general", "事业单位考试", "山东省", city="济南", interviewFormat="7+7", questionCount="2-3", prepTime=420, answerTime=420, timingMode="7分钟读题+7分钟答题"),
-                _direction("sd_sydw_qingdao", "青岛", "shandong", "general", "事业单位考试", "山东省", city="青岛", interviewFormat="5+5/15分钟包干", questionCount="2-3", timingMode="5+5或15分钟包干"),
-                _direction("sd_sydw_yantai", "烟台", "shandong", "general", "事业单位考试", "山东省", city="烟台", interviewFormat="6+6", questionCount=2, prepTime=360, answerTime=360, timingMode="6分钟读题+6分钟答题"),
-                _direction("sd_sydw_weihai", "威海", "shandong", "general", "事业单位考试", "山东省", city="威海", interviewFormat="6+6", questionCount=2, prepTime=360, answerTime=360, timingMode="6分钟读题+6分钟答题"),
-                _direction("sd_sydw_linyi", "临沂", "shandong", "general", "事业单位考试", "山东省", city="临沂", interviewFormat="10分钟包干无纸笔", questionCount=2, timingMode="10分钟包干无纸笔"),
+                _direction("sd_sydw_jinan", "济南", "shandong", "general", "事业单位考试", "山东省", subcategory="济南", interviewFormat="7+7", questionCount="2-3", prepTime=420, answerTime=420, timingMode="7分钟读题+7分钟答题"),
+                _direction("sd_sydw_qingdao", "青岛", "shandong", "general", "事业单位考试", "山东省", subcategory="青岛", interviewFormat="5+5/15分钟包干", questionCount="2-3", timingMode="5+5或15分钟包干"),
+                _direction("sd_sydw_yantai", "烟台", "shandong", "general", "事业单位考试", "山东省", subcategory="烟台", interviewFormat="6+6", questionCount=2, prepTime=360, answerTime=360, timingMode="6分钟读题+6分钟答题"),
+                _direction("sd_sydw_weihai", "威海", "shandong", "general", "事业单位考试", "山东省", subcategory="威海", interviewFormat="6+6", questionCount=2, prepTime=360, answerTime=360, timingMode="6分钟读题+6分钟答题"),
+                _direction("sd_sydw_linyi", "临沂", "shandong", "general", "事业单位考试", "山东省", subcategory="临沂", interviewFormat="10分钟包干无纸笔", questionCount=2, timingMode="10分钟包干无纸笔"),
                 *[
                     _direction(
                         f"sd_sydw_city_{index}",
@@ -264,7 +282,7 @@ TARGETED_POSITION_TREE = [
                         "general",
                         "事业单位考试",
                         "山东省",
-                        city=city,
+                        subcategory=city,
                         positionType=f"{city}事业单位",
                         interviewFormat="15分钟包干",
                         questionCount=3,
@@ -303,29 +321,29 @@ TARGETED_POSITION_TREE = [
                 _direction("gk_zhongjiwei", "中纪委", "national", "", "国家公务员考试", "中央党群机关", questionCount=3),
             ]),
             _region("national_administration", "中央国家行政机关", "national", "国家公务员考试", "中央国家行政机关", [
-                _direction("gk_waijiao", "外交部", "national", "diplomacy", "国家公务员考试", "中央国家行政机关", system="外交部", interviewFormat="结构化+追问"),
-                _direction("gk_fagai", "国家发改委", "national", "", "国家公务员考试", "中央国家行政机关", system="国家发改委", questionCount=5),
-                _direction("gk_jiaoyu", "教育部", "national", "", "国家公务员考试", "中央国家行政机关", system="教育部"),
-                _direction("gk_gongan", "公安部", "national", "police", "国家公务员考试", "中央国家行政机关", system="公安部"),
-                _direction("gk_caizheng", "财政部", "national", "", "国家公务员考试", "中央国家行政机关", system="财政部"),
-                _direction("gk_shenji", "审计署", "national", "", "国家公务员考试", "中央国家行政机关", system="审计署", questionCount=3),
-                _direction("gk_keji", "科技部", "national", "", "国家公务员考试", "中央国家行政机关", system="科技部", interviewFormat="含面谈"),
+                _direction("gk_waijiao", "外交部", "national", "diplomacy", "国家公务员考试", "中央国家行政机关", subcategory="外交部", interviewFormat="结构化+追问"),
+                _direction("gk_fagai", "国家发改委", "national", "", "国家公务员考试", "中央国家行政机关", subcategory="国家发改委", questionCount=5),
+                _direction("gk_jiaoyu", "教育部", "national", "", "国家公务员考试", "中央国家行政机关", subcategory="教育部"),
+                _direction("gk_gongan", "公安部", "national", "police", "国家公务员考试", "中央国家行政机关", subcategory="公安部"),
+                _direction("gk_caizheng", "财政部", "national", "", "国家公务员考试", "中央国家行政机关", subcategory="财政部"),
+                _direction("gk_shenji", "审计署", "national", "", "国家公务员考试", "中央国家行政机关", subcategory="审计署", questionCount=3),
+                _direction("gk_keji", "科技部", "national", "", "国家公务员考试", "中央国家行政机关", subcategory="科技部", interviewFormat="含面谈"),
             ]),
             _region("national_direct", "省级以下直属机构", "national", "国家公务员考试", "省级以下直属机构", [
-                _direction("gk_tax", "税务系统", "national", "tax", "国家公务员考试", "省级以下直属机构", system="税务系统", interviewFormat="结构化小组"),
-                _direction("gk_customs", "海关系统", "national", "customs", "国家公务员考试", "省级以下直属机构", system="海关系统", interviewFormat="结构化小组"),
-                _direction("gk_maritime", "海事局", "national", "", "国家公务员考试", "省级以下直属机构", system="海事局", interviewFormat="结构化"),
-                _direction("gk_railway_police", "铁路公安", "national", "police", "国家公务员考试", "省级以下直属机构", system="铁路公安", interviewFormat="结构化+视频"),
-                _direction("gk_statistics", "统计系统", "national", "", "国家公务员考试", "省级以下直属机构", system="统计系统", interviewFormat="结构化"),
-                _direction("gk_financial_regulation", "金融监管系统", "national", "finance", "国家公务员考试", "省级以下直属机构", system="金融监管系统", interviewFormat="含专业题"),
-                _direction("gk_meteorology", "气象局", "national", "", "国家公务员考试", "省级以下直属机构", system="气象局", interviewFormat="结构化"),
+                _direction("gk_tax", "税务系统", "national", "tax", "国家公务员考试", "省级以下直属机构", subcategory="税务系统", interviewFormat="结构化小组"),
+                _direction("gk_customs", "海关系统", "national", "customs", "国家公务员考试", "省级以下直属机构", subcategory="海关系统", interviewFormat="结构化小组"),
+                _direction("gk_maritime", "海事局", "national", "", "国家公务员考试", "省级以下直属机构", subcategory="海事局", interviewFormat="结构化"),
+                _direction("gk_railway_police", "铁路公安", "national", "police", "国家公务员考试", "省级以下直属机构", subcategory="铁路公安", interviewFormat="结构化+视频"),
+                _direction("gk_statistics", "统计系统", "national", "", "国家公务员考试", "省级以下直属机构", subcategory="统计系统", interviewFormat="结构化"),
+                _direction("gk_financial_regulation", "金融监管系统", "national", "finance", "国家公务员考试", "省级以下直属机构", subcategory="金融监管系统", interviewFormat="含专业题"),
+                _direction("gk_meteorology", "气象局", "national", "", "国家公务员考试", "省级以下直属机构", subcategory="气象局", interviewFormat="结构化"),
             ]),
             _region("national_public_institution", "参公事业单位", "national", "国家公务员考试", "参公事业单位", [
-                _direction("gk_nbs", "国家统计局", "national", "", "国家公务员考试", "参公事业单位", system="国家统计局", interviewFormat="结构化"),
-                _direction("gk_cma", "中国气象局", "national", "", "国家公务员考试", "参公事业单位", system="中国气象局", interviewFormat="结构化"),
-                _direction("gk_csrc", "证监会", "national", "finance", "国家公务员考试", "参公事业单位", system="证监会", interviewFormat="含专业题"),
-                _direction("gk_cbirc", "银保监会", "national", "finance", "国家公务员考试", "参公事业单位", system="银保监会", interviewFormat="含专业题"),
-                _direction("gk_cnipa", "国家知识产权局", "national", "", "国家公务员考试", "参公事业单位", system="国家知识产权局"),
+                _direction("gk_nbs", "国家统计局", "national", "", "国家公务员考试", "参公事业单位", subcategory="国家统计局", interviewFormat="结构化"),
+                _direction("gk_cma", "中国气象局", "national", "", "国家公务员考试", "参公事业单位", subcategory="中国气象局", interviewFormat="结构化"),
+                _direction("gk_csrc", "证监会", "national", "finance", "国家公务员考试", "参公事业单位", subcategory="证监会", interviewFormat="含专业题"),
+                _direction("gk_cbirc", "银保监会", "national", "finance", "国家公务员考试", "参公事业单位", subcategory="银保监会", interviewFormat="含专业题"),
+                _direction("gk_cnipa", "国家知识产权局", "national", "", "国家公务员考试", "参公事业单位", subcategory="国家知识产权局"),
             ]),
             _region("national_common", "通用试题类", "national", "国家公务员考试", "通用试题类", [
                 _direction("gk_common_public", "参公事业单位", "national", "", "国家公务员考试", "通用试题类", positionType="参公事业单位"),
@@ -341,31 +359,31 @@ TARGETED_POSITION_TREE = [
         "desc": "按已确认题源展示，题目真实主分类仍保留原考试体系。",
         "children": [
             _region("medical_beijing", "北京市", "beijing", directions=[
-                _direction("medical_bj_doctor", "医师岗", "beijing", "medical", portalTag="医疗卫生面试", positionType="医师岗", interviewFormat="结构化+专业答辩+病例分析"),
-                _direction("medical_bj_nurse", "护理岗", "beijing", "medical", portalTag="医疗卫生面试", positionType="护理岗", interviewFormat="结构化+实操考核"),
-                _direction("medical_bj_technician", "医技岗", "beijing", "medical", portalTag="医疗卫生面试", positionType="医技岗", interviewFormat="结构化+设备操作"),
-                _direction("medical_bj_pharmacist", "药师岗", "beijing", "medical", portalTag="医疗卫生面试", positionType="药师岗", interviewFormat="结构化+药学知识"),
-                _direction("medical_bj_admin", "行政岗", "beijing", "medical", portalTag="医疗卫生面试", positionType="行政岗", interviewFormat="结构化面试"),
+                _direction("medical_bj_doctor", "医师岗", "beijing", "medical", positionType="医师岗", interviewFormat="结构化+专业答辩+病例分析"),
+                _direction("medical_bj_nurse", "护理岗", "beijing", "medical", positionType="护理岗", interviewFormat="结构化+实操考核"),
+                _direction("medical_bj_technician", "医技岗", "beijing", "medical", positionType="医技岗", interviewFormat="结构化+设备操作"),
+                _direction("medical_bj_pharmacist", "药师岗", "beijing", "medical", positionType="药师岗", interviewFormat="结构化+药学知识"),
+                _direction("medical_bj_admin", "行政岗", "beijing", "medical", positionType="行政岗", interviewFormat="结构化面试"),
             ]),
             *[
                 _region(f"medical_{code}", province, code, directions=[
-                    _direction(f"medical_{code}_doctor", "医师岗", code, "medical", portalTag="医疗卫生面试", positionType="医师岗"),
-                    _direction(f"medical_{code}_nurse", "护理岗", code, "medical", portalTag="医疗卫生面试", positionType="护理岗"),
-                    _direction(f"medical_{code}_technician", "医技岗", code, "medical", portalTag="医疗卫生面试", positionType="医技岗"),
-                    _direction(f"medical_{code}_pharmacist", "药师岗", code, "medical", portalTag="医疗卫生面试", positionType="药师岗"),
-                    _direction(f"medical_{code}_admin", "行政岗", code, "medical", portalTag="医疗卫生面试", positionType="行政岗"),
+                    _direction(f"medical_{code}_doctor", "医师岗", code, "medical", positionType="医师岗"),
+                    _direction(f"medical_{code}_nurse", "护理岗", code, "medical", positionType="护理岗"),
+                    _direction(f"medical_{code}_technician", "医技岗", code, "medical", positionType="医技岗"),
+                    _direction(f"medical_{code}_pharmacist", "药师岗", code, "medical", positionType="药师岗"),
+                    _direction(f"medical_{code}_admin", "行政岗", code, "medical", positionType="行政岗"),
                 ])
                 for code, province in [("shanghai", "上海市"), ("guangdong", "广东省"), ("jiangsu", "江苏省"), ("sichuan", "四川省")]
             ],
             _region("medical_sichuan_partial", "四川省 / 部分地区", "sichuan", directions=[
                 *[
-                    _direction(f"medical_sc_partial_{code}", name, "sichuan", "medical", portalTag="医疗卫生面试", positionType=name, interviewFormat="医疗背景结构化")
+                    _direction(f"medical_sc_partial_{code}", name, "sichuan", "medical", positionType=name, interviewFormat="医疗背景结构化")
                     for code, name in MEDICAL_JOB_DIRECTIONS
                 ],
             ]),
             _region("medical_e_class", "E类联考省份", "all", directions=[
                 *[
-                    _direction(f"medical_e_class_{code}", name, "all", "medical", portalTag="医疗卫生面试", positionType=name, interviewFormat="E类联考分岗考核")
+                    _direction(f"medical_e_class_{code}", name, "all", "medical", positionType=name, interviewFormat="E类联考分岗考核")
                     for code, name in MEDICAL_JOB_DIRECTIONS
                 ],
             ]),
@@ -384,8 +402,7 @@ TARGETED_POSITION_TREE = [
                             system_name,
                             code,
                             "bank",
-                            portalTag="银行招考面试",
-                            system=system_name,
+                            subcategory=system_name,
                         )
                         for system_code, system_name in BANK_SYSTEM_DIRECTIONS
                     ]
@@ -416,7 +433,6 @@ TARGETED_POSITION_TREE = [
                                 province_name,
                                 province_code,
                                 position,
-                                portalTag="法检书记员面试",
                                 positionType=role_name,
                                 interviewFormat="结构化+专业知识",
                             )
@@ -428,7 +444,6 @@ TARGETED_POSITION_TREE = [
                                 province_name,
                                 province_code,
                                 position,
-                                portalTag="法检书记员面试",
                                 positionType=role_name,
                                 interviewFormat="结构化面试",
                             )
@@ -501,10 +516,9 @@ FOCUS_TARGET_FIELDS = (
     "position",
     "examCategory",
     "examSubcategory",
-    "system",
-    "positionType",
-    "portalTag",
-    "displayPortal",
+    "subcategory",
+    "subcategory2",
+    "year",
     "targetName",
     "interviewFormat",
     "timingMode",
@@ -548,11 +562,20 @@ def _question_type_label(question: Question, meta: dict) -> str:
 
 
 def _target_filters_from_request(data: FocusAnalysisRequest | GenerateQuestionsRequest) -> dict:
-    return {
-        key: value
-        for key in ("examCategory", "examSubcategory", "system", "positionType", "portalTag", "displayPortal")
-        if (value := str(getattr(data, key, "") or "").strip())
-    }
+    filters = {}
+    for key in ("examCategory", "examSubcategory", "subcategory", "subcategory2"):
+        value = str(getattr(data, key, "") or "").strip()
+        if value:
+            filters[key] = value
+    year = getattr(data, "year", "")
+    if year:
+        if isinstance(year, list):
+            year = [str(y).strip() for y in year if str(y).strip()]
+        elif isinstance(year, str):
+            year = [y.strip() for y in year.replace(",", "、").replace("，", ",").split(",") if y.strip()]
+        if year:
+            filters["year"] = year
+    return filters
 
 
 def _target_name(data: FocusAnalysisRequest | GenerateQuestionsRequest) -> str:
@@ -589,10 +612,8 @@ def _focus_target_key(data: FocusAnalysisRequest | dict) -> str:
         payload.get("position", ""),
         payload.get("examCategory", ""),
         payload.get("examSubcategory", ""),
-        payload.get("system", ""),
-        payload.get("positionType", ""),
-        payload.get("portalTag", ""),
-        payload.get("displayPortal", ""),
+        payload.get("subcategory", ""),
+        payload.get("subcategory2", ""),
     ]
     return "fields:" + "|".join(str(item).strip() for item in parts)
 
@@ -860,10 +881,9 @@ async def get_focus_admin_config(
     position: str = "",
     examCategory: str = "",
     examSubcategory: str = "",
-    system: str = "",
-    positionType: str = "",
-    portalTag: str = "",
-    displayPortal: str = "",
+    subcategory: str = "",
+    subcategory2: str = "",
+    year: str = "",
     targetName: str = "",
     interviewFormat: str = "",
     timingMode: str = "",
@@ -880,10 +900,9 @@ async def get_focus_admin_config(
         "position": position,
         "examCategory": examCategory,
         "examSubcategory": examSubcategory,
-        "system": system,
-        "positionType": positionType,
-        "portalTag": portalTag,
-        "displayPortal": displayPortal,
+        "subcategory": subcategory,
+        "subcategory2": subcategory2,
+        "year": year,
         "targetName": targetName,
         "interviewFormat": interviewFormat,
         "timingMode": timingMode,

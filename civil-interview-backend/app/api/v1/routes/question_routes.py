@@ -22,12 +22,18 @@ router = APIRouter(prefix="/questions", tags=["questions"])
 @router.get("")
 def list_qs(
     keyword: str = "", dimension: str = "", province: str = "", position: str = "",
+    subcategory: str = "", subcategory2: str = "", examCategory: str = "", year: str = "",
     current: int = 1, pageSize: int = 10,
     db: Session = Depends(get_db),
     current_user: AuthUser = Depends(get_current_user),
 ):
     ensure_paid_access(current_user, detail="开通后可查看推荐题目与扩展题目")
-    return list_questions(db, keyword=keyword, dimension=dimension, province=province, position=position, current=current, page_size=pageSize)
+    return list_questions(
+        db, keyword=keyword, dimension=dimension, province=province,
+        position=position, subcategory=subcategory, subcategory2=subcategory2,
+        examCategory=examCategory, year=year,
+        current=current, page_size=pageSize,
+    )
 
 
 @router.get("/random")

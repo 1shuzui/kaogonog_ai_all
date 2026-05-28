@@ -431,44 +431,6 @@ QUESTION_TYPE_CATEGORY_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("岗位认知", ("职业认知", "岗位认知", "自我认知", "报考动机", "价值观", "岗位匹配")),
 )
 
-SYSTEM_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("税务系统", ("税务", "税收", "纳税")),
-    ("海关系统", ("海关",)),
-    ("公安系统", ("公安", "民警", "交警", "铁路公安")),
-    ("法院系统", ("法院", "法官")),
-    ("检察系统", ("检察院", "检察官", "检察")),
-    ("市场监管", ("市场监管", "市监")),
-    ("监狱系统", ("监狱", "狱警")),
-    ("金融监管系统", ("金融监管", "银保监", "证监")),
-    ("银行系统", ("银行", "农商行", "城商行")),
-    ("医疗卫生系统", ("医疗", "卫生", "护理", "医师", "药师", "医技")),
-)
-
-POSITION_TYPE_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("A类综合管理岗", ("A类", "A 类")),
-    ("B类社会科学专技岗", ("B类", "B 类")),
-    ("C类自然科学专技岗", ("C类", "C 类")),
-    ("D类中小学教师岗", ("D类", "D 类")),
-    ("E类医疗卫生岗", ("E类", "E 类")),
-    ("综合管理岗", ("综合管理", "通用岗", "普通岗")),
-    ("乡镇岗", ("乡镇岗", "乡镇")),
-    ("遴选岗", ("遴选",)),
-    ("监狱岗", ("监狱岗", "省直监狱")),
-    ("税务系统补录", ("税务系统补录", "补录")),
-    ("书记员", ("书记员",)),
-    ("医师岗", ("医师",)),
-    ("护理岗", ("护理",)),
-    ("医技岗", ("医技", "检验", "影像")),
-    ("药师岗", ("药师",)),
-    ("银行岗", ("银行", "柜面", "客户经理")),
-)
-
-PORTAL_TAG_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("银行招考面试", ("银行招考", "银行面试", "银行", "农商行", "城商行", "柜面", "客户经理")),
-    ("医疗卫生面试", ("医疗卫生", "医疗", "卫生", "护理", "医师", "药师", "医技", "医院", "医患")),
-    ("法检书记员面试", ("法检", "书记员", "法院书记员", "检察院书记员")),
-)
-
 PROFILE_EXAM_CATEGORY_DEFAULTS = {
     "jiangsu_shiye": ("事业单位考试", "profile_default"),
     "anhui": ("省级公务员考试", "profile_default"),
@@ -553,16 +515,6 @@ def _is_jiangsu_civil_service_category(position_type: str) -> bool:
     return str(position_type or "").startswith(("A类", "B类", "C类", "D类", "E类"))
 
 
-def infer_position_type(text: str, exam_category: str, province: str, fallback: str = "") -> str:
-    """岗位类别只在对应考试体系内使用；特色入口另存 portalTags。"""
-
-    value = str(text or "")
-    matched = _first_rule_match(value, POSITION_TYPE_RULES)
-    if _is_jiangsu_civil_service_category(matched):
-        if exam_category == "省级公务员考试" and normalize_province_label(province) == "江苏省":
-            return matched
-        return fallback if fallback and fallback not in {"省考", "事业单位"} else ""
-    return matched or (fallback if fallback not in {"省考", "事业单位"} else "")
 
 
 def normalize_province_label(value: str) -> str:
@@ -607,20 +559,6 @@ def infer_region_parts(text: str, province: str) -> tuple[str, str]:
     return city, district
 
 
-def infer_agency(text: str) -> str:
-    """抽取具体机关/单位名称，抽不到留空。"""
-
-    value = re.sub(r"\s+", "", str(text or ""))
-    for pattern in (
-        r"([\u4e00-\u9fff]{2,20}(?:厅|局|委|办|院|行|中心|学校|医院))",
-        r"(中央[\u4e00-\u9fff]{2,20}(?:机关|部门))",
-    ):
-        match = re.search(pattern, value)
-        if match:
-            agency = match.group(1)
-            if agency not in {"事业单位", "公务员考试"}:
-                return agency
-    return ""
 
 
 def infer_job_level(text: str) -> str:
@@ -674,6 +612,9 @@ def infer_question_type_category(question_type: str, question_text: str = "") ->
     return _first_rule_match(text, QUESTION_TYPE_CATEGORY_RULES) or "综合分析"
 
 
+
+
+
 def build_classification_metadata(
     *,
     source_document: str,
@@ -705,15 +646,10 @@ def build_classification_metadata(
         source_document=source_document,
         default_province=province,
     )
-    city, district = infer_region_parts(source_evidence_text, province)
-    system = _first_rule_match(source_evidence_text, SYSTEM_RULES)
-    position_type = infer_position_type(source_evidence_text, exam_category, province, position)
+    subcategory, subcategory2 = infer_subcategories(source_evidence_text, exam_category, province)
     interview_format = _first_rule_match(source_evidence_text, INTERVIEW_FORMAT_RULES)
     question_type_category = infer_question_type_category(question_type, question_text)
-    agency = infer_agency(source_evidence_text)
     job_level = infer_job_level(source_evidence_text)
-    portal_tags = _all_rule_matches(source_evidence_text, PORTAL_TAG_RULES)
-    display_portals = list(portal_tags)
 
     review_reasons: list[str] = []
     if not exam_category:
@@ -726,8 +662,6 @@ def build_classification_metadata(
         review_reasons.append("缺少单题分值")
     if not interview_format:
         review_reasons.append("未明确面试形式")
-    if exam_category == "事业单位考试" and not position_type:
-        review_reasons.append("事业单位岗位类别未明确")
     if any(token in source_evidence_text for token in ("国企招聘", "特岗", "定岗特选", "强村行动")):
         review_reasons.append("标题含非标准事业单位/特殊招聘表述，需人工确认分类")
 
@@ -744,16 +678,11 @@ def build_classification_metadata(
     return {
         "examCategory": exam_category,
         "examSubcategory": exam_subcategory,
-        "city": city,
-        "district": district,
-        "system": system,
-        "agency": agency,
-        "positionType": position_type,
-        "jobLevel": job_level,
+        "subcategory": subcategory,
+        "subcategory2": subcategory2,
         "interviewFormat": interview_format,
         "questionTypeCategory": question_type_category,
-        "portalTags": portal_tags,
-        "displayPortals": display_portals,
+        "jobLevel": job_level,
         "classificationSource": classification_source,
         "classificationConfidence": confidence,
         "reviewStatus": review_status,

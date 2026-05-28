@@ -3,10 +3,9 @@ const TARGET_FIELDS = [
   'position',
   'examCategory',
   'examSubcategory',
-  'system',
-  'positionType',
-  'portalTag',
-  'displayPortal',
+  'subcategory',
+  'subcategory2',
+  'year',
   'targetCode',
   'targetName',
   'interviewFormat',
@@ -15,8 +14,6 @@ const TARGET_FIELDS = [
   'prepTime',
   'answerTime',
   'questionTypeScope',
-  'city',
-  'district',
   'notes'
 ]
 
@@ -139,7 +136,7 @@ export const DEFAULT_TARGETED_POSITION_TREE = [
           { id: 'js_sydw_general', name: '综合管理岗', province: 'jiangsu', position: 'general', examCategory: '事业单位考试', examSubcategory: '江苏省', positionType: '综合管理岗' },
           { id: 'js_sydw_grassroots', name: '基层方向', province: 'jiangsu', position: 'township', examCategory: '事业单位考试', examSubcategory: '江苏省', positionType: '基层岗' },
           { id: 'js_sydw_township', name: '乡镇方向', province: 'jiangsu', position: 'township', examCategory: '事业单位考试', examSubcategory: '江苏省', positionType: '乡镇岗' },
-          { id: 'js_sydw_medical', name: '医疗卫生相关岗位', province: 'jiangsu', position: 'medical', examCategory: '事业单位考试', examSubcategory: '江苏省', portalTag: '医疗卫生面试' },
+          { id: 'js_sydw_medical', name: '医疗卫生相关岗位', province: 'jiangsu', position: 'medical', examCategory: '事业单位考试', examSubcategory: '江苏省' },
           ...JIANGSU_SIDW_CITY_DIRECTIONS.map(([code, city]) => ({
             id: `js_sydw_city_${code}`,
             name: city,
@@ -147,7 +144,7 @@ export const DEFAULT_TARGETED_POSITION_TREE = [
             position: 'general',
             examCategory: '事业单位考试',
             examSubcategory: '江苏省',
-            city,
+            subcategory: city,
             positionType: `${city}事业单位`,
             interviewFormat: '8+12',
             questionCount: '3',
@@ -172,7 +169,7 @@ export const DEFAULT_TARGETED_POSITION_TREE = [
             position: 'general',
             examCategory: '事业单位考试',
             examSubcategory: '安徽省',
-            city,
+            subcategory: city,
             positionType: `${city}事业单位`,
             interviewFormat: '15分钟包干',
             questionCount: '3',
@@ -188,11 +185,11 @@ export const DEFAULT_TARGETED_POSITION_TREE = [
         examSubcategory: '山东省',
         directions: [
           { id: 'sd_sydw_provincial', name: '省属', province: 'shandong', position: 'general', examCategory: '事业单位考试', examSubcategory: '山东省', positionType: '省属事业单位', interviewFormat: '15分钟包干', questionCount: '3', timingMode: '15分钟包干' },
-          { id: 'sd_sydw_jinan', name: '济南', province: 'shandong', position: 'general', examCategory: '事业单位考试', examSubcategory: '山东省', city: '济南', interviewFormat: '7+7', questionCount: '2-3', prepTime: '420', answerTime: '420', timingMode: '7分钟读题+7分钟答题' },
-          { id: 'sd_sydw_qingdao', name: '青岛', province: 'shandong', position: 'general', examCategory: '事业单位考试', examSubcategory: '山东省', city: '青岛', interviewFormat: '5+5/15分钟包干', questionCount: '2-3', timingMode: '5+5或15分钟包干' },
-          { id: 'sd_sydw_yantai', name: '烟台', province: 'shandong', position: 'general', examCategory: '事业单位考试', examSubcategory: '山东省', city: '烟台', interviewFormat: '6+6', questionCount: '2', prepTime: '360', answerTime: '360', timingMode: '6分钟读题+6分钟答题' },
-          { id: 'sd_sydw_weihai', name: '威海', province: 'shandong', position: 'general', examCategory: '事业单位考试', examSubcategory: '山东省', city: '威海', interviewFormat: '6+6', questionCount: '2', prepTime: '360', answerTime: '360', timingMode: '6分钟读题+6分钟答题' },
-          { id: 'sd_sydw_linyi', name: '临沂', province: 'shandong', position: 'general', examCategory: '事业单位考试', examSubcategory: '山东省', city: '临沂', interviewFormat: '10分钟包干无纸笔', questionCount: '2', timingMode: '10分钟包干无纸笔' },
+          { id: 'sd_sydw_jinan', name: '济南', province: 'shandong', position: 'general', examCategory: '事业单位考试', examSubcategory: '山东省', subcategory: '济南', interviewFormat: '7+7', questionCount: '2-3', prepTime: '420', answerTime: '420', timingMode: '7分钟读题+7分钟答题' },
+          { id: 'sd_sydw_qingdao', name: '青岛', province: 'shandong', position: 'general', examCategory: '事业单位考试', examSubcategory: '山东省', subcategory: '青岛', interviewFormat: '5+5/15分钟包干', questionCount: '2-3', timingMode: '5+5或15分钟包干' },
+          { id: 'sd_sydw_yantai', name: '烟台', province: 'shandong', position: 'general', examCategory: '事业单位考试', examSubcategory: '山东省', subcategory: '烟台', interviewFormat: '6+6', questionCount: '2', prepTime: '360', answerTime: '360', timingMode: '6分钟读题+6分钟答题' },
+          { id: 'sd_sydw_weihai', name: '威海', province: 'shandong', position: 'general', examCategory: '事业单位考试', examSubcategory: '山东省', subcategory: '威海', interviewFormat: '6+6', questionCount: '2', prepTime: '360', answerTime: '360', timingMode: '6分钟读题+6分钟答题' },
+          { id: 'sd_sydw_linyi', name: '临沂', province: 'shandong', position: 'general', examCategory: '事业单位考试', examSubcategory: '山东省', subcategory: '临沂', interviewFormat: '10分钟包干无纸笔', questionCount: '2', timingMode: '10分钟包干无纸笔' },
           ...SHANDONG_SIDW_STANDARD_CITIES.map((city, index) => ({
             id: `sd_sydw_city_${index + 1}`,
             name: city,
@@ -200,7 +197,7 @@ export const DEFAULT_TARGETED_POSITION_TREE = [
             position: 'general',
             examCategory: '事业单位考试',
             examSubcategory: '山东省',
-            city,
+            subcategory: city,
             positionType: `${city}事业单位`,
             interviewFormat: '15分钟包干',
             questionCount: '3',
@@ -343,13 +340,13 @@ export const DEFAULT_TARGETED_POSITION_TREE = [
         id: 'medical_sichuan_partial',
         name: '四川省 / 部分地区',
         province: 'sichuan',
-        portalTag: '医疗卫生面试',
+        // portalTag_removed: '医疗卫生面试',
         directions: MEDICAL_JOB_DIRECTIONS.map(([code, name]) => ({
           id: `medical_sc_partial_${code}`,
           name,
           province: 'sichuan',
           position: 'medical',
-          portalTag: '医疗卫生面试',
+          // portalTag_removed: '医疗卫生面试',
           positionType: name,
           interviewFormat: '医疗背景结构化'
         }))
@@ -358,13 +355,13 @@ export const DEFAULT_TARGETED_POSITION_TREE = [
         id: 'medical_e_class',
         name: 'E类联考省份',
         province: 'all',
-        portalTag: '医疗卫生面试',
+        // portalTag_removed: '医疗卫生面试',
         directions: MEDICAL_JOB_DIRECTIONS.map(([code, name]) => ({
           id: `medical_e_class_${code}`,
           name,
           province: 'all',
           position: 'medical',
-          portalTag: '医疗卫生面试',
+          // portalTag_removed: '医疗卫生面试',
           positionType: name,
           interviewFormat: 'E类联考分岗考核'
         }))
@@ -380,15 +377,15 @@ export const DEFAULT_TARGETED_POSITION_TREE = [
         id: 'bank_all',
         name: '银行招考',
         province: 'all',
-        portalTag: '银行招考面试',
+        // portalTag_removed: '银行招考面试',
         adminHint: reservedAdminHint('银行招考'),
         directions: BANK_SYSTEM_DIRECTIONS.map(([code, name]) => ({
           id: `bank_portal_${code}`,
           name,
           province: 'all',
           position: 'bank',
-          portalTag: '银行招考面试',
-          system: name
+          // portalTag_removed: '银行招考面试',
+          subcategory: name
         }))
       }
     ]
@@ -413,7 +410,7 @@ export const DEFAULT_TARGETED_POSITION_TREE = [
             name,
             province: code,
             position: roleCode,
-            portalTag: '法检书记员面试',
+            // portalTag_removed: '法检书记员面试',
             positionType: roleName,
             interviewFormat: '结构化+专业知识'
           })),
@@ -424,7 +421,7 @@ export const DEFAULT_TARGETED_POSITION_TREE = [
               name,
               province: code,
               position: roleCode,
-              portalTag: '法检书记员面试',
+              // portalTag_removed: '法检书记员面试',
               positionType: roleName,
               interviewFormat: '结构化面试'
             }))

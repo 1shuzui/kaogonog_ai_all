@@ -550,10 +550,10 @@ const canGoPrev = computed(() => examStore.currentIndex > 0 && examStore.status 
 const canGoNext = computed(() => examStore.currentIndex < examStore.totalQuestions - 1 && examStore.status !== EXAM_STATUS.SUBMITTING && examStore.status !== EXAM_STATUS.ANSWERING)
 
 onMounted(async () => {
-  await new Promise((resolve) => setTimeout(resolve, 300))
-  const currentStream = await recorder.initStream({ videoEnabled: examStore.videoEnabled })
-  if (!currentStream) {
-    await new Promise((resolve) => setTimeout(resolve, 500))
+  const storedStream = examStore.consumeStream()
+  if (storedStream) {
+    recorder.setStream(storedStream)
+  } else {
     await recorder.initStream({ videoEnabled: examStore.videoEnabled })
   }
 

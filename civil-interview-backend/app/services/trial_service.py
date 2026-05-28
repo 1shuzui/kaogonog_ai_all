@@ -18,7 +18,13 @@ def _question_meta(question: Question) -> dict:
     return meta if isinstance(meta, dict) else {}
 
 
+TRIAL_QUESTION_ID = "q001"
+
+
 def _pick_trial_question(db: Session) -> Question | None:
+    trial = db.query(Question).filter(Question.id == TRIAL_QUESTION_ID).first()
+    if trial:
+        return trial
     questions = db.query(Question).all()
     tagged = []
     for question in questions:

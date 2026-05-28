@@ -185,10 +185,10 @@ const gradeLabel = computed(() => {
 onMounted(async () => {
   resetCameraWindow()
   window.addEventListener('resize', keepCameraWindowInBounds)
-  await new Promise((resolve) => setTimeout(resolve, 300))
-  const currentStream = await recorder.initStream({ videoEnabled: examStore.videoEnabled })
-  if (!currentStream) {
-    await new Promise((resolve) => setTimeout(resolve, 500))
+  const storedStream = examStore.consumeStream()
+  if (storedStream) {
+    recorder.setStream(storedStream)
+  } else {
     await recorder.initStream({ videoEnabled: examStore.videoEnabled })
   }
   if (examStore.fullExamMode && examStore.examStartTime) {

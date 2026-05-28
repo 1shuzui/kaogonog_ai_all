@@ -33,11 +33,17 @@ export function usePermission() {
   }
 
   // 同时请求摄像头+麦克风权限，避免分开请求时设备冲突
-  async function checkBoth() {
+  async function checkBoth(opts = {}) {
     checking.value = true
     error.value = ''
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      if (opts.keepStream) {
+        cameraReady.value = true
+        micReady.value = true
+        checking.value = false
+        return stream
+      }
       stream.getTracks().forEach(t => t.stop())
       cameraReady.value = true
       micReady.value = true

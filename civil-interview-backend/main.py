@@ -3,6 +3,7 @@ Layered architecture: routes → services → models (SQLite + SQLAlchemy)
 """
 import logging
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -116,31 +117,14 @@ def ensure_targeted_focus_config_schema() -> None:
         logger.warning("Targeted focus config schema sync skipped: %s", exc)
 
 
-# ── app factory ──────────────────────────────────────────────────────────────
-app = FastAPI(
-    title="公务员面试练习平台 API",
-    version="2.0.0",
-    docs_url="/docs",
-    redoc_url=None,
-)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.allowed_origins.split(",") if settings.allowed_origins != "*" else ["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
-
-# ── init DB + seed on first run ───────────────────────────────────────────────
-@app.on_event("startup")
-async def startup():
+# ── lifespan ──────────────────────────────────────────────────────────────────
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # startup
     Base.metadata.create_all(bind=engine)
     ensure_question_indexes()
     ensure_targeted_focus_config_schema()
     logger.info(f"Database tables ready ({settings.database_url.split(':')[0]})")
-    # Auto-seed if DB is empty
     try:
         from seed import seed
         from app.db.session import SessionLocal
@@ -165,13 +149,29 @@ async def startup():
         db.close()
     except Exception as e:
         logger.warning(f"Seed skipped: {e}")
-
-
-@app.on_event("shutdown")
-async def shutdown():
+    yield
+    # shutdown
     from app.core.redis_cache import close_redis
-
     await close_redis()
+
+
+# ── app factory ──────────────────────────────────────────────────────────────
+app = FastAPI(
+    title="公务员面试练习平台 API",
+    version="2.0.0",
+    docs_url="/docs",
+    redoc_url=None,
+    lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.allowed_origins.split(",") if settings.allowed_origins != "*" else ["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
 
 # ── routers ───────────────────────────────────────────────────────────────────
