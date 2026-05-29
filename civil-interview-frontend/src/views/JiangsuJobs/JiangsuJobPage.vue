@@ -63,7 +63,7 @@
             <a-button type="primary" size="small" @click="startPractice(item)">
               开始刷题
             </a-button>
-            <a-button size="small" @click="$router.push({ path: '/bank', query: { province: 'jiangsu', examCategory: '事业单位考试', position: 'jiangsu_' + category.key } })">去题库筛选</a-button>
+            <a-button size="small" @click="$router.push({ path: '/bank', query: { province: 'jiangsu', examCategory: '事业单位考试' } })">去题库筛选</a-button>
           </div>
         </div>
       </div>
@@ -137,7 +137,6 @@ async function loadQuestions() {
     const res = await getQuestions({
       province: 'jiangsu',
       examCategory: '事业单位考试',
-      position: 'jiangsu_' + category.value.key,
       current: 1,
       page: 1,
       pageSize: 1000

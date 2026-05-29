@@ -612,7 +612,22 @@ def infer_question_type_category(question_type: str, question_text: str = "") ->
     return _first_rule_match(text, QUESTION_TYPE_CATEGORY_RULES) or "综合分析"
 
 
+def infer_subcategories(source_text: str, exam_category: str, province: str) -> tuple[str | None, str | None]:
+    """从题源文本中提取二级/三级分类标签（如公安、监狱、省考等）。"""
 
+    system_map = {
+        "公安": "公安系统",
+        "监狱": "监狱系统",
+        "省考": "省考通用",
+        "选调": "选调生",
+        "遴选": "遴选",
+    }
+    subcategory = None
+    for keyword, label in system_map.items():
+        if keyword in source_text:
+            subcategory = label
+            break
+    return subcategory, None
 
 
 def build_classification_metadata(

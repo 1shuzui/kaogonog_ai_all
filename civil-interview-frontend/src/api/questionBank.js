@@ -28,6 +28,15 @@ export async function importQuestions(file) {
   })
 }
 
+export async function importDocx(file, province) {
+  const formData = new FormData()
+  formData.append('file', file)
+  return http.post('/questions/import/docx', formData, {
+    params: { province },
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+
 export async function getRandomQuestions(params) {
   return http.get('/questions/random', { params })
 }

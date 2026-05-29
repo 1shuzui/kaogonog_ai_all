@@ -6,6 +6,9 @@
         <a-button type="primary" @click="$router.push('/bank/import')">
           <UploadOutlined /> 批量导入
         </a-button>
+        <a-button @click="showDocxModal = true">
+          <FileTextOutlined /> docx导入
+        </a-button>
         <a-button @click="$router.push('/bank/edit')">
           <PlusOutlined /> 新增题目
         </a-button>
@@ -142,13 +145,57 @@
         />
       </div>
     </template>
+
+    <!-- docx 导入弹窗 -->
+    <a-modal
+      v-model:open="showDocxModal"
+      title="docx 题库导入"
+      :confirm-loading="docxImporting"
+      @ok="handleDocxImport"
+      ok-text="开始导入"
+      cancel-text="取消"
+    >
+      <a-form layout="vertical">
+        <a-form-item label="选择省份" required>
+          <a-select v-model:value="docxProvince" placeholder="请选择题库所属省份" style="width: 100%">
+            <a-select-option v-for="p in DOCX_PROVINCES" :key="p.code" :value="p.code">
+              {{ p.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item label="上传 docx 文件" required>
+          <a-upload-dragger
+            :before-upload="handleDocxFile"
+            :show-upload-list="false"
+            accept=".docx,.doc"
+          >
+            <p class="ant-upload-drag-icon">
+              <InboxOutlined />
+            </p>
+            <p class="ant-upload-text">点击或拖拽 .docx 文件到此处上传</p>
+            <p class="ant-upload-hint">支持 .docx / .doc 格式的题库文档</p>
+          </a-upload-dragger>
+          <div v-if="docxFile" style="margin-top: 8px">
+            <a-tag color="blue">{{ docxFile.name }}</a-tag>
+          </div>
+        </a-form-item>
+      </a-form>
+      <div v-if="docxResult" style="margin-top: 12px">
+        <a-alert
+          type="success"
+          :message="`导入成功：${docxResult.imported} 题`"
+          :description="docxResult.suites && docxResult.suites.length ? `套题：${docxResult.suites.join('、')}` : ''"
+          show-icon
+        />
+      </div>
+    </a-modal>
   </div>
 </template>
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { UploadOutlined, PlusOutlined } from '@ant-design/icons-vue'
+import { UploadOutlined, PlusOutlined, FileTextOutlined, InboxOutlined } from '@ant-design/icons-vue'
 import { useQuestionBankStore } from '@/stores/questionBank'
 import { useBillingStore } from '@/stores/billing'
 import ProvinceSelector from '@/components/common/ProvinceSelector.vue'
@@ -157,6 +204,7 @@ import QuestionMetaTags from '@/components/common/QuestionMetaTags.vue'
 import QuestionRichContent from '@/components/common/QuestionRichContent.vue'
 import { message } from 'ant-design-vue'
 import { useUserStore } from '@/stores/user'
+import { importDocx } from '@/api/questionBank'
 import { EXAM_CATEGORIES, SUBCATEGORY_LABELS, YEAR_OPTIONS } from '@/utils/constants'
 
 const router = useRouter()
@@ -262,6 +310,58 @@ function startTrial() {
 
 function goPricing() {
   router.push({ path: '/pricing', query: { redirect: '/bank', source: '题库' } })
+}
+
+// --- docx import ---
+const showDocxModal = ref(false)
+const docxImporting = ref(false)
+const docxFile = ref(null)
+const docxProvince = ref('national')
+const docxResult = ref(null)
+
+const DOCX_PROVINCES = [
+  { code: 'national', name: '全国通用' },
+  { code: '山东', name: '山东' },
+  { code: '江苏', name: '江苏' },
+  { code: '浙江', name: '浙江' },
+  { code: '广东', name: '广东' },
+  { code: '安徽', name: '安徽' },
+  { code: '湖南', name: '湖南' },
+  { code: '湖北', name: '湖北' },
+  { code: '河南', name: '河南' },
+  { code: '四川', name: '四川' },
+  { code: '河北', name: '河北' },
+  { code: '福建', name: '福建' },
+  { code: '辽宁', name: '辽宁' },
+  { code: '陕西', name: '陕西' },
+  { code: '北京', name: '北京' },
+  { code: '上海', name: '上海' },
+]
+
+function handleDocxFile(file) {
+  docxFile.value = file
+  docxResult.value = null
+  return false
+}
+
+async function handleDocxImport() {
+  if (!docxFile.value) {
+    message.warning('请先选择要上传的 docx 文件')
+    return
+  }
+  docxImporting.value = true
+  docxResult.value = null
+  try {
+    const res = await importDocx(docxFile.value, docxProvince.value)
+    docxResult.value = res.data || res
+    message.success(`导入成功：${docxResult.value.imported} 题`)
+    docxFile.value = null
+    bankStore.fetchQuestions()
+  } catch (e) {
+    message.error(e?.response?.data?.detail || e?.message || '导入失败')
+  } finally {
+    docxImporting.value = false
+  }
 }
 </script>
 

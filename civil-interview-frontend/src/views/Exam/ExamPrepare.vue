@@ -182,6 +182,7 @@ import {
   getFullExamSuiteSummary,
   loadFullExamSuiteQuestions
 } from '@/utils/fullExamSuites'
+import { parseTimingFormat } from '@/utils/targetedOptions'
 
 const router = useRouter()
 const route = useRoute()
@@ -308,8 +309,18 @@ function applyPreferredQuestionDimensions() {
 function applyUserPracticePreferencesToQuestions(questions = []) {
   const prefs = userStore.preferences || {}
   const target = source.value === 'targeted' ? (targetedStore.selectionPayload || {}) : {}
-  const targetPrepTime = Number(target.prepTime || 0)
-  const targetAnswerTime = Number(target.answerTime || 0)
+  let targetPrepTime = Number(target.prepTime || 0)
+  let targetAnswerTime = Number(target.answerTime || 0)
+
+  // Fallback: parse timingMode/interviewFormat when prepTime/answerTime not explicitly set
+  if (targetPrepTime === 0 && targetAnswerTime === 0) {
+    const parsed = parseTimingFormat(target.timingMode || target.interviewFormat || '')
+    if (parsed) {
+      targetPrepTime = parsed.prepTime
+      targetAnswerTime = parsed.answerTime
+    }
+  }
+
   const prepTime = Number(prefs.defaultPrepTime || 0)
   const answerTime = Number(prefs.defaultAnswerTime || 0)
   return questions.map((question) => ({

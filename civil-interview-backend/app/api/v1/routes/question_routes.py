@@ -13,7 +13,7 @@ from app.schemas.common import AuthUser, QuestionCreate, QuestionUpdate
 from app.services.question_service import (
     list_questions, get_random_questions, get_question,
     create_question, update_question, delete_question,
-    import_questions, generate_training_questions,
+    import_questions, import_from_docx, generate_training_questions,
 )
 
 router = APIRouter(prefix="/questions", tags=["questions"])
@@ -75,5 +75,17 @@ async def import_qs(file: UploadFile = File(...), db: Session = Depends(get_db),
     ensure_admin_access(current_user)
     content = await file.read()
     return import_questions(db, content, file.filename or "")
+
+
+@router.post("/import/docx")
+async def import_docx(
+    file: UploadFile = File(...),
+    province: str = "national",
+    db: Session = Depends(get_db),
+    current_user: AuthUser = Depends(get_current_user),
+):
+    ensure_admin_access(current_user)
+    content = await file.read()
+    return import_from_docx(db, content, file.filename or "", province)
 
 

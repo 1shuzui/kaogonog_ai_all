@@ -1,3 +1,4 @@
+import re
 from collections import Counter
 from copy import deepcopy
 from datetime import datetime, timezone
@@ -435,6 +436,10 @@ TARGETED_POSITION_TREE = [
                                 position,
                                 positionType=role_name,
                                 interviewFormat="结构化+专业知识",
+                                timingMode="15分钟包干",
+                                prepTime=0,
+                                answerTime=900,
+                                questionCount="2-3",
                             )
                             for province_code, province_name in CLERK_SOURCE_PROVINCES
                         ],
@@ -446,6 +451,10 @@ TARGETED_POSITION_TREE = [
                                 position,
                                 positionType=role_name,
                                 interviewFormat="结构化面试",
+                                timingMode="15分钟包干",
+                                prepTime=0,
+                                answerTime=900,
+                                questionCount="2-3",
                             )
                             for province_code, province_name in CLERK_STRUCTURED_PROVINCES
                             if province_code not in {item[0] for item in CLERK_SOURCE_PROVINCES}
@@ -528,6 +537,22 @@ FOCUS_TARGET_FIELDS = (
 )
 
 
+def parse_timing_format(text: str) -> tuple[int | None, int | None]:
+    """Parse timing format strings like '8+12' or '15分钟包干' → (prepTime, answerTime) in seconds."""
+    if not text:
+        return None, None
+    text = text.strip()
+    # "8+12" → prep=480s, answer=720s
+    m = re.fullmatch(r"(\d+)\+(\d+)", text)
+    if m:
+        return int(m.group(1)) * 60, int(m.group(2)) * 60
+    # "15分钟包干" / "20分钟作答" → prep=0, answer=N*60
+    m = re.search(r"(\d+)\s*分钟\s*(?:包干|作答|答题)", text)
+    if m:
+        return 0, int(m.group(1)) * 60
+    return None, None
+
+
 def _dimension_label(code: str) -> str:
     return DIMENSION_NAMES.get(code, code or "综合分析")
 
@@ -599,6 +624,17 @@ def _focus_request_payload(data: FocusAnalysisRequest | dict) -> dict:
             payload[field] = text
     payload["province"] = payload.get("province") or "national"
     payload["position"] = payload.get("position") or ""
+
+    # Auto-fill prepTime/answerTime from timingMode/interviewFormat if not explicitly set
+    prep_time = int(payload.get("prepTime", 0) or 0)
+    answer_time = int(payload.get("answerTime", 0) or 0)
+    if prep_time == 0 and answer_time == 0:
+        for field in ("timingMode", "interviewFormat"):
+            parsed_prep, parsed_answer = parse_timing_format(payload.get(field, ""))
+            if parsed_prep is not None and parsed_answer is not None:
+                payload["prepTime"] = str(parsed_prep)
+                payload["answerTime"] = str(parsed_answer)
+                break
     return payload
 
 

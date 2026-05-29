@@ -412,7 +412,11 @@ export const DEFAULT_TARGETED_POSITION_TREE = [
             position: roleCode,
             // portalTag_removed: '法检书记员面试',
             positionType: roleName,
-            interviewFormat: '结构化+专业知识'
+            interviewFormat: '结构化+专业知识',
+            timingMode: '15分钟包干',
+            prepTime: 0,
+            answerTime: 900,
+            questionCount: '2-3'
           })),
           ...CLERK_STRUCTURED_PROVINCES
             .filter(([code]) => !CLERK_SOURCE_PROVINCES.some(([sourceCode]) => sourceCode === code))
@@ -423,7 +427,11 @@ export const DEFAULT_TARGETED_POSITION_TREE = [
               position: roleCode,
               // portalTag_removed: '法检书记员面试',
               positionType: roleName,
-              interviewFormat: '结构化面试'
+              interviewFormat: '结构化面试',
+              timingMode: '15分钟包干',
+              prepTime: 0,
+              answerTime: 900,
+              questionCount: '2-3'
             }))
         ]
       }))
@@ -473,6 +481,22 @@ function ensureReservedProvinceEntries(tree = DEFAULT_TARGETED_POSITION_TREE) {
 
 ensureReservedProvinceEntries()
 
+export function parseTimingFormat(text) {
+  if (!text) return null
+  const trimmed = String(text).trim()
+  // "8+12" → prep=480s, answer=720s
+  const plusMatch = /^(\d+)\+(\d+)$/.exec(trimmed)
+  if (plusMatch) {
+    return { prepTime: parseInt(plusMatch[1], 10) * 60, answerTime: parseInt(plusMatch[2], 10) * 60 }
+  }
+  // "15分钟包干" / "20分钟作答" → prep=0
+  const baoGanMatch = /(\d+)\s*分钟\s*(?:包干|作答|答题)/.exec(trimmed)
+  if (baoGanMatch) {
+    return { prepTime: 0, answerTime: parseInt(baoGanMatch[1], 10) * 60 }
+  }
+  return null
+}
+
 export function normalizeTargetPayload(target = {}) {
   const payload = {}
   TARGET_FIELDS.forEach((field) => {
@@ -485,6 +509,15 @@ export function normalizeTargetPayload(target = {}) {
   payload.position = payload.position || ''
   payload.targetCode = payload.targetCode || String(target.id || target.code || '').trim()
   payload.targetName = payload.targetName || String(target.name || '').trim()
+
+  // Auto-fill prepTime/answerTime from timingMode/interviewFormat if not explicitly set
+  if (!payload.prepTime && !payload.answerTime) {
+    const parsed = parseTimingFormat(payload.timingMode || payload.interviewFormat || '')
+    if (parsed) {
+      payload.prepTime = String(parsed.prepTime)
+      payload.answerTime = String(parsed.answerTime)
+    }
+  }
   return payload
 }
 

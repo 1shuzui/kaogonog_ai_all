@@ -104,6 +104,20 @@ def _split_tags(value) -> list[str]:
     return []
 
 
+def _parse_timing_format(text: str) -> tuple[int, int] | None:
+    """Parse '8+12' → (480, 720) or '15分钟包干' → (0, 900). Returns None if unparseable."""
+    if not text:
+        return None
+    text = text.strip()
+    m = re.fullmatch(r"(\d+)\+(\d+)", text)
+    if m:
+        return int(m.group(1)) * 60, int(m.group(2)) * 60
+    m = re.search(r"(\d+)\s*分钟\s*(?:包干|作答|答题)", text)
+    if m:
+        return 0, int(m.group(1)) * 60
+    return None
+
+
 def _question_meta_from_keywords(keywords: dict | None) -> dict:
     if not isinstance(keywords, dict):
         return {}
@@ -926,9 +940,19 @@ def _question_matches_target_filters(question: Question, target_filters: dict | 
     def clean(value) -> str:
         return str(value or "").strip()
 
+    def values_match(a: str, b: str) -> bool:
+        """Loose match: exact equality or one contains the other for category aliases."""
+        if not a or not b:
+            return True
+        if a == b:
+            return True
+        # Bidirectional containment for alias matching (e.g. "法检书记员" contains "书记员")
+        return a in b or b in a
+
     for field in ("examCategory", "examSubcategory", "subcategory", "subcategory2"):
         expected = clean(target_filters.get(field))
-        if expected and clean(meta.get(field)) != expected:
+        actual = clean(meta.get(field))
+        if expected and actual and not values_match(expected, actual):
             return False
 
     year_filter = target_filters.get("year")
@@ -936,6 +960,9 @@ def _question_matches_target_filters(question: Question, target_filters: dict | 
         year_values = set(str(y).strip() for y in (year_filter if isinstance(year_filter, list) else [year_filter]) if str(y).strip())
         if year_values:
             meta_year = meta.get("year")
+            # Handle both list and single string
+            if isinstance(meta_year, str):
+                meta_year = [meta_year]
             meta_years = set(str(y).strip() for y in (meta_year if isinstance(meta_year, list) else []) if str(y).strip())
             if meta_years and not (year_values & meta_years):
                 return False
@@ -1450,6 +1477,14 @@ def import_questions(db: Session, content: bytes, filename: str) -> dict:
                         "dimensions": dimensions,
                         "keywords": _normalize_keywords(kw, meta),
                     }
+                    # Parse timingMode/interviewFormat for prepTime/answerTime fallback
+                    if imported_item["prepTime"] == 90 and imported_item["answerTime"] == 180:
+                        timing_text = str(row_value("timingMode", "") or row_value("interviewFormat", "")).strip()
+                        if timing_text:
+                            parsed = _parse_timing_format(timing_text)
+                            if parsed:
+                                imported_item["prepTime"] = parsed[0]
+                                imported_item["answerTime"] = parsed[1]
                     _upsert_normalized_question(db, imported_item)
                     imported += 1
                 except Exception:
@@ -1464,6 +1499,73 @@ def import_questions(db: Session, content: bytes, filename: str) -> dict:
         raise HTTPException(status_code=500, detail=f"导入失败: {e}")
 
     return {"imported": imported, "failed": failed}
+
+
+def import_from_docx(db: Session, file_content: bytes, filename: str, province: str) -> dict:
+    """Import questions from a .docx file by running the import script and syncing to DB."""
+    import subprocess
+    import tempfile
+    import uuid as _uuid
+
+    profile_name = f"web_import_{_uuid.uuid4().hex[:8]}"
+    script_path = REPO_ROOT / "ai_gongwu_backend" / "scripts" / "import_question_bank.py"
+
+    if not script_path.exists():
+        raise HTTPException(status_code=500, detail="导入脚本未找到，请联系管理员")
+
+    suffix = Path(filename).suffix.lower()
+    if suffix not in (".docx", ".doc"):
+        raise HTTPException(status_code=400, detail="仅支持 .docx / .doc 格式")
+
+    tmp_path = Path(tempfile.gettempdir()) / f"{profile_name}{suffix}"
+    tmp_path.write_bytes(file_content)
+
+    try:
+        result = subprocess.run(
+            [
+                "python", str(script_path),
+                "--profile-name", profile_name,
+                "--province", province,
+                "--source-file", str(tmp_path),
+            ],
+            capture_output=True, text=True, timeout=300,
+            cwd=str(REPO_ROOT),
+        )
+        if result.returncode != 0:
+            stderr = result.stderr.strip() or result.stdout.strip()
+            raise HTTPException(status_code=500, detail=f"导入脚本执行失败: {stderr}")
+
+        # Sync generated JSON files to DB
+        sync_result = sync_curated_question_assets(db)
+        db.commit()
+
+        # Collect suite info from generated files
+        output_dir = CURATED_QUESTION_DIR / f"generated_{profile_name}"
+        imported = 0
+        suites: set[str] = set()
+        if output_dir.exists():
+            for qf in sorted(output_dir.glob("*.json")):
+                try:
+                    data = json.loads(qf.read_text(encoding="utf-8"))
+                    imported += 1
+                    meta = data.get("_meta") or data.get("keywords", {}).get("_meta") or {}
+                    suite_name = str(meta.get("suiteName") or "").strip()
+                    if suite_name:
+                        suites.add(suite_name)
+                except Exception:
+                    pass
+
+        return {
+            "imported": imported or sync_result.get("synced", 0),
+            "failed": 0,
+            "suites": sorted(suites),
+            "profileName": profile_name,
+        }
+    finally:
+        try:
+            tmp_path.unlink(missing_ok=True)
+        except Exception:
+            pass
 
 
 async def generate_questions_by_position(
