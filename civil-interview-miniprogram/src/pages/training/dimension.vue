@@ -26,6 +26,31 @@
       <StatGrid :items="progressItems" />
     </view>
 
+    <!-- 定向筛选 -->
+    <view v-if="!readonlyMode" class="card">
+      <view class="section-head">
+        <text class="section-title">定向筛选（可选）</text>
+      </view>
+      <picker :range="examCategoryNames" :value="examCategoryIndex" @change="onExamCategoryFilterChange">
+        <view class="config-row">
+          <text>考试大类</text>
+          <text class="config-row__value">{{ selectedExamCategoryName }}</text>
+        </view>
+      </picker>
+      <picker :range="regionNames" :value="regionIndex" @change="onRegionFilterChange" :disabled="!regionOpts.length">
+        <view class="config-row">
+          <text>地区</text>
+          <text class="config-row__value">{{ selectedRegionNameText }}</text>
+        </view>
+      </picker>
+      <picker v-if="hasDirectionOpts" :range="directionNames" :value="directionIndex" @change="onDirectionFilterChange">
+        <view class="config-row">
+          <text>方向</text>
+          <text class="config-row__value">{{ selectedDirectionNameText }}</text>
+        </view>
+      </picker>
+    </view>
+
     <button v-if="!readonlyMode" class="primary-button" :loading="trainingStore.generating" @tap="generate">生成训练题</button>
 
     <view v-if="!readonlyMode && trainingStore.generatedQuestions.length" class="generated-list">
@@ -53,7 +78,8 @@ import { useSubscriptionStore } from '../../stores/subscription'
 import { useTrainingStore } from '../../stores/training'
 import { useUserStore } from '../../stores/user'
 import { hasPremiumAccess } from '../../utils/access'
-import { getTrainingCategory } from '../../utils/constants'
+import { getTrainingCategory, YEAR_OPTIONS } from '../../utils/constants'
+import { DEFAULT_TARGETED_POSITION_TREE } from '../../utils/targetedOptions'
 import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
 
 const billingStore = useBillingStore()
@@ -63,6 +89,66 @@ const examStore = useExamStore()
 const userStore = useUserStore()
 const categoryKey = ref('analysis')
 const category = computed(() => getTrainingCategory(categoryKey.value))
+
+// Targeted filter state
+const selectedExamCategoryId = ref('')
+const selectedRegionId = ref('')
+const selectedDirectionId = ref('')
+const examCatOpts = DEFAULT_TARGETED_POSITION_TREE
+const examCategoryNames = computed(() => ['不限', ...examCatOpts.map(c => c.name)])
+const examCategoryIndex = computed(() => {
+  const idx = examCatOpts.findIndex(c => String(c.id) === String(selectedExamCategoryId.value))
+  return idx >= 0 ? idx + 1 : 0
+})
+const selectedExamCategoryName = computed(() => {
+  const cat = examCatOpts.find(c => String(c.id) === String(selectedExamCategoryId.value))
+  return cat ? cat.name : '不限'
+})
+const selectedCatNode = computed(() =>
+  selectedExamCategoryId.value ? examCatOpts.find(c => String(c.id) === String(selectedExamCategoryId.value)) || null : null
+)
+const regionOpts = computed(() => selectedCatNode.value?.children || [])
+const regionNames = computed(() => ['不限', ...regionOpts.value.map(r => r.name)])
+const regionIndex = computed(() => {
+  const idx = regionOpts.value.findIndex(r => String(r.id) === String(selectedRegionId.value))
+  return idx >= 0 ? idx + 1 : 0
+})
+const selectedRegionNameText = computed(() => {
+  const r = regionOpts.value.find(r => String(r.id) === String(selectedRegionId.value))
+  return r ? r.name : '不限'
+})
+const selectedRegNode = computed(() =>
+  selectedRegionId.value ? regionOpts.value.find(r => String(r.id) === String(selectedRegionId.value)) || null : null
+)
+const hasDirectionOpts = computed(() => (selectedRegNode.value?.children?.length || 0) > 0)
+const directionOpts = computed(() => selectedRegNode.value?.children || [])
+const directionNames = computed(() => ['不限', ...directionOpts.value.map(d => d.name)])
+const directionIndex = computed(() => {
+  const idx = directionOpts.value.findIndex(d => String(d.id) === String(selectedDirectionId.value))
+  return idx >= 0 ? idx + 1 : 0
+})
+const selectedDirectionNameText = computed(() => {
+  const d = directionOpts.value.find(d => String(d.id) === String(selectedDirectionId.value))
+  return d ? d.name : '不限'
+})
+const selectedDirNode = computed(() =>
+  selectedDirectionId.value ? directionOpts.value.find(d => String(d.id) === String(selectedDirectionId.value)) || null : null
+)
+function onExamCategoryFilterChange(e) {
+  const idx = Number(e.detail.value)
+  selectedExamCategoryId.value = idx === 0 ? '' : (examCatOpts[idx - 1]?.id || '')
+  selectedRegionId.value = ''
+  selectedDirectionId.value = ''
+}
+function onRegionFilterChange(e) {
+  const idx = Number(e.detail.value)
+  selectedRegionId.value = idx === 0 ? '' : (regionOpts.value[idx - 1]?.id || '')
+  selectedDirectionId.value = ''
+}
+function onDirectionFilterChange(e) {
+  const idx = Number(e.detail.value)
+  selectedDirectionId.value = idx === 0 ? '' : (directionOpts.value[idx - 1]?.id || '')
+}
 const hasFullAccess = computed(() => hasPremiumAccess(userStore, billingStore, subscriptionStore))
 const readonlyMode = computed(() => !hasFullAccess.value)
 const progress = computed(() => trainingStore.getDimensionProgress(categoryKey.value))
@@ -98,7 +184,23 @@ async function generate() {
   }
   showLoading('生成训练题')
   try {
-    const questions = await trainingStore.generate(category.value.requestDimension, 3, userStore.selectedProvince || 'national')
+    const extraFilters = {}
+    const cat = selectedCatNode.value
+    const reg = selectedRegNode.value
+    const dir = selectedDirNode.value
+    if (cat) extraFilters.examCategory = cat.examCategory || cat.name
+    if (reg) {
+      if (reg.province) extraFilters.province = reg.province
+      if (reg.examSubcategory) extraFilters.subcategory = reg.examSubcategory
+      if (reg.subcategory) extraFilters.subcategory = reg.subcategory
+      if (!extraFilters.subcategory) extraFilters.subcategory = reg.name
+    }
+    if (dir) {
+      extraFilters.subcategory2 = dir.subcategory || dir.name
+      if (dir.province) extraFilters.province = dir.province
+    }
+    const province = extraFilters.province || userStore.selectedProvince || 'national'
+    const questions = await trainingStore.generate(category.value.requestDimension, 3, province, extraFilters)
     if (!questions.length) toast('暂未生成题目')
   } catch (error) {
     toast(error?.message || '生成失败')

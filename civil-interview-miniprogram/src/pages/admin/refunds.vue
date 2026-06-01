@@ -44,13 +44,25 @@
 
       <view class="card">
         <view class="section-head">
-          <text class="section-title">发起退款</text>
+          <text class="section-title">发起退款（扣时长）</text>
         </view>
         <input v-model="refundForm.orderNo" class="field" placeholder="订单号" />
         <input v-model="refundForm.refundedHours" class="field field--mt" type="number" placeholder="退款小时数，可留空" />
         <input v-model="refundForm.refundReason" class="field field--mt" placeholder="退款原因" />
         <textarea v-model="refundForm.refundRemark" class="textarea-field field--mt" placeholder="退款备注" />
         <button class="primary-button form-button" :loading="refundLoading" @tap="submitRefund">提交退款</button>
+      </view>
+
+      <view class="card">
+        <view class="section-head">
+          <text class="section-title">补偿时长（加时长）</text>
+        </view>
+        <text class="section-hint">系统故障或运营补偿，直接给用户追加额外时长，不涉及资金退款。</text>
+        <input v-model="compensateForm.username" class="field field--mt" placeholder="用户名" />
+        <input v-model="compensateForm.additionalMinutes" class="field field--mt" type="number" placeholder="追加分钟数" />
+        <input v-model="compensateForm.reason" class="field field--mt" placeholder="补偿原因" />
+        <textarea v-model="compensateForm.remark" class="textarea-field field--mt" placeholder="补偿备注" />
+        <button class="primary-button form-button" :loading="compensateLoading" @tap="submitCompensate">追加时长</button>
       </view>
     </template>
   </view>
@@ -60,13 +72,14 @@
 import { reactive, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import EmptyState from '../../components/EmptyState.vue'
-import { applyRefund, getRefundBalanceStats } from '../../api/payment'
+import { applyRefund, compensateSubscription, getRefundBalanceStats } from '../../api/payment'
 import { useUserStore } from '../../stores/user'
 import { requireLogin, toast } from '../../utils/navigation'
 
 const userStore = useUserStore()
 const statsLoading = ref(false)
 const refundLoading = ref(false)
+const compensateLoading = ref(false)
 const stats = ref(null)
 const statsForm = reactive({
   username: '',
@@ -77,6 +90,12 @@ const refundForm = reactive({
   refundedHours: '',
   refundReason: '',
   refundRemark: ''
+})
+const compensateForm = reactive({
+  username: '',
+  additionalMinutes: '',
+  reason: '',
+  remark: ''
 })
 
 onShow(() => {
@@ -132,7 +151,7 @@ async function submitRefund() {
   }
   const confirmed = await confirmModal({
     title: '确认退款',
-    content: '提交后将由后端按订单执行退款和权益扣减。',
+    content: '提交后将调用微信退款接口实际退款，并按比例扣减订阅时长。',
     confirmText: '确认'
   })
   if (!confirmed) return
@@ -154,9 +173,55 @@ async function submitRefund() {
     refundLoading.value = false
   }
 }
+
+async function submitCompensate() {
+  const username = compensateForm.username.trim()
+  const minutes = parseInt(compensateForm.additionalMinutes, 10)
+  if (!username) {
+    toast('请填写用户名')
+    return
+  }
+  if (!minutes || minutes <= 0) {
+    toast('请填写有效的追加分钟数')
+    return
+  }
+  const confirmed = await confirmModal({
+    title: '确认补偿',
+    content: `为用户 ${username} 追加 ${minutes} 分钟时长，确认操作？`,
+    confirmText: '确认'
+  })
+  if (!confirmed) return
+
+  compensateLoading.value = true
+  try {
+    const res = await compensateSubscription({
+      username,
+      additionalMinutes: minutes,
+      reason: compensateForm.reason.trim() || undefined,
+      remark: compensateForm.remark.trim() || undefined
+    })
+    toast(res?.message || '时长追加成功', 'success')
+    compensateForm.username = ''
+    compensateForm.additionalMinutes = ''
+    compensateForm.reason = ''
+    compensateForm.remark = ''
+  } catch (error) {
+    toast(error?.message || '补偿操作失败')
+  } finally {
+    compensateLoading.value = false
+  }
+}
 </script>
 
 <style scoped>
+.section-hint {
+  display: block;
+  margin: 8rpx 0 0;
+  color: #8c8c8c;
+  font-size: 23rpx;
+  line-height: 1.5;
+}
+
 .field--mt {
   margin-top: 16rpx;
 }

@@ -1,0 +1,161 @@
+{
+  "id": "SD-20210224P-GA-02",
+  "type": "情境模拟与应急应变能力 | 31分",
+  "province": "山东",
+  "fullScore": 31.0,
+  "question": "【背景链接】全国地级及以上城市全面启动生活垃圾分类工作。【题目原文】社区的大爷大妈们责任意识淡薄，对于社区垃圾分类不了解。假如你是社区工作人员，现在针对即将在社区开展的垃圾分类工作，开一次宣讲会，假设对面的考官就是社区居民，请你现场模拟进行宣讲。",
+  "dimensions": [
+    {
+      "name": "角色定位准确",
+      "score": 4.0
+    },
+    {
+      "name": "语言风格符合角色得",
+      "score": 2.0
+    },
+    {
+      "name": "场景氛围营造",
+      "score": 4.0
+    },
+    {
+      "name": "氛围营造到位得",
+      "score": 2.0
+    },
+    {
+      "name": "问题核心把握",
+      "score": 4.0
+    },
+    {
+      "name": "分层沟通策略",
+      "score": 4.0
+    },
+    {
+      "name": "语言亲和力",
+      "score": 3.0
+    },
+    {
+      "name": "回应群众关切",
+      "score": 3.0
+    },
+    {
+      "name": "问题解决实效",
+      "score": 2.5
+    },
+    {
+      "name": "后续跟进",
+      "score": 2.5
+    }
+  ],
+  "coreKeywords": [],
+  "strongKeywords": [],
+  "weakKeywords": [],
+  "bonusKeywords": [],
+  "penaltyKeywords": [],
+  "scoringCriteria": [
+    "角色定位准确（4分） 得分要求：能否准确把握模拟场景中的身份定位（如社区工作者/村干部/宣讲人），语言和行为是否符合角色身份。 评分细则：角色定位完全准确得2分",
+    "语言风格符合角色得（2分）：2.",
+    "场景氛围营造（4分） 得分要求：能否通过开场白和语气营造恰当的沟通氛围，拉近与群众/听众的距离。 评分细则：开场自然亲切得2分",
+    "氛围营造到位得（2分）：3.",
+    "问题核心把握（4分） 得分要求：能否准确抓住\"垃圾分类\"中的核心矛盾和群众最关切的诉求。 （二）沟通技巧与说服力（10分） 4.",
+    "分层沟通策略（4分）：是否设计了\"安抚情绪→讲清道理→达成共识\"的分层策略 5.",
+    "语言亲和力（3分）：语言是否接地气、通俗易懂，避免官话套话 6.",
+    "回应群众关切（3分）：是否具体回应了群众的疑问和顾虑 （三）问题解决与后续跟进（5分） 7.",
+    "问题解决实效（2.5分）：提出的方案是否务实管用 8.",
+    "后续跟进（2.5分）：是否有后续跟踪和长效机制建设的考虑 三、加分点（最高3分） 9. 山东本土方法（+1.5分）：运用和为贵调解模式等山东群众工作经验 10. 现场感染力（+1.5分）：语言表达富有感染力和说服力，能打动考官 四、创新思维加分（最高2分） 11. 沟通方式创新（+1分）：采用了巧妙的沟通策略或化解僵局的方法 12. 解决方案创新（+1分）：提出了创新性的解决问题思路 五、得分关键词语料库 核心关键词：垃圾分类、大爷、大妈、责任意识、淡薄 必备关键词：换位思考、安抚、信任、沟通、共识、落实、跟进"
+  ],
+  "deductionRules": [],
+  "sourceDocument": "山东公务员真题库_normalized.txt",
+  "sourceDocumentType": "extracted_txt",
+  "examCategory": "省级公务员考试",
+  "examSubcategory": "山东省",
+  "subcategory": "公安系统",
+  "subcategory2": null,
+  "interviewFormat": "结构化面试",
+  "questionTypeCategory": "应急应变",
+  "jobLevel": "",
+  "classificationSource": "source_title",
+  "classificationConfidence": "high",
+  "reviewStatus": "已确认",
+  "reviewReason": "",
+  "hasCompleteSuiteLevel": true,
+  "suiteId": "SD-20210224P-GA",
+  "suiteKey": "SD-20210224P-GA",
+  "suiteName": "2021年2月24日下午山东面试题公安系统",
+  "sourceTitleRaw": "2021年2月24日下午山东面试题公安系统",
+  "examDate": "2021-02-24",
+  "position": "",
+  "batch": "",
+  "questionNo": 2,
+  "questionScore": 31.0,
+  "hasAppearanceScore": true,
+  "referenceAnswer": "考生开始答题。 第一，各位居民朋友们、各位同事，大家好！感谢大家能来参加今天的座谈。 第二，今天把大家聚在一起，主要是想跟大家聊一聊垃圾分类、大爷、大妈。 第三，我先花一些时间把政策背景跟大家说清楚。山东推进'一次办好'改革，打造高效便捷的政务服务环境。 第四，下面我给大家详细介绍一下具体情况：安全问题、施工影响、后续管理。 第五，同时，我也想听听大家的意见和想法。有什么问题随时提出来。 第六，我相信只要我们心往一处想、劲往一处使，就没有克服不了的困难。 第七，最后，再次感谢大家的理解和支持！谢谢大家！ 考生回答完毕。",
+  "tags": [
+    "#情境模拟",
+    "#垃圾分类",
+    "#大爷",
+    "#大妈",
+    "#责任意识",
+    "#淡薄",
+    "#了解",
+    "#山东公务员面试"
+  ],
+  "scoreBands": [
+    {
+      "label": "低分/偏弱",
+      "min_score": 0,
+      "max_score": 17.1,
+      "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
+    },
+    {
+      "label": "基本合格",
+      "min_score": 17.2,
+      "max_score": 21.7,
+      "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
+    },
+    {
+      "label": "中高档",
+      "min_score": 21.8,
+      "max_score": 26.3,
+      "description": "内容较完整，逻辑较清晰，接近高分答案。"
+    },
+    {
+      "label": "高分标杆",
+      "min_score": 26.4,
+      "max_score": 31.0,
+      "description": "高分参考答案区间，用于回归验证。"
+    }
+  ],
+  "regressionCases": [
+    {
+      "label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_shandong/SD-20210224P-GA-02/reference_high.txt",
+      "expected_min": 28.0,
+      "expected_max": 31.0,
+      "llmExpectedMin": 28.0,
+      "llmExpectedMax": 31.0,
+      "notes": "来自原始题库文档的核心采分基准答案。"
+    },
+    {
+      "label": "程序化中档参考答案",
+      "sample_path": "assets/regression_samples/generated_shandong/SD-20210224P-GA-02/reference_mid.txt",
+      "expected_min": 9.6,
+      "expected_max": 12.8,
+      "llmExpectedMin": 10.3,
+      "llmExpectedMax": 14.6,
+      "notes": "基于高分答案程序化压缩生成；策略=template_scene_mid_1，句数=8，截断=none，关键词削弱=medium。"
+    },
+    {
+      "label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_shandong/SD-20210224P-GA-02/reference_low.txt",
+      "expected_min": 6.6,
+      "expected_max": 9.8,
+      "llmExpectedMin": 0.0,
+      "llmExpectedMax": 9.8,
+      "notes": "基于高分答案程序化降档生成；策略=template_scene_low_3，句数=7，截断=none，关键词削弱=medium，口语化=是。"
+    }
+  ],
+  "answerScoreTotal": 31.0,
+  "appearanceScore": 69.0,
+  "suiteTotalScore": 100.0,
+  "totalScore": 100.0
+}

@@ -50,3 +50,12 @@ export function importQuestions(filePath) {
     name: 'file'
   })
 }
+
+export function importDocx(filePath, province) {
+  return uploadFile({
+    url: '/questions/import/docx',
+    filePath,
+    name: 'file',
+    formData: { province }
+  })
+}

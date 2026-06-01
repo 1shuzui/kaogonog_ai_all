@@ -1,0 +1,166 @@
+{
+  "id": "SD-20210222P-GA-02",
+  "type": "计划组织协调能力 | 31分",
+  "province": "山东",
+  "fullScore": 31.0,
+  "question": "【背景链接】公安工作是维护国家安全和社会稳定的重要力量。【题目原文】小李领导要求很严格，一但出错小李就被责备。小李自嘲: 在办公室大气不敢喘，生怕被责备。如果你是小李，你会怎么做?",
+  "dimensions": [
+    {
+      "name": "目标明确性",
+      "score": 4.0
+    },
+    {
+      "name": "调研准备工作",
+      "score": 4.0
+    },
+    {
+      "name": "工作思路的系统性",
+      "score": 4.0
+    },
+    {
+      "name": "方案具体可操作性",
+      "score": 4.0
+    },
+    {
+      "name": "时间节点合理得",
+      "score": 1.0
+    },
+    {
+      "name": "组织协调能力",
+      "score": 3.0
+    },
+    {
+      "name": "有应急预案的得",
+      "score": 1.5
+    },
+    {
+      "name": "质量管控意识",
+      "score": 3.0
+    },
+    {
+      "name": "有质量评估指标的得",
+      "score": 1.5
+    },
+    {
+      "name": "评估总结",
+      "score": 2.5
+    },
+    {
+      "name": "长效机制",
+      "score": 2.5
+    }
+  ],
+  "coreKeywords": [],
+  "strongKeywords": [],
+  "weakKeywords": [],
+  "bonusKeywords": [],
+  "penaltyKeywords": [],
+  "scoringCriteria": [
+    "目标明确性（4分） 得分要求：对\"小李\"的工作目标是否有清晰准确的定位，是否体现问题导向、目标导向、效果导向。 评分细则：目标定位清晰准确得2分；体现三种导向得2分。 2.",
+    "调研准备工作（4分） 得分要求：能否提出科学合理的调研方法，了解\"小李\"的实际情况。 评分细则：调研方法具体（走访/座谈/数据收集等）得2分；关注维度全面（现状/需求/资源）得2分。 3.",
+    "工作思路的系统性（4分） 得分要求：能否提出系统完整的工作思路框架，而非零散的点状思维。 评分细则：思路框架完整得2分；体现系统性思维得2分。 （二）方案设计与执行（10分） 4.",
+    "方案具体可操作性（4分） 得分要求：工作方案是否具体、可操作，包括任务分解、责任分工、时间节点。 评分细则：任务分解清晰得1.5分；责任分工明确得1.5分",
+    "时间节点合理得（1分）：5.",
+    "组织协调能力（3分） 得分要求：是否考虑到跨部门协调、资源调配、信息沟通等实际执行问题。 评分细则：涉及协调机制的得1.5分",
+    "有应急预案的得（1.5分）：6.",
+    "质量管控意识（3分） 得分要求：是否关注过程管控和质量保障，而非只谈目标不谈执行。 评分细则：有过程管控措施的得1.5分",
+    "有质量评估指标的得（1.5分）：（三）总结与长效机制（5分） 7.",
+    "评估总结（2.5分）：回答是否包含对工作成效的评估和总结环节 8.",
+    "长效机制（2.5分）：能否将经验做法制度化、规范化，形成可复制推广的模式 三、加分点（最高3分） 9. 山东省情结合（+1.5分）：引用山东的'一次办好'改革等山东实践案例 10. 创新举措（+1.5分）：提出具有创新性的工作方案或方法，而非沿袭常规套路 四、创新思维加分（最高2分） 11. 方案创新（+1分）：提出的工作方案有独创性和亮点 12. 方法创新（+1分）：在工作方法或组织方式上有新颖的思路 五、得分关键词语料库 核心关键词：小李、责备、严格、出错、自嘲 必备关键词：调研、方案、执行、协调、评估、长效机制、责任分工、时间节点"
+  ],
+  "deductionRules": [],
+  "sourceDocument": "山东公务员真题库_normalized.txt",
+  "sourceDocumentType": "extracted_txt",
+  "examCategory": "省级公务员考试",
+  "examSubcategory": "山东省",
+  "subcategory": "公安系统",
+  "subcategory2": null,
+  "interviewFormat": "结构化面试",
+  "questionTypeCategory": "组织管理",
+  "jobLevel": "",
+  "classificationSource": "source_title",
+  "classificationConfidence": "high",
+  "reviewStatus": "已确认",
+  "reviewReason": "",
+  "hasCompleteSuiteLevel": true,
+  "suiteId": "SD-20210222P-GA",
+  "suiteKey": "SD-20210222P-GA",
+  "suiteName": "2021年2月22日下午山东面试题",
+  "sourceTitleRaw": "2021年2月22日下午山东面试题(公安系统)",
+  "examDate": "2021-02-22",
+  "position": "",
+  "batch": "",
+  "questionNo": 2,
+  "questionScore": 31.0,
+  "hasAppearanceScore": true,
+  "referenceAnswer": "考生开始答题。 第一，如果由我来负责小李、责备、严格，我将本着'系统谋划、精心组织、扎实推进、务求实效'的工作思路。 第二，第一阶段：深入调研，摸清底数。山东在全国率先推行'和为贵'社会治理模式。 第三，第二阶段：制定方案，明确路径。方案将包括明确的工作目标和责任分工。 第四，第三阶段：组织实施，狠抓落实。坚持靠前指挥、过程管控、注重质量。 第五，第四阶段：督促检查，确保实效。建立科学的评估和督查机制。 第六，第五阶段：总结提升，建章立制。将行之有效的做法固化为制度规范。 第七，总之，小李、责备、严格是一项系统工程，需要用心用情用力去做好每一个环节。 考生回答完毕。",
+  "tags": [
+    "#组织管理",
+    "#小李",
+    "#责备",
+    "#严格",
+    "#出错",
+    "#自嘲",
+    "#办公室",
+    "#山东公务员面试"
+  ],
+  "scoreBands": [
+    {
+      "label": "低分/偏弱",
+      "min_score": 0,
+      "max_score": 17.1,
+      "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
+    },
+    {
+      "label": "基本合格",
+      "min_score": 17.2,
+      "max_score": 21.7,
+      "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
+    },
+    {
+      "label": "中高档",
+      "min_score": 21.8,
+      "max_score": 26.3,
+      "description": "内容较完整，逻辑较清晰，接近高分答案。"
+    },
+    {
+      "label": "高分标杆",
+      "min_score": 26.4,
+      "max_score": 31.0,
+      "description": "高分参考答案区间，用于回归验证。"
+    }
+  ],
+  "regressionCases": [
+    {
+      "label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_shandong/SD-20210222P-GA-02/reference_high.txt",
+      "expected_min": 28.0,
+      "expected_max": 31.0,
+      "llmExpectedMin": 28.0,
+      "llmExpectedMax": 31.0,
+      "notes": "来自原始题库文档的核心采分基准答案。"
+    },
+    {
+      "label": "程序化中档参考答案",
+      "sample_path": "assets/regression_samples/generated_shandong/SD-20210222P-GA-02/reference_mid.txt",
+      "expected_min": 9.8,
+      "expected_max": 13.3,
+      "llmExpectedMin": 10.8,
+      "llmExpectedMax": 15.2,
+      "notes": "基于高分答案程序化压缩生成；策略=template_organization_mid_1，句数=7，截断=none，关键词削弱=medium。"
+    },
+    {
+      "label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_shandong/SD-20210222P-GA-02/reference_low.txt",
+      "expected_min": 6.8,
+      "expected_max": 10.3,
+      "llmExpectedMin": 0.0,
+      "llmExpectedMax": 10.3,
+      "notes": "基于高分答案程序化降档生成；策略=template_organization_low_3，句数=5，截断=none，关键词削弱=medium，口语化=是。"
+    }
+  ],
+  "answerScoreTotal": 63.0,
+  "appearanceScore": 37.0,
+  "suiteTotalScore": 100.0,
+  "totalScore": 100.0
+}

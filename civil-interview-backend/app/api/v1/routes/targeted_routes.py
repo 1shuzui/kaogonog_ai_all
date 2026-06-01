@@ -411,7 +411,14 @@ TARGETED_POSITION_TREE = [
                 for code, province in [
                     ("beijing", "北京市"), ("shanghai", "上海市"), ("guangdong", "广东省"), ("jiangsu", "江苏省"),
                     ("zhejiang", "浙江省"), ("shandong", "山东省"), ("henan", "河南省"), ("sichuan", "四川省"),
-                    ("bank_other", "其他20+省"),
+                    ("anhui", "安徽省"), ("fujian", "福建省"), ("gansu", "甘肃省"),
+                    ("guangxi", "广西壮族自治区"), ("guizhou", "贵州省"), ("hainan", "海南省"),
+                    ("hebei", "河北省"), ("heilongjiang", "黑龙江省"), ("hubei", "湖北省"),
+                    ("hunan", "湖南省"), ("jilin", "吉林省"), ("jiangxi", "江西省"),
+                    ("liaoning", "辽宁省"), ("neimenggu", "内蒙古自治区"), ("ningxia", "宁夏回族自治区"),
+                    ("qinghai", "青海省"), ("shaanxi", "陕西省"), ("shanxi", "山西省"),
+                    ("tianjin", "天津市"), ("xinjiang", "新疆维吾尔自治区"), ("xizang", "西藏自治区"),
+                    ("yunnan", "云南省"), ("chongqing", "重庆市"),
                 ]
             ],
         ],
@@ -592,6 +599,13 @@ def _target_filters_from_request(data: FocusAnalysisRequest | GenerateQuestionsR
         value = str(getattr(data, key, "") or "").strip()
         if value:
             filters[key] = value
+    # 兼容小程序端 city/system → subcategory 映射
+    if not filters.get("subcategory"):
+        for alt in ("system", "city"):
+            value = str(getattr(data, alt, "") or "").strip()
+            if value:
+                filters["subcategory"] = value
+                break
     year = getattr(data, "year", "")
     if year:
         if isinstance(year, list):
@@ -1040,11 +1054,14 @@ async def targeted_generate(data: GenerateQuestionsRequest, current_user: AuthUs
 @router.post("/training/generate")
 async def training_generate(data: TrainingGenerateRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     ensure_paid_access(current_user, detail="专项训练需付费开通后使用")
+    target_filters = _target_filters_from_request(data)
     questions = await generate_training_questions(
         db,
         data.dimension,
         data.count,
         data.sourceMode,
+        province=data.province or "national",
+        target_filters=target_filters if target_filters else None,
     )
     return {
         "questions": questions,

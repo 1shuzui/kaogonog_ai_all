@@ -26,6 +26,24 @@
             <text class="filter-row__value">{{ selectedCategoryName }}</text>
           </view>
         </picker>
+        <picker :range="examCategoryNames" :value="examCategoryIndex" @change="onExamCategoryChange">
+          <view class="filter-row">
+            <text>考试大类</text>
+            <text class="filter-row__value">{{ selectedExamCategoryName }}</text>
+          </view>
+        </picker>
+        <view class="filter-row filter-row--input">
+          <text>{{ subcategoryLabel }}</text>
+          <input v-model="subcategoryFilter" class="filter-row__input-field" placeholder="输入筛选" />
+        </view>
+        <view class="filter-row filter-row--input">
+          <text>四级分类</text>
+          <input v-model="subcategory2Filter" class="filter-row__input-field" placeholder="输入筛选" />
+        </view>
+        <view class="filter-row filter-row--input">
+          <text>年份</text>
+          <input v-model="yearFilter" class="filter-row__input-field" placeholder="如：2024,2023" />
+        </view>
         <view class="search-row">
           <input v-model="keyword" class="field search-row__input" placeholder="搜索题干关键词" confirm-type="search" @confirm="fetchFirstPage" />
           <button class="secondary-button search-row__button" :loading="loading" @tap="fetchFirstPage">搜索</button>
@@ -42,6 +60,8 @@
           <view class="question-item__meta">
             <text>{{ categoryName(question.dimension) }}</text>
             <text>{{ provinceName(question.province) }}</text>
+            <text v-if="question.examCategory">{{ question.examCategory }}</text>
+            <text v-if="question.subcategory">{{ question.subcategory }}</text>
             <text>{{ question.prepTime || 90 }} / {{ question.answerTime || 180 }} 秒</text>
           </view>
           <view class="action-row">
@@ -72,7 +92,7 @@ import { onShow } from '@dcloudio/uni-app'
 import EmptyState from '../../components/EmptyState.vue'
 import { deleteQuestion, getQuestions } from '../../api/questionBank'
 import { useUserStore } from '../../stores/user'
-import { PROVINCES, QUESTION_CATEGORIES, getCategoryName, getProvinceName } from '../../utils/constants'
+import { PROVINCES, QUESTION_CATEGORIES, EXAM_CATEGORIES, SUBCATEGORY_LABELS, getCategoryName, getProvinceName } from '../../utils/constants'
 import { compactText, normalizeListResponse } from '../../utils/format'
 import { requireLogin, toast } from '../../utils/navigation'
 
@@ -82,6 +102,10 @@ const loading = ref(false)
 const keyword = ref('')
 const selectedProvince = ref('')
 const selectedDimension = ref('')
+const selectedExamCategory = ref('')
+const subcategoryFilter = ref('')
+const subcategory2Filter = ref('')
+const yearFilter = ref('')
 const pagination = ref({
   current: 1,
   pageSize: 10,
@@ -90,10 +114,17 @@ const pagination = ref({
 const provinceOptions = computed(() => [{ code: '', name: '全部省份' }, ...(userStore.provinces.length ? userStore.provinces : PROVINCES)])
 const provinceNames = computed(() => provinceOptions.value.map((item) => item.name))
 const categoryNames = computed(() => QUESTION_CATEGORIES.map((item) => item.name))
+const examCategoryNames = computed(() => EXAM_CATEGORIES.map((item) => item.name))
 const provinceIndex = computed(() => Math.max(0, provinceOptions.value.findIndex((item) => item.code === selectedProvince.value)))
 const categoryIndex = computed(() => Math.max(0, QUESTION_CATEGORIES.findIndex((item) => item.key === selectedDimension.value)))
+const examCategoryIndex = computed(() => Math.max(0, EXAM_CATEGORIES.findIndex((item) => item.code === selectedExamCategory.value)))
 const selectedProvinceName = computed(() => provinceOptions.value[provinceIndex.value]?.name || '全部省份')
 const selectedCategoryName = computed(() => QUESTION_CATEGORIES[categoryIndex.value]?.name || '全部题型')
+const selectedExamCategoryName = computed(() => EXAM_CATEGORIES[examCategoryIndex.value]?.name || '全部考试')
+const subcategoryLabel = computed(() => {
+  if (!selectedExamCategory.value) return '三级分类'
+  return SUBCATEGORY_LABELS[selectedExamCategory.value] || '三级分类'
+})
 
 onShow(async () => {
   if (!requireLogin()) return
@@ -120,6 +151,12 @@ function onCategoryChange(event) {
   selectedDimension.value = selected?.key || ''
 }
 
+function onExamCategoryChange(event) {
+  const selected = EXAM_CATEGORIES[Number(event.detail.value)]
+  selectedExamCategory.value = selected?.code || ''
+  subcategoryFilter.value = ''
+}
+
 async function fetchPage(page = 1, append = false) {
   loading.value = true
   try {
@@ -128,7 +165,11 @@ async function fetchPage(page = 1, append = false) {
       pageSize: pagination.value.pageSize,
       keyword: keyword.value.trim(),
       province: selectedProvince.value || '',
-      dimension: selectedDimension.value || ''
+      dimension: selectedDimension.value || '',
+      examCategory: selectedExamCategory.value || '',
+      subcategory: subcategoryFilter.value.trim(),
+      subcategory2: subcategory2Filter.value.trim(),
+      year: yearFilter.value.trim()
     })
     const normalized = normalizeListResponse(response)
     questions.value = append ? [...questions.value, ...normalized.list] : normalized.list
@@ -216,9 +257,20 @@ async function removeQuestion(question) {
   font-size: 27rpx;
 }
 
+.filter-row--input {
+  align-items: center;
+  gap: 16rpx;
+}
+
 .filter-row__value {
   color: #1b5faa;
   font-weight: 600;
+}
+
+.filter-row__input-field {
+  flex: 1;
+  text-align: right;
+  font-size: 26rpx;
 }
 
 .search-row {

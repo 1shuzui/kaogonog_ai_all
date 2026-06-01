@@ -27,6 +27,7 @@ function normalizeFocusAnalysis(response = {}) {
       frequency: priorityToFrequency[item.priority] || '中',
       example: item.description || item.label || ''
     })),
+    hotTopics: focusAreas.map((item) => item.label).filter(Boolean),
     strategy: focusAreas.map((item) => item.description).filter(Boolean)
   }
 }
@@ -53,5 +54,29 @@ export async function generateQuestions(data) {
     method: 'POST',
     data
   })
-  return Array.isArray(response?.questions) ? response.questions : response
+  return Array.isArray(response?.questions) ? response.questions : []
+}
+
+export async function getFocusAdminConfig(data) {
+  return request({
+    url: '/targeted/focus/admin',
+    method: 'GET',
+    data
+  })
+}
+
+export async function saveFocusAdminConfig(data) {
+  return request({
+    url: '/targeted/focus/admin',
+    method: 'PUT',
+    data
+  })
+}
+
+export async function disableFocusAdminConfig(data) {
+  return request({
+    url: '/targeted/focus/admin/disable',
+    method: 'POST',
+    data
+  })
 }

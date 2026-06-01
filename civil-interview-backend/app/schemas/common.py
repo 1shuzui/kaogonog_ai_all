@@ -184,6 +184,13 @@ class RefundApplyRequest(BaseModel):
     refundRemark: Optional[str] = Field(default="", validation_alias=AliasChoices("refundRemark", "refund_remark"))
 
 
+class CompensateRequest(BaseModel):
+    username: str
+    additionalMinutes: int = Field(gt=0, validation_alias=AliasChoices("additionalMinutes", "additional_minutes"))
+    reason: Optional[str] = Field(default="", validation_alias=AliasChoices("reason", "reason"))
+    remark: Optional[str] = Field(default="", validation_alias=AliasChoices("remark", "remark"))
+
+
 # ===== Support =====
 class SupportFeedbackCreateRequest(BaseModel):
     type: str = "其他建议"
@@ -246,3 +253,9 @@ class TrainingGenerateRequest(BaseModel):
     dimension: str
     count: int = 3
     sourceMode: str = "local"
+    province: Optional[str] = "national"
+    examCategory: Optional[str] = Field(default="", validation_alias=AliasChoices("examCategory", "exam_category"))
+    examSubcategory: Optional[str] = Field(default="", validation_alias=AliasChoices("examSubcategory", "exam_subcategory"))
+    subcategory: Optional[str] = ""
+    subcategory2: Optional[str] = ""
+    year: Optional[str | List[str]] = ""

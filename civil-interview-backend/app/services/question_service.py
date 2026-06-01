@@ -91,7 +91,11 @@ CLASSIFICATION_META_KEYS = (
 
 
 def _normalize_stem_key(text: str | None) -> str:
-    return re.sub(r"\s+", "", str(text or "")).strip()
+    # Remove leading colons and trailing score patterns, then whitespace
+    cleaned = str(text or "")
+    cleaned = re.sub(r"^[：:]\s*", "", cleaned)  # strip leading fullwidth/halfwidth colon
+    cleaned = re.sub(r"[（(]\s*\d+(?:\.\d+)?\s*分\s*[）)]\s*$", "", cleaned)  # strip trailing score like （32分）
+    return re.sub(r"\s+", "", cleaned).strip()
 
 
 def _split_tags(value) -> list[str]:
@@ -816,6 +820,8 @@ def _persist_generated_questions(
         if not isinstance(item, dict):
             continue
         stem = str(item.get("stem", "")).strip()
+        stem = re.sub(r"^[：:]\s*", "", stem)
+        stem = re.sub(r"[（(]\s*\d+(?:\.\d+)?\s*分\s*[）)]\s*$", "", stem)
         if not stem:
             continue
         meta = _build_question_meta(
@@ -865,6 +871,8 @@ def _build_generated_question_payloads(
         if not isinstance(item, dict):
             continue
         stem = str(item.get("stem", "")).strip()
+        stem = re.sub(r"^[：:]\s*", "", stem)
+        stem = re.sub(r"[（(]\s*\d+(?:\.\d+)?\s*分\s*[）)]\s*$", "", stem)
         if not stem:
             continue
         meta = _build_question_meta(
@@ -1065,12 +1073,19 @@ def _choose_targeted_bank_questions(
     ]
 
 
-def _choose_training_bank_questions(db: Session, dimension: str, count: int) -> list[dict]:
-    preferred = _question_base_query(db, dimension=dimension).all()
+def _choose_training_bank_questions(
+    db: Session, dimension: str, count: int,
+    province: str = "national",
+    target_filters: dict | None = None,
+) -> list[dict]:
+    preferred = _question_base_query(db, dimension=dimension, province=province).all()
     fallback = db.query(Question).limit(max(count * 4, 50)).all() if not preferred else []
     pool = preferred or fallback
     if not pool:
         return []
+
+    if target_filters:
+        pool = _apply_target_filters(pool, target_filters)
 
     local_pool = [question for question in pool if _question_prefers_local_source(question)]
     other_pool = [question for question in pool if question not in local_pool]
@@ -1618,13 +1633,15 @@ async def generate_training_questions(
     dimension: str,
     count: int = 3,
     source_mode: str = "local",
+    province: str = "national",
+    target_filters: dict | None = None,
 ) -> List[dict]:
     count = min(count, 10)
     sync_curated_question_assets(db)
     normalized_mode = str(source_mode or "local").strip().lower()
 
     if normalized_mode == "local":
-        return _choose_training_bank_questions(db, dimension, count)
+        return _choose_training_bank_questions(db, dimension, count, province=province, target_filters=target_filters)
 
     dim_name = DIMENSION_NAMES.get(dimension, dimension)
     prompt = f"""请生成{count}道考察"{dim_name}"能力的公务员面试题目。
@@ -1661,5 +1678,5 @@ async def generate_training_questions(
             "generationSource": "fallback_bank",
             "generationFallbackReason": fallback_reason,
         }
-        for item in _choose_training_bank_questions(db, dimension, count)
+        for item in _choose_training_bank_questions(db, dimension, count, province=province, target_filters=target_filters)
     ]

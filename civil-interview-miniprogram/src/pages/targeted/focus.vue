@@ -1,6 +1,9 @@
 <template>
   <view class="page">
-    <text class="page-title">重点分析</text>
+    <view class="focus-header">
+      <text class="back-link" @tap="goBack">← 返回</text>
+      <text class="page-title">重点分析</text>
+    </view>
     <text class="page-desc">根据真实考试方向整理高频考点、能力重点和备考策略。</text>
 
     <view v-if="selectionTags.length" class="selection-card">
@@ -17,6 +20,14 @@
     </view>
 
     <view v-else-if="targetedStore.focusData" class="focus">
+      <!-- RadarChart for dimension visualization -->
+      <view v-if="radarDimensions.length" class="card">
+        <view class="section-head">
+          <text class="section-title">能力雷达图</text>
+        </view>
+        <RadarChart :dimensions="radarDimensions" size="medium" />
+      </view>
+
       <view v-if="coreFocus.length" class="card">
         <view class="section-head">
           <text class="section-title">核心能力权重</text>
@@ -38,8 +49,20 @@
           <text class="section-title">高频题型</text>
         </view>
         <view v-for="item in highFreqTypes" :key="item.type" class="list-item">
-          <text class="list-item__title">{{ item.type }} · {{ item.frequency || '中' }}</text>
+          <view class="list-item__head">
+            <text class="list-item__title">{{ item.type }}</text>
+            <text class="freq-tag" :style="{ background: freqColorBg(item.frequency), color: freqColor(item.frequency) }">{{ item.frequency || '中' }}频</text>
+          </view>
           <text class="list-item__desc">{{ item.example || '结合岗位实际进行展开。' }}</text>
+        </view>
+      </view>
+
+      <view v-if="hotTopics.length" class="card">
+        <view class="section-head">
+          <text class="section-title">热门话题</text>
+        </view>
+        <view class="topic-cloud">
+          <text v-for="topic in hotTopics" :key="topic" class="topic-tag">{{ topic }}</text>
         </view>
       </view>
 
@@ -47,21 +70,46 @@
         <view class="section-head">
           <text class="section-title">备考策略</text>
         </view>
-        <text v-for="item in strategy" :key="item" class="strategy-item">{{ item }}</text>
+        <view v-for="(item, idx) in strategy" :key="idx" class="strategy-item">
+          <text class="strategy-item__num">{{ idx + 1 }}</text>
+          <text class="strategy-item__text">{{ item }}</text>
+        </view>
       </view>
     </view>
-    <view v-else class="card">
+    <view v-else-if="!targetedStore.focusLoading" class="card">
       <EmptyState title="暂无分析结果" desc="请回到定向备面页选择方向后再试。" />
     </view>
 
-    <button class="primary-button" :disabled="readonlyMode" :loading="targetedStore.focusLoading" @tap="loadFocus">刷新分析</button>
+    <view v-if="targetedStore.generatedQuestions.length" class="card generated-practice">
+      <view class="generated-practice__header">
+        <view>
+          <text class="generated-practice__title">已生成题目</text>
+          <text class="generated-practice__desc">先查看题目，再点击开始练习进入设备检测和练习模式选择。</text>
+        </view>
+        <button class="primary-button" @tap="startGeneratedPractice">开始练习</button>
+      </view>
+      <view
+        v-for="(question, index) in targetedStore.generatedQuestions"
+        :key="question.id || index"
+        class="generated-practice__item"
+      >
+        <text class="generated-practice__idx">{{ index + 1 }}</text>
+        <text class="generated-practice__stem">{{ question.stem }}</text>
+      </view>
+    </view>
+
+    <view class="focus-actions">
+      <button class="primary-button" :disabled="readonlyMode" :loading="targetedStore.focusLoading" @tap="loadFocus">刷新分析</button>
+      <button v-if="!isEmptyFocus" class="secondary-button" :disabled="readonlyMode" :loading="generateLoading" @tap="generateQuestions">生成针对性题目</button>
+    </view>
   </view>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import EmptyState from '../../components/EmptyState.vue'
+import RadarChart from '../../components/RadarChart.vue'
 import { useBillingStore } from '../../stores/billing'
 import { useSubscriptionStore } from '../../stores/subscription'
 import { useTargetedStore } from '../../stores/targeted'
@@ -73,10 +121,12 @@ const billingStore = useBillingStore()
 const subscriptionStore = useSubscriptionStore()
 const targetedStore = useTargetedStore()
 const userStore = useUserStore()
+const generateLoading = ref(false)
 const hasFullAccess = computed(() => hasPremiumAccess(userStore, billingStore, subscriptionStore))
 const readonlyMode = computed(() => !hasFullAccess.value)
 const coreFocus = computed(() => Array.isArray(targetedStore.focusData?.coreFocus) ? targetedStore.focusData.coreFocus : [])
 const highFreqTypes = computed(() => Array.isArray(targetedStore.focusData?.highFreqTypes) ? targetedStore.focusData.highFreqTypes : [])
+const hotTopics = computed(() => Array.isArray(targetedStore.focusData?.hotTopics) ? targetedStore.focusData.hotTopics : [])
 const strategy = computed(() => Array.isArray(targetedStore.focusData?.strategy) ? targetedStore.focusData.strategy : [])
 const selectionTags = computed(() => {
   const payload = targetedStore.selectedTarget || targetedStore.selectionPayload || {}
@@ -90,10 +140,20 @@ const selectionTags = computed(() => {
 const isEmptyFocus = computed(() => (
   targetedStore.focusData?.isFallback === true || Number(targetedStore.focusData?.questionCount || 0) <= 0
 ))
+const radarDimensions = computed(() => {
+  return coreFocus.value.map((item) => ({
+    name: item.name,
+    score: item.weight || 20,
+    maxScore: 40
+  }))
+})
 
 onLoad(async (options = {}) => {
   if (!requireLogin()) return
-  applyRouteSelection(options)
+  // syncSelection() already called setTarget() before navigation — prefer store data
+  if (!targetedStore.hasSelection) {
+    applyRouteSelection(options)
+  }
   await refreshAccessState().catch(() => null)
   if (!targetedStore.hasSelection) {
     toast('请先选择考试方向')
@@ -105,19 +165,18 @@ onLoad(async (options = {}) => {
 
 function applyRouteSelection(options = {}) {
   const payload = {}
-  ;[
-    'province',
-    'position',
-    'examCategory',
-    'examSubcategory',
-    'system',
-    'positionType',
-    'portalTag',
-    'displayPortal',
-    'targetCode',
-    'targetName'
-  ].forEach((key) => {
-    const value = String(options[key] || '').trim()
+  const keys = [
+    'province', 'position', 'examCategory', 'examSubcategory',
+    'system', 'positionType', 'portalTag', 'displayPortal',
+    'targetCode', 'targetName', 'year'
+  ]
+  keys.forEach((key) => {
+    const raw = String(options[key] || '').trim()
+    if (!raw) return
+    let value = raw
+    try {
+      if (raw.includes('%')) value = decodeURIComponent(raw)
+    } catch { /* keep raw */ }
     if (value) payload[key] = value
   })
   if (payload.targetCode || payload.examCategory || payload.targetName) {
@@ -151,9 +210,63 @@ async function loadFocus() {
     hideLoading()
   }
 }
+
+function freqColor(freq) {
+  if (freq === '高') return '#cf1322'
+  if (freq === '中') return '#d48806'
+  return '#8c8c8c'
+}
+
+function freqColorBg(freq) {
+  if (freq === '高') return 'rgba(207, 19, 34, 0.08)'
+  if (freq === '中') return 'rgba(212, 136, 6, 0.08)'
+  return 'rgba(140, 140, 140, 0.08)'
+}
+
+function goBack() {
+  uni.navigateBack()
+}
+
+function startGeneratedPractice() {
+  if (!targetedStore.generatedQuestions.length) {
+    toast('请先生成针对性题目')
+    return
+  }
+  uni.navigateTo({ url: '/pages/exam/prepare?source=targeted' })
+}
+
+async function generateQuestions() {
+  if (readonlyMode.value || generateLoading.value) return
+  generateLoading.value = true
+  showLoading('生成题目')
+  try {
+    const questions = await targetedStore.fetchGeneratedQuestions(5)
+    if (questions && questions.length) {
+      toast(`已生成 ${questions.length} 道题目`, 'success')
+    }
+  } catch (error) {
+    toast(error?.message || '生成失败')
+  } finally {
+    generateLoading.value = false
+    hideLoading()
+  }
+}
 </script>
 
 <style scoped>
+.focus-header {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 8rpx;
+}
+
+.back-link {
+  color: #1b5faa;
+  font-size: 27rpx;
+  flex-shrink: 0;
+}
+
 .focus-row {
   margin-bottom: 24rpx;
 }
@@ -217,9 +330,16 @@ async function loadFocus() {
   border-bottom: 0;
 }
 
+.list-item__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6rpx;
+}
+
 .list-item__title,
 .list-item__desc,
-.strategy-item {
+.strategy-item__text {
   display: block;
 }
 
@@ -253,6 +373,109 @@ async function loadFocus() {
 }
 
 .strategy-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
   padding: 14rpx 0;
+  font-size: 27rpx;
+  color: #2a3648;
+  line-height: 1.5;
+}
+
+.strategy-item__num {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  background: #1b5faa;
+  color: #fff;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.topic-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+}
+
+.topic-tag {
+  padding: 10rpx 20rpx;
+  border-radius: 999rpx;
+  background: #fef7e8;
+  color: #8c6d1f;
+  font-size: 24rpx;
+}
+
+.freq-tag {
+  padding: 6rpx 16rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.generated-practice {
+  margin-top: 16rpx;
+}
+
+.generated-practice__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+}
+
+.generated-practice__title {
+  display: block;
+  color: #1a1a2e;
+  font-size: 28rpx;
+  font-weight: 700;
+  margin-bottom: 6rpx;
+}
+
+.generated-practice__desc {
+  display: block;
+  color: #6f7c8f;
+  font-size: 24rpx;
+}
+
+.generated-practice__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+  padding: 22rpx 0;
+  border-top: 1rpx solid #eef2f6;
+}
+
+.generated-practice__idx {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  background: #eef6ff;
+  color: #1b5faa;
+  font-size: 24rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.generated-practice__stem {
+  color: #2a3648;
+  font-size: 27rpx;
+  line-height: 1.75;
+  flex: 1;
+}
+
+.focus-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  margin-top: 24rpx;
 }
 </style>

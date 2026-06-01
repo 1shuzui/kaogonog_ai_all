@@ -106,6 +106,24 @@
         </a-col>
       </a-row>
 
+      <a-row :gutter="12">
+        <a-col :span="8">
+          <a-form-item label="套题ID">
+            <a-input v-model:value="form.suiteId" placeholder="如：SD-20200829A-SK" />
+          </a-form-item>
+        </a-col>
+        <a-col :span="8">
+          <a-form-item label="套题Key">
+            <a-input v-model:value="form.suiteKey" placeholder="同 suiteId" />
+          </a-form-item>
+        </a-col>
+        <a-col :span="8">
+          <a-form-item label="套题名称">
+            <a-input v-model:value="form.suiteName" placeholder="如：2020年8月31日上午山东省考面试题" />
+          </a-form-item>
+        </a-col>
+      </a-row>
+
       <!-- 采分点 -->
       <a-form-item label="采分点">
         <div v-for="(point, index) in form.scoringPoints" :key="index" class="scoring-point">
@@ -197,7 +215,10 @@ const form = reactive({
   year: [],
   interviewFormat: '',
   timingMode: '',
-  questionCount: ''
+  questionCount: '',
+  suiteId: '',
+  suiteKey: '',
+  suiteName: ''
 })
 
 onMounted(async () => {
@@ -228,7 +249,10 @@ onMounted(async () => {
         year: Array.isArray(q.year) ? q.year : (q.year ? String(q.year).split(',').filter(Boolean) : []),
         interviewFormat: q.interviewFormat || '',
         timingMode: q.timingMode || '',
-        questionCount: q.questionCount || ''
+        questionCount: q.questionCount || '',
+        suiteId: q.keywords?._meta?.suiteId || '',
+        suiteKey: q.keywords?._meta?.suiteKey || '',
+        suiteName: q.keywords?._meta?.suiteName || ''
       })
     }
   } else {
@@ -247,7 +271,10 @@ function applyTargetDefaultsFromRoute() {
     year: query.year ? String(query.year).split(',').filter(Boolean) : [],
     interviewFormat: String(query.interviewFormat || ''),
     timingMode: String(query.timingMode || ''),
-    questionCount: String(query.questionCount || '')
+    questionCount: String(query.questionCount || ''),
+    suiteId: String(query.suiteId || ''),
+    suiteKey: String(query.suiteKey || ''),
+    suiteName: String(query.suiteName || '')
   })
 }
 

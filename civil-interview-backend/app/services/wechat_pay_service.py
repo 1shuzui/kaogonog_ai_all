@@ -15,6 +15,8 @@ from app.schemas.common import PaymentCallbackRequest, PaymentOrderCreateRequest
 VIRTUAL_PAY_SCENE = "mini_program_virtual"
 X_PAY_QUERY_ORDER_PATH = "/xpay/query_order"
 X_PAY_QUERY_ORDER_URL = f"https://api.weixin.qq.com{X_PAY_QUERY_ORDER_PATH}"
+X_PAY_REFUND_ORDER_PATH = "/xpay/refund_order"
+X_PAY_REFUND_ORDER_URL = f"https://api.weixin.qq.com{X_PAY_REFUND_ORDER_PATH}"
 
 
 class WechatPayService:
@@ -84,6 +86,80 @@ class WechatPayService:
             "raw": result,
             "request": body_payload,
         }
+
+    def refund_virtual_order(self, order: PaymentOrder, refund_order_id: str, left_fee: int, refund_fee: int, refund_reason: str = "1", req_from: str = "1") -> dict:
+        extra_payload = order.extra_payload if isinstance(order.extra_payload, dict) else {}
+        openid = str(extra_payload.get("openId") or "")
+        if not openid:
+            raise HTTPException(status_code=400, detail="订单缺少 openId，无法发起退款")
+        if not settings.wechat_virtual_pay_offer_id:
+            raise HTTPException(status_code=500, detail="小程序虚拟支付 OfferID 未配置")
+
+        env = int(extra_payload.get("virtualPayEnv") or settings.wechat_virtual_pay_env or 0)
+        body_payload = {
+            "openid": openid,
+            "order_id": order.order_no,
+            "refund_order_id": refund_order_id,
+            "left_fee": left_fee,
+            "refund_fee": refund_fee,
+            "biz_meta": json.dumps({"username": order.username, "packageCode": order.package_code}, ensure_ascii=False, separators=(",", ":")),
+            "refund_reason": refund_reason,
+            "req_from": req_from,
+            "env": env,
+        }
+        body = json.dumps(body_payload, ensure_ascii=False, separators=(",", ":"))
+        app_key = self._get_virtual_app_key()
+        pay_sig = self._hmac_sha256(app_key, f"{X_PAY_REFUND_ORDER_PATH}&{body}")
+        response = requests.post(
+            X_PAY_REFUND_ORDER_URL,
+            params={
+                "access_token": self._get_access_token(),
+                "pay_sig": pay_sig,
+            },
+            data=body.encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            timeout=settings.wechat_pay_request_timeout,
+        )
+        if response.status_code >= 400:
+            raise HTTPException(status_code=502, detail=f"微信虚拟支付退款失败: HTTP {response.status_code}")
+        try:
+            result = response.json()
+        except ValueError as exc:
+            raise HTTPException(status_code=502, detail="微信虚拟支付退款响应不是 JSON") from exc
+
+        errcode = int(result.get("errcode") or result.get("err_code") or 0)
+        if errcode:
+            errmsg = result.get("errmsg") or result.get("err_msg") or "unknown error"
+            raise HTTPException(status_code=502, detail=f"微信虚拟支付退款失败: {errcode} {errmsg}")
+        return {
+            "success": True,
+            "refundOrderId": result.get("refund_order_id") or refund_order_id,
+            "refundWxOrderId": result.get("refund_wx_order_id") or "",
+            "payOrderId": result.get("pay_order_id") or order.order_no,
+            "payWxOrderId": result.get("pay_wx_order_id") or "",
+            "raw": result,
+        }
+
+    def _extract_virtual_left_fee(self, result: dict) -> int:
+        candidates = [
+            result.get("left_fee"),
+            result.get("leftFee"),
+        ]
+        order_info = result.get("order") or result.get("orderInfo") or result.get("order_info")
+        if isinstance(order_info, dict):
+            candidates.extend([
+                order_info.get("left_fee"),
+                order_info.get("leftFee"),
+            ])
+        for value in candidates:
+            if value in (None, ""):
+                continue
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                continue
+        amount = self._extract_virtual_order_amount(result)
+        return amount if amount else 0
 
     def _build_virtual_payment_payload(self, order: PaymentOrder, package: SubscriptionPackage, data: PaymentOrderCreateRequest) -> dict:
         self._assert_virtual_config(data)

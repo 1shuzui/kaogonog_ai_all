@@ -1,0 +1,2550 @@
+{
+  "profile": "shandong",
+  "province": "山东",
+  "source_files": [
+    "山东公务员真题库_normalized.txt"
+  ],
+  "source_stats": [
+    {
+      "source": "山东公务员真题库_normalized.txt",
+      "sourceDocument": "山东公务员真题库_normalized.txt",
+      "sourceDocumentType": "extracted_txt",
+      "legacyDocSource": false,
+      "questionHeaderCount": 84,
+      "uniqueQuestionIdCount": 84,
+      "duplicateHeaderCount": 0,
+      "titleCount": 162,
+      "generatedQuestionCount": 84,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    }
+  ],
+  "generated_question_count": 84,
+  "generated_question_ids": [
+    "SD-20200829A-SK-01",
+    "SD-20200829A-SK-02",
+    "SD-20200829A-SK-03",
+    "SD-20200829P-SK-01",
+    "SD-20200829P-SK-02",
+    "SD-20200829P-SK-03",
+    "SD-20200830A-SK-01",
+    "SD-20200830P-SK-01",
+    "SD-20200830P-SK-02",
+    "SD-20200830P-SK-03",
+    "SD-20200831A-SK-01",
+    "SD-20200831A-SK-02",
+    "SD-20200831A-SK-03",
+    "SD-20200831P-SK-01",
+    "SD-20200831P-SK-03",
+    "SD-20200901A-SK-01",
+    "SD-20200901A-SK-02",
+    "SD-20200901P-SK-01",
+    "SD-20200901P-SK-02",
+    "SD-20200901P-SK-03",
+    "SD-20200912A-JY-01",
+    "SD-20200912A-JY-02",
+    "SD-20200912P-JY-01",
+    "SD-20200912P-JY-02",
+    "SD-20200913P-JY-01",
+    "SD-20200913P-JY-02",
+    "SD-20200914P-GA-01",
+    "SD-20200914P-GA-02",
+    "SD-20200915A-GA-01",
+    "SD-20200915A-GA-02",
+    "SD-20200916A-GA-01",
+    "SD-20200916A-GA-02",
+    "SD-20200916P-GA-01",
+    "SD-20200916P-GA-02",
+    "SD-20200917A-GA-01",
+    "SD-20200917A-GA-02",
+    "SD-20200917P-GA-01",
+    "SD-20200917P-GA-02",
+    "SD-20201101X-QT-01",
+    "SD-20201101X-QT-02",
+    "SD-20210222A-GA-02",
+    "SD-20210222P-GA-01",
+    "SD-20210222P-GA-02",
+    "SD-20210223A-GA-01",
+    "SD-20210223A-GA-02",
+    "SD-20210223P-GA-01",
+    "SD-20210223P-GA-02",
+    "SD-20210224P-GA-02",
+    "SD-20210224X-GA-01",
+    "SD-20210224X-GA-02",
+    "SD-20210225A-GA-01",
+    "SD-20210225A-GA-02",
+    "SD-20210225P-GA-01",
+    "SD-20210225P-GA-02",
+    "SD-20210227A-JY-01",
+    "SD-20210227A-JY-02",
+    "SD-20210227P-JY-01",
+    "SD-20210228X-JY-01",
+    "SD-20210228X-JY-02",
+    "SD-20210301A-JY-01",
+    "SD-20210301A-JY-02",
+    "SD-20210306A-SK-01",
+    "SD-20210306A-SK-02",
+    "SD-20210306A-SK-03",
+    "SD-20210306P-SK-01",
+    "SD-20210306P-SK-02",
+    "SD-20210306P-SK-03",
+    "SD-20210307A-SK-01",
+    "SD-20210307A-SK-02",
+    "SD-20210307A-SK-03",
+    "SD-20210307P-SK-01",
+    "SD-20210307P-SK-02",
+    "SD-20210307P-SK-03",
+    "SD-20210308A-SK-02",
+    "SD-20210308A-SK-03",
+    "SD-20210308P-SK-01",
+    "SD-20210308P-SK-02",
+    "SD-20210308P-SK-03",
+    "SD-20210327A-XD-01",
+    "SD-20210327A-XD-02",
+    "SD-20210327P-XD-01",
+    "SD-20210327P-XD-02",
+    "SD-20210328X-XD-01",
+    "SD-20210328X-XD-02"
+  ],
+  "duplicates": [],
+  "skipped_blocks": [],
+  "parse_failures": [],
+  "sample_generation": {
+    "SD-20200829A-SK-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 419
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 259
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 169
+      }
+    },
+    "SD-20200829A-SK-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 400
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 263
+      },
+      "low": {
+        "score": 9.6,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 173
+      }
+    },
+    "SD-20200829A-SK-03": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 389
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200829P-SK-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 401
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 275
+      },
+      "low": {
+        "score": 9.6,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 185
+      }
+    },
+    "SD-20200829P-SK-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 389
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.5,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200829P-SK-03": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 403
+      },
+      "mid": {
+        "score": 11.1,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 253
+      },
+      "low": {
+        "score": 9.3,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 163
+      }
+    },
+    "SD-20200830A-SK-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 388
+      },
+      "mid": {
+        "score": 11.3,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 270
+      },
+      "low": {
+        "score": 9.5,
+        "strategy": "template_analysis_low_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 174
+      }
+    },
+    "SD-20200830P-SK-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 402
+      },
+      "mid": {
+        "score": 11.1,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 253
+      },
+      "low": {
+        "score": 9.3,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 163
+      }
+    },
+    "SD-20200830P-SK-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 394
+      },
+      "mid": {
+        "score": 11.1,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200830P-SK-03": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 395
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.5,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200831A-SK-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 409
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200831A-SK-02": {
+      "high": {
+        "score": 29.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 287
+      },
+      "mid": {
+        "score": 10.9,
+        "strategy": "template_organization_mid_1",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.3,
+        "strategy": "template_organization_low_3",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 178
+      }
+    },
+    "SD-20200831A-SK-03": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 394
+      },
+      "mid": {
+        "score": 11.1,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.5,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200831P-SK-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 421
+      },
+      "mid": {
+        "score": 11.1,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 255
+      },
+      "low": {
+        "score": 9.3,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 165
+      }
+    },
+    "SD-20200831P-SK-03": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 395
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200901A-SK-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 402
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200901A-SK-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 389
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.5,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200901P-SK-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 420
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200901P-SK-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 414
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200901P-SK-03": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 426
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200912A-JY-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 402
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200912A-JY-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 383
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.5,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200912P-JY-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 406
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 275
+      },
+      "low": {
+        "score": 9.7,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 185
+      }
+    },
+    "SD-20200912P-JY-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 412
+      },
+      "mid": {
+        "score": 11.1,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 255
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 165
+      }
+    },
+    "SD-20200913P-JY-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 8,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 327
+      },
+      "mid": {
+        "score": 16.4,
+        "strategy": "hybrid",
+        "count": 7,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 400
+      },
+      "low": {
+        "score": 12.7,
+        "strategy": "spread",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 225
+      }
+    },
+    "SD-20200913P-JY-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 389
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.5,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200914P-GA-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 408
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200914P-GA-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 395
+      },
+      "mid": {
+        "score": 11.1,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200915A-GA-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 407
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 259
+      },
+      "low": {
+        "score": 9.5,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 169
+      }
+    },
+    "SD-20200915A-GA-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 400
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200916A-GA-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 395
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200916A-GA-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 408
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200916P-GA-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 407
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.5,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200916P-GA-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 414
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200917A-GA-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 402
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200917A-GA-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 376
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200917P-GA-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 388
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20200917P-GA-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 403
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20201101X-QT-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 401
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.5,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20201101X-QT-02": {
+      "high": {
+        "score": 29.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 278
+      },
+      "mid": {
+        "score": 10.8,
+        "strategy": "template_organization_mid_1",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 251
+      },
+      "low": {
+        "score": 9.2,
+        "strategy": "template_organization_low_3",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 174
+      }
+    },
+    "SD-20210222A-GA-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 407
+      },
+      "mid": {
+        "score": 11.1,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210222P-GA-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 401
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210222P-GA-02": {
+      "high": {
+        "score": 29.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 278
+      },
+      "mid": {
+        "score": 10.8,
+        "strategy": "template_organization_mid_1",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 251
+      },
+      "low": {
+        "score": 9.3,
+        "strategy": "template_organization_low_3",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 174
+      }
+    },
+    "SD-20210223A-GA-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 396
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210223A-GA-02": {
+      "high": {
+        "score": 29.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 282
+      },
+      "mid": {
+        "score": 10.9,
+        "strategy": "template_organization_mid_1",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.3,
+        "strategy": "template_organization_low_3",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 178
+      }
+    },
+    "SD-20210223P-GA-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 388
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 267
+      },
+      "low": {
+        "score": 9.6,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 177
+      }
+    },
+    "SD-20210223P-GA-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 395
+      },
+      "mid": {
+        "score": 11.1,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.5,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210224P-GA-02": {
+      "high": {
+        "score": 29.1,
+        "strategy": "document",
+        "count": 10,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 254
+      },
+      "mid": {
+        "score": 10.3,
+        "strategy": "template_scene_mid_1",
+        "count": 8,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 262
+      },
+      "low": {
+        "score": 9.1,
+        "strategy": "template_scene_low_3",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 214
+      }
+    },
+    "SD-20210224X-GA-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 396
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 265
+      },
+      "low": {
+        "score": 9.6,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 175
+      }
+    },
+    "SD-20210224X-GA-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 401
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210225A-GA-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 402
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210225A-GA-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 395
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210225P-GA-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 400
+      },
+      "mid": {
+        "score": 11.1,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210225P-GA-02": {
+      "high": {
+        "score": 29.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 278
+      },
+      "mid": {
+        "score": 10.9,
+        "strategy": "template_organization_mid_1",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.3,
+        "strategy": "template_organization_low_3",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 178
+      }
+    },
+    "SD-20210227A-JY-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 383
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 259
+      },
+      "low": {
+        "score": 9.5,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 169
+      }
+    },
+    "SD-20210227A-JY-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 8,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 321
+      },
+      "mid": {
+        "score": 16.4,
+        "strategy": "hybrid",
+        "count": 7,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 394
+      },
+      "low": {
+        "score": 12.6,
+        "strategy": "spread",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 220
+      }
+    },
+    "SD-20210227P-JY-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 383
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 273
+      },
+      "low": {
+        "score": 9.8,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 193
+      }
+    },
+    "SD-20210228X-JY-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 396
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210228X-JY-02": {
+      "high": {
+        "score": 29.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 282
+      },
+      "mid": {
+        "score": 10.9,
+        "strategy": "template_organization_mid_1",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_organization_low_3",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 178
+      }
+    },
+    "SD-20210301A-JY-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 8,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 327
+      },
+      "mid": {
+        "score": 16.4,
+        "strategy": "hybrid",
+        "count": 7,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 400
+      },
+      "low": {
+        "score": 12.6,
+        "strategy": "spread",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 221
+      }
+    },
+    "SD-20210301A-JY-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 383
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210306A-SK-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 395
+      },
+      "mid": {
+        "score": 11.1,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.5,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210306A-SK-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 403
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210306A-SK-03": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 401
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210306P-SK-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 394
+      },
+      "mid": {
+        "score": 11.1,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210306P-SK-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 395
+      },
+      "mid": {
+        "score": 11.1,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.5,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210306P-SK-03": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 402
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210307A-SK-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 383
+      },
+      "mid": {
+        "score": 11.1,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 253
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 163
+      }
+    },
+    "SD-20210307A-SK-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 409
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210307A-SK-03": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 395
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210307P-SK-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 388
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210307P-SK-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 402
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210307P-SK-03": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 400
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.5,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210308A-SK-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 401
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210308A-SK-03": {
+      "high": {
+        "score": 29.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 284
+      },
+      "mid": {
+        "score": 10.9,
+        "strategy": "template_organization_mid_1",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.3,
+        "strategy": "template_organization_low_3",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 178
+      }
+    },
+    "SD-20210308P-SK-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 402
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210308P-SK-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 413
+      },
+      "mid": {
+        "score": 11.1,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 255
+      },
+      "low": {
+        "score": 9.3,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 165
+      }
+    },
+    "SD-20210308P-SK-03": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 407
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210327A-XD-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 409
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210327A-XD-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 402
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210327P-XD-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 419
+      },
+      "mid": {
+        "score": 11.1,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210327P-XD-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 401
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "SD-20210328X-XD-01": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 395
+      },
+      "mid": {
+        "score": 11.1,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 253
+      },
+      "low": {
+        "score": 9.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 163
+      }
+    },
+    "SD-20210328X-XD-02": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 12,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 395
+      },
+      "mid": {
+        "score": 11.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 9.5,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    }
+  }
+}

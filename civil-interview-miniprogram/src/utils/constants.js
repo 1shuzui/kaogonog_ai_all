@@ -159,6 +159,29 @@ export const DIMENSION_KEY_BY_NAME = {
 
 export const WEAK_THRESHOLD = 60
 
+export const EXAM_CATEGORIES = [
+  { code: '', name: '全部考试' },
+  { code: '国家公务员考试', name: '国考' },
+  { code: '省级公务员考试', name: '省考' },
+  { code: '事业单位考试', name: '事业单位' },
+  { code: '银行招考面试', name: '银行招考' },
+  { code: '医疗卫生面试', name: '医疗卫生' },
+  { code: '法检书记员面试', name: '法检书记员' }
+]
+
+export const SUBCATEGORY_LABELS = {
+  '国家公务员考试': '系统/方向',
+  '省级公务员考试': '招考方向',
+  '事业单位考试': '地级市',
+  '银行招考面试': '银行类别',
+  '医疗卫生面试': '岗位方向',
+  '法检书记员面试': '方向'
+}
+
+export const YEAR_OPTIONS = [
+  '2025', '2024', '2023', '2022', '2021', '2020', '2019', '2018'
+]
+
 export function getProvinceName(code) {
   return PROVINCES.find((item) => item.code === code)?.name || '国考'
 }

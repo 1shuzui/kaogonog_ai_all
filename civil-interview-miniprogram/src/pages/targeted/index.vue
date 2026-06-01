@@ -31,11 +31,15 @@
         </view>
       </picker>
       <picker v-if="hasDirectionLevel" :range="directionNames" :value="directionIndex" @change="onDirectionPickerChange">
-        <view class="picker-row picker-row--last">
+        <view class="picker-row">
           <text>{{ directionLevelLabel }}</text>
           <text class="picker-row__value">{{ selectedDirectionName }}</text>
         </view>
       </picker>
+      <view class="picker-row picker-row--year" @tap="showYearPicker = true">
+        <text>年份</text>
+        <text class="picker-row__value">{{ yearLabel }}</text>
+      </view>
       <text v-if="activeTarget" class="picker-summary">
         当前选择：{{ selectedPathLabel }}
       </text>
@@ -52,6 +56,13 @@
     </view>
 
     <view v-if="!readonlyMode && targetedStore.generatedQuestions.length">
+      <view class="generated-start card">
+        <view>
+          <text class="generated-start__title">已为当前考试方向准备 {{ targetedStore.generatedQuestions.length }} 道练习题</text>
+          <text class="generated-start__desc">先核对题目，再进入专项练习。</text>
+        </view>
+        <button class="primary-button" @tap="startGeneratedPractice">开始练习</button>
+      </view>
       <view class="section-head">
         <text class="section-title">生成题目</text>
         <text class="muted" @tap="generate">重新生成</text>
@@ -60,8 +71,26 @@
         v-for="question in targetedStore.generatedQuestions"
         :key="question.id"
         :question="question"
+        :show-rich-content="true"
+        :show-meta-tags="true"
+        :collapsed-height="224"
         @select="startQuestion"
       />
+    </view>
+
+    <view v-if="showYearPicker" class="year-overlay" @tap="showYearPicker = false">
+      <view class="year-modal card" @tap.stop>
+        <view class="section-head">
+          <text class="section-title">选择年份</text>
+          <text class="muted" @tap="showYearPicker = false">完成</text>
+        </view>
+        <checkbox-group @change="onYearChange">
+          <label v-for="opt in yearOptions" :key="opt.value" class="year-checkbox">
+            <checkbox :value="opt.value" :checked="opt.checked" />
+            <text>{{ opt.value }}</text>
+          </label>
+        </checkbox-group>
+      </view>
     </view>
   </view>
 </template>
@@ -77,6 +106,8 @@ import { useTargetedStore } from '../../stores/targeted'
 import { useUserStore } from '../../stores/user'
 import { hasPremiumAccess } from '../../utils/access'
 import { mergeTargetPayload } from '../../utils/targetedOptions'
+import { YEAR_OPTIONS } from '../../utils/constants'
+import { isQuestionScoringSupported, getScoringUnavailableMessage } from '../../utils/questionPresentation'
 import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
 
 const billingStore = useBillingStore()
@@ -87,6 +118,8 @@ const userStore = useUserStore()
 const selectedCategoryId = ref('')
 const selectedRegionId = ref('')
 const selectedTargetCode = ref('')
+const selectedYears = ref([])
+const showYearPicker = ref(false)
 const positionTree = computed(() => targetedStore.positionTree || [])
 const selectedCategory = computed(() => positionTree.value.find((item) => item.id === selectedCategoryId.value) || positionTree.value[0] || null)
 const levelLabels = computed(() => selectedCategory.value?.levelLabels || {})
@@ -106,11 +139,15 @@ const directionIndex = computed(() => Math.max(0, currentDirections.value.findIn
 const selectedCategoryName = computed(() => selectedCategory.value?.name || '请选择')
 const selectedRegionName = computed(() => selectedRegion.value?.name || '请选择')
 const selectedDirectionName = computed(() => selectedDirection.value?.name || '请选择')
-const activeTarget = computed(() => (
-  selectedCategory.value && selectedRegion.value && (!hasDirectionLevel.value || selectedDirection.value)
-    ? mergeTargetPayload(selectedCategory.value, selectedRegion.value, selectedDirection.value || {})
-    : null
-))
+const activeTarget = computed(() => {
+  if (!selectedCategory.value || !selectedRegion.value) return null
+  if (hasDirectionLevel.value && !selectedDirection.value) return null
+  const merged = mergeTargetPayload(selectedCategory.value, selectedRegion.value, selectedDirection.value || {})
+  if (selectedYears.value.length) {
+    merged.year = selectedYears.value
+  }
+  return merged
+})
 const selectedPathLabel = computed(() => [
   selectedCategoryName.value,
   selectedRegionName.value,
@@ -118,13 +155,19 @@ const selectedPathLabel = computed(() => [
 ].filter((item) => item && item !== '请选择').join(' / '))
 const selectedModeHints = computed(() => {
   const target = activeTarget.value || {}
-  return [
+  const hints = [
     target.interviewFormat ? `形式：${target.interviewFormat}` : '',
     target.questionCount ? `题量：${target.questionCount}题` : '',
     target.timingMode ? `计时：${target.timingMode}` : '',
     target.questionTypeScope ? `题型：${target.questionTypeScope}` : ''
   ].filter(Boolean)
+  if (selectedYears.value.length) {
+    hints.push(`年份：${selectedYears.value.join('、')}`)
+  }
+  return hints
 })
+const yearOptions = computed(() => YEAR_OPTIONS.map((y) => ({ value: y, checked: selectedYears.value.includes(y) })))
+const yearLabel = computed(() => selectedYears.value.length ? selectedYears.value.join('、') : '不限年份（可多选）')
 const canProceed = computed(() => !!activeTarget.value?.targetCode)
 const hasFullAccess = computed(() => hasPremiumAccess(userStore, billingStore, subscriptionStore))
 const readonlyMode = computed(() => !hasFullAccess.value)
@@ -178,6 +221,10 @@ function onRegionPickerChange(event) {
 
 function onDirectionPickerChange(event) {
   selectDirection(currentDirections.value[Number(event.detail.value)])
+}
+
+function onYearChange(event) {
+  selectedYears.value = event.detail.value || []
 }
 
 function initializeSelection() {
@@ -253,6 +300,10 @@ async function generate() {
 
 async function startQuestion(question) {
   if (readonlyMode.value) return
+  if (!isQuestionScoringSupported(question)) {
+    toast(getScoringUnavailableMessage(1))
+    return
+  }
   showLoading('创建考场')
   try {
     const prefs = userStore.preferences || {}
@@ -270,6 +321,11 @@ async function startQuestion(question) {
   } finally {
     hideLoading()
   }
+}
+
+function startGeneratedPractice() {
+  if (readonlyMode.value) return
+  uni.navigateTo({ url: '/pages/exam/prepare?source=targeted' })
 }
 
 function goPricing() {
@@ -360,5 +416,63 @@ function startTrial() {
   color: #1b5faa;
   font-size: 22rpx;
   line-height: 1.25;
+}
+
+.generated-start {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28rpx;
+  padding: 28rpx 32rpx;
+  margin-bottom: 20rpx;
+}
+
+.generated-start__title {
+  display: block;
+  color: #2a3648;
+  font-size: 27rpx;
+  font-weight: 700;
+}
+
+.generated-start__desc {
+  display: block;
+  margin-top: 8rpx;
+  color: #6f7c8f;
+  font-size: 24rpx;
+}
+
+.year-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.year-modal {
+  width: 100%;
+  max-height: 60vh;
+  border-radius: 24rpx 24rpx 0 0;
+  overflow-y: auto;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.year-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 22rpx 0;
+  border-bottom: 1rpx solid #eef2f6;
+  font-size: 27rpx;
+  color: #2a3648;
+}
+
+.picker-row--year {
+  cursor: pointer;
 }
 </style>

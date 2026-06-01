@@ -3,6 +3,9 @@ const TARGET_FIELDS = [
   'position',
   'examCategory',
   'examSubcategory',
+  'subcategory',
+  'subcategory2',
+  'year',
   'system',
   'positionType',
   'portalTag',
@@ -148,6 +151,7 @@ export const DEFAULT_TARGETED_POSITION_TREE = [
             examCategory: '事业单位考试',
             examSubcategory: '江苏省',
             city,
+            subcategory: city,
             positionType: `${city}事业单位`,
             interviewFormat: '8+12',
             questionCount: '3',
@@ -173,6 +177,7 @@ export const DEFAULT_TARGETED_POSITION_TREE = [
             examCategory: '事业单位考试',
             examSubcategory: '安徽省',
             city,
+            subcategory: city,
             positionType: `${city}事业单位`,
             interviewFormat: '15分钟包干',
             questionCount: '3',
@@ -188,11 +193,11 @@ export const DEFAULT_TARGETED_POSITION_TREE = [
         examSubcategory: '山东省',
         directions: [
           { id: 'sd_sydw_provincial', name: '省属', province: 'shandong', position: 'general', examCategory: '事业单位考试', examSubcategory: '山东省', positionType: '省属事业单位', interviewFormat: '15分钟包干', questionCount: '3', timingMode: '15分钟包干' },
-          { id: 'sd_sydw_jinan', name: '济南', province: 'shandong', position: 'general', examCategory: '事业单位考试', examSubcategory: '山东省', city: '济南', interviewFormat: '7+7', questionCount: '2-3', prepTime: '420', answerTime: '420', timingMode: '7分钟读题+7分钟答题' },
-          { id: 'sd_sydw_qingdao', name: '青岛', province: 'shandong', position: 'general', examCategory: '事业单位考试', examSubcategory: '山东省', city: '青岛', interviewFormat: '5+5/15分钟包干', questionCount: '2-3', timingMode: '5+5或15分钟包干' },
-          { id: 'sd_sydw_yantai', name: '烟台', province: 'shandong', position: 'general', examCategory: '事业单位考试', examSubcategory: '山东省', city: '烟台', interviewFormat: '6+6', questionCount: '2', prepTime: '360', answerTime: '360', timingMode: '6分钟读题+6分钟答题' },
-          { id: 'sd_sydw_weihai', name: '威海', province: 'shandong', position: 'general', examCategory: '事业单位考试', examSubcategory: '山东省', city: '威海', interviewFormat: '6+6', questionCount: '2', prepTime: '360', answerTime: '360', timingMode: '6分钟读题+6分钟答题' },
-          { id: 'sd_sydw_linyi', name: '临沂', province: 'shandong', position: 'general', examCategory: '事业单位考试', examSubcategory: '山东省', city: '临沂', interviewFormat: '10分钟包干无纸笔', questionCount: '2', timingMode: '10分钟包干无纸笔' },
+          { id: 'sd_sydw_jinan', name: '济南', province: 'shandong', position: 'general', examCategory: '事业单位考试', examSubcategory: '山东省', city: '济南', subcategory: '济南', interviewFormat: '7+7', questionCount: '2-3', prepTime: '420', answerTime: '420', timingMode: '7分钟读题+7分钟答题' },
+          { id: 'sd_sydw_qingdao', name: '青岛', province: 'shandong', position: 'general', examCategory: '事业单位考试', examSubcategory: '山东省', city: '青岛', subcategory: '青岛', interviewFormat: '5+5/15分钟包干', questionCount: '2-3', timingMode: '5+5或15分钟包干' },
+          { id: 'sd_sydw_yantai', name: '烟台', province: 'shandong', position: 'general', examCategory: '事业单位考试', examSubcategory: '山东省', city: '烟台', subcategory: '烟台', interviewFormat: '6+6', questionCount: '2', prepTime: '360', answerTime: '360', timingMode: '6分钟读题+6分钟答题' },
+          { id: 'sd_sydw_weihai', name: '威海', province: 'shandong', position: 'general', examCategory: '事业单位考试', examSubcategory: '山东省', city: '威海', subcategory: '威海', interviewFormat: '6+6', questionCount: '2', prepTime: '360', answerTime: '360', timingMode: '6分钟读题+6分钟答题' },
+          { id: 'sd_sydw_linyi', name: '临沂', province: 'shandong', position: 'general', examCategory: '事业单位考试', examSubcategory: '山东省', city: '临沂', subcategory: '临沂', interviewFormat: '10分钟包干无纸笔', questionCount: '2', timingMode: '10分钟包干无纸笔' },
           ...SHANDONG_SIDW_STANDARD_CITIES.map((city, index) => ({
             id: `sd_sydw_city_${index + 1}`,
             name: city,
@@ -201,6 +206,7 @@ export const DEFAULT_TARGETED_POSITION_TREE = [
             examCategory: '事业单位考试',
             examSubcategory: '山东省',
             city,
+            subcategory: city,
             positionType: `${city}事业单位`,
             interviewFormat: '15分钟包干',
             questionCount: '3',
@@ -376,21 +382,33 @@ export const DEFAULT_TARGETED_POSITION_TREE = [
     name: '银行招考面试',
     desc: '按银行招考面试方向统计。',
     children: [
-      {
-        id: 'bank_all',
-        name: '银行招考',
-        province: 'all',
+      ...[
+        ['beijing', '北京市'], ['shanghai', '上海市'], ['guangdong', '广东省'], ['jiangsu', '江苏省'],
+        ['zhejiang', '浙江省'], ['shandong', '山东省'], ['henan', '河南省'], ['sichuan', '四川省'],
+        ['anhui', '安徽省'], ['fujian', '福建省'], ['gansu', '甘肃省'],
+        ['guangxi', '广西壮族自治区'], ['guizhou', '贵州省'], ['hainan', '海南省'],
+        ['hebei', '河北省'], ['heilongjiang', '黑龙江省'], ['hubei', '湖北省'],
+        ['hunan', '湖南省'], ['jilin', '吉林省'], ['jiangxi', '江西省'],
+        ['liaoning', '辽宁省'], ['neimenggu', '内蒙古自治区'], ['ningxia', '宁夏回族自治区'],
+        ['qinghai', '青海省'], ['shaanxi', '陕西省'], ['shanxi', '山西省'],
+        ['tianjin', '天津市'], ['xinjiang', '新疆维吾尔自治区'], ['xizang', '西藏自治区'],
+        ['yunnan', '云南省'], ['chongqing', '重庆市'],
+      ].map(([code, province]) => ({
+        id: `bank_${code}`,
+        name: province,
+        province: code,
         portalTag: '银行招考面试',
-        adminHint: reservedAdminHint('银行招考'),
-        directions: BANK_SYSTEM_DIRECTIONS.map(([code, name]) => ({
-          id: `bank_portal_${code}`,
-          name,
-          province: 'all',
+        adminHint: reservedAdminHint(`${province}银行招考`),
+        directions: BANK_SYSTEM_DIRECTIONS.map(([sysCode, sysName]) => ({
+          id: `bank_${code}_${sysCode}`,
+          name: sysName,
+          province: code,
           position: 'bank',
           portalTag: '银行招考面试',
-          system: name
+          system: sysName,
+          subcategory: sysName
         }))
-      }
+      }))
     ]
   },
   {
@@ -520,6 +538,10 @@ export function normalizeTargetPayload(target = {}) {
       payload.prepTime = String(parsed.prepTime)
       payload.answerTime = String(parsed.answerTime)
     }
+  }
+  // Map city/system → subcategory for backend matching compatibility
+  if (!payload.subcategory) {
+    payload.subcategory = payload.city || payload.system || ''
   }
   return payload
 }

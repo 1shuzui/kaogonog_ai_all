@@ -11,10 +11,10 @@
     <div class="province-gate">
       <div class="province-gate__header">
         <span class="province-gate__eyebrow">首次进入设置</span>
-        <h2>请先设置练习偏好</h2>
+        <h2>请先设置考试偏好</h2>
         <p>
-          后续的随机抽题、定向备面、题库筛选会优先按这个省份和题型展示；
-          题型不选时系统会随机练习，也可以在个人中心随时修改。
+          后续的随机抽题、定向备面、题库筛选会优先按所选地区、考试大类和题型展示；
+          不选时系统会随机练习，也可以在"考试设置"中随时修改。
         </p>
       </div>
 
@@ -29,6 +29,20 @@
           @click="selectedProvince = item.code"
         >
           {{ item.name }}
+        </button>
+      </div>
+
+      <div class="province-gate__section-title">考试大类</div>
+      <div class="province-gate__grid">
+        <button
+          v-for="cat in examCategoryOptions"
+          :key="cat.id"
+          type="button"
+          class="province-gate__chip"
+          :class="{ 'is-active': selectedExamCategory === cat.name }"
+          @click="selectedExamCategory = selectedExamCategory === cat.name ? '' : cat.name"
+        >
+          {{ cat.name }}
         </button>
       </div>
 
@@ -61,6 +75,7 @@ import { computed, ref, watch } from 'vue'
 import { message } from 'ant-design-vue'
 import { useUserStore } from '@/stores/user'
 import { QUESTION_CATEGORIES, PROVINCES } from '@/utils/constants'
+import { DEFAULT_TARGETED_POSITION_TREE } from '@/utils/targetedOptions'
 
 const props = defineProps({
   open: {
@@ -89,6 +104,10 @@ const selectedProvince = ref(
     : ''
 )
 const selectedDimensions = ref([])
+const selectedExamCategory = ref('')
+const examCategoryOptions = computed(() =>
+  DEFAULT_TARGETED_POSITION_TREE.map(cat => ({ id: cat.id, name: cat.name }))
+)
 const preferredQuestionOptions = computed(() => QUESTION_CATEGORIES.filter((item) => item.key))
 
 watch(
@@ -101,6 +120,7 @@ watch(
       selectedDimensions.value = Array.isArray(userStore.preferences?.preferredQuestionDimensions)
         ? [...userStore.preferences.preferredQuestionDimensions]
         : []
+      selectedExamCategory.value = userStore.preferences?.examCategory || ''
     }
   }
 )
@@ -126,7 +146,8 @@ async function confirmProvince() {
     await userStore.savePreferences({
       ...userStore.preferences,
       preferredQuestionDimensions: selectedDimensions.value,
-      practicePreferenceConfirmed: true
+      practicePreferenceConfirmed: true,
+      examCategory: selectedExamCategory.value
     })
     emit('confirmed', selectedProvince.value)
   } finally {

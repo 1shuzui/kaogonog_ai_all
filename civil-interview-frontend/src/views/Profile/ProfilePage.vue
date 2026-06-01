@@ -86,12 +86,19 @@
 
     <!-- 练习偏好 -->
     <div class="card profile-section">
-      <h3>练习偏好</h3>
+      <h3>考试设置</h3>
       <a-form layout="vertical">
         <a-form-item label="默认省份">
           <a-select v-model:value="userStore.selectedProvince" @change="onProvinceChange">
             <a-select-option v-for="p in userStore.provinces" :key="p.code" :value="p.code">
               {{ p.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item label="考试大类">
+          <a-select v-model:value="preferences.examCategory" placeholder="不限考试大类" allow-clear>
+            <a-select-option v-for="cat in examCategoryOptions" :key="cat.id" :value="cat.name">
+              {{ cat.name }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -156,7 +163,8 @@ import { useFavoritesStore } from '@/stores/favorites'
 import { useBillingStore } from '@/stores/billing'
 import SupportCenterPanel from '@/components/common/SupportCenterPanel.vue'
 import { message } from 'ant-design-vue'
-import { QUESTION_CATEGORIES } from '@/utils/constants'
+import { QUESTION_CATEGORIES, YEAR_OPTIONS } from '@/utils/constants'
+import { DEFAULT_TARGETED_POSITION_TREE } from '@/utils/targetedOptions'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -169,8 +177,12 @@ const preferences = reactive({
   defaultAnswerTime: 180,
   enableVideo: true,
   preferredQuestionDimensions: [],
-  practicePreferenceConfirmed: false
+  practicePreferenceConfirmed: false,
+  examCategory: ''
 })
+const examCategoryOptions = computed(() =>
+  DEFAULT_TARGETED_POSITION_TREE.map(cat => ({ id: cat.id, name: cat.name }))
+)
 const questionTypeOptions = QUESTION_CATEGORIES.filter((item) => item.key)
 
 const userInitial = computed(() => {
@@ -185,9 +197,8 @@ const balanceTitle = computed(() => {
 
 const balanceDescription = computed(() => {
   if (userStore.isAdmin) return '管理员账号不扣减套餐余额，可访问全部训练与管理功能。'
-  const billing = userStore.userInfo?.billing || {}
-  const daily = Number(billing.remainingDailyMinutes || 0)
-  const total = Number(billing.remainingMinutes || 0)
+  const daily = Number(billingStore.remainingDailyMinutes || 0)
+  const total = Number(billingStore.remainingMinutes || 0)
   if (daily > 0 || total > 0) {
     return `剩余总时长 ${total} 分钟，今日可用 ${daily || total} 分钟。`
   }

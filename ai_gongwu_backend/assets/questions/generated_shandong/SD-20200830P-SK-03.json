@@ -1,0 +1,151 @@
+{
+  "id": "SD-20200830P-SK-03",
+  "type": "综合分析能力 | 32分",
+  "province": "山东",
+  "fullScore": 32.0,
+  "question": "【背景链接】山东省公务员考试面试注重考查考生的综合分析能力、组织协调能力、应急应变能力和语言表达能力。【题目原文】95 后年轻人跳档频繁，有人说要根据兴趣选择工作，通过努力实现个人价值，也有人说遇到不顺心的工作要立马换掉，这样你就是快乐的。对此你怎么看?",
+  "dimensions": [
+    {
+      "name": "核心概念识别与聚焦",
+      "score": 6.2
+    },
+    {
+      "name": "观点立场正确性与鲜明度",
+      "score": 6.2
+    },
+    {
+      "name": "出现方向性错误得",
+      "score": 0.0
+    },
+    {
+      "name": "核心概念阐述深度与广度",
+      "score": 6.2
+    },
+    {
+      "name": "原因分析",
+      "score": 4.7
+    },
+    {
+      "name": "每深入分析一个维度得",
+      "score": 1.6
+    },
+    {
+      "name": "影响分析",
+      "score": 4.7
+    },
+    {
+      "name": "正面+反面均涉及得",
+      "score": 2.4
+    }
+  ],
+  "coreKeywords": [],
+  "strongKeywords": [],
+  "weakKeywords": [],
+  "bonusKeywords": [],
+  "penaltyKeywords": [],
+  "scoringCriteria": [
+    "核心概念识别与聚焦（4分） 得分要求：能否准确识别题干中\"年轻人、跳档、频繁\"等核心概念，并将论述聚焦于这些关键点上，不跑题、不泛化。 评分细则：全部核心概念准确识别且聚焦得4分；识别2个及以上得3分；识别1个得2分；完全跑题得0至1分。 2.",
+    "观点立场正确性与鲜明度（4分） 得分要求：观点是否与党和国家的方针政策保持一致，是否立场坚定、态度鲜明，避免模棱两可、含糊其辞。 评分细则：立场完全正确且观点鲜明得4分；立场正确但观点不够鲜明得3分；个别表述有偏差但不影响整体得2分",
+    "出现方向性错误得（0分）：3.",
+    "核心概念阐述深度与广度（4分） 得分要求：对\"年轻人\"等核心概念的阐述是否有层次、有纵深。 评分细则：能从政策背景（顶层设计）、实践表现（基层落地）、社会影响（群众感受）三个维度各得1分，三个维度全部覆盖得满分4分。 （二）分析深度与多维论证（10分） 4.",
+    "原因分析（3分） 得分要求：能否从制度层面（体制机制、法律法规）、执行层面（落实偏差、监管漏洞）、社会层面（公众意识、舆论环境）等多维度分析\"年轻人\"的深层原因。 评分细则：",
+    "每深入分析一个维度得（1分）：三个维度全面覆盖得满分3分。 5.",
+    "影响分析（3分） 得分要求：能否全面评估\"年轻人\"的正面效应与潜在风险，体现辩证思维。 评分细则：",
+    "正面+反面均涉及得（1.5分）：能延伸至政府公信力/社会公平/经济发展/法治建设等至少2个领域得1.5分，"
+  ],
+  "deductionRules": [],
+  "sourceDocument": "山东公务员真题库_normalized.txt",
+  "sourceDocumentType": "extracted_txt",
+  "examCategory": "省级公务员考试",
+  "examSubcategory": "山东省",
+  "subcategory": "省考通用",
+  "subcategory2": null,
+  "interviewFormat": "结构化面试",
+  "questionTypeCategory": "综合分析",
+  "jobLevel": "",
+  "classificationSource": "source_title",
+  "classificationConfidence": "high",
+  "reviewStatus": "已确认",
+  "reviewReason": "",
+  "hasCompleteSuiteLevel": true,
+  "suiteId": "SD-20200830P-SK",
+  "suiteKey": "SD-20200830P-SK",
+  "suiteName": "2020年8月30日下午山东省考面试题",
+  "sourceTitleRaw": "2020年8月30日下午山东省考面试题",
+  "examDate": "2020-08-30",
+  "position": "",
+  "batch": "",
+  "questionNo": 3,
+  "questionScore": 32.0,
+  "hasAppearanceScore": true,
+  "referenceAnswer": "考生开始答题。 第一，题目中涉及的年轻人、跳档、频繁，是当前社会广泛关注的热点问题。 第二，年轻人、跳档、频繁之所以成为突出的社会现象或政策议题，有其深刻的时代背景和现实根源。山东的海洋经济、现代农业和高端制造业在全国具有重要地位。 第三，年轻人、跳档、频繁带来的影响是多方面的。从积极方面看，它反映了社会进步；但不可忽视的是，如果处理不当也会引发连锁反应。 第四，产生年轻人、跳档、频繁的深层原因是多维度的——制度层面、执行层面、社会层面等。 第五，解决年轻人、跳档、频繁需要多方协同、综合施策。山东推进'一次办好'改革，打造高效便捷的政务服务环境，为我们提供了可借鉴的实践路径。 第六，作为即将步入公务员队伍的年轻人，我认为最重要的就是要有'功成不必在我'的境界和'功成必定有我'的担当。焦裕禄（山东淄博人），在兰考治沙治碱，鞠躬尽瘁。 第七，总之，年轻人、跳档、频繁既是挑战也是机遇。 考生回答完毕。",
+  "tags": [
+    "#综合分析",
+    "#年轻人",
+    "#跳档",
+    "#频繁",
+    "#根据",
+    "#兴趣",
+    "#选择",
+    "#山东公务员面试"
+  ],
+  "scoreBands": [
+    {
+      "label": "低分/偏弱",
+      "min_score": 0,
+      "max_score": 17.6,
+      "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
+    },
+    {
+      "label": "基本合格",
+      "min_score": 17.7,
+      "max_score": 22.4,
+      "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
+    },
+    {
+      "label": "中高档",
+      "min_score": 22.5,
+      "max_score": 27.2,
+      "description": "内容较完整，逻辑较清晰，接近高分答案。"
+    },
+    {
+      "label": "高分标杆",
+      "min_score": 27.3,
+      "max_score": 32.0,
+      "description": "高分参考答案区间，用于回归验证。"
+    }
+  ],
+  "regressionCases": [
+    {
+      "label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_shandong/SD-20200830P-SK-03/reference_high.txt",
+      "expected_min": 29.0,
+      "expected_max": 32.0,
+      "llmExpectedMin": 29.0,
+      "llmExpectedMax": 32.0,
+      "notes": "来自原始题库文档的核心采分基准答案。"
+    },
+    {
+      "label": "程序化中档参考答案",
+      "sample_path": "assets/regression_samples/generated_shandong/SD-20200830P-SK-03/reference_mid.txt",
+      "expected_min": 10.0,
+      "expected_max": 13.7,
+      "llmExpectedMin": 11.2,
+      "llmExpectedMax": 15.5,
+      "notes": "基于高分答案程序化压缩生成；策略=template_analysis_mid_2，句数=6，截断=none，关键词削弱=medium。"
+    },
+    {
+      "label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_shandong/SD-20200830P-SK-03/reference_low.txt",
+      "expected_min": 7.0,
+      "expected_max": 10.7,
+      "llmExpectedMin": 0.0,
+      "llmExpectedMax": 10.7,
+      "notes": "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
+    }
+  ],
+  "answerScoreTotal": 96.0,
+  "appearanceScore": 4.0,
+  "suiteTotalScore": 100.0,
+  "totalScore": 100.0
+}

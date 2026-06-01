@@ -32,12 +32,18 @@
 
     <view class="card">
       <view class="section-head">
-        <text class="section-title">练习偏好</text>
+        <text class="section-title">考试设置</text>
       </view>
       <picker :range="provinceNames" :value="provinceIndex" @change="onProvinceChange">
         <view class="setting-row">
           <text>默认省份</text>
           <text>{{ userStore.selectedProvinceName }}</text>
+        </view>
+      </picker>
+      <picker :range="examCatPrefNames" :value="examCatPrefIndex" @change="onExamCatPrefChange">
+        <view class="setting-row">
+          <text>考试大类</text>
+          <text>{{ selectedExamCatPrefName }}</text>
         </view>
       </picker>
       <view class="setting-block">
@@ -127,6 +133,7 @@ import { useFavoritesStore } from '../../stores/favorites'
 import { useHistoryStore } from '../../stores/history'
 import { useUserStore } from '../../stores/user'
 import { PROVINCES, QUESTION_CATEGORIES } from '../../utils/constants'
+import { DEFAULT_TARGETED_POSITION_TREE } from '../../utils/targetedOptions'
 import { logger } from '../../utils/logger'
 import { requireLogin, toast } from '../../utils/navigation'
 
@@ -139,7 +146,8 @@ const preferences = reactive({
   defaultAnswerTime: 180,
   enableAudio: true,
   preferredQuestionDimensions: [],
-  practicePreferenceConfirmed: false
+  practicePreferenceConfirmed: false,
+  examCategory: ''
 })
 const profileLoading = ref(false)
 const profileError = ref('')
@@ -150,6 +158,23 @@ const initial = computed(() => safeDisplayName.value.slice(0, 1).toUpperCase() |
 const provinceOptions = computed(() => userStore.provinces.length ? userStore.provinces : PROVINCES)
 const provinceNames = computed(() => provinceOptions.value.map((item) => item.name))
 const provinceIndex = computed(() => Math.max(0, provinceOptions.value.findIndex((item) => item.code === userStore.selectedProvince)))
+// Exam category preference
+const examCatPrefOpts = DEFAULT_TARGETED_POSITION_TREE
+const examCatPrefNames = computed(() => ['不限', ...examCatPrefOpts.map(c => c.name)])
+const examCatPrefIndex = computed(() => {
+  const name = preferences.examCategory
+  if (!name) return 0
+  const idx = examCatPrefOpts.findIndex(c => c.name === name)
+  return idx >= 0 ? idx + 1 : 0
+})
+const selectedExamCatPrefName = computed(() => {
+  if (!preferences.examCategory) return '不限'
+  return preferences.examCategory
+})
+function onExamCatPrefChange(e) {
+  const idx = Number(e.detail.value)
+  preferences.examCategory = idx === 0 ? '' : (examCatPrefOpts[idx - 1]?.name || '')
+}
 const preferredQuestionOptions = QUESTION_CATEGORIES.filter((item) => item.key)
 const preferredQuestionLabel = computed(() => {
   if (!preferences.preferredQuestionDimensions.length) return '随机'
@@ -168,11 +193,10 @@ const balanceTitle = computed(() => {
 })
 const balanceDescription = computed(() => {
   if (userStore.isAdmin) return '管理员账号不扣减套餐余额，可访问全部训练与管理功能。'
-  const billing = userStore.userInfo?.billing || {}
-  const remaining = Number(billing.remainingMinutes || 0)
-  const daily = Number(billing.remainingDailyMinutes || 0)
-  if (remaining > 0 || daily > 0) {
-    return `剩余总时长 ${remaining} 分钟，今日可用 ${daily || remaining} 分钟。`
+  const daily = Number(billingStore.remainingDailyMinutes || 0)
+  const total = Number(billingStore.remainingMinutes || 0)
+  if (total > 0 || daily > 0) {
+    return `剩余总时长 ${total} 分钟，今日可用 ${daily || total} 分钟。`
   }
   return billingStore.plan?.status || '开通套餐后可查看剩余额度。'
 })
@@ -226,7 +250,8 @@ function normalizePagePreferences(raw = {}) {
     defaultAnswerTime: Math.max(60, Number(raw.defaultAnswerTime || preferences.defaultAnswerTime || 180)),
     enableAudio: raw.enableAudio !== false && raw.enableVideo !== false,
     preferredQuestionDimensions,
-    practicePreferenceConfirmed: raw.practicePreferenceConfirmed === true
+    practicePreferenceConfirmed: raw.practicePreferenceConfirmed === true,
+    examCategory: raw.examCategory || preferences.examCategory || ''
   }
 }
 

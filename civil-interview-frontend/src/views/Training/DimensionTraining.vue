@@ -23,6 +23,48 @@
       </div>
     </div>
 
+    <!-- 定向筛选 -->
+    <div class="card dim-filters" v-if="!readonlyMode">
+      <h4 style="margin-bottom: 12px; font-size: 14px; color: #555">定向筛选（可选）</h4>
+      <a-space direction="vertical" style="width: 100%">
+        <a-row :gutter="12">
+          <a-col :span="12">
+            <a-select v-model:value="selectedExamCategoryId" placeholder="考试大类" allow-clear
+              @change="handleExamCategoryFilterChange" style="width: 100%">
+              <a-select-option v-for="cat in examCategoryOptions" :key="cat.id" :value="cat.id">
+                {{ cat.name }}
+              </a-select-option>
+            </a-select>
+          </a-col>
+          <a-col :span="12">
+            <a-select v-model:value="selectedRegionId" placeholder="地区" allow-clear
+              :disabled="!regionOptions.length" @change="handleRegionFilterChange" style="width: 100%">
+              <a-select-option v-for="r in regionOptions" :key="r.id" :value="r.id">
+                {{ r.name }}
+              </a-select-option>
+            </a-select>
+          </a-col>
+        </a-row>
+        <a-row :gutter="12" v-if="hasDirectionOptions">
+          <a-col :span="12">
+            <a-select v-model:value="selectedDirectionId" placeholder="方向" allow-clear style="width: 100%">
+              <a-select-option v-for="d in directionOptions" :key="d.id" :value="d.id">
+                {{ d.name }}
+              </a-select-option>
+            </a-select>
+          </a-col>
+        </a-row>
+        <a-row :gutter="12">
+          <a-col :span="24">
+            <a-select v-model:value="selectedYearsFilter" mode="multiple" placeholder="年份不限" allow-clear
+              :max-tag-count="2" style="width: 100%">
+              <a-select-option v-for="y in YEAR_OPTIONS" :key="y" :value="y">{{ y }}</a-select-option>
+            </a-select>
+          </a-col>
+        </a-row>
+      </a-space>
+    </div>
+
     <!-- 生成训练题 -->
     <div class="dim-actions">
       <a-button
@@ -73,14 +115,20 @@ import { message } from 'ant-design-vue'
 import { TRAINING_CATEGORY_TIPS, getTrainingCategory, mergeTrainingProgress } from '@/utils/constants'
 import { useTrainingStore } from '@/stores/training'
 import { useUserStore } from '@/stores/user'
+import { useBillingStore } from '@/stores/billing'
 import { generateTrainingQuestions } from '@/api/training'
 import QuestionMetaTags from '@/components/common/QuestionMetaTags.vue'
 import { getScoringUnavailableMessage, isQuestionScoringSupported } from '@/utils/scoringSupport'
+import { DEFAULT_TARGETED_POSITION_TREE } from '@/utils/targetedOptions'
+import { YEAR_OPTIONS } from '@/utils/constants'
+import { hasPremiumAccess } from '@/utils/access'
 
 const route = useRoute()
 const router = useRouter()
 const trainingStore = useTrainingStore()
 const userStore = useUserStore()
+const billingStore = useBillingStore()
+const readonlyMode = computed(() => !hasPremiumAccess(userStore, billingStore))
 
 const categoryKey = computed(() => String(route.params.dimension || ''))
 const categoryInfo = computed(() => getTrainingCategory(categoryKey.value))
@@ -108,15 +156,74 @@ const avgScore = computed(() => {
 const generating = ref(false)
 const questions = ref([])
 
+// Targeted filter state
+const selectedExamCategoryId = ref('')
+const selectedRegionId = ref('')
+const selectedDirectionId = ref('')
+const selectedYearsFilter = ref([])
+const examCategoryOptions = computed(() =>
+  DEFAULT_TARGETED_POSITION_TREE.map(cat => ({ id: cat.id, name: cat.name }))
+)
+const selectedCategoryNode = computed(() =>
+  selectedExamCategoryId.value
+    ? DEFAULT_TARGETED_POSITION_TREE.find(c => String(c.id) === String(selectedExamCategoryId.value)) || null
+    : null
+)
+const regionOptions = computed(() =>
+  selectedCategoryNode.value?.children || []
+)
+const selectedRegionNode = computed(() =>
+  selectedRegionId.value
+    ? regionOptions.value.find(r => String(r.id) === String(selectedRegionId.value)) || null
+    : null
+)
+const hasDirectionOptions = computed(() =>
+  (selectedRegionNode.value?.children?.length || 0) > 0
+)
+const directionOptions = computed(() =>
+  selectedRegionNode.value?.children || []
+)
+const selectedDirectionNode = computed(() =>
+  selectedDirectionId.value
+    ? directionOptions.value.find(d => String(d.id) === String(selectedDirectionId.value)) || null
+    : null
+)
+function handleExamCategoryFilterChange() {
+  selectedRegionId.value = ''
+  selectedDirectionId.value = ''
+}
+function handleRegionFilterChange() {
+  selectedDirectionId.value = ''
+}
+
 async function generateQuestions() {
   if (!categoryInfo.value) return
   generating.value = true
   try {
-    const generatedQuestions = await generateTrainingQuestions({
-      dimension: categoryInfo.value.requestDimension,
-      province: userStore.selectedProvince || 'national',
-      count: 3
-    })
+    const params = { dimension: categoryInfo.value.requestDimension, count: 3 }
+    // Build target filters from selection
+    const cat = selectedCategoryNode.value
+    const region = selectedRegionNode.value
+    const dir = selectedDirectionNode.value
+    if (cat) {
+      params.examCategory = cat.examCategory || cat.name
+    }
+    if (region) {
+      params.province = region.province || userStore.selectedProvince || 'national'
+      if (region.examSubcategory) params.examSubcategory = region.examSubcategory
+      params.subcategory = region.subcategory || region.name
+    }
+    if (dir) {
+      params.subcategory2 = dir.subcategory || dir.name
+      if (dir.province) params.province = dir.province
+    }
+    if (selectedYearsFilter.value.length) {
+      params.year = selectedYearsFilter.value
+    }
+    if (!params.province) {
+      params.province = userStore.selectedProvince || 'national'
+    }
+    const generatedQuestions = await generateTrainingQuestions(params)
     questions.value = generatedQuestions.map((question) => ({
       ...question,
       trainingCategoryKey: categoryInfo.value.key,

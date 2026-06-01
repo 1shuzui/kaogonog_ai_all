@@ -180,7 +180,7 @@
             </view>
 
             <view v-if="finishingExam" class="analysis-status">
-              <text>正在分析结果，请稍候</text>
+              <text>{{ scoringProgressText }}</text>
             </view>
 
             <view class="record-panel">
@@ -306,6 +306,16 @@ const selectedMediaType = ref('')
 const questionStartedAt = ref(Date.now())
 const questionBookIndex = ref(0)
 const finishingExam = ref(false)
+const scoringProgressText = computed(() => {
+  const answers = examStore.answers || []
+  const pending = answers.filter(a => a.processingStatus && a.processingStatus !== 'completed' && a.processingStatus !== 'failed')
+  const total = answers.length
+  const done = total - pending.length
+  if (!pending.length) return '正在分析结果，请稍候'
+  const stageMap = { uploading: '上传录音', transcribing: '语音转文字', scoring: '智能评分中', queued: '排队等待' }
+  const stage = stageMap[pending[0]?.processingStatus] || '处理中'
+  return `${stage}...（${done}/${total}）`
+})
 const reportedQuestionKeys = new Set()
 const JIANGSU_FULL_EXAM_TIMING_MODE = 'jiangsu_5_15'
 const JIANGSU_READING_SECONDS = 5 * 60

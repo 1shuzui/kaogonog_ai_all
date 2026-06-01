@@ -1,0 +1,161 @@
+{
+  "id": "SD-20210227A-JY-02",
+  "type": "岗位认知与自我认知能力 | 32分",
+  "province": "山东",
+  "fullScore": 32.0,
+  "question": "【背景链接】监狱工作是国家刑罚执行的重要组成部分。【题目原文】毛泽东同志曾说，监狱其实是学校,也是工厂,或者是农场。结合这句话，谈谈对监狱工作的理解。",
+  "dimensions": [
+    {
+      "name": "职责认知",
+      "score": 5.3
+    },
+    {
+      "name": "岗位要求把握",
+      "score": 4.3
+    },
+    {
+      "name": "价值观与初心",
+      "score": 3.2
+    },
+    {
+      "name": "自身优势",
+      "score": 4.3
+    },
+    {
+      "name": "优势与岗位高度匹配得",
+      "score": 2.1
+    },
+    {
+      "name": "差距认识",
+      "score": 3.2
+    },
+    {
+      "name": "改进方向清晰得",
+      "score": 1.1
+    },
+    {
+      "name": "成长规划",
+      "score": 3.2
+    },
+    {
+      "name": "态度真诚度",
+      "score": 2.7
+    },
+    {
+      "name": "语言感染力",
+      "score": 2.6
+    }
+  ],
+  "coreKeywords": [],
+  "strongKeywords": [],
+  "weakKeywords": [],
+  "bonusKeywords": [],
+  "penaltyKeywords": [],
+  "scoringCriteria": [
+    "职责认知（5分） 得分要求：能否准确阐述2021年2月27日上午山东面试题（监狱系统）岗位的核心职责、工作性质和使命担当，展现对\"监狱\"的深刻理解。 评分细则：职责定位准确得2分；理解有深度（非泛泛而谈）得2分；体现出对该岗位特殊性的认知得1分。 2.",
+    "岗位要求把握（4分） 得分要求：能否从政治素质、业务能力、作风品格、为民情怀等维度全面阐述岗位要求。 评分细则：覆盖4个维度得满分4分；覆盖2至3个得2至3分；仅覆盖1个得1分。 3.",
+    "价值观与初心（3分） 得分要求：能否展现正确的权力观、政绩观和为民服务的初心。 评分细则：价值观正确且表述真诚得3分；正确但略显空洞得2分；有偏差得0至1分。 （二）自我认知（10分） 4.",
+    "自身优势（4分） 得分要求：能否清晰阐述自身与2021年2月27日上午山东面试题（监狱系统）岗位的适配度，包括专业背景、性格特质或个人经历。 评分细则：有具体的自身优势分析（非空泛自夸）得2分",
+    "优势与岗位高度匹配得（2分）：5.",
+    "差距认识（3分） 得分要求：能否清醒认识自身不足和差距，态度诚恳、实事求是。 评分细则：有明确的差距认识得2分",
+    "改进方向清晰得（1分）：6.",
+    "成长规划（3分） 得分要求：是否有清晰的职业发展规划和成长路径。 评分细则：规划具体可行得2分；体现出扎根基层的意愿得1分。 （三）表达与态度（5分） 7.",
+    "态度真诚度（2.5分）：不虚伪、不浮夸、不做作，展现出朴实真诚的态度 8.",
+    "语言感染力（2.5分）：是否能让考官感受到对该岗位的真正热爱和坚定信念 三、加分点（最高3分） 9. 先进典型对标（+1.5分）：引用焦裕禄等先进模范事迹进行自我对标，有具体的对照分析 10. 真情实感（+1.5分）：回答中融入了真实的个人经历或情感体验，而非机械背诵 四、创新思维加分（最高2分） 11. 岗位认知的独到视角（+1分）：对2021年2月27日上午山东面试题（监狱系统）岗位有超越常规的独特理解 12. 成长规划的创新性（+1分）：提出了有创意且可行的个人成长路径 五、得分关键词语料库 核心关键词：监狱、毛泽东、同志、其实、学校 必备关键词：初心、使命、责任、担当、奉献、人民、服务、廉洁、忠诚"
+  ],
+  "deductionRules": [],
+  "sourceDocument": "山东公务员真题库_normalized.txt",
+  "sourceDocumentType": "extracted_txt",
+  "examCategory": "省级公务员考试",
+  "examSubcategory": "山东省",
+  "subcategory": "监狱系统",
+  "subcategory2": null,
+  "interviewFormat": "结构化面试",
+  "questionTypeCategory": "岗位认知",
+  "jobLevel": "",
+  "classificationSource": "source_title",
+  "classificationConfidence": "high",
+  "reviewStatus": "已确认",
+  "reviewReason": "",
+  "hasCompleteSuiteLevel": true,
+  "suiteId": "SD-20210227A-JY",
+  "suiteKey": "SD-20210227A-JY",
+  "suiteName": "2021年2月27日上午山东面试题",
+  "sourceTitleRaw": "2021年2月27日上午山东面试题(监狱系统)",
+  "examDate": "2021-02-27",
+  "position": "",
+  "batch": "",
+  "questionNo": 2,
+  "questionScore": 32.0,
+  "hasAppearanceScore": true,
+  "referenceAnswer": "考生开始答题。 第一，题目提出了监狱、毛泽东、同志这一核心命题。 第二，选择公务员这份职业，首先要想清楚'为什么而来'的问题。焦裕禄（山东淄博人），在兰考治沙治碱，鞠躬尽瘁。 第三，我对2021年2月27日上午山东面试题（监狱系统）工作的认识是——这是一个需要情怀的岗位。 第四，本岗位要求我们具备过硬的政治素质、精湛的业务能力、优良的作风品格和深厚的为民情怀。 第五，对照这些要求，我清醒地认识到自身的差距和不足，但我有决心、有信心。 第六，如果我有幸能够进入2021年2月27日上午山东面试题（监狱系统）系统工作，我将做到：把学习作为第一需要，把实干作为第一追求。 第七，监狱、毛泽东、同志不是一个抽象的命题，而是需要用一生去回答的答卷。 考生回答完毕。",
+  "tags": [
+    "#岗位认知",
+    "#监狱",
+    "#毛泽东",
+    "#同志",
+    "#其实",
+    "#学校",
+    "#工厂",
+    "#山东公务员面试"
+  ],
+  "scoreBands": [
+    {
+      "label": "低分/偏弱",
+      "min_score": 0,
+      "max_score": 17.6,
+      "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
+    },
+    {
+      "label": "基本合格",
+      "min_score": 17.7,
+      "max_score": 22.4,
+      "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
+    },
+    {
+      "label": "中高档",
+      "min_score": 22.5,
+      "max_score": 27.2,
+      "description": "内容较完整，逻辑较清晰，接近高分答案。"
+    },
+    {
+      "label": "高分标杆",
+      "min_score": 27.3,
+      "max_score": 32.0,
+      "description": "高分参考答案区间，用于回归验证。"
+    }
+  ],
+  "regressionCases": [
+    {
+      "label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_shandong/SD-20210227A-JY-02/reference_high.txt",
+      "expected_min": 29.0,
+      "expected_max": 32.0,
+      "llmExpectedMin": 29.0,
+      "llmExpectedMax": 32.0,
+      "notes": "来自原始题库文档的核心采分基准答案。"
+    },
+    {
+      "label": "程序化中档参考答案",
+      "sample_path": "assets/regression_samples/generated_shandong/SD-20210227A-JY-02/reference_mid.txt",
+      "expected_min": 13.9,
+      "expected_max": 18.9,
+      "llmExpectedMin": 15.6,
+      "llmExpectedMax": 20.0,
+      "notes": "基于高分答案程序化压缩生成；策略=hybrid，句数=7，截断=160，关键词削弱=none。"
+    },
+    {
+      "label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_shandong/SD-20210227A-JY-02/reference_low.txt",
+      "expected_min": 10.1,
+      "expected_max": 15.1,
+      "llmExpectedMin": 0.0,
+      "llmExpectedMax": 15.1,
+      "notes": "基于高分答案程序化降档生成；策略=spread，句数=4，截断=90，关键词削弱=medium，口语化=是。"
+    }
+  ],
+  "answerScoreTotal": 64.0,
+  "appearanceScore": 36.0,
+  "suiteTotalScore": 100.0,
+  "totalScore": 100.0
+}

@@ -2,9 +2,8 @@ export const JIANGSU_JOB_CATEGORIES = [
   { key: 'a', code: 'A', title: '综合管理岗', shortTitle: '综合管理岗', subtitle: '省属 / 地市事业单位真题', scope: '综合管理', rank: 1, hot: '报考热度最高' },
   { key: 'b', code: 'B', title: '社会科学专技岗', shortTitle: '社会科学专技岗', subtitle: '法律 / 经济 / 会计', scope: '社科专技', rank: 2, hot: '专业岗高频' },
   { key: 'c', code: 'C', title: '自然科学专技岗', shortTitle: '自然科学专技岗', subtitle: '计算机 / 工程 / 农技', scope: '自然科学', rank: 3, hot: '理工农技' },
-  { key: 'd', code: 'D', title: '中小学教师岗', shortTitle: '中小学教师岗', subtitle: '', scope: '教师岗', rank: 4, hot: '教师专项' },
-  { key: 'e', code: 'E', title: '医疗卫生岗', shortTitle: '医疗卫生岗', subtitle: '', scope: '医疗卫生', rank: 5, hot: '医疗岗专项' },
-  { key: 'worker', code: '工勤', title: '工勤技能岗', shortTitle: '工勤', subtitle: '', scope: '工勤技能', rank: 6, hot: '技能岗' }
+  { key: 'e', code: 'E', title: '医疗卫生岗', shortTitle: '医疗卫生岗', subtitle: '', scope: '医疗卫生', rank: 4, hot: '医疗岗专项' },
+  { key: 'worker', code: '工勤', title: '工勤技能岗', shortTitle: '工勤', subtitle: '', scope: '工勤技能', rank: 5, hot: '技能岗' }
 ]
 
 export const JIANGSU_TARGETED_POSITIONS = JIANGSU_JOB_CATEGORIES.map((item) => ({

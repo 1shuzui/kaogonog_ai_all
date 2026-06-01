@@ -269,8 +269,14 @@ def _transcribe_with_local_whisper(media_bytes: bytes, filename: str) -> str:
             source_path = source_file.name
             source_file.write(media_bytes)
         model = _get_local_whisper_model()
-        result = model.transcribe(source_path, language="zh", fp16=False)
+        result = model.transcribe(source_path, language="zh", fp16=False, initial_prompt="简体中文普通话")
         text = str((result or {}).get("text") or "").strip()
+        # Force simplified Chinese via zhconv fallback
+        try:
+            from zhconv import convert
+            text = convert(text, 'zh-cn')
+        except ImportError:
+            pass
         return text
     finally:
         if source_path:

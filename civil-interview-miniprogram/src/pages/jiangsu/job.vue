@@ -147,7 +147,7 @@ async function loadQuestions() {
   try {
     const res = await getQuestions({
       province: 'jiangsu',
-      position: positionCode.value,
+      examCategory: '事业单位考试',
       current: 1,
       page: 1,
       pageSize: 1000

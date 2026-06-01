@@ -24,7 +24,8 @@ export function evaluateAnswer(data) {
   return request({
     url: '/scoring/evaluate',
     method: 'POST',
-    data
+    data,
+    timeout: 90000
   })
 }
 

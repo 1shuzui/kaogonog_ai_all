@@ -19,3 +19,11 @@ export function getRefundBalanceStats(data = {}) {
 export function applyRefund(data) {
   return http.post('/payment/admin/refund', data)
 }
+
+export function verifyVirtualPaymentOrder(orderNo, data = {}) {
+  return http.post(`/payment/orders/${encodeURIComponent(orderNo)}/virtual/verify`, data)
+}
+
+export function confirmVirtualPaymentOrder(orderNo, data = {}) {
+  return http.post(`/payment/orders/${encodeURIComponent(orderNo)}/virtual/confirm`, data)
+}

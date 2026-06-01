@@ -34,12 +34,14 @@ export function useMediaRecorder() {
   let chunks = []
   let durationTimer = null
   let startTime = 0
+  let externallyOwned = false
 
   function setStream(externalStream) {
     if (externalStream) {
       stream.value = externalStream
       hasVideo.value = externalStream.getVideoTracks().length > 0
       error.value = ''
+      externallyOwned = true  // stream owned externally, don't destroy on unmount
     }
   }
 
@@ -60,6 +62,7 @@ export function useMediaRecorder() {
           facingMode: 'user'
         }
       }
+      externallyOwned = false  // we created this stream, own it
       stream.value = await navigator.mediaDevices.getUserMedia(constraints)
       error.value = ''
       return stream.value
@@ -72,6 +75,19 @@ export function useMediaRecorder() {
   function startRecording() {
     if (!stream.value) {
       error.value = '请先初始化媒体流'
+      return
+    }
+
+    // Guard: if MediaRecorder already active, stop it first
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop()
+      mediaRecorder = null
+    }
+
+    // Guard: if stream has no active tracks, re-init
+    const activeTracks = stream.value.getTracks().filter(t => t.readyState === 'live')
+    if (!activeTracks.length) {
+      error.value = '媒体流已断开，请刷新页面后重试'
       return
     }
 
@@ -148,13 +164,27 @@ export function useMediaRecorder() {
       stream.value = null
     }
     clearInterval(durationTimer)
+    mediaRecorder = null
+    isRecording.value = false
+    isPaused.value = false
+    duration.value = 0
+  }
+
+  function cleanupRecording() {
+    clearInterval(durationTimer)
+    mediaRecorder = null
     isRecording.value = false
     isPaused.value = false
     duration.value = 0
   }
 
   onUnmounted(() => {
-    destroyStream()
+    if (externallyOwned) {
+      // Stream is owned externally (e.g. examStore.mediaStream) – don't stop tracks
+      cleanupRecording()
+    } else {
+      destroyStream()
+    }
   })
 
   return {

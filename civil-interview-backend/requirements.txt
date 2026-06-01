@@ -13,3 +13,5 @@ pymysql
 cryptography
 python-dotenv
 redis[hiredis]==5.2.1
+zhconv
+openai-whisper

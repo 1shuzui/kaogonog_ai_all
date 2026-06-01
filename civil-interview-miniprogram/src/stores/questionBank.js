@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { getQuestionById, getQuestions, getRandomQuestions } from '../api/questionBank'
+import { deleteQuestion, getQuestionById, getQuestions, getRandomQuestions } from '../api/questionBank'
 import { normalizeListResponse } from '../utils/format'
 
 export const useQuestionBankStore = defineStore('questionBank', {
@@ -11,7 +11,11 @@ export const useQuestionBankStore = defineStore('questionBank', {
       keyword: '',
       dimension: '',
       province: 'national',
-      position: ''
+      position: '',
+      examCategory: '',
+      subcategory: '',
+      subcategory2: '',
+      year: ''
     },
     pagination: {
       current: 1,
@@ -69,6 +73,11 @@ export const useQuestionBankStore = defineStore('questionBank', {
         ...filters
       }
       this.pagination.current = 1
+    },
+
+    async removeQuestion(id) {
+      await deleteQuestion(id)
+      this.questions = this.questions.filter((q) => q.id !== id)
     }
   }
 })

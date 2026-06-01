@@ -64,7 +64,7 @@ export const BILLING_PLANS = [
     packageCode: 'trial_3h',
     badge: '按时',
     title: '3小时体验包',
-    priceText: '¥0.01',
+    priceText: '¥99',
     description: '适合临近面试前的集中冲刺和短时高强度练习。',
     features: [
       '解锁全真模拟、定向备考、专项训练和题库推荐',
@@ -79,7 +79,7 @@ export const BILLING_PLANS = [
     packageCode: 'monthly_1h_day',
     badge: '包月',
     title: '包月每日1小时',
-    priceText: '¥0.01',
+    priceText: '¥299',
     description: '适合系统化备考和连续多天的稳定训练。',
     features: [
       '30 天有效期，每日 1 小时训练额度',
@@ -135,7 +135,7 @@ export function getPlanActivationSummary(planType) {
 }
 
 export function getPlanAmount(planType) {
-  if (planType === BILLING_PLAN_KEYS.HOURLY) return 0.01
-  if (planType === BILLING_PLAN_KEYS.MONTHLY) return 0.01
+  if (planType === BILLING_PLAN_KEYS.HOURLY) return 99
+  if (planType === BILLING_PLAN_KEYS.MONTHLY) return 299
   return 0
 }

@@ -39,10 +39,10 @@ export const useTrainingStore = defineStore('training', {
   },
 
   actions: {
-    async generate(dimension, count = 1, province = 'national') {
+    async generate(dimension, count = 1, province = 'national', extraFilters = {}) {
       this.generating = true
       try {
-        const response = await generateTrainingQuestions({ dimension, province, count, sourceMode: 'local' })
+        const response = await generateTrainingQuestions({ dimension, province, count, sourceMode: 'local', ...extraFilters })
         this.generatedQuestions = Array.isArray(response) ? response : []
         return this.generatedQuestions
       } finally {

@@ -38,6 +38,66 @@
 
         <text class="form-label">关键词</text>
         <input v-model="keywordText" class="field" placeholder="多个关键词用逗号分隔" />
+
+        <!-- 高级设置切换 -->
+        <view class="advanced-toggle" @tap="showAdvanced = !showAdvanced">
+          <text class="advanced-toggle__text">高级设置（考试分类、套题、同义词、AI关键词）</text>
+          <text class="advanced-toggle__icon">{{ showAdvanced ? '▲' : '▼' }}</text>
+        </view>
+
+        <view v-if="showAdvanced" class="advanced-section">
+          <text class="form-label">考试大类</text>
+          <input v-model="form.examCategory" class="field" placeholder="如：省级公务员考试、事业单位考试" />
+
+          <text class="form-label">二级分类</text>
+          <input v-model="form.examSubcategory" class="field" placeholder="如：安徽省、江苏省" />
+
+          <text class="form-label">三级分类</text>
+          <input v-model="form.subcategory" class="field" placeholder="如：地级市、系统、岗位方向" />
+
+          <text class="form-label">四级分类</text>
+          <input v-model="form.subcategory2" class="field" placeholder="如：区县、具体单位" />
+
+          <view class="time-grid">
+            <view>
+              <text class="form-label">面试形式</text>
+              <input v-model="form.interviewFormat" class="field" placeholder="如：15分钟包干" />
+            </view>
+            <view>
+              <text class="form-label">计时模式</text>
+              <input v-model="form.timingMode" class="field" placeholder="如：8分钟读题+12分钟答题" />
+            </view>
+          </view>
+
+          <text class="form-label">年份（多个用逗号分隔）</text>
+          <input v-model="yearText" class="field" placeholder="如：2024,2023,2022" />
+
+          <text class="form-label">套题数量</text>
+          <input v-model="form.questionCount" class="field" placeholder="如：3" />
+
+          <view class="time-grid">
+            <view>
+              <text class="form-label">套题ID</text>
+              <input v-model="form.suiteId" class="field" placeholder="如：SD-20200829A-SK" />
+            </view>
+            <view>
+              <text class="form-label">套题Key</text>
+              <input v-model="form.suiteKey" class="field" placeholder="同 suiteId" />
+            </view>
+          </view>
+
+          <text class="form-label">套题名称</text>
+          <input v-model="form.suiteName" class="field" placeholder="如：2020年8月31日上午山东省考面试题" />
+
+          <text class="form-label">同义表述库（每行一个）</text>
+          <textarea v-model="synonymsText" class="textarea-field" placeholder="每行一个同义表述" />
+
+          <text class="form-label">扣分关键词（逗号分隔）</text>
+          <input v-model="deductingText" class="field" placeholder="多个关键词用逗号分隔" />
+
+          <text class="form-label">加分关键词（逗号分隔）</text>
+          <input v-model="bonusText" class="field" placeholder="多个关键词用逗号分隔" />
+        </view>
       </view>
 
       <button class="primary-button" :loading="saving" @tap="submitForm">{{ isEdit ? '保存修改' : '新增题目' }}</button>
@@ -57,8 +117,14 @@ import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navig
 const userStore = useUserStore()
 const questionId = ref('')
 const saving = ref(false)
+const showAdvanced = ref(false)
 const scoringText = ref('')
 const keywordText = ref('')
+const yearText = ref('')
+const synonymsText = ref('')
+const deductingText = ref('')
+const bonusText = ref('')
+
 const form = reactive({
   stem: '',
   dimension: 'analysis',
@@ -68,11 +134,24 @@ const form = reactive({
   position: '',
   examCategory: '',
   examSubcategory: '',
+  subcategory: '',
+  subcategory2: '',
   system: '',
   positionType: '',
   portalTags: [],
-  displayPortals: []
+  displayPortals: [],
+  interviewFormat: '',
+  timingMode: '',
+  year: [],
+  questionCount: '',
+  suiteId: '',
+  suiteKey: '',
+  suiteName: '',
+  synonyms: [],
+  keywordsDeducting: [],
+  keywordsBonus: []
 })
+
 const categoryOptions = QUESTION_CATEGORIES.filter((item) => item.key)
 const categoryNames = computed(() => categoryOptions.map((item) => item.name))
 const provinceOptions = computed(() => userStore.provinces.length ? userStore.provinces : PROVINCES)
@@ -135,11 +214,33 @@ function parseKeywords() {
     .split(/[,，\n]/)
     .map((item) => item.trim())
     .filter(Boolean)
+  const deducting = deductingText.value
+    .split(/[,，\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+  const bonus = bonusText.value
+    .split(/[,，\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
   return {
     scoring,
-    deducting: [],
-    bonus: []
+    deducting,
+    bonus
   }
+}
+
+function parseSynonyms() {
+  return synonymsText.value
+    .split('\n')
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+function parseYear() {
+  return yearText.value
+    .split(/[,，\s]+/)
+    .map((item) => item.trim())
+    .filter(Boolean)
 }
 
 async function loadQuestion() {
@@ -154,12 +255,29 @@ async function loadQuestion() {
     form.position = question?.position || ''
     form.examCategory = question?.examCategory || ''
     form.examSubcategory = question?.examSubcategory || ''
+    form.subcategory = question?.subcategory || ''
+    form.subcategory2 = question?.subcategory2 || ''
     form.system = question?.system || ''
     form.positionType = question?.positionType || ''
     form.portalTags = Array.isArray(question?.portalTags) ? question.portalTags : []
     form.displayPortals = Array.isArray(question?.displayPortals) ? question.displayPortals : []
+    form.interviewFormat = question?.interviewFormat || ''
+    form.timingMode = question?.timingMode || ''
+    form.year = Array.isArray(question?.year) ? question.year : (question?.year ? String(question.year).split(',').filter(Boolean) : [])
+    form.questionCount = question?.questionCount || ''
+    form.suiteId = question?.keywords?._meta?.suiteId || question?.suiteId || ''
+    form.suiteKey = question?.keywords?._meta?.suiteKey || question?.suiteKey || ''
+    form.suiteName = question?.keywords?._meta?.suiteName || question?.suiteName || ''
+    form.synonyms = Array.isArray(question?.synonyms) ? question.synonyms : []
+    form.keywordsDeducting = Array.isArray(question?.keywords?.deducting) ? question.keywords.deducting : []
+    form.keywordsBonus = Array.isArray(question?.keywords?.bonus) ? question.keywords.bonus : []
+
     scoringText.value = scoringToText(question?.scoringPoints || [])
     keywordText.value = Array.isArray(question?.keywords?.scoring) ? question.keywords.scoring.join('，') : ''
+    yearText.value = Array.isArray(form.year) ? form.year.join(',') : ''
+    synonymsText.value = form.synonyms.join('\n')
+    deductingText.value = form.keywordsDeducting.join('，')
+    bonusText.value = form.keywordsBonus.join('，')
   } catch (error) {
     toast(error?.message || '题目加载失败')
   } finally {
@@ -173,14 +291,27 @@ function applyTargetDefaultsFromQuery(query = {}) {
   form.position = String(query.position || '')
   form.examCategory = String(query.examCategory || '')
   form.examSubcategory = String(query.examSubcategory || '')
+  form.subcategory = String(query.subcategory || '')
+  form.subcategory2 = String(query.subcategory2 || '')
   form.system = String(query.system || '')
   form.positionType = String(query.positionType || '')
   form.portalTags = portalTag ? [portalTag] : []
   form.displayPortals = portalTag ? [portalTag] : []
+  form.interviewFormat = String(query.interviewFormat || '')
+  form.timingMode = String(query.timingMode || '')
+  form.questionCount = String(query.questionCount || '')
+  form.suiteId = String(query.suiteId || '')
+  form.suiteKey = String(query.suiteKey || '')
+  form.suiteName = String(query.suiteName || '')
+  yearText.value = query.year ? String(query.year).split(',').filter(Boolean).join(',') : ''
 }
 
 function buildPayload() {
   const portalTags = Array.isArray(form.portalTags) ? form.portalTags.filter(Boolean) : []
+  const parsedKeywords = parseKeywords()
+  const parsedSynonyms = parseSynonyms()
+  const parsedYear = parseYear()
+
   return {
     stem: form.stem.trim(),
     dimension: form.dimension || 'analysis',
@@ -188,14 +319,26 @@ function buildPayload() {
     prepTime: Math.max(30, Number(form.prepTime || 90)),
     answerTime: Math.max(60, Number(form.answerTime || 180)),
     scoringPoints: parseScoringPoints(),
-    keywords: parseKeywords(),
+    keywords: parsedKeywords,
     position: form.position || '',
     examCategory: form.examCategory || '',
     examSubcategory: form.examSubcategory || '',
+    subcategory: form.subcategory || '',
+    subcategory2: form.subcategory2 || '',
     system: form.system || '',
     positionType: form.positionType || '',
     portalTags,
-    displayPortals: portalTags
+    displayPortals: portalTags,
+    interviewFormat: form.interviewFormat || '',
+    timingMode: form.timingMode || '',
+    year: parsedYear,
+    questionCount: form.questionCount || '',
+    suiteId: form.suiteId || '',
+    suiteKey: form.suiteKey || '',
+    suiteName: form.suiteName || '',
+    synonyms: parsedSynonyms,
+    keywordsDeducting: parsedKeywords.deducting,
+    keywordsBonus: parsedKeywords.bonus
   }
 }
 
@@ -243,5 +386,28 @@ async function submitForm() {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16rpx;
+}
+
+.advanced-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28rpx 0 16rpx;
+  margin-top: 16rpx;
+  border-top: 1rpx solid #eef2f6;
+}
+
+.advanced-toggle__text {
+  color: #1b5faa;
+  font-size: 26rpx;
+}
+
+.advanced-toggle__icon {
+  color: #1b5faa;
+  font-size: 22rpx;
+}
+
+.advanced-section {
+  padding-top: 8rpx;
 }
 </style>

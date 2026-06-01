@@ -2,7 +2,7 @@
   <a-select
     :value="selected"
     :options="options"
-    placeholder="选择省份"
+    placeholder="选择地区"
     style="min-width: 120px"
     @change="onSelect"
   />
@@ -21,7 +21,7 @@ const userStore = useUserStore()
 const selected = computed(() => props.value ?? userStore.selectedProvince)
 
 const options = computed(() =>
-  [{ value: 'all', label: '全部省份' }, ...userStore.provinces.map(p => ({ value: p.code, label: p.name }))]
+  [{ value: 'all', label: '全部地区' }, ...userStore.provinces.map(p => ({ value: p.code, label: p.name }))]
 )
 
 onMounted(() => {

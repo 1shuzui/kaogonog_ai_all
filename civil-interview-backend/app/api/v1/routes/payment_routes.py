@@ -5,6 +5,7 @@ from app.core.security import get_current_user
 from app.db.session import get_db
 from app.schemas.common import (
     AuthUser,
+    CompensateRequest,
     PaymentCallbackRequest,
     PaymentOrderCreateRequest,
     PaymentVirtualConfirmRequest,
@@ -13,6 +14,7 @@ from app.schemas.common import (
 )
 from app.services.payment_service import (
     apply_refund,
+    compensate_subscription,
     confirm_virtual_payment_order,
     create_payment_order,
     get_payment_order,
@@ -53,6 +55,11 @@ def payment_refund_stats(data: RefundBalanceStatsRequest, current_user: AuthUser
 @router.post("/admin/refund")
 def payment_apply_refund(data: RefundApplyRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     return apply_refund(db, current_user, data)
+
+
+@router.post("/admin/compensate")
+def payment_compensate(data: CompensateRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    return compensate_subscription(db, current_user, data)
 
 
 @router.post("/orders/{order_no}/virtual/confirm")

@@ -52,9 +52,19 @@ build_backend_artifact() {
     fi
   done
 
+  local question_service_backup
+  question_service_backup="$(mktemp)"
+  cp "$backend_dir/app/services/question_service.py" "$question_service_backup"
+  rm -f "$backend_dir/app/services/question_service.py"
+
   pyarmor gen -O "$obf_dir" -r "${pyarmor_inputs[@]}"
 
+  cp "$question_service_backup" "$backend_dir/app/services/question_service.py"
+  rm -f "$question_service_backup"
+
   rsync -a "$obf_dir/" "$artifact_dir/"
+  # Trial license can't obfuscate large files; copy the raw source as fallback
+  cp "$backend_dir/app/services/question_service.py" "$artifact_dir/app/services/question_service.py"
   rm -rf "$obf_dir"
 
   cp "$backend_dir/requirements.txt" "$artifact_dir/requirements.txt"
@@ -183,7 +193,7 @@ ssh "${SSH_OPTS[@]}" "$SERVER" "rm -rf \
 
 ssh "${SSH_OPTS[@]}" "$SERVER" "if grep -Eq '^DATABASE_URL=(mysql|mysql\\+)' '$REMOTE_LATEST/backend/.env'; then rm -f '$REMOTE_LATEST/backend/'*.db; fi"
 
-ssh "${SSH_OPTS[@]}" "$SERVER" "sudo nginx -t && for i in {1..90}; do curl -fsS http://127.0.0.1:8050/health >/dev/null 2>&1 && exit 0; sleep 1; done; curl -fsS http://127.0.0.1:8050/health >/dev/null"
+ssh "${SSH_OPTS[@]}" "$SERVER" "sudo nginx -t && sudo nginx -s reload && for i in {1..90}; do curl -fsS http://127.0.0.1:8050/health >/dev/null 2>&1 && exit 0; sleep 1; done; curl -fsS http://127.0.0.1:8050/health >/dev/null"
 ssh "${SSH_OPTS[@]}" "$SERVER" "ss -ltn | grep -q '127.0.0.1:8050' && ! ss -ltn | grep -Eq '0\\.0\\.0\\.0:8050|\\[::\\]:8050'"
 if timeout 3 bash -c '</dev/tcp/150.158.87.179/8050' 2>/dev/null; then
   echo "Public 8050 is reachable; expected it to be blocked." >&2

@@ -373,21 +373,30 @@ export const DEFAULT_TARGETED_POSITION_TREE = [
     name: '银行招考面试',
     desc: '按银行招考面试方向统计。',
     children: [
-      {
-        id: 'bank_all',
-        name: '银行招考',
-        province: 'all',
-        // portalTag_removed: '银行招考面试',
-        adminHint: reservedAdminHint('银行招考'),
-        directions: BANK_SYSTEM_DIRECTIONS.map(([code, name]) => ({
-          id: `bank_portal_${code}`,
-          name,
-          province: 'all',
+      ...[
+        ['beijing', '北京市'], ['shanghai', '上海市'], ['guangdong', '广东省'], ['jiangsu', '江苏省'],
+        ['zhejiang', '浙江省'], ['shandong', '山东省'], ['henan', '河南省'], ['sichuan', '四川省'],
+        ['anhui', '安徽省'], ['fujian', '福建省'], ['gansu', '甘肃省'],
+        ['guangxi', '广西壮族自治区'], ['guizhou', '贵州省'], ['hainan', '海南省'],
+        ['hebei', '河北省'], ['heilongjiang', '黑龙江省'], ['hubei', '湖北省'],
+        ['hunan', '湖南省'], ['jilin', '吉林省'], ['jiangxi', '江西省'],
+        ['liaoning', '辽宁省'], ['neimenggu', '内蒙古自治区'], ['ningxia', '宁夏回族自治区'],
+        ['qinghai', '青海省'], ['shaanxi', '陕西省'], ['shanxi', '山西省'],
+        ['tianjin', '天津市'], ['xinjiang', '新疆维吾尔自治区'], ['xizang', '西藏自治区'],
+        ['yunnan', '云南省'], ['chongqing', '重庆市'],
+      ].map(([code, province]) => ({
+        id: `bank_${code}`,
+        name: province,
+        province: code,
+        adminHint: reservedAdminHint(`${province}银行招考`),
+        directions: BANK_SYSTEM_DIRECTIONS.map(([sysCode, sysName]) => ({
+          id: `bank_${code}_${sysCode}`,
+          name: sysName,
+          province: code,
           position: 'bank',
-          // portalTag_removed: '银行招考面试',
-          subcategory: name
+          subcategory: sysName
         }))
-      }
+      }))
     ]
   },
   {

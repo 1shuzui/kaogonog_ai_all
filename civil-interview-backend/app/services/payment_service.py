@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.models.entities import PaymentOrder, SubscriptionPackage, User, UserSubscription
 from app.schemas.common import (
     AuthUser,
+    CompensateRequest,
     PaymentCallbackRequest,
     PaymentOrderCreateRequest,
     PaymentVirtualConfirmRequest,
@@ -194,16 +195,56 @@ def apply_refund(db: Session, current_user: AuthUser, data: RefundApplyRequest) 
     if row["refundableHours"] and refunded_hours > row["refundableHours"]:
         raise HTTPException(status_code=400, detail="退款小时数超过可退额度")
 
+    # Query WeChat for current order state including left_fee
+    package = db.query(SubscriptionPackage).filter(SubscriptionPackage.package_code == order.package_code).first()
+    if not package:
+        raise HTTPException(status_code=404, detail="订单关联套餐不存在")
+    try:
+        query_result = wechat_pay_service.query_virtual_order(order, package)
+    except HTTPException as exc:
+        raise HTTPException(status_code=502, detail=f"查询微信订单状态失败: {exc.detail}")
+
+    left_fee = wechat_pay_service._extract_virtual_left_fee(query_result.get("raw") or {})
+    if left_fee <= 0:
+        raise HTTPException(status_code=400, detail="微信侧该订单无可退余额")
+
     total_hours = row["totalHours"] or refunded_hours
+    refund_ratio = refunded_hours / total_hours if total_hours > 0 else 1.0
+    refund_fee = int(left_fee * refund_ratio)
+    if refund_fee <= 0:
+        raise HTTPException(status_code=400, detail="退款金额为0，无需退款")
+    refund_fee = min(refund_fee, left_fee)
+
+    # Generate refund_order_id
+    refund_order_id = f"RFND{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}{uuid.uuid4().hex[:6]}"
+
+    # Call WeChat refund API
+    try:
+        refund_result = wechat_pay_service.refund_virtual_order(
+            order=order,
+            refund_order_id=refund_order_id,
+            left_fee=left_fee,
+            refund_fee=refund_fee,
+            refund_reason=data.refundReason or "3",
+            req_from="1",
+        )
+    except HTTPException as exc:
+        raise HTTPException(status_code=502, detail=f"微信退款发起失败: {exc.detail}")
+
     refunded_amount = Decimal(str(order.amount or 0)) * Decimal(str(refunded_hours)) / Decimal(str(total_hours))
     refund_payload = {
         "refundedHours": round(refunded_hours, 2),
         "refundedAmount": _money(refunded_amount),
+        "refundFee": refund_fee,
+        "leftFee": left_fee,
         "refundReason": data.refundReason or "",
         "refundRemark": data.refundRemark or "",
         "refundedBy": current_user.username,
         "refundedAt": datetime.now(timezone.utc).isoformat(),
-        "mode": "admin_mark",
+        "refundOrderId": refund_order_id,
+        "refundWxOrderId": refund_result.get("refundWxOrderId") or "",
+        "mode": "wechat_virtual_refund",
+        "wechatRaw": refund_result.get("raw") or {},
     }
 
     callback_payload = dict(order.callback_payload) if isinstance(order.callback_payload, dict) else {}
@@ -219,7 +260,6 @@ def apply_refund(db: Session, current_user: AuthUser, data: RefundApplyRequest) 
         extra["refund"] = refund_payload
         subscription.extra_payload = extra
         user = db.query(User).filter(User.username == order.username).first()
-        package = db.query(SubscriptionPackage).filter(SubscriptionPackage.package_code == order.package_code).first()
         if user and package:
             _sync_user_preferences_subscription(user, package, subscription)
 
@@ -227,8 +267,63 @@ def apply_refund(db: Session, current_user: AuthUser, data: RefundApplyRequest) 
     db.refresh(order)
     return {
         "success": True,
-        "message": "退款已标记，请在微信支付/虚拟支付后台完成实际退款核验。",
+        "message": "退款已提交微信处理，请稍后在微信支付后台确认退款完成。",
         "order": _serialize_refund_row(order, subscription),
+        "refund": refund_result,
+    }
+
+
+def compensate_subscription(db: Session, current_user: AuthUser, data: CompensateRequest) -> dict:
+    _assert_admin(current_user)
+    user = db.query(User).filter(User.username == data.username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+
+    subscription = db.query(UserSubscription).filter(
+        UserSubscription.username == data.username,
+        UserSubscription.status == "active",
+    ).order_by(UserSubscription.created_at.desc()).first()
+    if not subscription:
+        raise HTTPException(status_code=404, detail="该用户没有活跃订阅")
+
+    additional = int(data.additionalMinutes)
+    subscription.total_minutes = int(subscription.total_minutes or 0) + additional
+
+    compensation = {
+        "additionalMinutes": additional,
+        "newTotalMinutes": int(subscription.total_minutes),
+        "reason": data.reason or "",
+        "remark": data.remark or "",
+        "operator": current_user.username,
+        "operatedAt": datetime.now(timezone.utc).isoformat(),
+    }
+    extra = dict(subscription.extra_payload) if isinstance(subscription.extra_payload, dict) else {}
+    compensations = list(extra.get("compensations") or [])
+    compensations.append(compensation)
+    extra["compensations"] = compensations
+    subscription.extra_payload = extra
+
+    package = db.query(SubscriptionPackage).filter(SubscriptionPackage.package_code == subscription.package_code).first()
+    if package:
+        _sync_user_preferences_subscription(user, package, subscription)
+
+    db.commit()
+    db.refresh(subscription)
+    return {
+        "success": True,
+        "message": f"已为用户 {data.username} 追加 {additional} 分钟时长",
+        "subscription": {
+            "username": subscription.username,
+            "packageCode": subscription.package_code,
+            "planType": subscription.plan_type,
+            "planName": subscription.plan_name,
+            "status": subscription.status,
+            "totalMinutes": subscription.total_minutes,
+            "usedMinutes": subscription.used_minutes,
+            "dailyLimitMinutes": subscription.daily_limit_minutes,
+            "dailyUsedMinutes": subscription.daily_used_minutes,
+        },
+        "compensation": compensation,
     }
 
 

@@ -121,6 +121,61 @@
         </div>
         <div v-if="showPracticeConfig" class="practice-config">
           <div class="practice-config__item">
+            <span class="practice-config__label">考试大类</span>
+            <a-select
+              v-model:value="selectedExamCategoryId"
+              placeholder="不限"
+              allow-clear
+              style="width: 260px"
+              @change="handleExamCategoryFilterChange"
+            >
+              <a-select-option v-for="cat in examCategoryOptions" :key="cat.id" :value="cat.id">
+                {{ cat.name }}
+              </a-select-option>
+            </a-select>
+          </div>
+          <div class="practice-config__item">
+            <span class="practice-config__label">地区</span>
+            <a-select
+              v-model:value="selectedRegionId"
+              placeholder="不限"
+              allow-clear
+              style="width: 260px"
+              :disabled="!regionOptions.length"
+              @change="handleRegionFilterChange"
+            >
+              <a-select-option v-for="region in regionOptions" :key="region.id" :value="region.id">
+                {{ region.name }}
+              </a-select-option>
+            </a-select>
+          </div>
+          <div v-if="hasDirectionOptions" class="practice-config__item">
+            <span class="practice-config__label">方向</span>
+            <a-select
+              v-model:value="selectedDirectionId"
+              placeholder="不限"
+              allow-clear
+              style="width: 260px"
+            >
+              <a-select-option v-for="dir in directionOptions" :key="dir.id" :value="dir.id">
+                {{ dir.name }}
+              </a-select-option>
+            </a-select>
+          </div>
+          <div class="practice-config__item">
+            <span class="practice-config__label">年份</span>
+            <a-select
+              v-model:value="selectedYearsFilter"
+              mode="multiple"
+              placeholder="不限年份"
+              allow-clear
+              style="width: 260px"
+              :max-tag-count="2"
+            >
+              <a-select-option v-for="y in YEAR_OPTIONS" :key="y" :value="y">{{ y }}</a-select-option>
+            </a-select>
+          </div>
+          <div class="practice-config__item">
             <span class="practice-config__label">题目数量</span>
             <a-input-number
               v-model:value="questionCount"
@@ -182,7 +237,8 @@ import {
   getFullExamSuiteSummary,
   loadFullExamSuiteQuestions
 } from '@/utils/fullExamSuites'
-import { parseTimingFormat } from '@/utils/targetedOptions'
+import { parseTimingFormat, DEFAULT_TARGETED_POSITION_TREE } from '@/utils/targetedOptions'
+import { YEAR_OPTIONS } from '@/utils/constants'
 
 const router = useRouter()
 const route = useRoute()
@@ -206,6 +262,11 @@ const enteringExam = ref(false)
 const questionCount = ref(5)
 const dimensionFilters = ref(['random'])
 const questionTypeTouched = ref(false)
+// Targeted filter state
+const selectedExamCategoryId = ref('')
+const selectedRegionId = ref('')
+const selectedDirectionId = ref('')
+const selectedYearsFilter = ref([])
 const asrStatus = ref(null)
 const selectedFullExamSuiteId = ref('')
 const fullExamSuites = ref([])
@@ -261,6 +322,67 @@ const selectedFullExamSuite = computed(() => (
   || null
 ))
 const selectedFullExamSuiteSummary = computed(() => getFullExamSuiteSummary(selectedFullExamSuite.value))
+
+// Targeted filter computed properties
+const examCategoryOptions = computed(() =>
+  DEFAULT_TARGETED_POSITION_TREE.map(cat => ({ id: cat.id, name: cat.name }))
+)
+const selectedCategoryNode = computed(() =>
+  selectedExamCategoryId.value
+    ? DEFAULT_TARGETED_POSITION_TREE.find(c => String(c.id) === String(selectedExamCategoryId.value)) || null
+    : null
+)
+const regionOptions = computed(() =>
+  selectedCategoryNode.value?.children || []
+)
+const selectedRegionNode = computed(() =>
+  selectedRegionId.value
+    ? regionOptions.value.find(r => String(r.id) === String(selectedRegionId.value)) || null
+    : null
+)
+const hasDirectionOptions = computed(() =>
+  (selectedRegionNode.value?.children?.length || 0) > 0
+)
+const directionOptions = computed(() =>
+  selectedRegionNode.value?.children || []
+)
+const selectedDirectionNode = computed(() =>
+  selectedDirectionId.value
+    ? directionOptions.value.find(d => String(d.id) === String(selectedDirectionId.value)) || null
+    : null
+)
+function handleExamCategoryFilterChange() {
+  selectedRegionId.value = ''
+  selectedDirectionId.value = ''
+}
+function handleRegionFilterChange() {
+  selectedDirectionId.value = ''
+}
+
+// Build target filter params for API calls
+const targetFilterParams = computed(() => {
+  const params = {}
+  const cat = selectedCategoryNode.value
+  const region = selectedRegionNode.value
+  const dir = selectedDirectionNode.value
+  if (cat) {
+    params.examCategory = cat.name
+    if (cat.examCategory) params.examCategory = cat.examCategory
+  }
+  if (region) {
+    if (region.province) params.province = region.province
+    if (region.examSubcategory) params.examSubcategory = region.examSubcategory
+    params.subcategory = region.subcategory || region.name
+  }
+  if (dir) {
+    params.subcategory2 = dir.subcategory || dir.name
+    if (dir.province) params.province = dir.province
+  }
+  if (selectedYearsFilter.value.length) {
+    params.year = selectedYearsFilter.value.join(',')
+  }
+  return params
+})
 
 watch(isFixedPracticeEntry, (fixed) => {
   if (fixed) {
@@ -589,7 +711,7 @@ async function enterExam() {
           allowAutoSupplement: false
         })
       } catch {
-        questions = await fetchScoringReadyRandomQuestions(targetQuestionCount)
+        questions = await fetchScoringReadyRandomQuestions(targetQuestionCount, { params: targetFilterParams.value })
       }
     } else if (source.value === 'training' && recommendedId) {
       try {
@@ -599,14 +721,14 @@ async function enterExam() {
           allowAutoSupplement: false
         })
       } catch {
-        questions = await fetchScoringReadyRandomQuestions(targetQuestionCount)
+        questions = await fetchScoringReadyRandomQuestions(targetQuestionCount, { params: targetFilterParams.value })
       }
     } else if (recommendedId) {
       try {
         const question = await getQuestionById(recommendedId)
         questions = await ensureScoringReadyQuestions([question], { requiredCount: 1 })
       } catch {
-        questions = await fetchScoringReadyRandomQuestions(targetQuestionCount)
+        questions = await fetchScoringReadyRandomQuestions(targetQuestionCount, { params: targetFilterParams.value })
       }
     } else if (examMode.value === 'fullExam') {
       if (!selectedFullExamSuite.value) {
@@ -619,7 +741,7 @@ async function enterExam() {
         allowAutoSupplement: false
       })
     } else {
-      questions = await fetchScoringReadyRandomQuestions(targetQuestionCount)
+      questions = await fetchScoringReadyRandomQuestions(targetQuestionCount, { params: targetFilterParams.value })
     }
 
     if (!questions.length) {

@@ -49,6 +49,29 @@
         </view>
       </view>
 
+      <!-- 定向筛选 -->
+      <view class="section-head" style="margin-top: 20rpx">
+        <text class="section-title">定向筛选（可选）</text>
+      </view>
+      <picker :range="examCategoryNames" :value="examCategoryIndex" @change="onExamCategoryFilterChange">
+        <view class="config-row">
+          <text>考试大类</text>
+          <text class="config-row__value">{{ selectedExamCategoryName }}</text>
+        </view>
+      </picker>
+      <picker :range="regionNames" :value="regionIndex" @change="onRegionFilterChange" :disabled="!regionOptions.length">
+        <view class="config-row">
+          <text>地区</text>
+          <text class="config-row__value">{{ selectedRegionNameText }}</text>
+        </view>
+      </picker>
+      <picker v-if="hasDirectionOptions" :range="directionNames" :value="directionIndex" @change="onDirectionFilterChange">
+        <view class="config-row">
+          <text>方向</text>
+          <text class="config-row__value">{{ selectedDirectionNameText }}</text>
+        </view>
+      </picker>
+
       <view v-if="mode === 'fullExam'" class="suite-panel">
         <view class="config-row config-row--suite">
           <text>真题套卷</text>
@@ -69,6 +92,26 @@
         </picker>
         <text v-if="selectedFullExamSuite" class="suite-panel__summary">{{ selectedFullExamSuiteSummary }}</text>
         <text v-else class="suite-panel__summary">{{ fullExamSuitesLoading ? '正在加载真题套卷...' : '当前省份暂无整套真题套卷，请切换江苏、安徽或湖南。' }}</text>
+      </view>
+
+      <view v-if="mode !== 'fullExam'" class="config-row config-row--year" @tap="showYearPicker = true">
+        <text>年份</text>
+        <text class="config-row__value">{{ yearLabel }}</text>
+      </view>
+
+      <view v-if="showYearPicker" class="year-overlay" @tap="showYearPicker = false">
+        <view class="year-modal card" @tap.stop>
+          <view class="section-head">
+            <text class="section-title">选择年份</text>
+            <text class="muted" @tap="showYearPicker = false">完成</text>
+          </view>
+          <checkbox-group @change="onYearFilterChange">
+            <label v-for="opt in yearOptions" :key="opt.value" class="year-checkbox">
+              <checkbox :value="opt.value" :checked="opt.checked" />
+              <text>{{ opt.value }}</text>
+            </label>
+          </checkbox-group>
+        </view>
       </view>
 
       <view class="config-row media-row">
@@ -138,12 +181,13 @@ import { getAsrStatus } from '../../api/scoring'
 import { getTrialQuestion, getTrialStatus } from '../../api/trial'
 import { hasPremiumAccess } from '../../utils/access'
 import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
-import { QUESTION_CATEGORIES } from '../../utils/constants'
+import { QUESTION_CATEGORIES, YEAR_OPTIONS } from '../../utils/constants'
 import {
   fetchFullExamSuites,
   getFullExamSuiteSummary,
   loadFullExamSuiteQuestions
 } from '../../utils/fullExamSuites'
+import { DEFAULT_TARGETED_POSITION_TREE } from '../../utils/targetedOptions'
 
 const examStore = useExamStore()
 const billingStore = useBillingStore()
@@ -164,6 +208,12 @@ const mode = ref('free')
 const mediaMode = ref('audio')
 const selectedDimensions = ref(['random'])
 const questionTypeTouched = ref(false)
+// Targeted filter state
+const selectedExamCategoryId = ref('')
+const selectedRegionId = ref('')
+const selectedDirectionId = ref('')
+const selectedYearsFilter = ref([])
+const showYearPicker = ref(false)
 const selectedFullExamSuiteId = ref('')
 const fullExamSuites = ref([])
 const fullExamSuitesLoading = ref(false)
@@ -246,6 +296,115 @@ watch(() => userStore.selectedProvince, () => {
 watch(() => userStore.preferences?.preferredQuestionDimensions, () => {
   applyPreferredQuestionDimensions()
 }, { immediate: true, deep: true })
+
+// Targeted filter computed properties
+const examCategoryOptions = DEFAULT_TARGETED_POSITION_TREE
+const examCategoryNames = computed(() => ['不限', ...examCategoryOptions.map(c => c.name)])
+const examCategoryIndex = computed(() => {
+  const idx = examCategoryOptions.findIndex(c => String(c.id) === String(selectedExamCategoryId.value))
+  return idx >= 0 ? idx + 1 : 0
+})
+const selectedExamCategoryName = computed(() => {
+  const cat = examCategoryOptions.find(c => String(c.id) === String(selectedExamCategoryId.value))
+  return cat ? cat.name : '不限'
+})
+const selectedCategoryNode = computed(() =>
+  selectedExamCategoryId.value
+    ? examCategoryOptions.find(c => String(c.id) === String(selectedExamCategoryId.value)) || null
+    : null
+)
+const regionOptions = computed(() => selectedCategoryNode.value?.children || [])
+const regionNames = computed(() => ['不限', ...regionOptions.value.map(r => r.name)])
+const regionIndex = computed(() => {
+  const idx = regionOptions.value.findIndex(r => String(r.id) === String(selectedRegionId.value))
+  return idx >= 0 ? idx + 1 : 0
+})
+const selectedRegionNameText = computed(() => {
+  const r = regionOptions.value.find(r => String(r.id) === String(selectedRegionId.value))
+  return r ? r.name : '不限'
+})
+const selectedRegionNode = computed(() =>
+  selectedRegionId.value
+    ? regionOptions.value.find(r => String(r.id) === String(selectedRegionId.value)) || null
+    : null
+)
+const hasDirectionOptions = computed(() => (selectedRegionNode.value?.children?.length || 0) > 0)
+const directionOptions = computed(() => selectedRegionNode.value?.children || [])
+const directionNames = computed(() => ['不限', ...directionOptions.value.map(d => d.name)])
+const directionIndex = computed(() => {
+  const idx = directionOptions.value.findIndex(d => String(d.id) === String(selectedDirectionId.value))
+  return idx >= 0 ? idx + 1 : 0
+})
+const selectedDirectionNameText = computed(() => {
+  const d = directionOptions.value.find(d => String(d.id) === String(selectedDirectionId.value))
+  return d ? d.name : '不限'
+})
+const selectedDirectionNode = computed(() =>
+  selectedDirectionId.value
+    ? directionOptions.value.find(d => String(d.id) === String(selectedDirectionId.value)) || null
+    : null
+)
+const yearOptions = computed(() =>
+  YEAR_OPTIONS.map(y => ({ value: y, checked: selectedYearsFilter.value.includes(y) }))
+)
+const yearLabel = computed(() =>
+  selectedYearsFilter.value.length ? selectedYearsFilter.value.join('、') : '不限年份（可多选）'
+)
+
+// Build target filter params for API calls
+const targetFilterParams = computed(() => {
+  const params = {}
+  const cat = selectedCategoryNode.value
+  const region = selectedRegionNode.value
+  const dir = selectedDirectionNode.value
+  if (cat) params.examCategory = cat.examCategory || cat.name
+  if (region) {
+    if (region.province) params.province = region.province
+    if (region.examSubcategory) params.subcategory = region.examSubcategory
+    if (region.subcategory && !params.subcategory) params.subcategory = region.subcategory
+    if (!params.subcategory) params.subcategory = region.name
+  }
+  if (dir) {
+    params.subcategory2 = dir.subcategory || dir.name
+    if (dir.province) params.province = dir.province
+  }
+  if (selectedYearsFilter.value.length) params.year = selectedYearsFilter.value.join(',')
+  return params
+})
+
+function onExamCategoryFilterChange(e) {
+  const idx = Number(e.detail.value)
+  if (idx === 0) {
+    selectedExamCategoryId.value = ''
+  } else {
+    const cat = examCategoryOptions[idx - 1]
+    selectedExamCategoryId.value = cat ? cat.id : ''
+  }
+  selectedRegionId.value = ''
+  selectedDirectionId.value = ''
+}
+function onRegionFilterChange(e) {
+  const idx = Number(e.detail.value)
+  if (idx === 0) {
+    selectedRegionId.value = ''
+  } else {
+    const r = regionOptions.value[idx - 1]
+    selectedRegionId.value = r ? r.id : ''
+  }
+  selectedDirectionId.value = ''
+}
+function onDirectionFilterChange(e) {
+  const idx = Number(e.detail.value)
+  if (idx === 0) {
+    selectedDirectionId.value = ''
+  } else {
+    const d = directionOptions.value[idx - 1]
+    selectedDirectionId.value = d ? d.id : ''
+  }
+}
+function onYearFilterChange(e) {
+  selectedYearsFilter.value = e.detail.value || []
+}
 
 function applyUserPracticePreferencesToQuestions(questions = []) {
   const prefs = userStore.preferences || {}
@@ -542,9 +701,10 @@ async function startPractice() {
           : recommendedQuestionId.value
             ? getQuestionById(recommendedQuestionId.value).then((question) => (question?.id ? [question] : []))
             : questionBankStore.fetchRandom({
-              province: userStore.selectedProvince,
+              province: targetFilterParams.value.province || userStore.selectedProvince,
               count: count.value,
-              dimension: selectedDimensionParam.value
+              dimension: selectedDimensionParam.value,
+              ...targetFilterParams.value
             }),
         ENTER_ROOM_TIMEOUT_MS,
         []

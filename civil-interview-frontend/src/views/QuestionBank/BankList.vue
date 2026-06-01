@@ -28,18 +28,19 @@
       <!-- 筛选栏 -->
       <div class="bank-list__filters card">
         <a-space wrap>
-          <ProvinceSelector v-model:value="provinceFilter" @change="onProvinceChange" />
           <a-select
             v-model:value="examCategoryFilter"
-            placeholder="考试大类"
+            placeholder="考试类型"
             allow-clear
             style="width: 140px"
             @change="onExamCategoryChange"
           >
+
             <a-select-option v-for="item in EXAM_CATEGORIES" :key="item.code" :value="item.code">
               {{ item.name }}
             </a-select-option>
           </a-select>
+          <ProvinceSelector v-model:value="provinceFilter" @change="onProvinceChange" />
           <a-input
             v-model:value="subcategoryFilter"
             :placeholder="subcategoryPlaceholder"

@@ -23,3 +23,14 @@ export async function getTermsStatus(config = {}) {
 export async function agreeTerms(version) {
   return http.post('/user/agree-terms', { version })
 }
+
+export async function updatePassword(data) {
+  return http.put('/user/password', data)
+}
+
+export async function getDeviceRisk(deviceId, config = {}) {
+  return http.get('/user/device-risk', {
+    headers: { 'X-Device-ID': deviceId || '' },
+    ...config
+  })
+}

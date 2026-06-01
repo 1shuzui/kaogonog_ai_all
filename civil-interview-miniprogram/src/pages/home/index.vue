@@ -23,8 +23,8 @@
         <scroll-view class="preference-modal__scroll" scroll-y>
           <view class="preference-setup">
             <view class="preference-setup__head">
-              <text class="preference-setup__kicker">首次练习偏好</text>
-              <text class="preference-setup__title">选择备考地区和注重题型</text>
+              <text class="preference-setup__kicker">首次考试设置</text>
+              <text class="preference-setup__title">选择备考地区、考试大类和注重题型</text>
               <text class="preference-setup__desc">后续可在“我的”里修改；题型不选时系统会按随机题型练习。</text>
             </view>
             <picker :range="provinceNames" :value="onboardingProvinceIndex" @change="onOnboardingProvinceChange">
@@ -33,6 +33,12 @@
                 <text>{{ onboardingProvinceName }}</text>
               </view>
             </picker>
+              <picker :range="onboardingExamCatNames" :value="onboardingExamCatIndex" @change="onOnboardingExamCatChange">
+                <view class="preference-picker">
+                  <text>考试大类</text>
+                  <text>{{ onboardingExamCatName }}</text>
+                </view>
+              </picker>
             <view class="preference-chip-grid">
               <view
                 v-for="item in preferredQuestionOptions"
@@ -249,6 +255,7 @@ import {
 } from '../../utils/constants'
 import { formatDate } from '../../utils/format'
 import { JIANGSU_JOB_CATEGORIES } from '../../utils/jiangsuJobs'
+import { DEFAULT_TARGETED_POSITION_TREE } from '../../utils/targetedOptions'
 import { requireLogin, toast } from '../../utils/navigation'
 
 const historyStore = useHistoryStore()
@@ -304,6 +311,23 @@ const provinceOptions = computed(() => userStore.provinces.length ? userStore.pr
 const provinceNames = computed(() => provinceOptions.value.map((item) => item.name))
 const onboardingProvinceIndex = computed(() => Math.max(0, provinceOptions.value.findIndex((item) => item.code === onboardingProvince.value)))
 const onboardingProvinceName = computed(() => provinceOptions.value[onboardingProvinceIndex.value]?.name || '国考')
+// Onboarding exam category
+const onboardingExamCatId = ref('')
+const examCatPrefOpts = DEFAULT_TARGETED_POSITION_TREE
+const onboardingExamCatNames = computed(() => ['不限', ...examCatPrefOpts.map(c => c.name)])
+const onboardingExamCatIndex = computed(() => {
+  if (!onboardingExamCatId.value) return 0
+  const idx = examCatPrefOpts.findIndex(c => String(c.id) === String(onboardingExamCatId.value))
+  return idx >= 0 ? idx + 1 : 0
+})
+const onboardingExamCatName = computed(() => {
+  const cat = examCatPrefOpts.find(c => String(c.id) === String(onboardingExamCatId.value))
+  return cat ? cat.name : '不限'
+})
+function onOnboardingExamCatChange(e) {
+  const idx = Number(e.detail.value)
+  onboardingExamCatId.value = idx === 0 ? '' : (examCatPrefOpts[idx - 1]?.id || '')
+}
 const trendDisplayData = computed(() => {
   const list = Array.isArray(historyStore.trendData) ? historyStore.trendData : []
   return trendLimit.value > 0 ? list.slice(-trendLimit.value) : list
@@ -560,9 +584,12 @@ async function savePreferenceSetup() {
     await userStore.savePreferences({
       ...userStore.preferences,
       preferredQuestionDimensions: onboardingPreferredDimensions.value,
-      practicePreferenceConfirmed: true
+      practicePreferenceConfirmed: true,
+      examCategory: onboardingExamCatId.value
+        ? (examCatPrefOpts.find(c => String(c.id) === String(onboardingExamCatId.value))?.name || '')
+        : ''
     })
-    toast('练习偏好已保存', 'success')
+    toast('考试设置已保存', 'success')
   } finally {
     preferenceSaving.value = false
   }

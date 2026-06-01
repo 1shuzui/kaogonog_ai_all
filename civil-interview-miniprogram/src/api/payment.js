@@ -14,6 +14,14 @@ export function getPaymentOrder(orderNo) {
   })
 }
 
+export function verifyVirtualPaymentOrder(orderNo, data = {}) {
+  return request({
+    url: `/payment/orders/${encodeURIComponent(orderNo)}/virtual/verify`,
+    method: 'POST',
+    data
+  })
+}
+
 export function confirmVirtualPaymentOrder(orderNo, data = {}) {
   return request({
     url: `/payment/orders/${encodeURIComponent(orderNo)}/virtual/confirm`,
@@ -39,6 +47,14 @@ export function getRefundBalanceStats(data = {}) {
 export function applyRefund(data) {
   return request({
     url: '/payment/admin/refund',
+    method: 'POST',
+    data
+  })
+}
+
+export function compensateSubscription(data) {
+  return request({
+    url: '/payment/admin/compensate',
     method: 'POST',
     data
   })
