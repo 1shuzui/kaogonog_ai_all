@@ -74,6 +74,7 @@ class UserPreferencesUpdate(BaseModel):
     enableAudio: Optional[bool] = None
     preferredQuestionDimensions: Optional[List[str]] = None
     practicePreferenceConfirmed: Optional[bool] = None
+    examCategory: Optional[str] = None
 
 
 class UserProvinceUpdate(BaseModel):
@@ -143,13 +144,13 @@ class UsageReportRequest(BaseModel):
 # ===== Payment =====
 class PaymentOrderCreateRequest(BaseModel):
     packageCode: str = Field(validation_alias=AliasChoices("packageCode", "package_code"))
-    payChannel: str = Field(default="wechat", validation_alias=AliasChoices("payChannel", "pay_channel"))
+    payChannel: str = Field(default="wechat_virtual", validation_alias=AliasChoices("payChannel", "pay_channel"))
     appId: Optional[str] = Field(default=None, validation_alias=AliasChoices("appId", "app_id"))
     code: Optional[str] = None
     openId: Optional[str] = Field(default=None, validation_alias=AliasChoices("openId", "open_id"))
     clientIp: Optional[str] = Field(default=None, validation_alias=AliasChoices("clientIp", "client_ip"))
     idempotencyKey: Optional[str] = Field(default=None, validation_alias=AliasChoices("idempotencyKey", "idempotency_key"))
-    scene: str = Field(default="mini_program")
+    scene: str = Field(default="mini_program_virtual")
 
 
 class PaymentVirtualConfirmRequest(BaseModel):
@@ -159,17 +160,6 @@ class PaymentVirtualConfirmRequest(BaseModel):
     paidAt: Optional[str] = Field(default=None, validation_alias=AliasChoices("paidAt", "paid_at"))
     outTradeNo: Optional[str] = Field(default=None, validation_alias=AliasChoices("outTradeNo", "out_trade_no"))
     rawResult: Dict = Field(default_factory=dict, validation_alias=AliasChoices("rawResult", "raw_result"))
-
-
-class PaymentCallbackRequest(BaseModel):
-    mode: str = "wechat"
-    orderNo: Optional[str] = Field(default=None, validation_alias=AliasChoices("orderNo", "order_no"))
-    status: str = "paid"
-    thirdPartyOrderNo: Optional[str] = Field(default=None, validation_alias=AliasChoices("thirdPartyOrderNo", "third_party_order_no"))
-    paidAt: Optional[str] = Field(default=None, validation_alias=AliasChoices("paidAt", "paid_at"))
-    amountTotal: Optional[int] = Field(default=None, validation_alias=AliasChoices("amountTotal", "amount_total"))
-    callbackPayload: Dict = Field(default_factory=dict, validation_alias=AliasChoices("callbackPayload", "callback_payload"))
-    resourcePlain: Optional[Dict] = Field(default=None, validation_alias=AliasChoices("resourcePlain", "resource_plain"))
 
 
 class RefundBalanceStatsRequest(BaseModel):
@@ -182,13 +172,6 @@ class RefundApplyRequest(BaseModel):
     refundedHours: Optional[float] = Field(default=None, ge=0, validation_alias=AliasChoices("refundedHours", "refunded_hours"))
     refundReason: Optional[str] = Field(default="", validation_alias=AliasChoices("refundReason", "refund_reason"))
     refundRemark: Optional[str] = Field(default="", validation_alias=AliasChoices("refundRemark", "refund_remark"))
-
-
-class CompensateRequest(BaseModel):
-    username: str
-    additionalMinutes: int = Field(gt=0, validation_alias=AliasChoices("additionalMinutes", "additional_minutes"))
-    reason: Optional[str] = Field(default="", validation_alias=AliasChoices("reason", "reason"))
-    remark: Optional[str] = Field(default="", validation_alias=AliasChoices("remark", "remark"))
 
 
 # ===== Support =====

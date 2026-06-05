@@ -91,7 +91,7 @@ npm run build:mp-weixin:prod
 
 ssh "${SSH_OPTS[@]}" "$SERVER" "mkdir -p '$REMOTE_LATEST/frontend' '$REMOTE_LATEST/miniprogram/mp-weixin-prod'"
 
-rsync -az --delete -e "$RSYNC_RSH" \
+rsync -az -e "$RSYNC_RSH" \
   "$ROOT_DIR/civil-interview-frontend/dist/" \
   "$SERVER:$REMOTE_LATEST/frontend/"
 
@@ -138,6 +138,18 @@ updates = {
     'PRODUCTION_REQUIRE_SECURE_CONFIG': 'true',
     'REDIS_URL': 'redis://:4Wv79nd4v3%21@127.0.0.1:6379/0',
     'WECHAT_PAY_ENABLED': 'true',
+    'ASR_PROVIDER': 'funasr_onnx',
+    'ASR_DEVICE': 'cpu',
+    'ASR_INTRA_OP_NUM_THREADS': '4',
+    'ASR_MAX_SEGMENT_SECONDS': '30',
+    'ASR_SEGMENT_PADDING_MS': '120',
+    'FUNASR_MODEL_NAME': 'damo/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-onnx',
+    'FUNASR_VAD_MODEL_NAME': 'damo/speech_fsmn_vad_zh-cn-16k-common-onnx',
+    'FUNASR_PUNC_MODEL_NAME': 'damo/punc_ct-transformer_zh-cn-common-vocab272727-onnx',
+    'FUNASR_QUANTIZE': 'true',
+    'FUNASR_ENABLE_PUNC': 'true',
+    'FUNASR_VAD_MAX_END_SIL_MS': '800',
+    'MODELSCOPE_CACHE': 'storage/modelscope_cache',
 }
 lines = env_path.read_text().splitlines() if env_path.exists() else []
 values = {}

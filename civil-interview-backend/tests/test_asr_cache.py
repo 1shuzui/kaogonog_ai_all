@@ -27,14 +27,18 @@ class AsrCacheTestCase(unittest.IsolatedAsyncioTestCase):
     async def test_transcribe_audio_file_returns_cached_transcript_from_real_redis(self):
         audio_bytes = b"x" * 4096
         asr_model = ai._resolve_asr_model()
+        remote_asr_model = ai._resolve_remote_asr_model()
         asr_cache_scope = hashlib.sha256(
             "|".join(
                 [
-                    ai.settings.llm_provider,
-                    ai.settings.llm_base_url,
+                    ai.settings.asr_provider,
                     asr_model,
+                    remote_asr_model,
+                    ai.settings.funasr_vad_model_name,
+                    ai.settings.funasr_punc_model_name if ai.settings.funasr_enable_punc else "",
                     "zh",
                     ai.ASR_SIMPLIFIED_CHINESE_PROMPT,
+                    ai.ASR_CACHE_SCHEMA,
                 ]
             ).encode("utf-8")
         ).hexdigest()[:12]

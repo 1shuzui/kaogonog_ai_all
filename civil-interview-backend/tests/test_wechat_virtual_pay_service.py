@@ -31,7 +31,7 @@ def test_virtual_pay_payload_uses_code2session_and_official_params(monkeypatch):
     package = SubscriptionPackage(package_code="trial_3h", package_name="3小时套餐", package_type="hourly")
     data = PaymentOrderCreateRequest(
         packageCode="trial_3h",
-        payChannel="wechat",
+        payChannel="wechat_virtual",
         appId="wx_test",
         code="wx_code",
         scene="mini_program_virtual",
@@ -56,6 +56,27 @@ def test_virtual_pay_payload_uses_code2session_and_official_params(monkeypatch):
     ).hexdigest()
     assert virtual_pay["signature"] == hmac.new(b"session_key", sign_data.encode("utf-8"), hashlib.sha256).hexdigest()
     assert order.extra_payload["openId"] == "openid_1"
+
+
+def test_virtual_pay_payload_rejects_non_virtual_channel(monkeypatch):
+    monkeypatch.setattr(settings, "wechat_pay_enabled", True)
+    order = PaymentOrder(order_no="PAY_TEST_001A", username="alice", amount=Decimal("99.00"), extra_payload={})
+    package = SubscriptionPackage(package_code="trial_3h", package_name="3小时套餐", package_type="hourly")
+    data = PaymentOrderCreateRequest(
+        packageCode="trial_3h",
+        payChannel="wechat",
+        appId="wx_test",
+        code="wx_code",
+        scene="mini_program_virtual",
+    )
+
+    try:
+        wechat_pay_service.get_pay_payload(order, package, data)
+    except Exception as exc:
+        assert getattr(exc, "status_code", None) == 400
+        assert "官方小程序虚拟支付" in str(getattr(exc, "detail", ""))
+    else:
+        raise AssertionError("non-virtual payChannel should be rejected")
 
 
 def test_virtual_pay_order_amount_follows_actual_goods_price():

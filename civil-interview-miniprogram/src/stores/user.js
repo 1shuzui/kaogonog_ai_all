@@ -66,7 +66,8 @@ function normalizePreferences(preferences = {}) {
     defaultAnswerTime: Math.max(60, Number(merged.defaultAnswerTime) || DEFAULT_PREFERENCES.defaultAnswerTime),
     enableAudio: merged.enableAudio !== false && merged.enableVideo !== false,
     preferredQuestionDimensions,
-    practicePreferenceConfirmed: merged.practicePreferenceConfirmed === true
+    practicePreferenceConfirmed: merged.practicePreferenceConfirmed === true,
+    examCategory: String(merged.examCategory || '').trim()
   }
 }
 

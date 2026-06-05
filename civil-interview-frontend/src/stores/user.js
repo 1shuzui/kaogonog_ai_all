@@ -15,7 +15,8 @@ const DEFAULT_PREFERENCES = {
   defaultAnswerTime: 180,
   enableVideo: true,
   preferredQuestionDimensions: [],
-  practicePreferenceConfirmed: false
+  practicePreferenceConfirmed: false,
+  examCategory: ''
 }
 
 const VALID_PREFERRED_QUESTION_DIMENSIONS = new Set([
@@ -54,7 +55,8 @@ function normalizePreferences(preferences) {
     defaultAnswerTime: Number.isFinite(answer) && answer > 0 ? answer : DEFAULT_PREFERENCES.defaultAnswerTime,
     enableVideo: typeof merged.enableVideo === 'boolean' ? merged.enableVideo : DEFAULT_PREFERENCES.enableVideo,
     preferredQuestionDimensions,
-    practicePreferenceConfirmed: merged.practicePreferenceConfirmed === true
+    practicePreferenceConfirmed: merged.practicePreferenceConfirmed === true,
+    examCategory: String(merged.examCategory || '').trim()
   }
 }
 

@@ -31,6 +31,22 @@ class TestJiangsuQuestionFiltering(unittest.TestCase):
                 scoring_points=[{"content": "依法分析", "score": 10}],
                 keywords={"scoring": [], "deducting": [], "bonus": [], "_meta": {"positionTags": ["jiangsu_b"]}},
             ),
+            Question(
+                id="JS-LYG-LYQ20250705-01",
+                stem="连云港连云区事业单位题目",
+                dimension="analysis",
+                province="jiangsu",
+                scoring_points=[{"content": "分析到位", "score": 10}],
+                keywords={
+                    "scoring": [],
+                    "deducting": [],
+                    "bonus": [],
+                    "_meta": {
+                        "suiteName": "2025年7月5日江苏省连云港市连云区事业单位面试题",
+                        "examDate": "2025-07-05",
+                    },
+                },
+            ),
         ])
         self.db.commit()
 
@@ -46,6 +62,12 @@ class TestJiangsuQuestionFiltering(unittest.TestCase):
         self.assertEqual([item["id"] for item in a_result["list"]], ["js_a_1"])
         self.assertEqual([item["id"] for item in b_result["list"]], ["js_b_1"])
         self.assertEqual(d_result["list"], [])
+
+    def test_year_filter_falls_back_to_exam_date(self):
+        result = list_questions(self.db, province="jiangsu", year="2025", page_size=20)
+
+        self.assertEqual([item["id"] for item in result["list"]], ["JS-LYG-LYQ20250705-01"])
+        self.assertEqual(result["list"][0]["year"], ["2025"])
 
 
 if __name__ == "__main__":

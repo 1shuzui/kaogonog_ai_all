@@ -185,7 +185,8 @@ import { QUESTION_CATEGORIES, YEAR_OPTIONS } from '../../utils/constants'
 import {
   fetchFullExamSuites,
   getFullExamSuiteSummary,
-  loadFullExamSuiteQuestions
+  loadFullExamSuiteQuestions,
+  normalizeProvinceCode
 } from '../../utils/fullExamSuites'
 import { DEFAULT_TARGETED_POSITION_TREE } from '../../utils/targetedOptions'
 
@@ -213,6 +214,7 @@ const selectedExamCategoryId = ref('')
 const selectedRegionId = ref('')
 const selectedDirectionId = ref('')
 const selectedYearsFilter = ref([])
+const targetFilterTouched = ref(false)
 const showYearPicker = ref(false)
 const selectedFullExamSuiteId = ref('')
 const fullExamSuites = ref([])
@@ -289,10 +291,6 @@ watch(fullExamSuiteOptions, (suites) => {
   }
 }, { immediate: true })
 
-watch(() => userStore.selectedProvince, () => {
-  refreshFullExamSuites().catch(() => null)
-}, { immediate: true })
-
 watch(() => userStore.preferences?.preferredQuestionDimensions, () => {
   applyPreferredQuestionDimensions()
 }, { immediate: true, deep: true })
@@ -313,7 +311,25 @@ const selectedCategoryNode = computed(() =>
     ? examCategoryOptions.find(c => String(c.id) === String(selectedExamCategoryId.value)) || null
     : null
 )
-const regionOptions = computed(() => selectedCategoryNode.value?.children || [])
+function uniqueRegionsFromTree() {
+  const seen = new Set()
+  const regions = []
+  examCategoryOptions.forEach((category) => {
+    ;(category.children || []).forEach((region) => {
+      const province = normalizeProvinceCode(region.province || '')
+      if (!province || province === 'all') return
+      if (seen.has(province)) return
+      seen.add(province)
+      regions.push({
+        id: `region_${province}`,
+        name: region.name || province,
+        province
+      })
+    })
+  })
+  return regions
+}
+const regionOptions = computed(() => uniqueRegionsFromTree())
 const regionNames = computed(() => ['不限', ...regionOptions.value.map(r => r.name)])
 const regionIndex = computed(() => {
   const idx = regionOptions.value.findIndex(r => String(r.id) === String(selectedRegionId.value))
@@ -328,8 +344,42 @@ const selectedRegionNode = computed(() =>
     ? regionOptions.value.find(r => String(r.id) === String(selectedRegionId.value)) || null
     : null
 )
-const hasDirectionOptions = computed(() => (selectedRegionNode.value?.children?.length || 0) > 0)
-const directionOptions = computed(() => selectedRegionNode.value?.children || [])
+function findCategoryByPreference(value = '') {
+  const text = String(value || '').trim()
+  if (!text) return null
+  return examCategoryOptions.find((category) => (
+    String(category.id) === text
+    || String(category.name) === text
+    || String(category.examCategory || '') === text
+  )) || null
+}
+function matchingTreeRegions() {
+  const region = selectedRegionNode.value
+  if (!region) return []
+  const categories = selectedCategoryNode.value ? [selectedCategoryNode.value] : examCategoryOptions
+  return categories.flatMap((category) => (
+    (category.children || []).filter((item) => normalizeProvinceCode(item.province || '') === region.province)
+  ))
+}
+const directionOptions = computed(() => {
+  const seen = new Set()
+  const options = []
+  matchingTreeRegions().forEach((region) => {
+    const directions = Array.isArray(region.directions)
+      ? region.directions
+      : Array.isArray(region.children)
+        ? region.children
+        : []
+    directions.forEach((direction) => {
+      const id = String(direction.id || `${region.id}_${direction.name}`)
+      if (seen.has(id)) return
+      seen.add(id)
+      options.push(direction)
+    })
+  })
+  return options
+})
+const hasDirectionOptions = computed(() => directionOptions.value.length > 0)
 const directionNames = computed(() => ['不限', ...directionOptions.value.map(d => d.name)])
 const directionIndex = computed(() => {
   const idx = directionOptions.value.findIndex(d => String(d.id) === String(selectedDirectionId.value))
@@ -360,19 +410,43 @@ const targetFilterParams = computed(() => {
   if (cat) params.examCategory = cat.examCategory || cat.name
   if (region) {
     if (region.province) params.province = region.province
-    if (region.examSubcategory) params.subcategory = region.examSubcategory
-    if (region.subcategory && !params.subcategory) params.subcategory = region.subcategory
-    if (!params.subcategory) params.subcategory = region.name
   }
   if (dir) {
-    params.subcategory2 = dir.subcategory || dir.name
+    if (dir.examSubcategory) params.examSubcategory = dir.examSubcategory
+    if (dir.subcategory) params.subcategory = dir.subcategory
+    if (dir.subcategory2) params.subcategory2 = dir.subcategory2
+    if (!dir.subcategory && !dir.subcategory2) params.subcategory2 = dir.name
+    if (dir.position) params.position = dir.position
     if (dir.province) params.province = dir.province
   }
-  if (selectedYearsFilter.value.length) params.year = selectedYearsFilter.value.join(',')
+  if (mode.value !== 'fullExam' && selectedYearsFilter.value.length) params.year = selectedYearsFilter.value.join(',')
   return params
 })
 
+function applyDefaultTargetFilters(force = false) {
+  if (targetFilterTouched.value && !force) return
+  const preferredCategory = findCategoryByPreference(userStore.preferences?.examCategory)
+  selectedExamCategoryId.value = preferredCategory?.id || ''
+  const preferredProvince = normalizeProvinceCode(userStore.selectedProvince || '')
+  if (preferredProvince && preferredProvince !== 'all') {
+    selectedRegionId.value = regionOptions.value.find((region) => region.province === preferredProvince)?.id || ''
+  } else {
+    selectedRegionId.value = ''
+  }
+  selectedDirectionId.value = ''
+}
+
+watch(() => [userStore.selectedProvince, userStore.preferences?.examCategory], () => {
+  applyDefaultTargetFilters()
+  refreshFullExamSuites().catch(() => null)
+}, { immediate: true })
+
+watch(targetFilterParams, () => {
+  refreshFullExamSuites().catch(() => null)
+}, { deep: true })
+
 function onExamCategoryFilterChange(e) {
+  targetFilterTouched.value = true
   const idx = Number(e.detail.value)
   if (idx === 0) {
     selectedExamCategoryId.value = ''
@@ -380,10 +454,10 @@ function onExamCategoryFilterChange(e) {
     const cat = examCategoryOptions[idx - 1]
     selectedExamCategoryId.value = cat ? cat.id : ''
   }
-  selectedRegionId.value = ''
   selectedDirectionId.value = ''
 }
 function onRegionFilterChange(e) {
+  targetFilterTouched.value = true
   const idx = Number(e.detail.value)
   if (idx === 0) {
     selectedRegionId.value = ''
@@ -394,6 +468,7 @@ function onRegionFilterChange(e) {
   selectedDirectionId.value = ''
 }
 function onDirectionFilterChange(e) {
+  targetFilterTouched.value = true
   const idx = Number(e.detail.value)
   if (idx === 0) {
     selectedDirectionId.value = ''
@@ -421,9 +496,10 @@ function applyUserPracticePreferencesToQuestions(questions = []) {
 function applyFullExamTimingMode(questions = []) {
   if (mode.value !== 'fullExam') return questions
   const suiteTiming = selectedFullExamSuite.value?.timingMode || ''
+  const suiteProvince = selectedFullExamSuite.value?.province || userStore.selectedProvince
   return questions.map((question) => ({
     ...question,
-    fullExamTimingMode: question?.timingMode || suiteTiming || (userStore.selectedProvince === 'jiangsu' ? JIANGSU_FULL_EXAM_TIMING_MODE : '')
+    fullExamTimingMode: question?.timingMode || suiteTiming || (suiteProvince === 'jiangsu' ? JIANGSU_FULL_EXAM_TIMING_MODE : '')
   }))
 }
 
@@ -435,7 +511,12 @@ async function refreshFullExamSuites() {
   }
   fullExamSuitesLoading.value = true
   try {
-    const suites = await fetchFullExamSuites(getQuestions, userStore.selectedProvince)
+    const filters = targetFilterParams.value
+    const suites = await fetchFullExamSuites(
+      getQuestions,
+      filters.province || userStore.selectedProvince,
+      { params: filters }
+    )
     fullExamSuites.value = suites
   } catch (error) {
     fullExamSuites.value = []

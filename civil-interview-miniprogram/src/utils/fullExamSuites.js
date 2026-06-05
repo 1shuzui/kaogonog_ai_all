@@ -1,15 +1,54 @@
 const PROVINCE_NAME_TO_CODE = {
+  北京: 'beijing',
+  北京市: 'beijing',
+  上海: 'shanghai',
+  上海市: 'shanghai',
+  广东: 'guangdong',
+  广东省: 'guangdong',
   江苏: 'jiangsu',
+  江苏省: 'jiangsu',
   安徽: 'anhui',
+  安徽省: 'anhui',
   安徽消防: 'anhui',
+  河南: 'henan',
+  河南省: 'henan',
+  山东: 'shandong',
+  山东省: 'shandong',
+  湖北: 'hubei',
+  湖北省: 'hubei',
   湖南: 'hunan',
+  湖南省: 'hunan',
+  河北: 'hebei',
+  河北省: 'hebei',
+  福建: 'fujian',
+  福建省: 'fujian',
+  辽宁: 'liaoning',
+  辽宁省: 'liaoning',
+  陕西: 'shanxi',
+  陕西省: 'shanxi',
+  浙江: 'zhejiang',
+  浙江省: 'zhejiang',
+  四川: 'sichuan',
+  四川省: 'sichuan',
   全国: 'national'
 }
 
 const PROVINCE_CODE_TO_NAME = {
+  beijing: '北京',
+  shanghai: '上海',
+  guangdong: '广东',
   jiangsu: '江苏',
   anhui: '安徽',
+  henan: '河南',
+  shandong: '山东',
+  hubei: '湖北',
   hunan: '湖南',
+  hebei: '河北',
+  fujian: '福建',
+  liaoning: '辽宁',
+  shanxi: '陕西',
+  zhejiang: '浙江',
+  sichuan: '四川',
   national: '全国'
 }
 
@@ -282,7 +321,7 @@ export function normalizeFullExamQuestion(raw = {}, suite = {}, index = 0) {
 export function buildFullExamSuitesFromQuestions(questions = [], province = '') {
   const list = normalizeQuestionListResponse(questions)
   const requestedProvince = normalizeProvinceCode(province)
-  const shouldFilterProvince = requestedProvince && requestedProvince !== 'national'
+  const shouldFilterProvince = requestedProvince && requestedProvince !== 'all'
   const groups = new Map()
 
   for (const question of list) {
@@ -408,13 +447,22 @@ export function getFullExamSuiteSummary(suite) {
 
 export async function fetchFullExamSuites(getQuestions, province, options = {}) {
   if (typeof getQuestions !== 'function') return []
-  const code = normalizeProvinceCode(province)
+  const filterParams = options.params && typeof options.params === 'object' ? options.params : {}
+  const rawProvince = filterParams.province ?? province
+  const hasProvinceFilter = String(rawProvince || '').trim() !== ''
+  const code = hasProvinceFilter ? normalizeProvinceCode(rawProvince) : 'all'
   const params = {
     current: 1,
     page: 1,
     pageSize: Number(options.pageSize || FULL_EXAM_FETCH_PAGE_SIZE)
   }
-  if (code !== 'national') params.province = code
+  Object.entries(filterParams).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value).trim() !== '') {
+      params[key] = value
+    }
+  })
+  if (code && code !== 'all') params.province = code
+  else delete params.province
 
   const response = await getQuestions(params)
   return buildFullExamSuitesFromQuestions(normalizeQuestionListResponse(response), code)

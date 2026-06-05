@@ -38,6 +38,7 @@ DEFAULT_PREFERENCES = {
     "enableAudio": True,
     "preferredQuestionDimensions": [],
     "practicePreferenceConfirmed": False,
+    "examCategory": "",
 }
 VALID_PREFERRED_QUESTION_DIMENSIONS = {
     "analysis",
@@ -79,6 +80,7 @@ def _normalize_preferences(prefs: dict | None) -> dict:
         and not (item in seen_dimensions or seen_dimensions.add(item))
     ]
     merged["practicePreferenceConfirmed"] = bool(merged.get("practicePreferenceConfirmed"))
+    merged["examCategory"] = str(merged.get("examCategory") or "").strip()
     merged["enableAudio"] = merged.get("enableAudio") is not False and merged.get("enableVideo") is not False
     merged["enableVideo"] = bool(merged.get("enableVideo"))
     merged["billing"] = normalize_billing_state(raw_preferences.get("billing"))

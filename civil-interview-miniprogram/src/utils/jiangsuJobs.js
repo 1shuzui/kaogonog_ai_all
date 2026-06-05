@@ -32,21 +32,25 @@ export const JIANGSU_CITY_FILTERS = [
   { key: 'suqian', name: '宿迁' }
 ]
 
-export const JIANGSU_YEAR_FILTERS = ['2025', '2024', '2023', '2022']
+export const JIANGSU_YEAR_FILTERS = ['2025', '2024', '2023', '2022', '2021', '2020', '2019', '2018', '2017']
 
 export const JIANGSU_QUESTION_TYPES = [
   { key: 'analysis', name: '综合分析' },
-  { key: 'organization', name: '组织管理' },
-  { key: 'interpersonal', name: '人际沟通' },
-  { key: 'simulation', name: '现场模拟' }
+  { key: 'practical', name: '组织管理' },
+  { key: 'emergency', name: '应急应变' },
+  { key: 'logic', name: '人际沟通' },
+  { key: 'expression', name: '情景模拟' },
+  { key: 'legal', name: '岗位认知' }
 ]
 
 const CITY_POOL = JIANGSU_CITY_FILTERS.filter((item) => item.key !== 'all')
 const TYPE_STEMS = {
   analysis: '请结合事业单位服务群众职责，谈谈你对基层治理精细化的理解。',
-  organization: '单位准备开展便民服务专项活动，领导交由你负责，你会如何组织。',
-  interpersonal: '同事对你负责的材料反复提出修改意见，你会如何沟通处理。',
-  simulation: '窗口群众因排队时间过长情绪激动，请你现场安抚并解决问题。'
+  practical: '单位准备开展便民服务专项活动，领导交由你负责，你会如何组织。',
+  emergency: '窗口大厅突发设备故障，群众等待时间较长，你会如何处置。',
+  logic: '同事对你负责的材料反复提出修改意见，你会如何沟通处理。',
+  expression: '窗口群众因排队时间过长情绪激动，请你现场安抚并解决问题。',
+  legal: '请谈谈你对事业单位工作人员岗位职责和服务意识的理解。'
 }
 
 export function getJiangsuJobCategory(key = 'a') {

@@ -35,6 +35,14 @@ def _env_int(*keys: str, default: int) -> int:
         return default
 
 
+def _env_float(*keys: str, default: float) -> float:
+    raw = _env(*keys, default=str(default))
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return default
+
+
 def _env_bool(*keys: str, default: bool) -> bool:
     raw = _env(*keys, default="true" if default else "false").strip().lower()
     return raw in {"1", "true", "yes", "on"}
@@ -112,6 +120,31 @@ class Settings:
     redis_cache_ttl_questions: int = _env_int("REDIS_CACHE_TTL_QUESTIONS", default=3600)
     redis_cache_ttl_llm: int = _env_int("REDIS_CACHE_TTL_LLM", default=86400)
     redis_cache_ttl_transcript: int = _env_int("REDIS_CACHE_TTL_TRANSCRIPT", default=3600)
+
+    asr_provider: str = _env("ASR_PROVIDER", default="funasr_onnx")
+    asr_device: str = _env("ASR_DEVICE", default="cpu")
+    asr_intra_op_num_threads: int = _env_int("ASR_INTRA_OP_NUM_THREADS", default=4)
+    asr_max_segment_seconds: float = _env_float("ASR_MAX_SEGMENT_SECONDS", default=30.0)
+    asr_segment_padding_ms: int = _env_int("ASR_SEGMENT_PADDING_MS", default=120)
+    funasr_model_name: str = _env(
+        "FUNASR_MODEL_NAME",
+        default="damo/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-onnx",
+    )
+    funasr_vad_model_name: str = _env(
+        "FUNASR_VAD_MODEL_NAME",
+        default="damo/speech_fsmn_vad_zh-cn-16k-common-onnx",
+    )
+    funasr_punc_model_name: str = _env(
+        "FUNASR_PUNC_MODEL_NAME",
+        default="damo/punc_ct-transformer_zh-cn-common-vocab272727-onnx",
+    )
+    funasr_model_revision: str = _env("FUNASR_MODEL_REVISION", default="v2.0.4")
+    funasr_vad_model_revision: str = _env("FUNASR_VAD_MODEL_REVISION", default="v2.0.4")
+    funasr_punc_model_revision: str = _env("FUNASR_PUNC_MODEL_REVISION", default="v2.0.4")
+    funasr_quantize: bool = _env_bool("FUNASR_QUANTIZE", default=True)
+    funasr_vad_max_end_sil_ms: int = _env_int("FUNASR_VAD_MAX_END_SIL_MS", default=800)
+    funasr_enable_punc: bool = _env_bool("FUNASR_ENABLE_PUNC", default=True)
+    modelscope_cache: str = _env("MODELSCOPE_CACHE", default=str(BACKEND_ROOT / "storage" / "modelscope_cache"))
 
     wechat_pay_enabled: bool = _env_bool("WECHAT_PAY_ENABLED", default=False)
     wechat_pay_scene: str = _env("WECHAT_PAY_SCENE", default="mini_program_virtual")

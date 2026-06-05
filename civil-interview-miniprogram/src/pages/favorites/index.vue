@@ -1,7 +1,7 @@
 <template>
   <view class="page">
     <text class="page-title">错题本 / 收藏夹</text>
-    <text class="page-desc">低分题自动进入错题，手动收藏单独记录，两个状态互不混用。</text>
+    <text class="page-desc">低分题自动进入错题，手动收藏单独记录。</text>
 
     <view class="tabs card">
       <view

@@ -6,6 +6,7 @@ import io
 import logging
 import mimetypes
 import os
+import re
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -31,7 +32,25 @@ ASR_SIMPLIFIED_CHINESE_PROMPT = (
 )
 LLM_MAX_RETRIES = 3
 LLM_RETRY_BACKOFF_BASE = 1.5
-_whisper_model = None
+ASR_SAMPLE_RATE = 16000
+ASR_CACHE_SCHEMA = "funasr-onnx-v4"
+FUNASR_PROVIDER_ALIASES = {"funasr", "funasr_onnx", "paraformer", "paraformer_onnx"}
+FUNASR_ONNX_CACHE: dict[tuple, dict[str, object]] = {}
+FUNASR_MIN_AUDIO_RMS = 0.0008
+FUNASR_MIN_SEGMENT_RMS = 0.001
+FUNASR_VAD_MERGE_GAP_MS = 250
+FUNASR_SEGMENT_COMMA_GAP_MS = 250
+FUNASR_SEGMENT_PERIOD_GAP_MS = 650
+FUNASR_SENTENCE_PUNCTUATION = "，。！？；、,.!?;"
+FUNASR_CONTEXTUAL_CORRECTIONS = (
+    ("是是在", "是在"),
+    ("反馈机机制", "反馈机制"),
+    ("快速反馈机机制", "快速反馈机制"),
+    ("差异化的预言", "差异化的预研"),
+    ("差异化预言", "差异化预研"),
+    ("敢闯敢式", "敢闯敢试"),
+    ("敢闯敢视", "敢闯敢试"),
+)
 
 # OpenAI-compatible client for the configured LLM provider
 _client: Optional[OpenAI] = None
@@ -119,6 +138,12 @@ async def call_llm_api_async(
 
 
 def _resolve_asr_model() -> str:
+    if _is_funasr_provider():
+        return str(settings.funasr_model_name or "").strip()
+    return _resolve_remote_asr_model()
+
+
+def _resolve_remote_asr_model() -> str:
     configured = str(settings.llm_asr_model or "").strip()
     if configured:
         return configured
@@ -203,6 +228,305 @@ def _normalize_media_for_asr(media_bytes: bytes, filename: str) -> tuple[bytes, 
     return media_bytes, filename or f"answer{suffix}"
 
 
+def _decode_media_to_wav(media_bytes: bytes, filename: str) -> str:
+    suffix = Path(filename or "").suffix.lower() or ".webm"
+    source_path = None
+    target_path = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as source_file:
+            source_path = source_file.name
+            source_file.write(media_bytes)
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as target_file:
+            target_path = target_file.name
+
+        subprocess.run(
+            [
+                "ffmpeg",
+                "-y",
+                "-i",
+                source_path,
+                "-vn",
+                "-ac",
+                "1",
+                "-ar",
+                str(ASR_SAMPLE_RATE),
+                "-sample_fmt",
+                "s16",
+                target_path,
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return target_path
+    except FileNotFoundError as exc:
+        raise RuntimeError("系统未安装 ffmpeg，无法为 FunASR 预处理音频") from exc
+    except subprocess.CalledProcessError as exc:
+        raise RuntimeError("音频格式转换失败，无法进行语音识别") from exc
+    finally:
+        if source_path:
+            Path(source_path).unlink(missing_ok=True)
+
+
+def _configure_funasr_cache_env() -> str:
+    cache_dir = Path(settings.modelscope_cache).expanduser()
+    if not cache_dir.is_absolute():
+        cache_dir = Path(__file__).resolve().parents[2] / cache_dir
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    credentials_dir = cache_dir / ".modelscope" / "credentials"
+    credentials_dir.mkdir(parents=True, exist_ok=True)
+    os.environ.setdefault("MODELSCOPE_CACHE", str(cache_dir))
+    os.environ.setdefault("MODELSCOPE_CREDENTIALS_PATH", str(credentials_dir))
+    os.environ.setdefault("HF_HOME", str(cache_dir / "hf_home"))
+    os.environ.setdefault("HUGGINGFACE_HUB_CACHE", str(cache_dir / "huggingface"))
+    return str(cache_dir)
+
+
+def _funasr_device_id():
+    device = str(settings.asr_device or "cpu").strip().lower()
+    if device in {"cpu", "-1"}:
+        return "-1"
+    if device.startswith("cuda"):
+        parts = device.split(":", 1)
+        return int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 0
+    if device.startswith("gpu"):
+        parts = device.split(":", 1)
+        return int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 0
+    return device
+
+
+def _is_funasr_provider() -> bool:
+    return str(settings.asr_provider or "").strip().lower() in FUNASR_PROVIDER_ALIASES
+
+
+def _get_funasr_onnx_models() -> dict[str, object]:
+    cache_key = (
+        settings.funasr_model_name,
+        settings.funasr_vad_model_name,
+        settings.funasr_punc_model_name if settings.funasr_enable_punc else "",
+        settings.funasr_quantize,
+        settings.funasr_vad_max_end_sil_ms,
+        settings.asr_device,
+        settings.asr_intra_op_num_threads,
+    )
+    if cache_key in FUNASR_ONNX_CACHE:
+        return FUNASR_ONNX_CACHE[cache_key]
+
+    try:
+        from funasr_onnx import CT_Transformer, Fsmn_vad, Paraformer
+    except ImportError as exc:
+        raise RuntimeError("缺少 funasr-onnx / onnxruntime 依赖，无法使用 Paraformer ONNX ASR") from exc
+
+    cache_dir = _configure_funasr_cache_env()
+    device_id = _funasr_device_id()
+    common_kwargs = {
+        "device_id": device_id,
+        "quantize": settings.funasr_quantize,
+        "intra_op_num_threads": settings.asr_intra_op_num_threads,
+        "cache_dir": cache_dir,
+    }
+    logger.info("Loading FunASR ONNX Paraformer: %s", settings.funasr_model_name)
+    asr_model = Paraformer(settings.funasr_model_name, batch_size=1, **common_kwargs)
+    logger.info("Loading FunASR ONNX FSMN-VAD: %s", settings.funasr_vad_model_name)
+    vad_model = Fsmn_vad(
+        settings.funasr_vad_model_name,
+        batch_size=1,
+        max_end_sil=settings.funasr_vad_max_end_sil_ms,
+        **common_kwargs,
+    )
+    punc_model = None
+    if settings.funasr_enable_punc and settings.funasr_punc_model_name:
+        logger.info("Loading FunASR ONNX punctuation model: %s", settings.funasr_punc_model_name)
+        punc_model = CT_Transformer(settings.funasr_punc_model_name, **common_kwargs)
+
+    models = {"asr": asr_model, "vad": vad_model, "punc": punc_model}
+    FUNASR_ONNX_CACHE[cache_key] = models
+    return models
+
+
+def _extract_funasr_text(result) -> str:
+    if isinstance(result, tuple):
+        return _extract_funasr_text(result[0]) if result else ""
+    if isinstance(result, list):
+        parts = []
+        for item in result:
+            if isinstance(item, dict):
+                value = item.get("text") or item.get("preds") or item.get("sentence")
+                if value:
+                    parts.append(_extract_funasr_text(value))
+            elif item not in (None, ""):
+                parts.append(_extract_funasr_text(item))
+        return "".join(parts).strip()
+    if isinstance(result, dict):
+        return _extract_funasr_text(result.get("text") or result.get("preds") or result.get("sentence") or "")
+    return str(result or "").strip()
+
+
+def _normalize_funasr_segment_text(text: str) -> str:
+    return re.sub(r"\s+", "", str(text or "").strip())
+
+
+def _join_funasr_segments(parts: list[tuple[str, int, int]]) -> str:
+    transcript = ""
+    previous_end = None
+    for text, start, end in parts:
+        text = _normalize_funasr_segment_text(text)
+        if not text:
+            continue
+        if transcript and previous_end is not None:
+            gap_ms = max(0, int((start - previous_end) * 1000 / ASR_SAMPLE_RATE))
+            last_char = transcript[-1]
+            if gap_ms >= FUNASR_SEGMENT_PERIOD_GAP_MS and last_char not in FUNASR_SENTENCE_PUNCTUATION:
+                transcript += "。"
+            elif gap_ms >= FUNASR_SEGMENT_COMMA_GAP_MS and last_char not in FUNASR_SENTENCE_PUNCTUATION:
+                transcript += "，"
+        transcript += text
+        previous_end = end
+    return transcript.strip()
+
+
+def _postprocess_funasr_transcript(text: str) -> str:
+    transcript = str(text or "").strip()
+    if not transcript:
+        return ""
+    transcript = re.sub(r"\s+", "", transcript)
+    for old, new in FUNASR_CONTEXTUAL_CORRECTIONS:
+        transcript = transcript.replace(old, new)
+    transcript = re.sub(r"(接近)(?:[，,、]?\1)+(?=的)", r"\1", transcript)
+    transcript = re.sub(r"(人员)(?:[，,、]?\1)+(?=能力)", r"\1", transcript)
+    transcript = re.sub(r"(点的)+点上", "点上", transcript)
+    transcript = re.sub(r"(预研)(?:[，,、]?\1)+", r"\1", transcript)
+    transcript = re.sub(r"(机制)(?:[，,、]?\1)+", r"\1", transcript)
+    transcript = re.sub(r"水土不服试点(?=一般|通常|往往|会)", "水土不服，试点", transcript)
+    transcript = re.sub(r"推广失败不能直接否\s*定", "推广失败不能直接否定", transcript)
+    transcript = re.sub(r"([，。！？；、])\1+", r"\1", transcript)
+    return transcript.strip()
+
+
+def _audio_rms(waveform) -> float:
+    try:
+        import numpy as np
+
+        if waveform is None or waveform.size == 0:
+            return 0.0
+        return float(np.sqrt(np.mean(np.square(waveform.astype("float32")))))
+    except Exception:
+        return 0.0
+
+
+def _merge_vad_segments(raw_segments, audio_length: int) -> list[tuple[int, int]]:
+    if not raw_segments:
+        return [(0, audio_length)]
+    if isinstance(raw_segments, list) and raw_segments and isinstance(raw_segments[0], list):
+        first = raw_segments[0]
+        segments = first if first and isinstance(first[0], (list, tuple)) else raw_segments
+    else:
+        segments = raw_segments
+
+    merge_gap_samples = int(FUNASR_VAD_MERGE_GAP_MS * ASR_SAMPLE_RATE / 1000)
+    max_segment_samples = int(max(settings.asr_max_segment_seconds, 1.0) * ASR_SAMPLE_RATE)
+    speech_segments: list[tuple[int, int]] = []
+    for segment in segments:
+        if not isinstance(segment, (list, tuple)) or len(segment) < 2:
+            continue
+        try:
+            start_ms = int(float(segment[0]))
+            end_ms = int(float(segment[1]))
+        except (TypeError, ValueError):
+            continue
+        start = max(0, int(start_ms * ASR_SAMPLE_RATE / 1000))
+        end = min(audio_length, int(end_ms * ASR_SAMPLE_RATE / 1000))
+        if end <= start:
+            continue
+        speech_segments.append((start, end))
+
+    if not speech_segments:
+        return [(0, audio_length)]
+
+    speech_segments.sort()
+    merged_speech: list[tuple[int, int]] = []
+    for start, end in speech_segments:
+        if merged_speech and start - merged_speech[-1][1] <= merge_gap_samples:
+            previous_start, previous_end = merged_speech[-1]
+            merged_speech[-1] = (previous_start, max(previous_end, end))
+        else:
+            merged_speech.append((start, end))
+
+    padding_samples = int(max(settings.asr_segment_padding_ms, 0) * ASR_SAMPLE_RATE / 1000)
+    normalized: list[tuple[int, int]] = []
+    for index, (speech_start, speech_end) in enumerate(merged_speech):
+        previous_end = merged_speech[index - 1][1] if index > 0 else 0
+        next_start = merged_speech[index + 1][0] if index + 1 < len(merged_speech) else audio_length
+        start = max(0, speech_start - padding_samples)
+        end = min(audio_length, speech_end + padding_samples)
+        start = max(start, (previous_end + speech_start) // 2)
+        end = min(end, (speech_end + next_start) // 2)
+        while end - start > max_segment_samples:
+            chunk_end = min(end, start + max_segment_samples)
+            normalized.append((start, chunk_end))
+            start = chunk_end
+        normalized.append((start, end))
+    return normalized or [(0, audio_length)]
+
+
+def _punctuate_funasr_text(text: str, punc_model) -> str:
+    text = str(text or "").strip()
+    if not text or punc_model is None:
+        return text
+    try:
+        result = punc_model(text)
+        return _extract_funasr_text(result) or text
+    except Exception as exc:
+        logger.warning("FunASR punctuation recovery failed, using raw transcript: %s", exc)
+        return text
+
+
+def _transcribe_with_funasr_onnx(wav_path: str) -> str:
+    import librosa
+
+    models = _get_funasr_onnx_models()
+    waveform, _ = librosa.load(wav_path, sr=ASR_SAMPLE_RATE, mono=True)
+    if waveform.size == 0:
+        return ""
+    if _audio_rms(waveform) < FUNASR_MIN_AUDIO_RMS:
+        logger.info("FunASR skipped near-silent audio before VAD")
+        return ""
+
+    vad_model = models["vad"]
+    raw_segments = vad_model(waveform)
+    segments = _merge_vad_segments(raw_segments, int(waveform.shape[-1]))
+    logger.info("FunASR VAD split audio into %s segment(s)", len(segments))
+
+    asr_model = models["asr"]
+    parts: list[tuple[str, int, int]] = []
+    for index, (start, end) in enumerate(segments, start=1):
+        segment_audio = waveform[start:end]
+        if segment_audio.size < int(0.2 * ASR_SAMPLE_RATE):
+            continue
+        if _audio_rms(segment_audio) < FUNASR_MIN_SEGMENT_RMS:
+            logger.debug("FunASR segment %s/%s skipped by low RMS", index, len(segments))
+            continue
+        result = asr_model(segment_audio)
+        text = _extract_funasr_text(result)
+        if text:
+            parts.append((text, start, end))
+        logger.debug("FunASR segment %s/%s transcribed chars=%s", index, len(segments), len(text))
+
+    transcript = _join_funasr_segments(parts)
+    transcript = _punctuate_funasr_text(transcript, models.get("punc"))
+    return _postprocess_funasr_transcript(transcript)
+
+
+def _transcribe_with_funasr(media_bytes: bytes, filename: str) -> str:
+    wav_path = None
+    try:
+        wav_path = _decode_media_to_wav(media_bytes, filename)
+        return _transcribe_with_funasr_onnx(wav_path)
+    finally:
+        if wav_path:
+            Path(wav_path).unlink(missing_ok=True)
+
+
 def _transcribe_with_dashscope_chat_asr(
     client: OpenAI,
     audio_bytes: bytes,
@@ -248,41 +572,6 @@ def _transcribe_with_dashscope_chat_asr(
     return _extract_text_from_message_content(response.choices[0].message.content)
 
 
-def _get_local_whisper_model():
-    global _whisper_model
-    if _whisper_model is not None:
-        return _whisper_model
-
-    import whisper
-
-    model_size = str(os.getenv("WHISPER_MODEL_SIZE", "tiny")).strip() or "tiny"
-    logger.info("Loading local Whisper fallback model: %s", model_size)
-    _whisper_model = whisper.load_model(model_size)
-    return _whisper_model
-
-
-def _transcribe_with_local_whisper(media_bytes: bytes, filename: str) -> str:
-    source_path = None
-    suffix = Path(filename or "").suffix.lower() or ".webm"
-    try:
-        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as source_file:
-            source_path = source_file.name
-            source_file.write(media_bytes)
-        model = _get_local_whisper_model()
-        result = model.transcribe(source_path, language="zh", fp16=False, initial_prompt="简体中文普通话")
-        text = str((result or {}).get("text") or "").strip()
-        # Force simplified Chinese via zhconv fallback
-        try:
-            from zhconv import convert
-            text = convert(text, 'zh-cn')
-        except ImportError:
-            pass
-        return text
-    finally:
-        if source_path:
-            Path(source_path).unlink(missing_ok=True)
-
-
 async def transcribe_audio_file(audio_bytes: bytes, filename: str = "answer.webm") -> str:
     """Best-effort ASR with an honest fallback.
 
@@ -293,14 +582,18 @@ async def transcribe_audio_file(audio_bytes: bytes, filename: str = "answer.webm
         return SHORT_AUDIO_PLACEHOLDER
 
     asr_model = _resolve_asr_model()
+    remote_asr_model = _resolve_remote_asr_model()
     asr_cache_scope = hashlib.sha256(
         "|".join(
             [
-                settings.llm_provider,
-                settings.llm_base_url,
+                settings.asr_provider,
                 asr_model,
+                remote_asr_model,
+                settings.funasr_vad_model_name,
+                settings.funasr_punc_model_name if settings.funasr_enable_punc else "",
                 "zh",
                 ASR_SIMPLIFIED_CHINESE_PROMPT,
+                ASR_CACHE_SCHEMA,
             ]
         ).encode("utf-8")
     ).hexdigest()[:12]
@@ -310,20 +603,34 @@ async def transcribe_audio_file(audio_bytes: bytes, filename: str = "answer.webm
         logger.info("ASR cache hit: %s", asr_cache_key)
         return cached_transcript.strip()
 
+    if _is_funasr_provider():
+        try:
+            text = _transcribe_with_funasr(audio_bytes, filename)
+            if text.strip():
+                transcript = text.strip()
+                await cache_set_json(
+                    asr_cache_key,
+                    transcript,
+                    settings.redis_cache_ttl_transcript,
+                )
+                return transcript
+        except Exception as exc:
+            logger.warning("FunASR transcription failed, falling back to remote ASR if configured: %s", exc)
+
     client = get_client()
-    if client and asr_model:
+    if client and remote_asr_model:
         try:
             prepared_bytes, prepared_name = _normalize_media_for_asr(audio_bytes, filename)
             if "dashscope.aliyuncs.com" in str(settings.llm_base_url or ""):
                 try:
-                    text = _transcribe_with_dashscope_chat_asr(client, prepared_bytes, prepared_name, asr_model)
+                    text = _transcribe_with_dashscope_chat_asr(client, prepared_bytes, prepared_name, remote_asr_model)
                 except Exception as prompt_exc:
                     logger.warning("DashScope ASR prompt request failed, retrying audio-only: %s", prompt_exc)
                     text = _transcribe_with_dashscope_chat_asr(
                         client,
                         prepared_bytes,
                         prepared_name,
-                        asr_model,
+                        remote_asr_model,
                         include_prompt=False,
                     )
             else:
@@ -331,7 +638,7 @@ async def transcribe_audio_file(audio_bytes: bytes, filename: str = "answer.webm
                 file_obj.name = prepared_name or "answer.webm"
                 try:
                     response = client.audio.transcriptions.create(
-                        model=asr_model,
+                        model=remote_asr_model,
                         file=file_obj,
                         language="zh",
                         prompt=ASR_SIMPLIFIED_CHINESE_PROMPT,
@@ -339,7 +646,7 @@ async def transcribe_audio_file(audio_bytes: bytes, filename: str = "answer.webm
                 except TypeError:
                     file_obj.seek(0)
                     response = client.audio.transcriptions.create(
-                        model=asr_model,
+                        model=remote_asr_model,
                         file=file_obj,
                         language="zh",
                     )
@@ -355,20 +662,7 @@ async def transcribe_audio_file(audio_bytes: bytes, filename: str = "answer.webm
                 )
                 return transcript
         except Exception as exc:
-            logger.warning("ASR transcription failed, trying local Whisper fallback: %s", exc)
-
-    try:
-        text = _transcribe_with_local_whisper(audio_bytes, filename)
-        if text.strip():
-            transcript = text.strip()
-            await cache_set_json(
-                asr_cache_key,
-                transcript,
-                settings.redis_cache_ttl_transcript,
-            )
-            return transcript
-    except Exception as exc:
-        logger.warning("Local Whisper fallback failed, falling back to placeholder: %s", exc)
+            logger.warning("Remote ASR transcription failed, falling back to placeholder: %s", exc)
 
     return ASR_UNAVAILABLE_PLACEHOLDER
 

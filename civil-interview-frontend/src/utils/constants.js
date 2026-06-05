@@ -208,9 +208,9 @@ export const SUBCATEGORY_LABELS = {
   '法检书记员面试': '方向'
 }
 
-// 年份选项（2025-2018）
+// 年份选项（2025-2017）
 export const YEAR_OPTIONS = [
-  '2025', '2024', '2023', '2022', '2021', '2020', '2019', '2018'
+  '2025', '2024', '2023', '2022', '2021', '2020', '2019', '2018', '2017'
 ]
 
 export function getQuestionTypeName(key) {

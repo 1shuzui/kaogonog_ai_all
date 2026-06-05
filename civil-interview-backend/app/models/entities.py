@@ -113,7 +113,7 @@ class PaymentOrder(Base):
     package_code = Column(String(100), nullable=False, index=True)
     package_type = Column(String(30), nullable=False, index=True)
     amount = Column(Numeric(10, 2), nullable=False, default=0)
-    pay_channel = Column(String(30), nullable=False, default="wechat")
+    pay_channel = Column(String(30), nullable=False, default="wechat_virtual")
     status = Column(String(30), nullable=False, default="pending", index=True)
     third_party_order_no = Column(String(100), default="")
     paid_at = Column(DateTime, nullable=True)

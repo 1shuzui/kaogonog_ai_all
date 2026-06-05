@@ -19,6 +19,12 @@ class SettingsCompatibilityTestCase(unittest.TestCase):
         self.assertTrue(hasattr(settings, "redis_cache_ttl_questions"))
         self.assertTrue(hasattr(settings, "redis_cache_ttl_llm"))
         self.assertTrue(hasattr(settings, "redis_cache_ttl_transcript"))
+        self.assertTrue(hasattr(settings, "asr_provider"))
+        self.assertTrue(hasattr(settings, "funasr_model_name"))
+        self.assertTrue(hasattr(settings, "funasr_vad_model_name"))
+        self.assertTrue(hasattr(settings, "funasr_punc_model_name"))
+        self.assertTrue(hasattr(settings, "funasr_quantize"))
+        self.assertTrue(hasattr(settings, "modelscope_cache"))
 
 
 if __name__ == "__main__":

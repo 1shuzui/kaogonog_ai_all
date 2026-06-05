@@ -14,4 +14,9 @@ cryptography
 python-dotenv
 redis[hiredis]==5.2.1
 zhconv
-openai-whisper
+funasr-onnx==0.4.1
+modelscope
+onnxruntime
+soundfile
+librosa
+jieba

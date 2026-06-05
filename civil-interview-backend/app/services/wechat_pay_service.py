@@ -9,7 +9,7 @@ import requests
 
 from app.core.config import settings
 from app.models.entities import PaymentOrder, SubscriptionPackage
-from app.schemas.common import PaymentCallbackRequest, PaymentOrderCreateRequest
+from app.schemas.common import PaymentOrderCreateRequest
 
 
 VIRTUAL_PAY_SCENE = "mini_program_virtual"
@@ -24,20 +24,13 @@ class WechatPayService:
     _access_token_expires_at: int = 0
 
     def get_pay_payload(self, order: PaymentOrder, package: SubscriptionPackage, data: PaymentOrderCreateRequest) -> dict:
-        if data.payChannel != "wechat":
-            raise HTTPException(status_code=400, detail="当前仅支持微信支付")
+        if data.payChannel != "wechat_virtual":
+            raise HTTPException(status_code=400, detail="虚拟商品购买只能使用微信官方小程序虚拟支付")
         if data.scene != VIRTUAL_PAY_SCENE:
             raise HTTPException(status_code=400, detail="小程序虚拟商品必须使用官方小程序虚拟支付")
         if not settings.wechat_pay_enabled:
             raise HTTPException(status_code=503, detail="小程序虚拟支付未启用")
         return self._build_virtual_payment_payload(order, package, data)
-
-    def parse_callback(self, data: PaymentCallbackRequest, headers: dict | None = None) -> dict:
-        headers = headers or {}
-        mode = (data.mode or data.callbackPayload.get("mode") or "").lower()
-        if mode == "wechat":
-            return self._parse_wechat_callback_placeholder(data, headers)
-        raise HTTPException(status_code=400, detail="不支持的微信支付回调模式")
 
     def query_virtual_order(self, order: PaymentOrder, package: SubscriptionPackage) -> dict:
         extra_payload = order.extra_payload if isinstance(order.extra_payload, dict) else {}
@@ -471,41 +464,5 @@ class WechatPayService:
                     pass
                 return str(value)
         return datetime.now(timezone.utc).isoformat()
-
-    def _parse_wechat_callback_placeholder(self, data: PaymentCallbackRequest, headers: dict) -> dict:
-        picked_headers = self._pick_wechat_headers(headers)
-        resource_plain = data.resourcePlain or data.callbackPayload.get("resourcePlain") or data.callbackPayload.get("resource_plain")
-        if not resource_plain:
-            raise HTTPException(
-                status_code=501,
-                detail="微信服务端回调验签与 resource 解密尚未接入；小程序虚拟支付当前通过客户端成功回传确认订单。",
-            )
-        order_no = resource_plain.get("out_trade_no") or resource_plain.get("orderNo") or resource_plain.get("order_no")
-        if not order_no:
-            raise HTTPException(status_code=400, detail="微信回调明文缺少 out_trade_no")
-        trade_state = resource_plain.get("trade_state") or resource_plain.get("status") or "SUCCESS"
-        amount = resource_plain.get("amount") if isinstance(resource_plain.get("amount"), dict) else {}
-        return {
-            "mode": "wechat",
-            "verified": False,
-            "verifyPending": True,
-            "orderNo": order_no,
-            "status": "paid" if trade_state == "SUCCESS" else str(trade_state).lower(),
-            "transactionId": resource_plain.get("transaction_id") or resource_plain.get("transactionId") or "",
-            "paidAt": resource_plain.get("success_time") or resource_plain.get("paidAt") or datetime.now(timezone.utc).isoformat(),
-            "amountTotal": amount.get("total") if amount else resource_plain.get("amountTotal"),
-            "rawPayload": resource_plain,
-            "headers": picked_headers,
-        }
-
-    def _pick_wechat_headers(self, headers: dict) -> dict:
-        lower_headers = {str(k).lower(): v for k, v in headers.items()}
-        return {
-            "wechatpayTimestamp": lower_headers.get("wechatpay-timestamp", ""),
-            "wechatpayNonce": lower_headers.get("wechatpay-nonce", ""),
-            "wechatpaySignature": lower_headers.get("wechatpay-signature", ""),
-            "wechatpaySerial": lower_headers.get("wechatpay-serial", ""),
-        }
-
 
 wechat_pay_service = WechatPayService()

@@ -119,7 +119,7 @@
             {{ selectedFullExamSuite ? selectedFullExamSuiteSummary : (fullExamSuitesLoading ? '正在加载真题套卷...' : '当前省份暂无整套真题套卷，请切换江苏、安徽或湖南。') }}
           </div>
         </div>
-        <div v-if="showPracticeConfig" class="practice-config">
+        <div v-if="showTargetFilterConfig" class="practice-config">
           <div class="practice-config__item">
             <span class="practice-config__label">考试大类</span>
             <a-select
@@ -156,13 +156,14 @@
               placeholder="不限"
               allow-clear
               style="width: 260px"
+              @change="handleDirectionFilterChange"
             >
               <a-select-option v-for="dir in directionOptions" :key="dir.id" :value="dir.id">
                 {{ dir.name }}
               </a-select-option>
             </a-select>
           </div>
-          <div class="practice-config__item">
+          <div v-if="showPracticeConfig" class="practice-config__item">
             <span class="practice-config__label">年份</span>
             <a-select
               v-model:value="selectedYearsFilter"
@@ -175,7 +176,7 @@
               <a-select-option v-for="y in YEAR_OPTIONS" :key="y" :value="y">{{ y }}</a-select-option>
             </a-select>
           </div>
-          <div class="practice-config__item">
+          <div v-if="showPracticeConfig" class="practice-config__item">
             <span class="practice-config__label">题目数量</span>
             <a-input-number
               v-model:value="questionCount"
@@ -185,7 +186,7 @@
               style="width: 120px"
             />
           </div>
-          <div class="practice-config__item">
+          <div v-if="showPracticeConfig" class="practice-config__item">
             <span class="practice-config__label">题目类型</span>
             <a-select
               v-model:value="dimensionFilters"
@@ -235,7 +236,8 @@ import {
 import {
   fetchFullExamSuites,
   getFullExamSuiteSummary,
-  loadFullExamSuiteQuestions
+  loadFullExamSuiteQuestions,
+  normalizeProvinceCode
 } from '@/utils/fullExamSuites'
 import { parseTimingFormat, DEFAULT_TARGETED_POSITION_TREE } from '@/utils/targetedOptions'
 import { YEAR_OPTIONS } from '@/utils/constants'
@@ -305,6 +307,7 @@ const fixedPracticeSources = new Set(['targeted', 'training', 'jiangsu'])
 const source = computed(() => String(route.query.source || ''))
 const isFixedPracticeEntry = computed(() => fixedPracticeSources.has(source.value))
 const showPracticeConfig = computed(() => examMode.value === 'free' && !isFixedPracticeEntry.value)
+const showTargetFilterConfig = computed(() => !isFixedPracticeEntry.value && ['free', 'fullExam'].includes(examMode.value))
 const asrUnavailable = computed(() => asrStatus.value && asrStatus.value.ready === false)
 const asrStatusText = computed(() => {
   if (!asrStatus.value) return ''
@@ -332,30 +335,95 @@ const selectedCategoryNode = computed(() =>
     ? DEFAULT_TARGETED_POSITION_TREE.find(c => String(c.id) === String(selectedExamCategoryId.value)) || null
     : null
 )
-const regionOptions = computed(() =>
-  selectedCategoryNode.value?.children || []
-)
+function uniqueRegionsFromTree() {
+  const seen = new Set()
+  const regions = []
+  DEFAULT_TARGETED_POSITION_TREE.forEach((category) => {
+    ;(category.children || []).forEach((region) => {
+      const province = normalizeProvinceCode(region.province || '')
+      if (!province || province === 'all') return
+      if (seen.has(province)) return
+      seen.add(province)
+      regions.push({
+        id: `region_${province}`,
+        name: region.name || province,
+        province
+      })
+    })
+  })
+  return regions
+}
+const regionOptions = computed(() => uniqueRegionsFromTree())
 const selectedRegionNode = computed(() =>
   selectedRegionId.value
     ? regionOptions.value.find(r => String(r.id) === String(selectedRegionId.value)) || null
     : null
 )
+function findCategoryByPreference(value = '') {
+  const text = String(value || '').trim()
+  if (!text) return null
+  return DEFAULT_TARGETED_POSITION_TREE.find((category) => (
+    String(category.id) === text
+    || String(category.name) === text
+    || String(category.examCategory || '') === text
+  )) || null
+}
+function matchingTreeRegions() {
+  const region = selectedRegionNode.value
+  if (!region) return []
+  const categories = selectedCategoryNode.value ? [selectedCategoryNode.value] : DEFAULT_TARGETED_POSITION_TREE
+  return categories.flatMap((category) => (
+    (category.children || []).filter((item) => normalizeProvinceCode(item.province || '') === region.province)
+  ))
+}
 const hasDirectionOptions = computed(() =>
-  (selectedRegionNode.value?.children?.length || 0) > 0
+  directionOptions.value.length > 0
 )
-const directionOptions = computed(() =>
-  selectedRegionNode.value?.children || []
-)
+const directionOptions = computed(() => {
+  const seen = new Set()
+  const options = []
+  matchingTreeRegions().forEach((region) => {
+    const directions = Array.isArray(region.directions)
+      ? region.directions
+      : Array.isArray(region.children)
+        ? region.children
+        : []
+    directions.forEach((direction) => {
+      const id = String(direction.id || `${region.id}_${direction.name}`)
+      if (seen.has(id)) return
+      seen.add(id)
+      options.push(direction)
+    })
+  })
+  return options
+})
 const selectedDirectionNode = computed(() =>
   selectedDirectionId.value
     ? directionOptions.value.find(d => String(d.id) === String(selectedDirectionId.value)) || null
     : null
 )
 function handleExamCategoryFilterChange() {
-  selectedRegionId.value = ''
   selectedDirectionId.value = ''
+  targetFilterTouched.value = true
 }
 function handleRegionFilterChange() {
+  selectedDirectionId.value = ''
+  targetFilterTouched.value = true
+}
+function handleDirectionFilterChange() {
+  targetFilterTouched.value = true
+}
+const targetFilterTouched = ref(false)
+function applyDefaultTargetFilters(force = false) {
+  if (targetFilterTouched.value && !force) return
+  const preferredCategory = findCategoryByPreference(userStore.preferences?.examCategory)
+  selectedExamCategoryId.value = preferredCategory?.id || ''
+  const preferredProvince = normalizeProvinceCode(userStore.selectedProvince || '')
+  if (preferredProvince && preferredProvince !== 'all') {
+    selectedRegionId.value = regionOptions.value.find((region) => region.province === preferredProvince)?.id || ''
+  } else {
+    selectedRegionId.value = ''
+  }
   selectedDirectionId.value = ''
 }
 
@@ -366,19 +434,20 @@ const targetFilterParams = computed(() => {
   const region = selectedRegionNode.value
   const dir = selectedDirectionNode.value
   if (cat) {
-    params.examCategory = cat.name
-    if (cat.examCategory) params.examCategory = cat.examCategory
+    params.examCategory = cat.examCategory || cat.name
   }
   if (region) {
     if (region.province) params.province = region.province
-    if (region.examSubcategory) params.examSubcategory = region.examSubcategory
-    params.subcategory = region.subcategory || region.name
   }
   if (dir) {
-    params.subcategory2 = dir.subcategory || dir.name
+    if (dir.examSubcategory) params.examSubcategory = dir.examSubcategory
+    if (dir.subcategory) params.subcategory = dir.subcategory
+    if (dir.subcategory2) params.subcategory2 = dir.subcategory2
+    if (!dir.subcategory && !dir.subcategory2) params.subcategory2 = dir.name
+    if (dir.position) params.position = dir.position
     if (dir.province) params.province = dir.province
   }
-  if (selectedYearsFilter.value.length) {
+  if (examMode.value !== 'fullExam' && selectedYearsFilter.value.length) {
     params.year = selectedYearsFilter.value.join(',')
   }
   return params
@@ -402,9 +471,14 @@ watch(fullExamSuiteOptions, (suites) => {
   }
 }, { immediate: true })
 
-watch(() => userStore.selectedProvince, () => {
+watch(() => [userStore.selectedProvince, userStore.preferences?.examCategory], () => {
+  applyDefaultTargetFilters()
   refreshFullExamSuites().catch(() => null)
 }, { immediate: true })
+
+watch(targetFilterParams, () => {
+  refreshFullExamSuites().catch(() => null)
+}, { deep: true })
 
 watch(() => userStore.preferences?.preferredQuestionDimensions, () => {
   applyPreferredQuestionDimensions()
@@ -456,9 +530,10 @@ function applyUserPracticePreferencesToQuestions(questions = []) {
 
 function applyFullExamTimingMode(questions = []) {
   if (examMode.value !== 'fullExam') return questions
+  const suiteProvince = selectedFullExamSuite.value?.province || userStore.selectedProvince
   return questions.map((question) => ({
     ...question,
-    fullExamTimingMode: question?.fullExamTimingMode || (userStore.selectedProvince === 'jiangsu' ? JIANGSU_FULL_EXAM_TIMING_MODE : '')
+    fullExamTimingMode: question?.fullExamTimingMode || (suiteProvince === 'jiangsu' ? JIANGSU_FULL_EXAM_TIMING_MODE : '')
   }))
 }
 
@@ -471,7 +546,12 @@ async function refreshFullExamSuites() {
   }
   fullExamSuitesLoading.value = true
   try {
-    const suites = await fetchFullExamSuites(getQuestions, userStore.selectedProvince)
+    const filters = targetFilterParams.value
+    const suites = await fetchFullExamSuites(
+      getQuestions,
+      filters.province || userStore.selectedProvince,
+      { params: filters }
+    )
     fullExamSuites.value = suites
   } catch (error) {
     fullExamSuites.value = []

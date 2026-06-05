@@ -10,7 +10,8 @@ export const DEFAULT_PREFERENCES = {
   defaultAnswerTime: 180,
   enableAudio: true,
   preferredQuestionDimensions: [],
-  practicePreferenceConfirmed: false
+  practicePreferenceConfirmed: false,
+  examCategory: ''
 }
 
 export const PROVINCES = [
@@ -179,7 +180,7 @@ export const SUBCATEGORY_LABELS = {
 }
 
 export const YEAR_OPTIONS = [
-  '2025', '2024', '2023', '2022', '2021', '2020', '2019', '2018'
+  '2025', '2024', '2023', '2022', '2021', '2020', '2019', '2018', '2017'
 ]
 
 export function getProvinceName(code) {

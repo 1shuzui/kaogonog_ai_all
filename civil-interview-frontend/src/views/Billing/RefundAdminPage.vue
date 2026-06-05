@@ -6,7 +6,7 @@
       </a-button>
       <div>
         <h2>余额与退款</h2>
-        <p>按订单剩余可用小时统计退款余额，并执行管理员退款标记。</p>
+        <p>按订单剩余可用小时统计退款余额，并通过微信官方小程序虚拟支付退款接口处理。</p>
       </div>
       <a-button type="primary" :loading="loading" @click="loadStats">
         <ReloadOutlined /> 刷新
@@ -110,7 +110,7 @@
 
     <a-modal
       v-model:open="refundVisible"
-      title="确认退款"
+      title="确认微信虚拟支付退款"
       :confirm-loading="refundSubmitting"
       @ok="submitRefund"
     >
@@ -120,6 +120,7 @@
         <p>创建时间：{{ formatDateTime(activeRecord.createdAt) }}</p>
         <p>支付时间：{{ activeRecord.paidAt ? formatDateTime(activeRecord.paidAt) : '未支付' }}</p>
         <p>最多可退：{{ activeRecord.refundableHours }} 小时，¥{{ formatAmount(activeRecord.refundableAmount) }}</p>
+        <p class="refund-admin__modal-note">提交后会调用微信官方小程序虚拟支付退款接口，并按比例扣减对应训练权益。</p>
         <a-form layout="vertical">
           <a-form-item label="退款小时数">
             <a-input-number
@@ -211,7 +212,7 @@ async function submitRefund() {
       refundedHours: refundForm.refundedHours,
       refundRemark: refundForm.refundRemark
     })
-    message.success('退款已标记')
+    message.success('微信虚拟支付退款已提交')
     refundVisible.value = false
     await loadStats()
   } finally {
@@ -319,6 +320,10 @@ function formatDateTime(value) {
 .refund-admin__modal p {
   margin: 0 0 8px;
   color: @text-secondary;
+}
+
+.refund-admin__modal-note {
+  line-height: 1.7;
 }
 
 @media (max-width: 900px) {

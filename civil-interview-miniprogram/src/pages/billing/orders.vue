@@ -3,7 +3,7 @@
     <view class="page-head">
       <view>
         <text class="page-title">订单记录</text>
-        <text class="page-desc">支付状态以服务端订单与微信支付通知为准。</text>
+        <text class="page-desc">支付状态以服务端订单与微信官方小程序虚拟支付结果为准。</text>
       </view>
       <button class="secondary-button page-head__button" :loading="loading" @tap="fetchOrders">刷新</button>
     </view>
@@ -53,7 +53,7 @@
       </view>
       <view class="detail-row">
         <text>支付渠道</text>
-        <text>{{ selectedOrder.payChannel || selectedOrder.pay_channel || 'wechat' }}</text>
+        <text>{{ selectedOrder.payChannel || selectedOrder.pay_channel || 'wechat_virtual' }}</text>
       </view>
       <view class="detail-row">
         <text>支付时间</text>

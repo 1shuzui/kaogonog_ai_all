@@ -1,7 +1,6 @@
 <template>
   <view class="page">
     <text class="page-title">套餐中心</text>
-    <text class="page-desc">小程序内虚拟权益购买使用微信官方虚拟支付能力，支付完成后会自动同步权益。</text>
 
     <view class="pricing-status card">
       <text class="pricing-status__label">当前套餐</text>
@@ -35,7 +34,7 @@
           <text>历史报告、收藏题和低分错题复盘</text>
         </view>
       </view>
-      <button class="primary-button" :loading="loadingPlan === 'hourly'" :disabled="!!loadingPlan" @tap="activate('hourly')">立即开通</button>
+      <button class="primary-button" :loading="loadingPlan === 'hourly'" :disabled="!!loadingPlan" @tap="activate('hourly')">开通</button>
     </view>
 
     <view class="plan-card card">
@@ -50,12 +49,12 @@
           <text>错题收藏、历史复盘和智能推荐</text>
         </view>
       </view>
-      <button class="primary-button" :loading="loadingPlan === 'monthly'" :disabled="!!loadingPlan" @tap="activate('monthly')">立即开通</button>
+      <button class="primary-button" :loading="loadingPlan === 'monthly'" :disabled="!!loadingPlan" @tap="activate('monthly')">开通</button>
     </view>
 
     <view class="card pricing-note">
       <text>支付说明</text>
-      <text>付费权益允许叠加，系统会优先消耗更早到期的余额；支付成功后以小程序虚拟支付结果、后端订单和账户权益同步结果为准。</text>
+      <text>付费权益允许叠加，系统会优先消耗更早到期的余额；支付成功后以账户权益同步结果为准。</text>
     </view>
   </view>
 </template>
@@ -66,6 +65,7 @@ import { confirmVirtualPaymentOrder, createPaymentOrder, getPaymentOrder } from 
 import { useBillingStore } from '../../stores/billing'
 import { useUserStore } from '../../stores/user'
 import { toast } from '../../utils/navigation'
+import { getWechatLoginCode } from '../../utils/wechatLogin'
 
 const billingStore = useBillingStore()
 const userStore = useUserStore()
@@ -99,6 +99,15 @@ function canUseWechatVirtualPayment() {
   return compareVersion(sdkVersion, '2.19.2') >= 0 || wx.canIUse?.('requestVirtualPayment') === true
 }
 
+function isIosDevice() {
+  if (typeof wx === 'undefined') return false
+  const deviceInfo = typeof wx.getDeviceInfo === 'function'
+    ? wx.getDeviceInfo()
+    : (typeof wx.getSystemInfoSync === 'function' ? wx.getSystemInfoSync() : {})
+  const platform = String(deviceInfo.platform || deviceInfo.system || '').toLowerCase()
+  return platform.includes('ios') || platform.includes('iphone') || platform.includes('ipad')
+}
+
 function parseVirtualPaySignData(signData) {
   if (typeof signData !== 'string' || !signData.trim()) {
     throw new Error('小程序虚拟支付参数不完整：缺少 signData')
@@ -129,21 +138,19 @@ function validateWechatVirtualPayParams(payParams = {}) {
   if (payParams.mode === 'short_series_goods' && (!signData.productId || !signData.goodsPrice)) {
     throw new Error('小程序虚拟支付道具直购参数不完整')
   }
+  if (isIosDevice() && Number(signData.env) === 1) {
+    throw new Error('iOS 端小程序虚拟支付不支持沙箱环境，请切换现网虚拟支付配置后再开通')
+  }
+}
+
+async function ensureLoginForVirtualPayment() {
+  if (userStore.isAuthenticated) return
+  const code = await getWechatLoginCode()
+  await userStore.loginWithWechat(code, '2026-05-12')
 }
 
 function loginForPayCode() {
-  return new Promise((resolve, reject) => {
-    uni.login({
-      provider: 'weixin',
-      success(res) {
-        if (res.code) resolve(res.code)
-        else reject(new Error('微信登录未返回 code'))
-      },
-      fail(err) {
-        reject(new Error(err?.errMsg || '微信登录失败'))
-      }
-    })
-  })
+  return getWechatLoginCode()
 }
 
 function requestWechatVirtualPayment(payParams = {}) {
@@ -181,10 +188,11 @@ async function activate(plan) {
   if (!PACKAGE_BY_PLAN[plan] || loadingPlan.value) return
   loadingPlan.value = plan
   try {
+    await ensureLoginForVirtualPayment()
     const code = await loginForPayCode()
     const order = await createPaymentOrder({
       packageCode: PACKAGE_BY_PLAN[plan],
-      payChannel: 'wechat',
+      payChannel: 'wechat_virtual',
       scene: 'mini_program_virtual',
       appId: WECHAT_APPID,
       code,
@@ -258,9 +266,16 @@ function startTrial() {
 
 .plan-card {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 190rpx;
+  grid-template-columns: minmax(0, 1fr) 220rpx;
   gap: 20rpx;
   align-items: center;
+}
+
+.plan-card .primary-button {
+  padding: 0 12rpx;
+  font-size: 25rpx;
+  line-height: 1.25;
+  white-space: normal;
 }
 
 .plan-card__title {

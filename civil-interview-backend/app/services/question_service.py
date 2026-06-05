@@ -133,6 +133,53 @@ def _question_source_label(source: str) -> str:
     return QUESTION_SOURCE_LABELS.get(source, source or "未知来源")
 
 
+def _normalize_year_values(value) -> list[str]:
+    if isinstance(value, list):
+        candidates = value
+    elif isinstance(value, str):
+        candidates = re.split(r"[、，,；;/\s]+", value)
+    elif value in (None, ""):
+        candidates = []
+    else:
+        candidates = [value]
+    years: list[str] = []
+    for item in candidates:
+        match = re.search(r"(?:19|20)\d{2}", str(item or ""))
+        if match and match.group(0) not in years:
+            years.append(match.group(0))
+    return years
+
+
+def _infer_year_values(*values) -> list[str]:
+    years: list[str] = []
+    for value in values:
+        for year in _normalize_year_values(value):
+            if year not in years:
+                years.append(year)
+    return years
+
+
+def _question_years_from_meta(meta: dict | None) -> list[str]:
+    if not isinstance(meta, dict):
+        return []
+    date_years = _normalize_year_values(meta.get("examDate"))
+    if date_years:
+        return date_years
+    explicit_years = _normalize_year_values(meta.get("year"))
+    if explicit_years:
+        return explicit_years
+    for group in (
+        (meta.get("examDate"),),
+        (meta.get("suiteName"), meta.get("sourceTitleRaw")),
+        (meta.get("sourceQuestionId"),),
+        (meta.get("sourceDocument"), meta.get("originFile")),
+    ):
+        inferred_years = _infer_year_values(*group)
+        if inferred_years:
+            return inferred_years
+    return []
+
+
 def _first_rule_match(text: str, rules) -> str:
     for label, aliases in rules:
         if any(alias in text for alias in aliases):
@@ -374,6 +421,13 @@ def _build_question_meta(
             value = classification_meta.get(key)
         if value not in ("", [], None):
             meta[key] = value
+    date_years = _normalize_year_values(meta.get("examDate"))
+    if date_years:
+        meta["year"] = date_years
+    elif not meta.get("year"):
+        inferred_years = _question_years_from_meta(meta)
+        if inferred_years:
+            meta["year"] = inferred_years
     return {key: value for key, value in meta.items() if value not in ("", [], None)}
 
 
@@ -421,7 +475,7 @@ def _q_to_dict(q: Question) -> dict:
             "interviewFormat": meta.get("interviewFormat", ""),
             "questionTypeCategory": meta.get("questionTypeCategory", ""),
             "jobLevel": meta.get("jobLevel", ""),
-            "year": meta.get("year", []),
+            "year": _question_years_from_meta(meta),
             "timingMode": meta.get("timingMode", ""),
             "questionCount": meta.get("questionCount"),
             "classificationSource": meta.get("classificationSource", ""),
@@ -967,11 +1021,7 @@ def _question_matches_target_filters(question: Question, target_filters: dict | 
     if year_filter:
         year_values = set(str(y).strip() for y in (year_filter if isinstance(year_filter, list) else [year_filter]) if str(y).strip())
         if year_values:
-            meta_year = meta.get("year")
-            # Handle both list and single string
-            if isinstance(meta_year, str):
-                meta_year = [meta_year]
-            meta_years = set(str(y).strip() for y in (meta_year if isinstance(meta_year, list) else []) if str(y).strip())
+            meta_years = set(_question_years_from_meta(meta))
             if meta_years and not (year_values & meta_years):
                 return False
     return True
@@ -1184,7 +1234,7 @@ def list_questions(
             if year_set:
                 rows = [
                     q for q in rows
-                    if year_set & set(str(y).strip() for y in (_question_meta_from_keywords(q.keywords).get("year") or []))
+                    if year_set & set(_question_years_from_meta(_question_meta_from_keywords(q.keywords)))
                 ]
         total = len(rows)
         start = (current - 1) * page_size

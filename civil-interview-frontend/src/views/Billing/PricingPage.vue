@@ -5,12 +5,12 @@
         <span class="pricing-hero__eyebrow">套餐方案</span>
         <h1>解锁更完整的面试训练</h1>
         <p>
-          试用用户可以先体验 1 道引导题。套餐开通会创建后端订单，
-          在小程序端完成微信支付后会自动同步权益。
+          试用用户可以先体验 1 道引导题。所有付费虚拟训练权益
+          均需在微信小程序套餐中心通过官方小程序虚拟支付开通。
         </p>
         <div class="pricing-hero__chips">
           <span>单题试用</span>
-          <span>后端订单</span>
+          <span>小程序虚拟支付</span>
           <span>权益同步</span>
           <span>录音/录像评分</span>
         </div>
@@ -59,7 +59,7 @@
         <div class="pricing-risk__item">账号权益建议仅限本人使用，不建议多人共用。</div>
         <div class="pricing-risk__item">付费套餐允许叠加，系统会优先消耗更早到期或更早开通的权益余额。</div>
         <div class="pricing-risk__item">多设备同时登录或多人切换使用，可能导致练习记录、录音、评分结果出现错位或覆盖。</div>
-        <div class="pricing-risk__item">当前支付以服务器订单、微信支付通知和订阅状态为准；PC 端创建订单后请在小程序端完成真实支付。</div>
+        <div class="pricing-risk__item">付费虚拟训练权益只能在微信小程序内通过官方小程序虚拟支付开通；PC 端仅用于查看套餐与核对权益。</div>
         <div class="pricing-risk__item">如果出现订单、权限或设备异常，请通过个人中心的客服反馈入口联系管理员处理。</div>
       </div>
       <div class="pricing-risk__actions">
@@ -101,9 +101,10 @@
             block
             :type="isCurrentPlan(plan.key) ? 'default' : 'primary'"
             :loading="purchasingPlanKey === plan.key"
+            :disabled="isCurrentPlan(plan.key)"
             @click="activatePlan(plan)"
           >
-            {{ isCurrentPlan(plan.key) ? '当前套餐' : '立即开通' }}
+            {{ isCurrentPlan(plan.key) ? '当前套餐' : '小程序虚拟支付开通' }}
           </a-button>
         </template>
       </div>
@@ -120,32 +121,10 @@
         </div>
       </div>
       <p class="pricing-support__note">
-        PC 端用于查看套餐、创建订单和核对权益；小程序端使用同一套后端支付接口拉起微信支付。所有付费套餐均以服务器订单、
-        微信支付通知和后端权益余额为准，重复开通会叠加到同一账号。
+        PC 端用于查看套餐和核对权益；所有付费套餐均在微信小程序套餐中心通过官方小程序虚拟支付开通，
+        支付完成后以服务端虚拟支付订单与账户权益同步结果为准，重复开通会叠加到同一账号。
       </p>
     </div>
-
-    <a-modal
-      v-model:open="successVisible"
-      :title="latestOrder?.status === 'paid' ? '开通成功' : '订单已创建'"
-      :footer="null"
-      @cancel="successVisible = false"
-    >
-      <div v-if="latestOrder" class="pricing-success">
-        <div class="pricing-success__amount">¥{{ latestOrder.amount }}</div>
-        <div class="pricing-success__title">{{ latestOrder.title }}</div>
-        <p>{{ latestOrder.summary }}</p>
-        <div class="pricing-success__meta">
-          <span>订单号：{{ latestOrder.id }}</span>
-          <span>状态：{{ latestOrder.statusText }}</span>
-          <span v-if="latestOrder.payMode">支付模式：{{ latestOrder.payMode }}</span>
-        </div>
-        <div class="pricing-success__actions">
-          <a-button @click="goOrders">查看订单</a-button>
-          <a-button type="primary" @click="goNextStep">继续使用</a-button>
-        </div>
-      </div>
-    </a-modal>
   </div>
 </template>
 
@@ -155,7 +134,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { useBillingStore } from '@/stores/billing'
 import { useUserStore } from '@/stores/user'
-import { createPaymentOrder } from '@/api/payment'
 import { BILLING_PLANS, BILLING_PLAN_KEYS, PREMIUM_MODULES } from '@/utils/billing'
 
 const route = useRoute()
@@ -167,9 +145,8 @@ const plans = BILLING_PLANS
 const paywallSource = computed(() => String(route.query.source || billingStore.lastPaywallSource || ''))
 const redirectTarget = computed(() => String(route.query.redirect || billingStore.lastIntendedPath || '/'))
 const trialQuestion = computed(() => billingStore.trialQuestion)
-const successVisible = ref(false)
-const latestOrder = ref(null)
 const purchasingPlanKey = ref('')
+const MINI_PROGRAM_PRICING_PATH = '/pages/pricing/index'
 
 function resolvePostPurchaseTarget() {
   const target = redirectTarget.value || '/'
@@ -194,31 +171,8 @@ function startTrial() {
 }
 
 function goNextStep() {
-  successVisible.value = false
   billingStore.clearPaywallIntent()
   router.push(resolvePostPurchaseTarget())
-}
-
-function goOrders() {
-  successVisible.value = false
-  router.push('/profile/orders')
-}
-
-function buildOrderView(order, plan, callbackResult = null) {
-  const paid = callbackResult?.success || order.status === 'paid'
-  return {
-    id: order.orderNo,
-    planType: plan.key,
-    title: order.packageName || plan.title,
-    amount: order.amount,
-    status: paid ? 'paid' : order.status,
-    statusText: paid ? '已支付' : '待支付',
-    payMode: order.payParams?.mode || '',
-    summary: paid
-      ? '后端订单已完成支付回调，权益已同步。'
-      : (order.payParams?.message || '订单已创建，请继续完成支付。'),
-    createdAt: order.createdAt
-  }
 }
 
 async function activatePlan(plan) {
@@ -232,18 +186,10 @@ async function activatePlan(plan) {
   }
   purchasingPlanKey.value = plan.key
   try {
-    await createPaymentOrder({
-      packageCode: plan.packageCode,
-      payChannel: 'wechat',
-      scene: 'pc_web'
-    })
-  } catch (error) {
-    const detail = error?.normalizedMessage || error?.response?.data?.detail || ''
-    if (detail) {
-      message.info(detail)
-    } else {
-      message.info('PC 端暂不直接拉起微信支付，请打开小程序完成购买。')
-    }
+    await navigator.clipboard?.writeText(MINI_PROGRAM_PRICING_PATH)
+    message.success(`请在微信小程序套餐中心完成官方虚拟支付，路径已复制：${MINI_PROGRAM_PRICING_PATH}`)
+  } catch {
+    message.info(`请在微信小程序套餐中心完成官方虚拟支付：${MINI_PROGRAM_PRICING_PATH}`)
   } finally {
     purchasingPlanKey.value = ''
   }
@@ -555,45 +501,6 @@ async function activatePlan(plan) {
   color: @text-secondary;
   font-size: @font-size-sm;
   line-height: 1.8;
-}
-
-.pricing-success {
-  text-align: center;
-}
-
-.pricing-success__amount {
-  color: @primary-color;
-  font-size: 34px;
-  font-weight: 700;
-  line-height: 1.1;
-}
-
-.pricing-success__title {
-  margin-top: 8px;
-  color: @text-primary;
-  font-size: @font-size-lg;
-  font-weight: 600;
-}
-
-.pricing-success p {
-  margin: 10px 0 12px;
-  color: @text-secondary;
-  line-height: 1.8;
-}
-
-.pricing-success__meta {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  color: @text-secondary;
-  font-size: @font-size-xs;
-}
-
-.pricing-success__actions {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 16px;
 }
 
 @media (max-width: 992px) {

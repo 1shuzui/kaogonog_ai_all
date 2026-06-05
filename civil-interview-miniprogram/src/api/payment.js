@@ -51,11 +51,3 @@ export function applyRefund(data) {
     data
   })
 }
-
-export function compensateSubscription(data) {
-  return request({
-    url: '/payment/admin/compensate',
-    method: 'POST',
-    data
-  })
-}

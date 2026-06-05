@@ -5,8 +5,6 @@ from app.core.security import get_current_user
 from app.db.session import get_db
 from app.schemas.common import (
     AuthUser,
-    CompensateRequest,
-    PaymentCallbackRequest,
     PaymentOrderCreateRequest,
     PaymentVirtualConfirmRequest,
     RefundApplyRequest,
@@ -14,12 +12,10 @@ from app.schemas.common import (
 )
 from app.services.payment_service import (
     apply_refund,
-    compensate_subscription,
     confirm_virtual_payment_order,
     create_payment_order,
     get_payment_order,
     get_refund_balance_stats,
-    handle_payment_callback,
     list_payment_orders,
     verify_virtual_payment_order,
 )
@@ -57,16 +53,6 @@ def payment_apply_refund(data: RefundApplyRequest, current_user: AuthUser = Depe
     return apply_refund(db, current_user, data)
 
 
-@router.post("/admin/compensate")
-def payment_compensate(data: CompensateRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
-    return compensate_subscription(db, current_user, data)
-
-
 @router.post("/orders/{order_no}/virtual/confirm")
 def payment_virtual_confirm(order_no: str, data: PaymentVirtualConfirmRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     return confirm_virtual_payment_order(db, current_user, order_no, data)
-
-
-@router.post("/callback/wechat")
-def payment_wechat_callback(data: PaymentCallbackRequest, db: Session = Depends(get_db)):
-    return handle_payment_callback(db, data)

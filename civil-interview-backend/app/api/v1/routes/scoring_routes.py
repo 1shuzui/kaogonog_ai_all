@@ -1,11 +1,11 @@
-import importlib.util
 import re
 import shutil
+from importlib.util import find_spec as importlib_util_find
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
-from app.core.ai import _resolve_asr_model
+from app.core.ai import _resolve_asr_model, _resolve_remote_asr_model
 from app.core.config import settings
 from app.core.security import get_current_user
 from app.db.session import get_db
@@ -60,21 +60,30 @@ async def scoring_transcribe(audio: UploadFile = File(...), current_user: AuthUs
 @router.get("/asr-status")
 def scoring_asr_status(current_user: AuthUser = Depends(get_current_user)):
     asr_model = _resolve_asr_model()
-    remote_ready = bool(settings.llm_api_key and asr_model)
+    remote_asr_model = _resolve_remote_asr_model()
+    funasr_provider = str(settings.asr_provider or "").strip().lower()
+    funasr_dependency_ready = (
+        importlib_util_find("funasr_onnx") is not None
+        or importlib_util_find("funasr") is not None
+    )
     ffmpeg_ready = shutil.which("ffmpeg") is not None
-    local_whisper_ready = importlib.util.find_spec("whisper") is not None and ffmpeg_ready
+    funasr_ready = funasr_provider in {"funasr", "funasr_onnx", "paraformer", "paraformer_onnx"} and funasr_dependency_ready and ffmpeg_ready
+    remote_ready = bool(settings.llm_api_key and remote_asr_model)
 
-    ready = remote_ready or local_whisper_ready
-    mode = "remote_asr" if remote_ready else "local_whisper" if local_whisper_ready else "unavailable"
-    model = asr_model if remote_ready else "whisper" if local_whisper_ready else ""
-    message = "语音转写服务已就绪" if ready else "语音转写服务未就绪，请检查 ASR 模型配置、Whisper 依赖和 ffmpeg。"
+    ready = funasr_ready or remote_ready
+    mode = "funasr_onnx_vad" if funasr_ready else "remote_asr" if remote_ready else "unavailable"
+    model = asr_model if ready else ""
+    message = "语音转写服务已就绪" if ready else "语音转写服务未就绪，请检查 FunASR/ONNX 依赖、模型缓存和 ffmpeg。"
     return {
         "ready": ready,
         "mode": mode,
-        "provider": settings.llm_provider,
+        "provider": settings.asr_provider,
         "model": model,
+        "vadModel": settings.funasr_vad_model_name,
+        "puncModel": settings.funasr_punc_model_name if settings.funasr_enable_punc else "",
+        "funasrReady": funasr_ready,
+        "funasrDependencyReady": funasr_dependency_ready,
         "remoteAsrReady": remote_ready,
-        "localWhisperReady": local_whisper_ready,
         "ffmpegReady": ffmpeg_ready,
         "message": message,
     }

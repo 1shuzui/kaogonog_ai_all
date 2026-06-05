@@ -6,7 +6,7 @@
       </a-button>
       <div>
         <h2>订单记录</h2>
-        <p>展示服务器中的真实支付订单与套餐权益状态。</p>
+        <p>展示服务器中的微信官方小程序虚拟支付订单与套餐权益状态。</p>
       </div>
       <a-button :loading="loading" @click="loadOrders">
         <ReloadOutlined /> 刷新
@@ -62,9 +62,9 @@
       </template>
     </a-table>
 
-    <EmptyState v-else-if="!loading" text="暂无后端订单记录，请先前往套餐页创建订单。">
+    <EmptyState v-else-if="!loading" text="暂无虚拟支付订单记录，请在微信小程序套餐中心开通后查看。">
       <template #action>
-        <a-button type="primary" @click="$router.push('/pricing')">去开通</a-button>
+        <a-button type="primary" @click="$router.push('/pricing')">查看套餐</a-button>
       </template>
     </EmptyState>
   </div>

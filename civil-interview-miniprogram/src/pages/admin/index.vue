@@ -7,7 +7,7 @@
       <view class="menu-item card" @tap="goRefunds">
         <view>
           <text class="menu-item__title">退款管理</text>
-          <text class="menu-item__desc">查询可退额度并提交管理员退款</text>
+          <text class="menu-item__desc">查询可退额度并提交微信虚拟支付退款</text>
         </view>
         <text class="menu-item__arrow">›</text>
       </view>

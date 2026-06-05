@@ -8,8 +8,6 @@ from sqlalchemy.orm import Session
 from app.models.entities import PaymentOrder, SubscriptionPackage, User, UserSubscription
 from app.schemas.common import (
     AuthUser,
-    CompensateRequest,
-    PaymentCallbackRequest,
     PaymentOrderCreateRequest,
     PaymentVirtualConfirmRequest,
     RefundApplyRequest,
@@ -202,6 +200,8 @@ def apply_refund(db: Session, current_user: AuthUser, data: RefundApplyRequest) 
     try:
         query_result = wechat_pay_service.query_virtual_order(order, package)
     except HTTPException as exc:
+        if exc.status_code < 500:
+            raise
         raise HTTPException(status_code=502, detail=f"查询微信订单状态失败: {exc.detail}")
 
     left_fee = wechat_pay_service._extract_virtual_left_fee(query_result.get("raw") or {})
@@ -211,6 +211,8 @@ def apply_refund(db: Session, current_user: AuthUser, data: RefundApplyRequest) 
     total_hours = row["totalHours"] or refunded_hours
     refund_ratio = refunded_hours / total_hours if total_hours > 0 else 1.0
     refund_fee = int(left_fee * refund_ratio)
+    if refund_fee <= 0 and left_fee > 0 and refund_ratio > 0:
+        refund_fee = 1
     if refund_fee <= 0:
         raise HTTPException(status_code=400, detail="退款金额为0，无需退款")
     refund_fee = min(refund_fee, left_fee)
@@ -229,6 +231,8 @@ def apply_refund(db: Session, current_user: AuthUser, data: RefundApplyRequest) 
             req_from="1",
         )
     except HTTPException as exc:
+        if exc.status_code < 500:
+            raise
         raise HTTPException(status_code=502, detail=f"微信退款发起失败: {exc.detail}")
 
     refunded_amount = Decimal(str(order.amount or 0)) * Decimal(str(refunded_hours)) / Decimal(str(total_hours))
@@ -267,63 +271,9 @@ def apply_refund(db: Session, current_user: AuthUser, data: RefundApplyRequest) 
     db.refresh(order)
     return {
         "success": True,
-        "message": "退款已提交微信处理，请稍后在微信支付后台确认退款完成。",
+        "message": "退款已提交微信官方小程序虚拟支付接口处理，请稍后在虚拟支付交易订单中确认退款完成。",
         "order": _serialize_refund_row(order, subscription),
         "refund": refund_result,
-    }
-
-
-def compensate_subscription(db: Session, current_user: AuthUser, data: CompensateRequest) -> dict:
-    _assert_admin(current_user)
-    user = db.query(User).filter(User.username == data.username).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="用户不存在")
-
-    subscription = db.query(UserSubscription).filter(
-        UserSubscription.username == data.username,
-        UserSubscription.status == "active",
-    ).order_by(UserSubscription.created_at.desc()).first()
-    if not subscription:
-        raise HTTPException(status_code=404, detail="该用户没有活跃订阅")
-
-    additional = int(data.additionalMinutes)
-    subscription.total_minutes = int(subscription.total_minutes or 0) + additional
-
-    compensation = {
-        "additionalMinutes": additional,
-        "newTotalMinutes": int(subscription.total_minutes),
-        "reason": data.reason or "",
-        "remark": data.remark or "",
-        "operator": current_user.username,
-        "operatedAt": datetime.now(timezone.utc).isoformat(),
-    }
-    extra = dict(subscription.extra_payload) if isinstance(subscription.extra_payload, dict) else {}
-    compensations = list(extra.get("compensations") or [])
-    compensations.append(compensation)
-    extra["compensations"] = compensations
-    subscription.extra_payload = extra
-
-    package = db.query(SubscriptionPackage).filter(SubscriptionPackage.package_code == subscription.package_code).first()
-    if package:
-        _sync_user_preferences_subscription(user, package, subscription)
-
-    db.commit()
-    db.refresh(subscription)
-    return {
-        "success": True,
-        "message": f"已为用户 {data.username} 追加 {additional} 分钟时长",
-        "subscription": {
-            "username": subscription.username,
-            "packageCode": subscription.package_code,
-            "planType": subscription.plan_type,
-            "planName": subscription.plan_name,
-            "status": subscription.status,
-            "totalMinutes": subscription.total_minutes,
-            "usedMinutes": subscription.used_minutes,
-            "dailyLimitMinutes": subscription.daily_limit_minutes,
-            "dailyUsedMinutes": subscription.daily_used_minutes,
-        },
-        "compensation": compensation,
     }
 
 
@@ -340,7 +290,7 @@ def get_payment_order(db: Session, current_user: AuthUser, order_no: str) -> dic
     pay_payload = {
         "mode": "query",
         "scene": (order.extra_payload or {}).get("scene", "mini_program") if isinstance(order.extra_payload, dict) else "mini_program",
-        "message": "订单查询接口不重复生成支付签名，如需重新拉起支付，请重新创建订单或补充预下单刷新接口。",
+        "message": "订单查询接口不重复生成虚拟支付签名，如需重新拉起支付，请在微信小程序套餐中心重新发起官方小程序虚拟支付。",
     }
     return _serialize_payment_response(order, package, pay_payload)
 
@@ -390,14 +340,6 @@ def _parse_paid_at(raw: str | None) -> datetime:
         except ValueError:
             return datetime.now(timezone.utc)
     return datetime.now(timezone.utc)
-
-
-def _assert_callback_amount(order: PaymentOrder, amount_total: int | None) -> None:
-    if amount_total is None:
-        return
-    expected_total = int(round(float(order.amount or 0) * 100))
-    if expected_total != int(amount_total):
-        raise HTTPException(status_code=400, detail="回调金额与订单金额不一致")
 
 
 def _extract_virtual_transaction_id(data: PaymentVirtualConfirmRequest) -> str:
@@ -539,70 +481,6 @@ def confirm_virtual_payment_order(db: Session, current_user: AuthUser, order_no:
     return {
         "success": True,
         "idempotent": False,
-        "order": _serialize_order(order),
-        "subscription": {
-            "username": subscription.username,
-            "packageCode": subscription.package_code,
-            "planType": subscription.plan_type,
-            "planName": subscription.plan_name,
-            "status": subscription.status,
-            "totalMinutes": subscription.total_minutes,
-            "dailyLimitMinutes": subscription.daily_limit_minutes,
-            "startAt": subscription.start_at.isoformat() if subscription.start_at else "",
-            "endAt": subscription.end_at.isoformat() if subscription.end_at else "",
-        },
-    }
-
-
-def handle_payment_callback(db: Session, data: PaymentCallbackRequest, headers: dict | None = None) -> dict:
-    parsed = wechat_pay_service.parse_callback(data, headers)
-    order = db.query(PaymentOrder).filter(PaymentOrder.order_no == parsed["orderNo"]).first()
-    if not order:
-        raise HTTPException(status_code=404, detail="订单不存在")
-
-    package = _get_package_or_404(db, order.package_code)
-    user = db.query(User).filter(User.username == order.username).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="订单关联用户不存在")
-
-    _assert_callback_amount(order, parsed.get("amountTotal"))
-    paid_at = _parse_paid_at(parsed.get("paidAt"))
-
-    if order.status == "paid":
-        subscription = _ensure_subscription_for_paid_order(db, order, package, order.paid_at or paid_at)
-        _sync_user_preferences_subscription(user, package, subscription)
-        db.commit()
-        return {
-            "success": True,
-            "idempotent": True,
-            "message": "订单已支付，重复回调已忽略",
-            "callbackMode": parsed["mode"],
-            "verifyPending": parsed.get("verifyPending", False),
-            "order": _serialize_order(order),
-        }
-
-    order.status = parsed.get("status") or "paid"
-    order.third_party_order_no = parsed.get("transactionId") or order.third_party_order_no
-    order.paid_at = paid_at
-    order.callback_payload = {
-        "mode": parsed["mode"],
-        "verified": parsed.get("verified", False),
-        "verifyPending": parsed.get("verifyPending", False),
-        "headers": parsed.get("headers", {}),
-        "payload": parsed.get("rawPayload", {}),
-        "realCallbackTodo": parsed.get("realCallbackTodo", {}),
-    }
-
-    subscription = _ensure_subscription_for_paid_order(db, order, package, paid_at)
-    _sync_user_preferences_subscription(user, package, subscription)
-    db.commit()
-    db.refresh(order)
-    return {
-        "success": True,
-        "idempotent": False,
-        "callbackMode": parsed["mode"],
-        "verified": parsed.get("verified", False),
-        "verifyPending": parsed.get("verifyPending", False),
         "order": _serialize_order(order),
         "subscription": {
             "username": subscription.username,

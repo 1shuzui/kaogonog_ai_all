@@ -147,6 +147,11 @@ class AuthAndPaymentEndpointTestCase(unittest.TestCase):
             amount=Decimal("0.01"),
             status="paid",
             paid_at=datetime.now(timezone.utc),
+            extra_payload={
+                "openId": "openid_buyer",
+                "virtualPayEnv": 0,
+                "virtualProductId": "trial_3h",
+            },
         )
         subscription = UserSubscription(
             username="buyer",
@@ -171,11 +176,31 @@ class AuthAndPaymentEndpointTestCase(unittest.TestCase):
         self.assertEqual(stats["total"], 1)
         self.assertEqual(stats["summary"]["refundableHours"], 2)
 
-        refunded = apply_refund(
-            self.db,
-            DummyAuthUser("admin", is_admin=True),
-            RefundApplyRequest(orderNo="PAY_REFUND_1", refundedHours=2, refundRemark="用户申请"),
-        )
+        import app.services.payment_service as payment_service
+
+        original_query = payment_service.wechat_pay_service.query_virtual_order
+        original_refund = payment_service.wechat_pay_service.refund_virtual_order
+        payment_service.wechat_pay_service.query_virtual_order = lambda order, package: {
+            "verified": True,
+            "transactionId": "WX_ORDER_1",
+            "raw": {"left_fee": 1},
+            "request": {"openid": "openid_buyer"},
+        }
+        payment_service.wechat_pay_service.refund_virtual_order = lambda **kwargs: {
+            "success": True,
+            "refundOrderId": kwargs["refund_order_id"],
+            "refundWxOrderId": "WX_REFUND_1",
+            "raw": {"errcode": 0},
+        }
+        try:
+            refunded = apply_refund(
+                self.db,
+                DummyAuthUser("admin", is_admin=True),
+                RefundApplyRequest(orderNo="PAY_REFUND_1", refundedHours=2, refundRemark="用户申请"),
+            )
+        finally:
+            payment_service.wechat_pay_service.query_virtual_order = original_query
+            payment_service.wechat_pay_service.refund_virtual_order = original_refund
 
         self.assertTrue(refunded["success"])
         self.assertEqual(order.status, "refunded")
