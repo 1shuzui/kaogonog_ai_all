@@ -1,3 +1,10 @@
+"""
+这个路由文件提供ASR 转写、答题评分和评分状态接口；它只做请求参数、鉴权依赖和服务层转发，业务规则尽量留在 service 里。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 import re
 import shutil
 from importlib.util import find_spec as importlib_util_find
@@ -52,13 +59,37 @@ def _is_low_value_transcript(text: str) -> bool:
 
 
 @router.post("/transcribe")
-async def scoring_transcribe(audio: UploadFile = File(...), current_user: AuthUser = Depends(get_current_user)):
+async def scoring_transcribe(
+    audio: UploadFile = File(...),
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    scoring_transcribe 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+
+    @param audio: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     audio_bytes = await audio.read()
-    return await transcribe(audio_bytes, filename=audio.filename or "answer.webm")
+    return await transcribe(audio_bytes, filename=audio.filename or "answer.webm", db=db)
 
 
 @router.get("/asr-status")
 def scoring_asr_status(current_user: AuthUser = Depends(get_current_user)):
+    """
+    scoring_asr_status 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     asr_model = _resolve_asr_model()
     remote_asr_model = _resolve_remote_asr_model()
     funasr_provider = str(settings.asr_provider or "").strip().lower()
@@ -91,6 +122,17 @@ def scoring_asr_status(current_user: AuthUser = Depends(get_current_user)):
 
 @router.post("/evaluate")
 async def scoring_evaluate(data: EvaluateRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    scoring_evaluate 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+
+    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    """
     if not db.query(Question.id).filter(Question.id == data.questionId).first():
         raise HTTPException(status_code=404, detail="Question not found")
 
@@ -109,4 +151,16 @@ async def scoring_evaluate(data: EvaluateRequest, current_user: AuthUser = Depen
 
 @router.get("/result/{exam_id}/{question_id}")
 def scoring_result(exam_id: str, question_id: str, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    scoring_result 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+
+    @param exam_id: 考试记录标识；用于把多题作答、扣权益和历史结果绑定到同一次练习。
+    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     return get_scoring_result(db, exam_id, question_id)

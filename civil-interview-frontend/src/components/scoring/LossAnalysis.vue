@@ -1,3 +1,10 @@
+<!--
+这个组件展示扣分原因和可改进点，帮助用户知道分数丢在哪里，而不只是看到总分。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <div class="loss-analysis" :class="{ 'loss-analysis--compact': compact }">
     <h4 class="loss-analysis__title">失分诊断</h4>

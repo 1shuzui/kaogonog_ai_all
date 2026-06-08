@@ -1,4 +1,10 @@
-"""Audio transcription providers for media processing."""
+"""
+这个文件封装旧后端音频转写；本地模型、远程服务和不可用提示都在这里统一处理。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 
 from __future__ import annotations
 
@@ -47,15 +53,40 @@ def _configure_model_cache_env() -> Path:
 
 
 class BaseTranscriber(abc.ABC):
-    """Abstract transcription provider."""
+    """
+    BaseTranscriber 作为公共类型保留，是为了让调用方共享同一套业务语义和数据边界。
+
+    媒体服务负责把音视频转成可评分文本，注释重点记录模型能力、缓存和降级边界。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     @abc.abstractmethod
     def transcribe(self, audio_path: str, language: Optional[str] = None) -> str:
-        """Transcribe the provided audio file into text."""
+        """
+        transcribe 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+        媒体服务负责把音视频转成可评分文本，注释重点记录模型能力、缓存和降级边界。
+
+        @param audio_path: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+        @param language: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
 
 
 class WhisperLocalTranscriber(BaseTranscriber):
-    """Local Whisper implementation."""
+    """
+    WhisperLocalTranscriber 作为公共类型保留，是为了让调用方共享同一套业务语义和数据边界。
+
+    媒体服务负责把音视频转成可评分文本，注释重点记录模型能力、缓存和降级边界。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     def __init__(self, model_size: str):
         self.model_size = model_size
@@ -83,6 +114,16 @@ class WhisperLocalTranscriber(BaseTranscriber):
         logger.info("Whisper 模型加载完成。")
 
     def transcribe(self, audio_path: str, language: Optional[str] = None) -> str:
+        """
+        transcribe 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+        媒体服务负责把音视频转成可评分文本，注释重点记录模型能力、缓存和降级边界。
+
+        @param audio_path: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+        @param language: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+        @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+        @raises RuntimeError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+        """
         logger.info("ASR 开始转录: %s", audio_path)
         try:
             result = self.model.transcribe(
@@ -100,7 +141,15 @@ class WhisperLocalTranscriber(BaseTranscriber):
 
 
 class FunASRTranscriber(BaseTranscriber):
-    """FunASR Paraformer implementation."""
+    """
+    FunASRTranscriber 作为公共类型保留，是为了让调用方共享同一套业务语义和数据边界。
+
+    媒体服务负责把音视频转成可评分文本，注释重点记录模型能力、缓存和降级边界。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     def __init__(self):
         self.device = settings.ASR_DEVICE
@@ -143,6 +192,16 @@ class FunASRTranscriber(BaseTranscriber):
         logger.info("FunASR 模型加载完成。")
 
     def transcribe(self, audio_path: str, language: Optional[str] = None) -> str:
+        """
+        transcribe 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+        媒体服务负责把音视频转成可评分文本，注释重点记录模型能力、缓存和降级边界。
+
+        @param audio_path: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+        @param language: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+        @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+        @raises RuntimeError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+        """
         del language
         logger.info("ASR 开始转录: %s", audio_path)
         try:
@@ -167,7 +226,15 @@ class FunASRTranscriber(BaseTranscriber):
 
 
 def get_transcriber(provider: Optional[str] = None) -> BaseTranscriber:
-    """Return the configured ASR provider implementation."""
+    """
+    get_transcriber 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    媒体服务负责把音视频转成可评分文本，注释重点记录模型能力、缓存和降级边界。
+
+    @param provider: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises RuntimeError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    """
 
     provider_name = (provider or settings.ASR_PROVIDER).strip().lower()
     if provider_name == "whisper":

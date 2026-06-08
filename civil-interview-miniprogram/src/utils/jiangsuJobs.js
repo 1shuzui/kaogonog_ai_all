@@ -1,3 +1,10 @@
+/**
+ * 这个文件维护小程序首页的江苏事业单位岗位入口；它负责把用户看到的岗位名和内部筛选参数接起来。
+ *
+ * @param 无；文件级模块依赖导出函数、组合式 API 或调用方传入上下文。
+ * @return 导出可复用的端侧能力，具体返回值由各公共函数保持兼容。
+ * @raises 不主动吞掉业务异常；请求失败、权限不足和运行时错误交由调用方或全局拦截器处理。
+ */
 export const JIANGSU_JOB_CATEGORIES = [
   { key: 'a', code: 'A', title: '综合管理岗', shortTitle: '综合管理岗', subtitle: '省属 / 地市事业单位真题', scope: '综合管理', rank: 1, hot: '报考热度最高' },
   { key: 'b', code: 'B', title: '社会科学专技岗', shortTitle: '社会科学专技岗', subtitle: '法律 / 经济 / 会计', scope: '社科专技', rank: 2, hot: '专业岗高频' },

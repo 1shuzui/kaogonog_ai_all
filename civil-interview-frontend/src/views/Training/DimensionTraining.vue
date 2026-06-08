@@ -1,3 +1,10 @@
+<!--
+这个网页专项训练页进入某个题型或能力方向练习，选择和生成题目仍要受权益校验约束。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <div class="dim-training page-container">
     <div class="dim-training__header">

@@ -1,4 +1,10 @@
-"""评分与违规前置检测 Prompt 构造模块。"""
+"""
+这个文件集中放 LLM 评分提示词；这样调整评分口径时不用在多个服务里翻模板。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 
 import json
 
@@ -139,7 +145,17 @@ def build_violation_check_prompt(
     answer_text: str,
     visual_observation: str | None = None,
 ) -> str:
-    """评分前的违规检测提示词。"""
+    """
+    评分前的违规检测提示词。
+
+    评分子模块封装关键词、分值和提示词策略，注释用于区分题型分类与能力维度。
+
+    @param question: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param answer_text: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param visual_observation: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     visual_block = visual_observation or "未提供视频流，请不要把视觉观察作为单独触发违规拦截的依据。"
 
@@ -204,7 +220,17 @@ def build_evidence_extraction_prompt(
     answer_text: str,
     visual_observation: str | None = None,
 ) -> str:
-    """第一阶段：从原文中抽取可核验的证据。"""
+    """
+    第一阶段：从原文中抽取可核验的证据。
+
+    评分子模块封装关键词、分值和提示词策略，注释用于区分题型分类与能力维度。
+
+    @param question: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param answer_text: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param visual_observation: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     dimensions = [{item.name: item.score} for item in question.dimensions]
     visual_block = visual_observation or "未提供视频流，无法评估仪态信息。"
@@ -266,7 +292,16 @@ def build_evidence_scoring_prompt(
     question: QuestionDefinition,
     evidence_packet: EvidenceExtractionPayload,
 ) -> str:
-    """第二阶段：只基于证据包打分。"""
+    """
+    第二阶段：只基于证据包打分。
+
+    评分子模块封装关键词、分值和提示词策略，注释用于区分题型分类与能力维度。
+
+    @param question: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param evidence_packet: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     dimensions = [{item.name: item.score} for item in question.dimensions]
     province_focus, fit_focus = _build_local_focus_text(question)
@@ -349,7 +384,16 @@ def build_answer_revision_prompt(
     question: QuestionDefinition,
     final_result: EvaluationResult,
 ) -> str:
-    """根据最终评分结果生成答案改动建议。"""
+    """
+    根据最终评分结果生成答案改动建议。
+
+    评分子模块封装关键词、分值和提示词策略，注释用于区分题型分类与能力维度。
+
+    @param question: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param final_result: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     payload = {
         "question_id": question.id,

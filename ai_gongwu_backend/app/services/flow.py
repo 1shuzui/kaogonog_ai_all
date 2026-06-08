@@ -1,14 +1,9 @@
-"""业务编排服务。
+"""
+这个文件串起旧后端的面试评分流程；题目、媒体、ASR、LLM 和本地计算都在这里按顺序衔接。
 
-如果把整个后端想象成一条流水线，这个文件就是“总调度台”。
-它不关心 HTTP 细节，也不直接处理数据库，而是专门负责串联核心步骤：
-
-1. 找到题目
-2. 解析文本 / 音频 / 视频
-3. 生成 Prompt 调模型
-4. 对模型结果做后处理和校验
-
-这层设计的好处是：API 层保持轻，业务逻辑更集中，也更容易测试。
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
 """
 
 import json
@@ -118,7 +113,15 @@ def _normalize_violation_payload(raw_payload: dict | None) -> ViolationCheckPayl
     )
 
 class InterviewFlowService:
-    """统筹媒体解析、模型评分和确定性校验的核心服务。"""
+    """
+    统筹媒体解析、模型评分和确定性校验的核心服务。
+
+    旧后端服务仍承担回归和迁移参考价值，注释用于说明双轨维护期间的兼容原因。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     def __init__(
         self,
@@ -131,7 +134,15 @@ class InterviewFlowService:
         self.evaluation_store = evaluation_store
 
     def validate_media_suffix(self, filename: str) -> None:
-        """检查上传文件后缀是否在支持列表中。"""
+        """
+        检查上传文件后缀是否在支持列表中。
+
+        旧后端服务仍承担回归和迁移参考价值，注释用于说明双轨维护期间的兼容原因。
+
+        @param filename: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises ValueError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+        """
 
         suffix = Path(filename).suffix.lower()
         supported_extensions = (
@@ -594,7 +605,18 @@ class InterviewFlowService:
         *,
         persist: bool = True,
     ) -> EvaluationResult:
-        """处理音频/视频类提交。"""
+        """
+        处理音频/视频类提交。
+
+        旧后端服务仍承担回归和迁移参考价值，注释用于说明双轨维护期间的兼容原因。
+
+        @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
+        @param file_path: 本地文件路径；脚本需保留来源路径以便题库导入结果可追溯。
+        @param source_filename: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
+        @param persist: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+        @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+        @raises ValueError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+        """
 
         # 先把媒体转成统一结构。
         extraction_result = self._extract_from_media(file_path).model_copy(
@@ -616,12 +638,17 @@ class InterviewFlowService:
         *,
         persist: bool = True,
     ) -> EvaluationResult:
-        """处理纯文本提交通道。
+        """
+        处理纯文本提交通道。 这个接口很适合： - 快速调试评分逻辑 - 对比不同 Prompt 效果 - 不依赖 Whisper / ffmpeg 的轻量测试
 
-        这个接口很适合：
-        - 快速调试评分逻辑
-        - 对比不同 Prompt 效果
-        - 不依赖 Whisper / ffmpeg 的轻量测试
+        旧后端服务仍承担回归和迁移参考价值，注释用于说明双轨维护期间的兼容原因。
+
+        @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
+        @param text_content: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+        @param source_filename: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
+        @param persist: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+        @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+        @raises ValueError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
         """
 
         logger.info("启动纯文本测评旁路, question_id=%s, 文本长度=%s", question_id, len(text_content))

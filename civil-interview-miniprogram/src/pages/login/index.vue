@@ -1,3 +1,10 @@
+<!--
+这个小程序登录页只在用户主动使用权益、试用或个人数据时出现；首页允许先浏览，是为了符合微信审核的先体验后授权要求。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <view class="login-page">
     <view class="login-card">
@@ -64,6 +71,10 @@
 
       <button v-if="mode === 'login'" class="secondary-button wechat-login-button" :loading="wechatLoading" @tap="loginByWechat">
         微信快捷登录
+      </button>
+
+      <button class="link-button browse-button" @tap="browseWithoutLogin">
+        暂且跳过登录，先浏览功能
       </button>
 
       <button v-if="mode === 'login'" class="link-button forgot-button" @tap="openResetPanel">
@@ -152,6 +163,7 @@ const resetTip = ref('')
 const privacyAuthRequired = ref(false)
 const privacyAuthorizationReady = ref(false)
 const privacyContractName = ref('')
+const redirectUrl = ref('')
 const AGREED_TERMS_STORAGE_KEY = 'civil_agreed_terms_version'
 const AGREED_TERMS_VERSION = '2026-05-12'
 const form = reactive({
@@ -174,7 +186,7 @@ const accountSetupForm = reactive({
 })
 
 function goHomeWithCachedSession() {
-  uni.switchTab({ url: '/pages/home/index' })
+  goAfterLogin()
 }
 
 function clearLocalSession() {
@@ -187,10 +199,23 @@ function openResetPanel() {
   resetForm.username = form.username.trim()
 }
 
-onLoad(() => {
+onLoad((query = {}) => {
+  redirectUrl.value = decodeURIComponent(query.redirect || '')
   restoreAgreementState()
-  loadWechatPrivacySetting()
 })
+
+function goAfterLogin() {
+  const url = redirectUrl.value || '/pages/home/index'
+  if (url.startsWith('/pages/home/index') || url.startsWith('/pages/targeted/index') || url.startsWith('/pages/bank/index') || url.startsWith('/pages/training/index') || url.startsWith('/pages/profile/index')) {
+    uni.switchTab({ url: url.split('?')[0] })
+    return
+  }
+  uni.redirectTo({ url })
+}
+
+function browseWithoutLogin() {
+  uni.switchTab({ url: '/pages/home/index' })
+}
 
 function readAcceptedTermsVersion() {
   try {
@@ -213,19 +238,28 @@ function restoreAgreementState() {
 }
 
 function loadWechatPrivacySetting() {
-  if (typeof wx === 'undefined' || typeof wx.getPrivacySetting !== 'function') return
-  wx.getPrivacySetting({
-    success(res) {
-      privacyAuthRequired.value = !!res.needAuthorization
-      privacyContractName.value = res.privacyContractName || '小程序隐私保护指引'
-      if (!res.needAuthorization) {
-        privacyAuthorizationReady.value = true
-      }
-    },
-    fail() {
+  return new Promise((resolve) => {
+    if (typeof wx === 'undefined' || typeof wx.getPrivacySetting !== 'function') {
       privacyAuthRequired.value = false
       privacyAuthorizationReady.value = true
+      resolve()
+      return
     }
+    wx.getPrivacySetting({
+      success(res) {
+        privacyAuthRequired.value = !!res.needAuthorization
+        privacyContractName.value = res.privacyContractName || '小程序隐私保护指引'
+        if (!res.needAuthorization) {
+          privacyAuthorizationReady.value = true
+        }
+        resolve()
+      },
+      fail() {
+        privacyAuthRequired.value = false
+        privacyAuthorizationReady.value = true
+        resolve()
+      }
+    })
   })
 }
 
@@ -239,6 +273,11 @@ function validateTermsAgreement() {
     return false
   }
   return true
+}
+
+async function ensurePrivacyReadyForLogin() {
+  await loadWechatPrivacySetting()
+  return validateTermsAgreement()
 }
 
 function validate() {
@@ -273,12 +312,13 @@ function validate() {
 async function submit() {
   if (loading.value) return
   if (!validate()) return
+  if (!await ensurePrivacyReadyForLogin()) return
   loading.value = true
   try {
     if (mode.value === 'login') {
       await userStore.login(form.username.trim(), form.password)
       toast('登录成功', 'success')
-      uni.switchTab({ url: '/pages/home/index' })
+      goAfterLogin()
       return
     }
 
@@ -301,7 +341,7 @@ async function submit() {
 
 async function loginByWechat() {
   if (wechatLoading.value) return
-  if (!validateTermsAgreement()) return
+  if (!await ensurePrivacyReadyForLogin()) return
   wechatLoading.value = true
   try {
     const code = await getWechatLoginCode()
@@ -309,11 +349,11 @@ async function loginByWechat() {
     if (result?.requiresPcAccountSetup) {
       accountSetupVisible.value = false
       toast('登录成功', 'success')
-      uni.switchTab({ url: '/pages/home/index' })
+      goAfterLogin()
       return
     }
     toast('登录成功', 'success')
-    uni.switchTab({ url: '/pages/home/index' })
+    goAfterLogin()
   } catch (error) {
     toast(error?.message || '微信登录失败')
   } finally {
@@ -353,7 +393,7 @@ async function submitAccountSetup() {
     })
     accountSetupVisible.value = false
     toast('PC 登录账号已创建', 'success')
-    uni.switchTab({ url: '/pages/home/index' })
+    goAfterLogin()
   } catch (error) {
     toast(error?.message || '账号创建失败')
   } finally {
@@ -370,7 +410,7 @@ function skipAccountSetup() {
     success(res) {
       if (res.confirm) {
         accountSetupVisible.value = false
-        uni.switchTab({ url: '/pages/home/index' })
+        goAfterLogin()
       }
     }
   })
@@ -528,6 +568,12 @@ function goLegalDocuments() {
 
 .wechat-login-button {
   margin-top: 18rpx;
+}
+
+.browse-button {
+  margin-top: 18rpx;
+  color: #1b5faa;
+  font-size: 27rpx;
 }
 
 .agreement-box {

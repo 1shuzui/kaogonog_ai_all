@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
-"""Compatibility wrapper for gitnexus_detect_changes.
+"""
+这个脚本处理 `gitnexus_detect_changes` 相关的本地运维或数据检查；放在仓库根目录是为了部署和排查时直接调用。
 
-The current GitNexus CLI on this machine exposes `impact/context/query/...`
-but not the `detect_changes` command documented by the MCP/tooling guides.
-This script provides a local, graph-assisted approximation for this repo:
-
-- reads git diff for a given scope
-- infers changed symbols from changed line ranges
-- asks GitNexus `context` for each inferred symbol to collect affected processes
-- prints a compact JSON or text summary
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
 """
 
 from __future__ import annotations
@@ -24,6 +20,17 @@ from collections import defaultdict
 
 
 def run(cmd: list[str], cwd: str, timeout: int | None = None) -> str:
+    """
+    run 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    该公共函数处在模块对外边界，注释记录调用约束，避免调用方依赖内部实现细节。
+
+    @param cmd: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param cwd: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param timeout: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises RuntimeError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    """
     result = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout)
     if result.returncode != 0:
         raise RuntimeError(result.stderr.strip() or result.stdout.strip() or "command failed")
@@ -31,6 +38,15 @@ def run(cmd: list[str], cwd: str, timeout: int | None = None) -> str:
 
 
 def repo_root() -> pathlib.Path:
+    """
+    repo_root 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    该公共函数处在模块对外边界，注释记录调用约束，避免调用方依赖内部实现细节。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     out = subprocess.run(
         ["git", "rev-parse", "--show-toplevel"],
         capture_output=True,
@@ -41,6 +57,15 @@ def repo_root() -> pathlib.Path:
 
 
 def infer_repo_name(root: pathlib.Path) -> str:
+    """
+    infer_repo_name 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    该公共函数处在模块对外边界，注释记录调用约束，避免调用方依赖内部实现细节。
+
+    @param root: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     registry_path = pathlib.Path.home() / ".gitnexus" / "registry.json"
     if registry_path.exists():
         try:
@@ -54,6 +79,16 @@ def infer_repo_name(root: pathlib.Path) -> str:
 
 
 def diff_args(scope: str, base_ref: str | None) -> tuple[list[str], list[str]]:
+    """
+    diff_args 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    该公共函数处在模块对外边界，注释记录调用约束，避免调用方依赖内部实现细节。
+
+    @param scope: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param base_ref: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises ValueError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    """
     if scope == "staged":
         return ["git", "diff", "--cached", "--name-only"], ["git", "diff", "--cached", "--unified=0", "--no-color"]
     if scope == "unstaged":
@@ -70,6 +105,15 @@ def diff_args(scope: str, base_ref: str | None) -> tuple[list[str], list[str]]:
 
 
 def parse_changed_ranges(diff_text: str) -> dict[str, list[tuple[int, int]]]:
+    """
+    parse_changed_ranges 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    该公共函数处在模块对外边界，注释记录调用约束，避免调用方依赖内部实现细节。
+
+    @param diff_text: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     changed: dict[str, list[tuple[int, int]]] = defaultdict(list)
     current_file = ""
     for line in diff_text.splitlines():
@@ -104,6 +148,15 @@ JS_PATTERNS = [
 
 
 def symbol_patterns(path: pathlib.Path) -> list[re.Pattern[str]]:
+    """
+    symbol_patterns 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    该公共函数处在模块对外边界，注释记录调用约束，避免调用方依赖内部实现细节。
+
+    @param path: 本地路径或路由路径；调用方需区分文件系统路径与前端页面路径。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     if path.suffix == ".py":
         return PY_PATTERNS
     if path.suffix in {".js", ".ts", ".jsx", ".tsx", ".vue"}:
@@ -112,6 +165,17 @@ def symbol_patterns(path: pathlib.Path) -> list[re.Pattern[str]]:
 
 
 def infer_symbols_for_file(root: pathlib.Path, rel_path: str, ranges: list[tuple[int, int]]) -> list[dict]:
+    """
+    infer_symbols_for_file 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    该公共函数处在模块对外边界，注释记录调用约束，避免调用方依赖内部实现细节。
+
+    @param root: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param rel_path: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param ranges: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     path = root / rel_path
     if not path.exists() or not path.is_file():
         return []
@@ -157,6 +221,18 @@ def infer_symbols_for_file(root: pathlib.Path, rel_path: str, ranges: list[tuple
 
 
 def fetch_context(repo_name: str, root: pathlib.Path, rel_path: str, symbol_name: str) -> dict:
+    """
+    fetch_context 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    该公共函数处在模块对外边界，注释记录调用约束，避免调用方依赖内部实现细节。
+
+    @param repo_name: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param root: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param rel_path: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param symbol_name: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     try:
         raw = run(
             [
@@ -178,6 +254,15 @@ def fetch_context(repo_name: str, root: pathlib.Path, rel_path: str, symbol_name
 
 
 def render_text(summary: dict) -> str:
+    """
+    render_text 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    该公共函数处在模块对外边界，注释记录调用约束，避免调用方依赖内部实现细节。
+
+    @param summary: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     lines = [
         f"repo: {summary['repo']}",
         f"scope: {summary['scope']}",
@@ -200,6 +285,15 @@ def render_text(summary: dict) -> str:
 
 
 def main() -> int:
+    """
+    main 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    该公共函数处在模块对外边界，注释记录调用约束，避免调用方依赖内部实现细节。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     parser = argparse.ArgumentParser(description="Compatibility wrapper for gitnexus_detect_changes")
     parser.add_argument("--scope", default="staged", choices=["staged", "unstaged", "all", "compare"])
     parser.add_argument("--base-ref", default="main")

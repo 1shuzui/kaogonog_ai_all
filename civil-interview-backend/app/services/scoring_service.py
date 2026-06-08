@@ -1,4 +1,10 @@
-"""Scoring service: transcribe, evaluate (two-stage), get result"""
+"""
+这个文件是评分主链路，负责把题目、转写文本、采分点和 LLM 结果拼成用户看到的分数；缓存和兜底逻辑都是为了让重复评分更快、异常答案也能稳定返回。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 import hashlib
 import json
 import logging
@@ -11,7 +17,7 @@ from typing import Optional
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app.core.ai import call_llm_api_async, transcribe_audio_file
+from app.core.ai import call_llm_api_async, transcribe_audio_file, transcribe_audio_file_with_meta
 from app.core.config import settings
 from app.core.redis_cache import cache_get_json, cache_set_json
 from app.core.video_analysis import analyze_video_behavior
@@ -27,8 +33,10 @@ logger = logging.getLogger(__name__)
 
 PLACEHOLDER_TRANSCRIPT_MARKERS = (
     "未能识别出有效语音",
+    "未识别到有效语音",
     "未配置真实语音转写服务",
     "无法生成可靠文字稿",
+    "语音转写服务暂不可用",
 )
 
 DIM_MAPPING = {
@@ -117,9 +125,64 @@ NON_SUBSTANTIVE_MARKERS = (
 )
 
 
-async def transcribe(audio_bytes: bytes, filename: str = "answer.webm") -> dict:
-    transcript = await transcribe_audio_file(audio_bytes, filename=filename)
-    return {"transcript": transcript, "duration": round(len(transcript) / 10, 1)}
+def attach_asr_meta_to_media_record(db: Session, audio_sha256: str, asr_meta: dict) -> bool:
+    """
+    attach_asr_meta_to_media_record 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    评分服务承载 ASR、LLM 和本地规则之间的折中，注释重点记录评分稳定性与成本边界。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param audio_sha256: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param asr_meta: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
+    if not audio_sha256 or not isinstance(asr_meta, dict):
+        return False
+    answers = (
+        db.query(ExamAnswer)
+        .filter(ExamAnswer.score_result.isnot(None))
+        .order_by(ExamAnswer.id.desc())
+        .limit(50)
+        .all()
+    )
+    for answer in answers:
+        score_result = answer.score_result if isinstance(answer.score_result, dict) else {}
+        media_record = score_result.get("mediaRecord") if isinstance(score_result.get("mediaRecord"), dict) else {}
+        if media_record.get("contentSha256") != audio_sha256:
+            continue
+        media_record = {**media_record, "asrMeta": asr_meta}
+        answer.score_result = {**score_result, "mediaRecord": media_record}
+        db.commit()
+        return True
+    return False
+
+
+async def transcribe(audio_bytes: bytes, filename: str = "answer.webm", db: Session | None = None) -> dict:
+    """
+    transcribe 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    评分服务承载 ASR、LLM 和本地规则之间的折中，注释重点记录评分稳定性与成本边界。
+
+    @param audio_bytes: 上传音频的二进制内容；进入 ASR 前用于缓存和切片，避免长音频直接压垮模型。
+    @param filename: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
+    result = await transcribe_audio_file_with_meta(audio_bytes, filename=filename)
+    transcript = str(result.get("transcript") or "")
+    asr_meta = result.get("asrMeta") if isinstance(result.get("asrMeta"), dict) else {}
+    linked = False
+    if db is not None and asr_meta.get("audioSha256"):
+        linked = attach_asr_meta_to_media_record(db, asr_meta["audioSha256"], asr_meta)
+    return {
+        "transcript": transcript,
+        "duration": round(len(transcript) / 10, 1),
+        "asrMeta": {**asr_meta, "linkedToMediaRecord": linked},
+        "needsRetry": bool(result.get("needsRetry")),
+        "message": result.get("message") or "",
+    }
 
 
 def _effective_transcript_length(transcript: str) -> int:
@@ -871,6 +934,18 @@ def _apply_short_answer_cap(result: dict, transcript: str) -> dict:
 
 
 async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_id: Optional[str]) -> dict:
+    """
+    evaluate_answer 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    评分服务承载 ASR、LLM 和本地规则之间的折中，注释重点记录评分稳定性与成本边界。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
+    @param transcript: 语音转写后的答题文本；评分链路依赖它，但不得把低置信 ASR 当成标准答案。
+    @param exam_id: 考试记录标识；用于把多题作答、扣权益和历史结果绑定到同一次练习。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    """
     question = db.query(Question).filter(Question.id == question_id).first()
     if not question:
         raise HTTPException(status_code=404, detail="Question not found")
@@ -1118,6 +1193,17 @@ def _persist_result(db: Session, exam_id: Optional[str], question_id: str, trans
 
 
 def get_scoring_result(db: Session, exam_id: str, question_id: str) -> dict:
+    """
+    get_scoring_result 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    评分服务承载 ASR、LLM 和本地规则之间的折中，注释重点记录评分稳定性与成本边界。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param exam_id: 考试记录标识；用于把多题作答、扣权益和历史结果绑定到同一次练习。
+    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    """
     ans = db.query(ExamAnswer).filter(
         ExamAnswer.exam_id == exam_id,
         ExamAnswer.question_id == question_id,

@@ -1,3 +1,10 @@
+<!--
+这个小程序页面是实际答题考场；录音、录像、计时和提交都在这里串起来，题目分数不能在作答前暴露。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <view
     class="exam-room"
@@ -320,6 +327,7 @@ const reportedQuestionKeys = new Set()
 const JIANGSU_FULL_EXAM_TIMING_MODE = 'jiangsu_5_15'
 const JIANGSU_READING_SECONDS = 5 * 60
 const JIANGSU_ANSWER_SECONDS = 15 * 60
+const RECORD_AUTH_SCOPE = 'scope.record'
 let timer = null
 let pendingRecordStopResolve = null
 let lastCameraTapAt = 0
@@ -634,6 +642,78 @@ function canRecordNow() {
   return true
 }
 
+function getRecordAuthSetting() {
+  return new Promise((resolve) => {
+    if (typeof uni.getSetting !== 'function') {
+      resolve(undefined)
+      return
+    }
+    uni.getSetting({
+      success(res) {
+        resolve(res?.authSetting?.[RECORD_AUTH_SCOPE])
+      },
+      fail() {
+        resolve(undefined)
+      }
+    })
+  })
+}
+
+function requestRecordPermission() {
+  return new Promise((resolve) => {
+    if (typeof uni.authorize !== 'function') {
+      resolve(true)
+      return
+    }
+    uni.authorize({
+      scope: RECORD_AUTH_SCOPE,
+      success() {
+        resolve(true)
+      },
+      fail() {
+        resolve(false)
+      }
+    })
+  })
+}
+
+function openRecordPermissionSetting() {
+  return new Promise((resolve) => {
+    uni.showModal({
+      title: '需要麦克风权限',
+      content: '录音作答需要开启麦克风权限，请在设置中允许使用麦克风。',
+      confirmText: '去设置',
+      cancelText: '取消',
+      success(modalRes) {
+        if (!modalRes?.confirm || typeof uni.openSetting !== 'function') {
+          resolve(false)
+          return
+        }
+        uni.openSetting({
+          success(settingRes) {
+            resolve(settingRes?.authSetting?.[RECORD_AUTH_SCOPE] === true)
+          },
+          fail() {
+            resolve(false)
+          }
+        })
+      },
+      fail() {
+        resolve(false)
+      }
+    })
+  })
+}
+
+async function ensureRecordPermission() {
+  const currentSetting = await getRecordAuthSetting()
+  if (currentSetting === true) return true
+  if (currentSetting === false) return openRecordPermissionSetting()
+  const authorized = await requestRecordPermission()
+  if (authorized) return true
+  return openRecordPermissionSetting()
+}
+
 function startJiangsuAnswer() {
   if (!isJiangsuReading.value) return
   phase.value = 'answering'
@@ -691,12 +771,16 @@ function startRecorderInternal() {
   }
 }
 
-function startRecord() {
-  if (!canRecordNow()) return
+async function startRecord() {
   if (videoRecording.value) {
     toast('请先停止录像')
     return
   }
+  if (!await ensureRecordPermission()) {
+    toast('未开启麦克风权限，无法录音')
+    return
+  }
+  if (!canRecordNow()) return
   startRecorderInternal()
 }
 
@@ -847,16 +931,20 @@ function onCameraError(error) {
   cameraAvailable.value = false
 }
 
-function startVideoWithAudio() {
-  if (!canRecordNow()) return
+async function startVideoWithAudio() {
   if (!useVideoMode.value) {
-    startRecord()
+    await startRecord()
     return
   }
   if (recording.value || videoRecording.value) {
     toast('当前正在记录作答')
     return
   }
+  if (!await ensureRecordPermission()) {
+    toast('未开启麦克风权限，无法录音')
+    return
+  }
+  if (!canRecordNow()) return
   recordedFile.value = ''
   recordedVideoFile.value = ''
   selectedMediaType.value = ''

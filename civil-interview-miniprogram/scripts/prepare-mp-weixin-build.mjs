@@ -1,3 +1,10 @@
+/**
+ * 这个小程序构建脚本负责清理旧产物、校验 JSON 并镜像生产目录；这样微信开发者工具导入时不容易读到过期文件。
+ *
+ * @param 无；命令行参数从 process.argv 读取，保持 npm scripts 与人工执行一致。
+ * @return 根据命令清理或校验构建目录，并在生产模式镜像稳定产物目录。
+ * @raises Error 当构建产物缺失、JSON 非法或命令参数不符合预期时终止进程。
+ */
 import {
   cpSync,
   existsSync,

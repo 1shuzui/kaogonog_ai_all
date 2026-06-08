@@ -5,16 +5,16 @@
   "lazyCodeLoading": "requiredComponents",
   "pages": [
     {
-      "path": "pages/login/index",
-      "style": {
-        "navigationBarTitleText": "登录"
-      }
-    },
-    {
       "path": "pages/home/index",
       "style": {
         "navigationBarTitleText": "公考面试AI测评",
         "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/login/index",
+      "style": {
+        "navigationBarTitleText": "登录"
       }
     },
     {

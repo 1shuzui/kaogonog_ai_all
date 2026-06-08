@@ -1,3 +1,10 @@
+"""
+这个文件负责权益套餐的有效期、每日限额和用时余额；所有练习入口都应该从这里确认还能不能继续使用。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 from datetime import date, datetime
 
 from fastapi import HTTPException
@@ -172,6 +179,16 @@ def _sync_user_preferences_subscription(
 
 
 def get_subscription_status(db: Session, current_user: AuthUser) -> dict:
+    """
+    get_subscription_status 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     user = get_user_or_404(db, current_user.username)
     subscriptions = _list_user_subscriptions(db, user.username)
     subscription = _select_subscription(user, subscriptions)
@@ -209,6 +226,17 @@ def _select_subscription(user: User, subscriptions: list[UserSubscription]) -> U
 
 
 def switch_subscription(db: Session, current_user: AuthUser, subscription_id: int) -> dict:
+    """
+    switch_subscription 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @param subscription_id: 业务对象标识；用于跨接口追溯同一条记录，调用方应避免传入展示名。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    """
     user = get_user_or_404(db, current_user.username)
     subscriptions = _list_user_subscriptions(db, user.username)
     subscription = next((item for item in subscriptions if int(item.id or 0) == int(subscription_id or 0)), None)
@@ -224,6 +252,17 @@ def switch_subscription(db: Session, current_user: AuthUser, subscription_id: in
 
 
 def check_subscription_access(db: Session, current_user: AuthUser, mode: str = "practice") -> dict:
+    """
+    check_subscription_access 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @param mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     subscription = get_subscription_status(db, current_user)
     allowed = subscription["canUse"]
     reason = ""

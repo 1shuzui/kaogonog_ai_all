@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""批量回归脚本。
+"""
+这个脚本跑确定性回归；它不依赖真实 LLM，适合快速检查导入和本地评分规则是否被改坏。
 
-用途：
-1. 按题目批量执行文本样本评分
-2. 对照题库里的 regressionCases 判断是否命中预期分档
-3. 输出控制台摘要，同时把 JSON / Markdown 报表写入 reports/regression
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
 """
 
 from __future__ import annotations
@@ -30,6 +30,15 @@ from app.models.schemas import RegressionCase, ScoreBand
 
 @dataclass
 class RegressionRow:
+    """
+    RegressionRow 作为公共类型保留，是为了让调用方共享同一套业务语义和数据边界。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
     question_id: str
     sample_label: str
     sample_path: str
@@ -44,6 +53,15 @@ class RegressionRow:
 
 
 def parse_args() -> argparse.Namespace:
+    """
+    parse_args 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     parser = argparse.ArgumentParser(description="运行题库回归样本批量评分。")
     parser.add_argument(
         "--question-id",
@@ -65,6 +83,15 @@ def parse_args() -> argparse.Namespace:
 
 
 def resolve_sample_path(sample_path: str) -> Path:
+    """
+    resolve_sample_path 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param sample_path: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises FileNotFoundError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    """
     candidates = [
         Path(sample_path),
         REPO_ROOT / sample_path,
@@ -78,6 +105,16 @@ def resolve_sample_path(sample_path: str) -> Path:
 
 
 def pick_band(score: float, score_bands: Iterable[ScoreBand]) -> str:
+    """
+    pick_band 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param score: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param score_bands: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     for band in score_bands:
         if band.min_score <= score <= band.max_score:
             return band.label
@@ -85,11 +122,31 @@ def pick_band(score: float, score_bands: Iterable[ScoreBand]) -> str:
 
 
 def expected_band_name(case: RegressionCase, score_bands: Iterable[ScoreBand]) -> str:
+    """
+    expected_band_name 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param case: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param score_bands: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     midpoint = round((case.expected_min + case.expected_max) / 2, 1)
     return pick_band(midpoint, score_bands)
 
 
 def render_markdown(rows: list[RegressionRow], generated_at: str) -> str:
+    """
+    render_markdown 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param rows: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param generated_at: 时间边界值；用于保持统计、计费或展示口径一致，需注意时区约定。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     lines = [
         "# 回归测试报告",
         "",
@@ -131,6 +188,15 @@ def render_markdown(rows: list[RegressionRow], generated_at: str) -> str:
 
 
 def main() -> int:
+    """
+    main 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises SystemExit: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    """
     args = parse_args()
     question_bank = get_question_bank()
     flow_service = get_flow_service()

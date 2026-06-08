@@ -1,3 +1,10 @@
+/**
+ * 这个文件是网页端 axios 的总入口；token、基础地址和错误处理集中在这里，页面只关心业务结果。
+ *
+ * @param 无；文件级模块依赖导出函数、组合式 API 或调用方传入上下文。
+ * @return 导出可复用的端侧能力，具体返回值由各公共函数保持兼容。
+ * @raises 不主动吞掉业务异常；请求失败、权限不足和运行时错误交由调用方或全局拦截器处理。
+ */
 import axios from 'axios'
 import { message } from 'ant-design-vue'
 import router from '@/router'

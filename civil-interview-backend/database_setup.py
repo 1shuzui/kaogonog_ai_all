@@ -1,4 +1,10 @@
-""" 一键部署脚本 — 初始化/重置 MySQL 数据库、建表、写入种子数据 """
+"""
+这个文件是数据库初始化和迁移兜底脚本；线上已用 MySQL，但历史 JSON/旧字段仍要靠它补齐。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 import argparse
 import json
 import os
@@ -21,6 +27,15 @@ SUBSCRIPTION_PACKAGE_SEEDS = [
 
 
 def parse_database_url(url: str) -> dict:
+    """
+    拆解 DATABASE_URL，方便部署脚本直接拿到 PyMySQL 需要的连接参数。
+
+    部署环境有时只给一条连接串，不给 MYSQL_* 分项变量，所以这里保留两种配置入口。
+
+    @param url: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     url = url.replace("mysql+pymysql://", "").replace("mysql://", "")
     url = url.split("?")[0]
     user_pass, host_db = url.split("@", 1)
@@ -35,6 +50,15 @@ def parse_database_url(url: str) -> dict:
 
 
 def get_mysql_config() -> dict:
+    """
+    从 .env 读取 MySQL 配置，优先使用 DATABASE_URL，缺失时再拼 MYSQL_* 变量。
+
+    缺少必要配置时直接报错，是为了避免脚本误连到默认库或本机临时库。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises RuntimeError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    """
     load_dotenv(BASE_DIR / ".env")
     database_url = os.getenv("DATABASE_URL", "")
     if database_url and "mysql" in database_url:
@@ -69,10 +93,16 @@ TABLE_STATEMENTS = [
         preferences JSON NULL,
         agreed_terms_version VARCHAR(20) DEFAULT '',
         agreed_terms_at DATETIME NULL,
+        last_login_at DATETIME NULL,
+        last_active_at DATETIME NULL,
         last_login_device VARCHAR(200) DEFAULT '',
         login_device_history JSON NULL,
+        registered_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_users_last_login_at (last_login_at),
+        INDEX idx_users_last_active_at (last_active_at),
+        INDEX idx_users_registered_at (registered_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     """,
     """
@@ -250,6 +280,15 @@ TABLE_STATEMENTS = [
 
 
 def check_connection(config: dict) -> bool:
+    """
+    在建库前先验证 MySQL 能连接，减少执行到一半才失败的部署事故。
+
+    这里只查版本号，不改任何表，适合上线前做只读检查。
+
+    @param config: 配置载荷；用于管理员或环境变量覆盖默认行为，调用方需保证来源可信。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     try:
         conn = pymysql.connect(host=config["host"], port=config["port"], user=config["user"],
                                password=config["password"], charset=config["charset"],
@@ -266,6 +305,15 @@ def check_connection(config: dict) -> bool:
 
 
 def create_database(config: dict):
+    """
+    创建业务库并固定 utf8mb4，保证题干、转写和中文套题名能完整保存。
+
+    脚本显式建库，是为了新服务器初始化时不依赖人工提前建好 schema。
+
+    @param config: 配置载荷；用于管理员或环境变量覆盖默认行为，调用方需保证来源可信。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     conn = pymysql.connect(host=config["host"], port=config["port"], user=config["user"],
                             password=config["password"], charset=config["charset"],
                             cursorclass=config["cursorclass"], autocommit=True)
@@ -278,6 +326,15 @@ def create_database(config: dict):
 
 
 def drop_database(config: dict):
+    """
+    删除目标业务库，仅在显式 reset 时使用。
+
+    这个函数会清空真实数据，保留独立函数名是为了让调用点足够醒目。
+
+    @param config: 配置载荷；用于管理员或环境变量覆盖默认行为，调用方需保证来源可信。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     conn = pymysql.connect(host=config["host"], port=config["port"], user=config["user"],
                             password=config["password"], charset=config["charset"],
                             cursorclass=config["cursorclass"], autocommit=True)
@@ -306,10 +363,44 @@ def _add_column_if_missing(cur, database: str, table: str, column: str, ddl: str
         cur.execute(f"ALTER TABLE `{table}` ADD COLUMN {ddl}")
 
 
+def _index_exists(cur, database: str, table: str, index_name: str) -> bool:
+    cur.execute(
+        """
+        SELECT COUNT(*) AS cnt
+        FROM information_schema.STATISTICS
+        WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND INDEX_NAME = %s
+        """,
+        (database, table, index_name),
+    )
+    return cur.fetchone()["cnt"] > 0
+
+
+def _add_index_if_missing(cur, database: str, table: str, index_name: str, ddl: str) -> None:
+    if not _index_exists(cur, database, table, index_name):
+        cur.execute(ddl)
+
+
 def ensure_schema_updates(conn, database: str) -> None:
+    """
+    给旧库补新增字段和索引，让老服务器不需要手写迁移 SQL 也能跟上当前代码。
+
+    这里按列和索引逐项检查，是为了重复执行脚本时保持幂等。
+
+    @param conn: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param database: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     with conn.cursor() as cur:
         _add_column_if_missing(cur, database, "users", "agreed_terms_version", "agreed_terms_version VARCHAR(20) DEFAULT ''")
         _add_column_if_missing(cur, database, "users", "agreed_terms_at", "agreed_terms_at DATETIME NULL")
+        _add_column_if_missing(cur, database, "users", "last_login_at", "last_login_at DATETIME NULL")
+        _add_column_if_missing(cur, database, "users", "last_active_at", "last_active_at DATETIME NULL")
+        _add_column_if_missing(cur, database, "users", "registered_at", "registered_at DATETIME NULL")
+        cur.execute("UPDATE users SET registered_at = COALESCE(created_at, NOW()) WHERE registered_at IS NULL")
+        _add_index_if_missing(cur, database, "users", "idx_users_last_login_at", "CREATE INDEX idx_users_last_login_at ON users (last_login_at)")
+        _add_index_if_missing(cur, database, "users", "idx_users_last_active_at", "CREATE INDEX idx_users_last_active_at ON users (last_active_at)")
+        _add_index_if_missing(cur, database, "users", "idx_users_registered_at", "CREATE INDEX idx_users_registered_at ON users (registered_at)")
         _add_column_if_missing(cur, database, "users", "last_login_device", "last_login_device VARCHAR(200) DEFAULT ''")
         _add_column_if_missing(cur, database, "users", "login_device_history", "login_device_history JSON NULL")
         _add_column_if_missing(cur, database, "exam_answers", "score_result", "score_result JSON NULL AFTER transcript")
@@ -343,6 +434,15 @@ def ensure_schema_updates(conn, database: str) -> None:
 
 
 def create_tables(config: dict):
+    """
+    创建或更新核心业务表，覆盖用户、题目、考试、订单、权益和定向备面配置。
+
+    所有表结构集中在这里，是为了新机器部署和旧库补字段走同一份脚本。
+
+    @param config: 配置载荷；用于管理员或环境变量覆盖默认行为，调用方需保证来源可信。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     conn = pymysql.connect(**config)
     try:
         with conn.cursor() as cur:
@@ -358,6 +458,15 @@ def create_tables(config: dict):
         conn.close()
 
 def check_tables(config: dict):
+    """
+    打印当前表和记录数，方便部署后确认有没有连错库或漏导数据。
+
+    它只读表数量，不输出用户隐私和题目正文。
+
+    @param config: 配置载荷；用于管理员或环境变量覆盖默认行为，调用方需保证来源可信。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     conn = pymysql.connect(**config)
     try:
         with conn.cursor() as cur:
@@ -373,11 +482,20 @@ def check_tables(config: dict):
 
 
 def seed_default_user(conn):
+    """
+    写入默认管理员账号，方便全新环境第一次登录后台。
+
+    已存在 admin 时只更新展示资料，不替换用户名以外的真实用户数据。
+
+    @param conn: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     from passlib.context import CryptContext
     pwd_context = CryptContext(schemes=["pbkdf2_sha256", "bcrypt"], deprecated="auto")
     sql = """
-    INSERT INTO users (username, hashed_password, full_name, email, province)
-    VALUES (%s, %s, %s, %s, %s)
+    INSERT INTO users (username, hashed_password, full_name, email, province, registered_at)
+    VALUES (%s, %s, %s, %s, %s, NOW())
     ON DUPLICATE KEY UPDATE full_name = VALUES(full_name), email = VALUES(email)
     """
     with conn.cursor() as cur:
@@ -386,6 +504,15 @@ def seed_default_user(conn):
 
 
 def seed_subscription_packages(conn):
+    """
+    写入当前上架套餐，保证套餐中心和微信虚拟支付道具能对上。
+
+    套餐用 package_code 幂等更新，避免重复执行脚本生成多份同名套餐。
+
+    @param conn: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     sql = """
     INSERT INTO subscription_packages (package_code, package_name, package_type, price, total_minutes, daily_limit_minutes, duration_days, description)
     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
@@ -406,6 +533,15 @@ def seed_subscription_packages(conn):
 
 
 def seed_questions(conn):
+    """
+    从 seed_questions.json 写入基础题目，用于空库演示和本地冒烟测试。
+
+    正式题库主要靠导入资产同步，这里只是保证新环境不会完全没题可测。
+
+    @param conn: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     if not SEED_QUESTIONS_PATH.exists():
         print(f" [SKIP] 题目文件不存在 {SEED_QUESTIONS_PATH}")
         return 0
@@ -445,6 +581,15 @@ def seed_questions(conn):
 
 
 def seed_from_db_json(conn):
+    """
+    迁移早期 db.json 里的用户、考试和历史记录，给老数据一次性搬到 MySQL 的通道。
+
+    迁移使用 INSERT IGNORE，是为了重复执行时不覆盖已经进入 MySQL 的真实记录。
+
+    @param conn: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     if not DB_JSON_PATH.exists():
         return
     print(" [INFO] 检测到 db.json，尝试迁移旧数据...")
@@ -508,6 +653,15 @@ def seed_from_db_json(conn):
 
 
 def run_seed(config: dict):
+    """
+    按固定顺序写入默认用户、套餐、题目和旧 JSON 数据。
+
+    这些写入放在同一个事务里，是为了任何一步失败时不留下半套初始化数据。
+
+    @param config: 配置载荷；用于管理员或环境变量覆盖默认行为，调用方需保证来源可信。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     conn = pymysql.connect(**config)
     try:
         seed_default_user(conn)
@@ -523,6 +677,15 @@ def run_seed(config: dict):
 
 
 def main():
+    """
+    命令行入口，给部署人员提供检查、建表、重置和只写种子数据几种模式。
+
+    交互输出写得直白，是为了服务器上执行脚本时能快速看出卡在哪一步。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     parser = argparse.ArgumentParser(description="公务员面试系统 - MySQL 一键部署")
     parser.add_argument("--reset", action="store_true", help="删库重置（清除所有数据）")
     parser.add_argument("--seed-only", action="store_true", help="仅写入种子数据（不建表）")

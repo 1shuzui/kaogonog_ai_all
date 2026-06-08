@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Export project question/answer inventory for manual testing."""
+"""
+这个脚本处理 `export_question_answer_inventory` 相关的本地运维或数据检查；放在仓库根目录是为了部署和排查时直接调用。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 
 from __future__ import annotations
 
@@ -15,6 +21,16 @@ REPORT_DIR = REPO_ROOT / "reports"
 
 
 def answer_asset_status(has_reference: bool, regression_count: int) -> str:
+    """
+    answer_asset_status 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    该公共函数处在模块对外边界，注释记录调用约束，避免调用方依赖内部实现细节。
+
+    @param has_reference: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param regression_count: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     if has_reference and regression_count:
         return "reference+regression"
     if has_reference:
@@ -25,6 +41,15 @@ def answer_asset_status(has_reference: bool, regression_count: int) -> str:
 
 
 def export_asset_inventory() -> list[dict]:
+    """
+    export_asset_inventory 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    该公共函数处在模块对外边界，注释记录调用约束，避免调用方依赖内部实现细节。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     rows = []
     for path in sorted(ASSET_ROOT.rglob("*.json")):
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -53,6 +78,15 @@ def export_asset_inventory() -> list[dict]:
 
 
 def export_backend_inventory() -> list[dict]:
+    """
+    export_backend_inventory 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    该公共函数处在模块对外边界，注释记录调用约束，避免调用方依赖内部实现细节。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     if not BACKEND_DB.exists():
         return []
     conn = sqlite3.connect(BACKEND_DB)
@@ -90,6 +124,16 @@ def export_backend_inventory() -> list[dict]:
 
 
 def export_markdown(asset_rows: list[dict], backend_rows: list[dict]) -> str:
+    """
+    export_markdown 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    该公共函数处在模块对外边界，注释记录调用约束，避免调用方依赖内部实现细节。
+
+    @param asset_rows: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param backend_rows: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     lines = [
         "# Question Answer Inventory",
         "",
@@ -131,6 +175,15 @@ def export_markdown(asset_rows: list[dict], backend_rows: list[dict]) -> str:
 
 
 def main() -> int:
+    """
+    main 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    该公共函数处在模块对外边界，注释记录调用约束，避免调用方依赖内部实现细节。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     asset_rows = export_asset_inventory()
     backend_rows = export_backend_inventory()

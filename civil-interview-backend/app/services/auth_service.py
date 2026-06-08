@@ -1,4 +1,10 @@
-"""Auth service: login, register, WeChat binding and password reset."""
+"""
+这个文件专门处理账号登录、注册、微信小程序登录和密码重置；把这些入口放在一起，是为了避免 PC、小程序和管理员端各写一套身份规则。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 from datetime import datetime, timedelta, timezone
 import hashlib
 import secrets
@@ -41,6 +47,14 @@ def _auth_response(user: User, extra: dict | None = None) -> dict:
     if extra:
         response.update(extra)
     return response
+
+
+def _mark_login_success(db: Session, user: User) -> None:
+    now = datetime.now(timezone.utc)
+    user.last_login_at = now
+    user.last_active_at = now
+    db.commit()
+    db.refresh(user)
 
 
 def _preferences(user: User) -> dict:
@@ -125,6 +139,17 @@ def _account_login_payload(user: User) -> dict:
 
 
 def login_user(db: Session, username: str, password: str) -> dict:
+    """
+    login_user 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    认证服务连接账号、微信身份和审核运营体验，集中处理是为了避免多端登录规则分叉。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param username: 账号唯一标识；历史记录、权益和订单仍以用户名串联，需保持向后兼容。
+    @param password: 用户提交的凭据明文；只在校验/哈希边界短暂使用，避免持久化原文。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    """
     user = db.query(User).filter(User.username == username).first()
     if not user or not verify_password(password, user.hashed_password):
         raise HTTPException(
@@ -132,10 +157,21 @@ def login_user(db: Session, username: str, password: str) -> dict:
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    _mark_login_success(db, user)
     return _auth_response(user)
 
 
 def register_user(db: Session, data: RegisterRequest) -> dict:
+    """
+    register_user 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    认证服务连接账号、微信身份和审核运营体验，集中处理是为了避免多端登录规则分叉。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException, IntegrityError, SQLAlchemyError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    """
     existing = db.query(User).filter(User.username == data.username).first()
     if existing:
         raise HTTPException(status_code=400, detail="Username already registered")
@@ -161,6 +197,16 @@ def register_user(db: Session, data: RegisterRequest) -> dict:
 
 
 def login_wechat_miniprogram(db: Session, data: WechatMiniProgramLoginRequest) -> dict:
+    """
+    login_wechat_miniprogram 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    认证服务连接账号、微信身份和审核运营体验，集中处理是为了避免多端登录规则分叉。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     session_info = _code_to_session(data.code)
     openid = session_info["openid"]
     user = _find_user_by_wechat_openid(db, openid)
@@ -182,8 +228,7 @@ def login_wechat_miniprogram(db: Session, data: WechatMiniProgramLoginRequest) -
     if data.agreedTermsVersion:
         user.agreed_terms_version = data.agreedTermsVersion
         user.agreed_terms_at = datetime.now(timezone.utc)
-    db.commit()
-    db.refresh(user)
+    _mark_login_success(db, user)
     account_login = _account_login_payload(user)
     return _auth_response(user, {
         "created": created,
@@ -198,6 +243,17 @@ def login_wechat_miniprogram(db: Session, data: WechatMiniProgramLoginRequest) -
 
 
 def bind_wechat_miniprogram(db: Session, current_user, data: WechatMiniProgramBindRequest) -> dict:
+    """
+    bind_wechat_miniprogram 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    认证服务连接账号、微信身份和审核运营体验，集中处理是为了避免多端登录规则分叉。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    """
     user = db.query(User).filter(User.username == current_user.username).first()
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
@@ -211,10 +267,22 @@ def bind_wechat_miniprogram(db: Session, current_user, data: WechatMiniProgramBi
 
 
 def setup_wechat_miniprogram_account(db: Session, current_user, data: WechatMiniProgramAccountRequest) -> dict:
+    """
+    setup_wechat_miniprogram_account 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    认证服务连接账号、微信身份和审核运营体验，集中处理是为了避免多端登录规则分叉。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    """
     user = db.query(User).filter(User.username == current_user.username).first()
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
     if not user.username.startswith(WECHAT_ACCOUNT_PREFIX):
+        _mark_login_success(db, user)
         return _auth_response(user, {"message": "当前账号已可用于 PC 登录", "requiresPcAccountSetup": False})
 
     target_username = str(data.username or "").strip()
@@ -227,12 +295,21 @@ def setup_wechat_miniprogram_account(db: Session, current_user, data: WechatMini
     user.hashed_password = get_password_hash(data.password)
     if not user.full_name or user.full_name == "微信用户":
         user.full_name = target_username
-    db.commit()
-    db.refresh(user)
+    _mark_login_success(db, user)
     return _auth_response(user, {"message": "PC 登录账号已设置", "requiresPcAccountSetup": False})
 
 
 def request_password_reset(db: Session, data: PasswordResetRequest) -> dict:
+    """
+    request_password_reset 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    认证服务连接账号、微信身份和审核运营体验，集中处理是为了避免多端登录规则分叉。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    """
     user = db.query(User).filter(User.username == data.username).first()
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
@@ -273,6 +350,16 @@ def _load_valid_password_reset(user: User, code: str) -> dict:
 
 
 def verify_password_reset(db: Session, data: PasswordResetVerifyRequest) -> dict:
+    """
+    verify_password_reset 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    认证服务连接账号、微信身份和审核运营体验，集中处理是为了避免多端登录规则分叉。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    """
     user = db.query(User).filter(User.username == data.username).first()
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
@@ -287,6 +374,16 @@ def verify_password_reset(db: Session, data: PasswordResetVerifyRequest) -> dict
 
 
 def confirm_password_reset(db: Session, data: PasswordResetConfirmRequest) -> dict:
+    """
+    confirm_password_reset 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    认证服务连接账号、微信身份和审核运营体验，集中处理是为了避免多端登录规则分叉。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    """
     user = db.query(User).filter(User.username == data.username).first()
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")

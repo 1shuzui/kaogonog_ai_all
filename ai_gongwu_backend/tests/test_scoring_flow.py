@@ -1,4 +1,10 @@
-"""评分流程与阶段 0 违规检测测试。"""
+"""
+这个测试文件守住 `test_scoring_flow` 对应的回归场景；它记录的是以前容易出错的业务边界，而不是普通示例代码。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 
 import importlib
 import sys
@@ -30,24 +36,66 @@ from app.services.flow import InterviewFlowService
 
 
 class StubQuestionBank:
-    """最小题库桩，返回固定题目。"""
+    """
+    最小题库桩，返回固定题目。
+
+    测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     def __init__(self, question: QuestionDefinition):
         self.question = question
 
     def get_question(self, question_id: str) -> QuestionDefinition:
+        """
+        get_question 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
+        @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         return self.question
 
 
 class StubEvaluationStore:
-    """测试里不落库，只保留接口形状。"""
+    """
+    测试里不落库，只保留接口形状。
+
+    测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     def save_evaluation(self, **kwargs):
+        """
+        save_evaluation 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param **kwargs: 调用方传入的业务上下文；保留原接口形态以兼容现有路由、脚本或测试。
+        @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         return kwargs["final_result"]
 
 
 class StubLLMClient:
-    """可编排返回结果的大模型桩。"""
+    """
+    可编排返回结果的大模型桩。
+
+    测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     def __init__(self, responses=None, *, enabled: bool = True):
         self.provider = "TEST"
@@ -57,6 +105,16 @@ class StubLLMClient:
         self.calls: list[dict[str, str]] = []
 
     def generate(self, prompt: str, system_message: str | None = None):
+        """
+        generate 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param prompt: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+        @param system_message: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+        @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         self.calls.append(
             {
                 "prompt": prompt,
@@ -69,9 +127,26 @@ class StubLLMClient:
 
 
 class ScoringFlowViolationTestCase(unittest.TestCase):
-    """锁住阶段 0 违规检测的关键行为。"""
+    """
+    锁住阶段 0 违规检测的关键行为。
+
+    测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     def setUp(self):
+        """
+        setUp 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         self.question = QuestionDefinition(
             id="AH-TEST-001",
             type="综合分析",
@@ -190,6 +265,15 @@ class ScoringFlowViolationTestCase(unittest.TestCase):
         )
 
     def test_violation_prompt_mentions_context_rules_examples_and_json_contract(self):
+        """
+        test_violation_prompt_mentions_context_rules_examples_and_json_contract 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         prompt = build_violation_check_prompt(
             self.question,
             "要坚持废物利用，肯定不能走后门。",
@@ -203,6 +287,15 @@ class ScoringFlowViolationTestCase(unittest.TestCase):
         self.assertIn('"matched_terms"', prompt)
 
     def test_explicit_abuse_is_blocked_by_stage_zero_llm(self):
+        """
+        test_explicit_abuse_is_blocked_by_stage_zero_llm 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         llm_client = StubLLMClient(
             responses=[
                 self._build_violation_response(
@@ -231,6 +324,15 @@ class ScoringFlowViolationTestCase(unittest.TestCase):
         self.assertEqual(len(llm_client.calls), 1)
 
     def test_explicit_integrity_violation_returns_phrases_and_blocks_following_stages(self):
+        """
+        test_explicit_integrity_violation_returns_phrases_and_blocks_following_stages 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         llm_client = StubLLMClient(
             responses=[
                 self._build_violation_response(
@@ -261,6 +363,15 @@ class ScoringFlowViolationTestCase(unittest.TestCase):
         self.assertEqual(len(llm_client.calls), 1)
 
     def test_safe_context_terms_do_not_trigger_violation_and_flow_continues(self):
+        """
+        test_safe_context_terms_do_not_trigger_violation_and_flow_continues 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         llm_client = StubLLMClient(
             responses=[
                 self._build_non_violation_response(),
@@ -291,6 +402,15 @@ class ScoringFlowViolationTestCase(unittest.TestCase):
         self.assertEqual(len(llm_client.calls), 4)
 
     def test_stage_zero_failure_fails_open_and_continues_to_normal_scoring(self):
+        """
+        test_stage_zero_failure_fails_open_and_continues_to_normal_scoring 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         llm_client = StubLLMClient(
             responses=[
                 None,
@@ -319,6 +439,15 @@ class ScoringFlowViolationTestCase(unittest.TestCase):
         )
 
     def test_answer_revision_prompt_contains_scoring_and_speech_rate_context(self):
+        """
+        test_answer_revision_prompt_contains_scoring_and_speech_rate_context 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         prompt = build_answer_revision_prompt(
             self.question,
             self._mock_final_result_for_prompt(),
@@ -329,6 +458,15 @@ class ScoringFlowViolationTestCase(unittest.TestCase):
         self.assertIn('"answer_revision_suggestion"', prompt)
 
     def test_answer_revision_generation_failure_does_not_break_main_flow(self):
+        """
+        test_answer_revision_generation_failure_does_not_break_main_flow 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         llm_client = StubLLMClient(
             responses=[
                 self._build_non_violation_response(),
@@ -375,6 +513,15 @@ class ScoringFlowViolationTestCase(unittest.TestCase):
         )
 
     def test_interpersonal_scoring_prompt_mentions_basic_pass_guardrail(self):
+        """
+        test_interpersonal_scoring_prompt_mentions_basic_pass_guardrail 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         interpersonal_question = QuestionDefinition(
             id="AH-TEST-IP-001",
             type="人际沟通",

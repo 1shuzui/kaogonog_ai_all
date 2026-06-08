@@ -1,3 +1,10 @@
+<!--
+这个小程序专项训练页按选定训练分类生成题目，方向可不限，但开始练习要检查权益。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <view class="page">
     <view v-if="readonlyMode" class="card access-card">
@@ -19,7 +26,7 @@
       </view>
     </view>
 
-    <view class="card">
+    <view v-if="userStore.isAuthenticated" class="card">
       <view class="section-head">
         <text class="section-title">训练进度</text>
       </view>
@@ -27,31 +34,31 @@
     </view>
 
     <!-- 定向筛选 -->
-    <view v-if="!readonlyMode" class="card">
+    <view class="card">
       <view class="section-head">
         <text class="section-title">定向筛选（可选）</text>
       </view>
-      <picker :range="examCategoryNames" :value="examCategoryIndex" @change="onExamCategoryFilterChange">
+      <LightSelector title="考试大类" :options="examCategoryNames" :value="examCategoryIndex" @change="onExamCategoryFilterChange">
         <view class="config-row">
           <text>考试大类</text>
           <text class="config-row__value">{{ selectedExamCategoryName }}</text>
         </view>
-      </picker>
-      <picker :range="regionNames" :value="regionIndex" @change="onRegionFilterChange" :disabled="!regionOpts.length">
+      </LightSelector>
+      <LightSelector title="地区" :options="regionNames" :value="regionIndex" :disabled="!regionOpts.length" @change="onRegionFilterChange">
         <view class="config-row">
           <text>地区</text>
           <text class="config-row__value">{{ selectedRegionNameText }}</text>
         </view>
-      </picker>
-      <picker v-if="hasDirectionOpts" :range="directionNames" :value="directionIndex" @change="onDirectionFilterChange">
+      </LightSelector>
+      <LightSelector v-if="hasDirectionOpts" title="方向" :options="directionNames" :value="directionIndex" @change="onDirectionFilterChange">
         <view class="config-row">
           <text>方向</text>
           <text class="config-row__value">{{ selectedDirectionNameText }}</text>
         </view>
-      </picker>
+      </LightSelector>
     </view>
 
-    <button v-if="!readonlyMode" class="primary-button" :loading="trainingStore.generating" @tap="generate">生成训练题</button>
+    <button class="primary-button" :loading="trainingStore.generating" @tap="generate">生成训练题</button>
 
     <view v-if="!readonlyMode && trainingStore.generatedQuestions.length" class="generated-list">
       <view class="section-head generated-list__head">
@@ -70,6 +77,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
+import LightSelector from '../../components/LightSelector.vue'
 import QuestionCard from '../../components/QuestionCard.vue'
 import StatGrid from '../../components/StatGrid.vue'
 import { useBillingStore } from '../../stores/billing'
@@ -80,7 +88,7 @@ import { useUserStore } from '../../stores/user'
 import { hasPremiumAccess } from '../../utils/access'
 import { getTrainingCategory, YEAR_OPTIONS } from '../../utils/constants'
 import { DEFAULT_TARGETED_POSITION_TREE } from '../../utils/targetedOptions'
-import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
+import { hideLoading, promptLoginForAction, showLoading, toast } from '../../utils/navigation'
 
 const billingStore = useBillingStore()
 const subscriptionStore = useSubscriptionStore()
@@ -120,8 +128,12 @@ const selectedRegionNameText = computed(() => {
 const selectedRegNode = computed(() =>
   selectedRegionId.value ? regionOpts.value.find(r => String(r.id) === String(selectedRegionId.value)) || null : null
 )
-const hasDirectionOpts = computed(() => (selectedRegNode.value?.children?.length || 0) > 0)
-const directionOpts = computed(() => selectedRegNode.value?.children || [])
+const directionOpts = computed(() => (
+  Array.isArray(selectedRegNode.value?.directions)
+    ? selectedRegNode.value.directions
+    : selectedRegNode.value?.children || []
+))
+const hasDirectionOpts = computed(() => directionOpts.value.length > 0)
 const directionNames = computed(() => ['不限', ...directionOpts.value.map(d => d.name)])
 const directionIndex = computed(() => {
   const idx = directionOpts.value.findIndex(d => String(d.id) === String(selectedDirectionId.value))
@@ -162,7 +174,6 @@ const progressItems = computed(() => [
 ])
 
 onLoad((query) => {
-  if (!requireLogin()) return
   categoryKey.value = query?.key || 'analysis'
   refreshAccessState().catch(() => null)
 })
@@ -176,7 +187,7 @@ async function refreshAccessState() {
 }
 
 async function generate() {
-  if (readonlyMode.value) return
+  if (!promptLoginForAction('生成专项训练题', `/pages/training/dimension?key=${encodeURIComponent(categoryKey.value)}`)) return
   await refreshAccessState().catch(() => null)
   if (readonlyMode.value) {
     toast('请先开通套餐后使用专项训练')
@@ -210,6 +221,7 @@ async function generate() {
 }
 
 async function startQuestion(question) {
+  if (!promptLoginForAction('开始专项训练', `/pages/training/dimension?key=${encodeURIComponent(categoryKey.value)}`)) return
   if (readonlyMode.value) return
   showLoading('创建考场')
   try {
@@ -228,10 +240,12 @@ async function startQuestion(question) {
 }
 
 function goPricing() {
+  if (!promptLoginForAction('开通套餐', '/pages/pricing/index')) return
   uni.navigateTo({ url: '/pages/pricing/index' })
 }
 
 function startTrial() {
+  if (!promptLoginForAction('试用 1 题', '/pages/exam/prepare?trial=1')) return
   uni.navigateTo({ url: '/pages/exam/prepare?trial=1' })
 }
 </script>

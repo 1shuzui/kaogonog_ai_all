@@ -1,12 +1,9 @@
-"""面试测评接口层。
+"""
+这个旧后端面试接口文件仍用于回归和迁移对照；它把题目查询、媒体上传和评分入口放在一起，方便比较新旧链路差异。
 
-这一层专门处理“和 HTTP 有关的事情”，比如：
-1. 接收表单和上传文件
-2. 把异常转换成 HTTP 状态码
-3. 调用业务服务并返回统一响应
-
-它不负责真正的评分逻辑，评分逻辑在 service 层。
-这样分层后，代码更容易维护。
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
 """
 
 import logging
@@ -44,7 +41,15 @@ router = APIRouter()
 async def list_questions(
     question_bank: QuestionBank = Depends(get_question_bank),
 ) -> Any:
-    """返回当前题库中的题目摘要。"""
+    """
+    返回当前题库中的题目摘要。
+
+    该公共函数处在模块对外边界，注释记录调用约束，避免调用方依赖内部实现细节。
+
+    @param question_bank: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     questions = await run_in_threadpool(question_bank.list_questions)
     return [
@@ -71,7 +76,16 @@ async def get_question_detail(
     question_id: str,
     question_bank: QuestionBank = Depends(get_question_bank),
 ) -> Any:
-    """返回单题详情，便于前端或回归工具查看配置。"""
+    """
+    返回单题详情，便于前端或回归工具查看配置。
+
+    该公共函数处在模块对外边界，注释记录调用约束，避免调用方依赖内部实现细节。
+
+    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
+    @param question_bank: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    """
 
     try:
         question = await run_in_threadpool(question_bank.get_question, question_id)
@@ -110,7 +124,17 @@ async def evaluate_interview_submission(
     media_file: UploadFile = File(..., description="考生作答的音视频文件"),
     flow_service: InterviewFlowService = Depends(get_flow_service),
 ) -> Any:
-    """评估音频或视频作答文件。"""
+    """
+    评估音频或视频作答文件。
+
+    该公共函数处在模块对外边界，注释记录调用约束，避免调用方依赖内部实现细节。
+
+    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
+    @param media_file: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
+    @param flow_service: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException, RuntimeError, ValueError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    """
 
     temp_path = None
     safe_filename = media_file.filename or "unknown"
@@ -163,12 +187,16 @@ async def evaluate_text_submission(
     text_file: UploadFile = File(..., description="考生作答的纯文本文件 (.txt)"),
     flow_service: InterviewFlowService = Depends(get_flow_service),
 ) -> Any:
-    """评估纯文本作答。
+    """
+    评估纯文本作答。 这个接口是“旁路接口”，优势是： - 不依赖音视频解析 - 便于快速调 Prompt 和评分逻辑 - 便于在弱机器环境做验证
 
-    这个接口是“旁路接口”，优势是：
-    - 不依赖音视频解析
-    - 便于快速调 Prompt 和评分逻辑
-    - 便于在弱机器环境做验证
+    该公共函数处在模块对外边界，注释记录调用约束，避免调用方依赖内部实现细节。
+
+    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
+    @param text_file: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
+    @param flow_service: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException, RuntimeError, ValueError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
     """
 
     filename = (text_file.filename or "").lower()
@@ -214,7 +242,16 @@ async def list_evaluation_records(
     limit: int = 20,
     evaluation_store: EvaluationStore = Depends(get_evaluation_store),
 ) -> Any:
-    """按时间倒序查看最近测评记录。"""
+    """
+    按时间倒序查看最近测评记录。
+
+    该公共函数处在模块对外边界，注释记录调用约束，避免调用方依赖内部实现细节。
+
+    @param limit: 调用方给定的数量上限；用于控制题库抽样或列表返回的成本。
+    @param evaluation_store: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     normalized_limit = max(1, min(limit, 100))
     return await run_in_threadpool(
@@ -232,7 +269,16 @@ async def get_evaluation_record_detail(
     record_id: int,
     evaluation_store: EvaluationStore = Depends(get_evaluation_store),
 ) -> Any:
-    """返回单条测评记录的完整详情。"""
+    """
+    返回单条测评记录的完整详情。
+
+    该公共函数处在模块对外边界，注释记录调用约束，避免调用方依赖内部实现细节。
+
+    @param record_id: 业务对象标识；用于跨接口追溯同一条记录，调用方应避免传入展示名。
+    @param evaluation_store: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    """
 
     record = await run_in_threadpool(
         evaluation_store.get_record_detail,

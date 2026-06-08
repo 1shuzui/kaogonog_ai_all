@@ -1,3 +1,10 @@
+<!--
+这个顶部栏承载网页端导航、登录状态和常用入口，让各页面不用重复写页头。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <header class="app-header">
     <div class="app-header__brand" @click="$router.push('/')">

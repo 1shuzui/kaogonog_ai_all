@@ -1,3 +1,10 @@
+"""
+这个文件记录答题用时和扣减分钟数；把扣量留在服务端，是为了避免小程序端时间上报异常导致权益被绕过。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 from datetime import date
 
 from fastapi import HTTPException
@@ -38,6 +45,17 @@ def _ensure_default_trial_subscription(db: Session, username: str) -> UserSubscr
 
 
 def report_usage(db: Session, current_user: AuthUser, data: UsageReportRequest) -> dict:
+    """
+    report_usage 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    """
     user = get_user_or_404(db, current_user.username)
     exam = db.query(Exam).filter(Exam.id == data.examId, Exam.user_id == current_user.username).first()
     if not exam:

@@ -1,3 +1,10 @@
+<!--
+这个小程序页面负责进考场前的模式、套题和权限准备；耗时请求要并行短等，避免用户卡在检查页。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <view class="page">
     <text class="page-title">{{ pageTitle }}</text>
@@ -53,24 +60,24 @@
       <view class="section-head" style="margin-top: 20rpx">
         <text class="section-title">定向筛选（可选）</text>
       </view>
-      <picker :range="examCategoryNames" :value="examCategoryIndex" @change="onExamCategoryFilterChange">
+      <LightSelector title="考试大类" :options="examCategoryNames" :value="examCategoryIndex" @change="onExamCategoryFilterChange">
         <view class="config-row">
           <text>考试大类</text>
           <text class="config-row__value">{{ selectedExamCategoryName }}</text>
         </view>
-      </picker>
-      <picker :range="regionNames" :value="regionIndex" @change="onRegionFilterChange" :disabled="!regionOptions.length">
+      </LightSelector>
+      <LightSelector title="地区" :options="regionNames" :value="regionIndex" :disabled="!regionOptions.length" @change="onRegionFilterChange">
         <view class="config-row">
           <text>地区</text>
           <text class="config-row__value">{{ selectedRegionNameText }}</text>
         </view>
-      </picker>
-      <picker v-if="hasDirectionOptions" :range="directionNames" :value="directionIndex" @change="onDirectionFilterChange">
+      </LightSelector>
+      <LightSelector v-if="hasDirectionOptions" title="方向" :options="directionNames" :value="directionIndex" @change="onDirectionFilterChange">
         <view class="config-row">
           <text>方向</text>
           <text class="config-row__value">{{ selectedDirectionNameText }}</text>
         </view>
-      </picker>
+      </LightSelector>
 
       <view v-if="mode === 'fullExam'" class="suite-panel">
         <view class="config-row config-row--suite">
@@ -171,6 +178,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
+import LightSelector from '../../components/LightSelector.vue'
 import { useExamStore } from '../../stores/exam'
 import { useBillingStore } from '../../stores/billing'
 import { useQuestionBankStore } from '../../stores/questionBank'

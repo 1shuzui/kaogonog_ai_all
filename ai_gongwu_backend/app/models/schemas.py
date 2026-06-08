@@ -1,15 +1,9 @@
-"""数据模型定义。
+"""
+这个文件定义旧后端的请求和响应结构；它让评分、题库和媒体接口在迁移期间仍有固定数据形状。
 
-这一层的作用可以理解为“数据合同”：
-1. 题库长什么样
-2. LLM 返回结果长什么样
-3. API 最终响应长什么样
-都在这里被显式定义出来。
-
-这样做的好处是：
-- 少写很多 if/else 防御代码
-- 数据一旦不符合结构，能更早发现问题
-- 对弱基础同学来说，读这里能快速理解系统到底在传什么数据
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
 """
 
 from datetime import datetime
@@ -19,11 +13,14 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class QuestionDimension(BaseModel):
-    """题目中的单个评分维度。
+    """
+    QuestionDimension 请求/响应模型固定端侧契约，集中定义可避免 PC 与小程序各自猜测字段含义。
 
-    例如：
-    - 现象解读：8 分
-    - 创新思维：2 分
+    旧后端模型用于历史数据和迁移脚本兼容，注释说明字段保留的业务依据。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
     """
 
     name: str
@@ -31,10 +28,14 @@ class QuestionDimension(BaseModel):
 
 
 class ScoreBand(BaseModel):
-    """题目分档配置。
+    """
+    ScoreBand 请求/响应模型固定端侧契约，集中定义可避免 PC 与小程序各自猜测字段含义。
 
-    用于把连续分数映射成更容易理解的档位，
-    例如“低分 / 中档 / 通用高分 / 河南省直高分”。
+    旧后端模型用于历史数据和迁移脚本兼容，注释说明字段保留的业务依据。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
     """
 
     label: str
@@ -44,7 +45,15 @@ class ScoreBand(BaseModel):
 
 
 class RegressionCase(BaseModel):
-    """题目的回归测试样本配置。"""
+    """
+    RegressionCase 请求/响应模型固定端侧契约，集中定义可避免 PC 与小程序各自猜测字段含义。
+
+    旧后端模型用于历史数据和迁移脚本兼容，注释说明字段保留的业务依据。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     label: str
     sample_path: str
@@ -56,12 +65,14 @@ class RegressionCase(BaseModel):
 
 
 class QuestionDefinition(BaseModel):
-    """题库中一整道题的结构。
+    """
+    QuestionDefinition 请求/响应模型固定端侧契约，集中定义可避免 PC 与小程序各自猜测字段含义。
 
-    这里基本对应 question.json 里的字段。
-    model_config = ConfigDict(extra="ignore") 表示：
-    即使 JSON 多出一些未声明字段，也不会直接报错。
-    对接外部数据时会更宽容。
+    旧后端模型用于历史数据和迁移脚本兼容，注释说明字段保留的业务依据。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
     """
 
     model_config = ConfigDict(extra="ignore")
@@ -96,13 +107,14 @@ class QuestionDefinition(BaseModel):
 
 
 class MediaExtractionResult(BaseModel):
-    """媒体解析后的统一结果。
+    """
+    MediaExtractionResult 请求/响应模型固定端侧契约，集中定义可避免 PC 与小程序各自猜测字段含义。
 
-    不管上传的是：
-    - 纯文本
-    - 音频
-    - 视频
-    最后都会被整理成这一个结构，方便后面统一评分。
+    旧后端模型用于历史数据和迁移脚本兼容，注释说明字段保留的业务依据。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
     """
 
     # transcript 是后续内容评分的核心依据
@@ -122,10 +134,14 @@ class MediaExtractionResult(BaseModel):
 
 
 class LLMGenerationResult(BaseModel):
-    """一次模型调用的结构化结果。
+    """
+    LLMGenerationResult 请求/响应模型固定端侧契约，集中定义可避免 PC 与小程序各自猜测字段含义。
 
-    raw_content 保留模型返回原文，
-    parsed_payload 是解析后的 JSON 数据。
+    旧后端模型用于历史数据和迁移脚本兼容，注释说明字段保留的业务依据。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
     """
 
     raw_content: str = ""
@@ -133,7 +149,15 @@ class LLMGenerationResult(BaseModel):
 
 
 class ViolationCheckPayload(BaseModel):
-    """违规检测阶段的结构化结果。"""
+    """
+    ViolationCheckPayload 请求/响应模型固定端侧契约，集中定义可避免 PC 与小程序各自猜测字段含义。
+
+    旧后端模型用于历史数据和迁移脚本兼容，注释说明字段保留的业务依据。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     model_config = ConfigDict(extra="ignore")
 
@@ -144,7 +168,15 @@ class ViolationCheckPayload(BaseModel):
 
 
 class EvidenceItem(BaseModel):
-    """单条评分证据。"""
+    """
+    EvidenceItem 请求/响应模型固定端侧契约，集中定义可避免 PC 与小程序各自猜测字段含义。
+
+    旧后端模型用于历史数据和迁移脚本兼容，注释说明字段保留的业务依据。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     id: str
     dimension_hint: str = ""
@@ -155,7 +187,15 @@ class EvidenceItem(BaseModel):
 
 
 class EvidenceExtractionPayload(BaseModel):
-    """第一阶段：证据抽取结果。"""
+    """
+    EvidenceExtractionPayload 请求/响应模型固定端侧契约，集中定义可避免 PC 与小程序各自猜测字段含义。
+
+    旧后端模型用于历史数据和迁移脚本兼容，注释说明字段保留的业务依据。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     model_config = ConfigDict(extra="ignore")
 
@@ -165,7 +205,15 @@ class EvidenceExtractionPayload(BaseModel):
 
 
 class ReasonedScoreItem(BaseModel):
-    """绑定证据的加分 / 扣分理由。"""
+    """
+    ReasonedScoreItem 请求/响应模型固定端侧契约，集中定义可避免 PC 与小程序各自猜测字段含义。
+
+    旧后端模型用于历史数据和迁移脚本兼容，注释说明字段保留的业务依据。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     model_config = ConfigDict(extra="ignore")
 
@@ -176,7 +224,15 @@ class ReasonedScoreItem(BaseModel):
 
 
 class StageTwoScoringPayload(BaseModel):
-    """第二阶段：基于证据的评分结果。"""
+    """
+    StageTwoScoringPayload 请求/响应模型固定端侧契约，集中定义可避免 PC 与小程序各自猜测字段含义。
+
+    旧后端模型用于历史数据和迁移脚本兼容，注释说明字段保留的业务依据。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     model_config = ConfigDict(extra="ignore")
 
@@ -188,10 +244,14 @@ class StageTwoScoringPayload(BaseModel):
 
 
 class LLMEvaluationPayload(BaseModel):
-    """大模型理论上应该返回的结构。
+    """
+    LLMEvaluationPayload 请求/响应模型固定端侧契约，集中定义可避免 PC 与小程序各自猜测字段含义。
 
-    注意：这是“期望结构”，并不代表模型一定老老实实遵守。
-    所以后面还会有一层 post-processing 再做校验。
+    旧后端模型用于历史数据和迁移脚本兼容，注释说明字段保留的业务依据。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
     """
 
     model_config = ConfigDict(extra="ignore")
@@ -212,14 +272,14 @@ class LLMEvaluationPayload(BaseModel):
 
 
 class EvaluationResult(LLMEvaluationPayload):
-    """系统最终返回给前端/调用方的结果。
+    """
+    EvaluationResult 请求/响应模型固定端侧契约，集中定义可避免 PC 与小程序各自猜测字段含义。
 
-    它是在 LLM 原始结果基础上，再经过：
-    - 维度校正
-    - 分数收敛
-    - 引语核验
-    - 关键词补充
-    之后得到的“更可信版本”。
+    旧后端模型用于历史数据和迁移脚本兼容，注释说明字段保留的业务依据。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
     """
 
     # 补充回题目与原始输入信息，方便前端展示和后续追踪
@@ -260,12 +320,14 @@ class EvaluationResult(LLMEvaluationPayload):
 
 
 class EvaluationAPIResponse(BaseModel):
-    """统一的接口响应外壳。
+    """
+    EvaluationAPIResponse 请求/响应模型固定端侧契约，集中定义可避免 PC 与小程序各自猜测字段含义。
 
-    这样前端接收时更稳定：
-    - code 看状态
-    - message 看消息
-    - data 看真正业务数据
+    旧后端模型用于历史数据和迁移脚本兼容，注释说明字段保留的业务依据。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
     """
 
     code: int = 200
@@ -274,7 +336,15 @@ class EvaluationAPIResponse(BaseModel):
 
 
 class QuestionSummary(BaseModel):
-    """题目摘要，用于题目列表接口。"""
+    """
+    QuestionSummary 请求/响应模型固定端侧契约，集中定义可避免 PC 与小程序各自猜测字段含义。
+
+    旧后端模型用于历史数据和迁移脚本兼容，注释说明字段保留的业务依据。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     id: str
     type: str = ""
@@ -287,7 +357,15 @@ class QuestionSummary(BaseModel):
 
 
 class QuestionDetail(BaseModel):
-    """题目详情，用于前端查看完整题目配置。"""
+    """
+    QuestionDetail 请求/响应模型固定端侧契约，集中定义可避免 PC 与小程序各自猜测字段含义。
+
+    旧后端模型用于历史数据和迁移脚本兼容，注释说明字段保留的业务依据。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     id: str
     type: str = ""
@@ -310,7 +388,15 @@ class QuestionDetail(BaseModel):
 
 
 class EvaluationRecordSummary(BaseModel):
-    """测评记录列表项。"""
+    """
+    EvaluationRecordSummary 请求/响应模型固定端侧契约，集中定义可避免 PC 与小程序各自猜测字段含义。
+
+    旧后端模型用于历史数据和迁移脚本兼容，注释说明字段保留的业务依据。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     id: int
     question_id: str
@@ -323,7 +409,15 @@ class EvaluationRecordSummary(BaseModel):
 
 
 class EvaluationRecordDetail(BaseModel):
-    """单条测评记录详情。"""
+    """
+    EvaluationRecordDetail 请求/响应模型固定端侧契约，集中定义可避免 PC 与小程序各自猜测字段含义。
+
+    旧后端模型用于历史数据和迁移脚本兼容，注释说明字段保留的业务依据。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     id: int
     question_id: str

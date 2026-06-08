@@ -1,3 +1,10 @@
+"""
+这个路由文件提供定向备面分类、重点分析和管理员维护接口；它只做请求参数、鉴权依赖和服务层转发，业务规则尽量留在 service 里。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 import re
 from collections import Counter
 from copy import deepcopy
@@ -526,6 +533,55 @@ def _ensure_reserved_province_entries() -> None:
 _ensure_reserved_province_entries()
 
 FOCUS_MIN_QUESTION_COUNT = 1
+ABILITY_DIMENSION_LABELS = {
+    "analysis": "综合分析",
+    "practical": "实务落地",
+    "emergency": "应急应变",
+    "legal": "行政思维",
+    "logic": "逻辑结构",
+    "expression": "语言表达",
+}
+ABILITY_DIMENSION_KEYS_BY_LABEL = {label: key for key, label in ABILITY_DIMENSION_LABELS.items()}
+ABILITY_DIMENSION_ALIASES = {
+    "法治思维": "行政思维",
+    "职业认知": "行政思维",
+    "岗位认知": "行政思维",
+    "组织管理": "实务落地",
+    "人际沟通": "逻辑结构",
+    "人际关系": "逻辑结构",
+    "情景模拟": "语言表达",
+    "现场模拟": "语言表达",
+}
+QUESTION_TYPE_LABELS = {"综合分析", "组织管理", "应急应变", "人际沟通", "情景模拟", "岗位认知"}
+QUESTION_TYPE_ALIASES = {
+    "analysis": "综合分析",
+    "practical": "组织管理",
+    "organization": "组织管理",
+    "emergency": "应急应变",
+    "adaptability": "应急应变",
+    "logic": "人际沟通",
+    "interpersonal": "人际沟通",
+    "expression": "情景模拟",
+    "simulation": "情景模拟",
+    "legal": "岗位认知",
+    "career": "岗位认知",
+    "实务落地": "组织管理",
+    "逻辑结构": "人际沟通",
+    "语言表达": "情景模拟",
+    "现场模拟": "情景模拟",
+    "行政思维": "岗位认知",
+    "法治思维": "岗位认知",
+    "职业认知": "岗位认知",
+    "人际关系": "人际沟通",
+}
+QUESTION_TYPE_KEYWORDS = (
+    ("组织管理", ("组织", "计划", "调研", "宣传", "活动", "接待", "推进", "落实", "协调")),
+    ("应急应变", ("应急", "突发", "危机", "舆情", "处置", "投诉", "冲突")),
+    ("人际沟通", ("人际", "沟通", "劝导", "同事", "领导", "群众", "关系")),
+    ("情景模拟", ("情景模拟", "现场模拟", "模拟", "演讲", "发言", "串词", "宣讲")),
+    ("岗位认知", ("职业认知", "岗位认知", "自我认知", "报考动机", "价值观", "岗位匹配")),
+    ("综合分析", ("综合分析", "社会现象", "政策理解", "观点", "漫画", "寓言", "名言", "现象", "分析")),
+)
 FOCUS_TARGET_FIELDS = (
     "targetCode",
     "province",
@@ -545,7 +601,15 @@ FOCUS_TARGET_FIELDS = (
 
 
 def parse_timing_format(text: str) -> tuple[int | None, int | None]:
-    """Parse timing format strings like '8+12' or '15分钟包干' → (prepTime, answerTime) in seconds."""
+    """
+    Parse timing format strings like '8+12' or '15分钟包干' → (prepTime, answerTime) in seconds.
+
+    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     if not text:
         return None, None
     text = text.strip()
@@ -561,7 +625,35 @@ def parse_timing_format(text: str) -> tuple[int | None, int | None]:
 
 
 def _dimension_label(code: str) -> str:
-    return DIMENSION_NAMES.get(code, code or "综合分析")
+    return ABILITY_DIMENSION_LABELS.get(code, code or "综合分析")
+
+
+def _normalize_ability_dimension(value: str | None) -> tuple[str, str]:
+    text = str(value or "").strip()
+    if not text:
+        return "analysis", "综合分析"
+    if text in ABILITY_DIMENSION_LABELS:
+        return text, ABILITY_DIMENSION_LABELS[text]
+    normalized = ABILITY_DIMENSION_ALIASES.get(text, text)
+    if normalized in ABILITY_DIMENSION_KEYS_BY_LABEL:
+        return ABILITY_DIMENSION_KEYS_BY_LABEL[normalized], normalized
+    return "analysis", "综合分析"
+
+
+def _normalize_question_type_label(value: str | None) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return "综合分析"
+    text = text.split("·", 1)[0].strip()
+    return QUESTION_TYPE_ALIASES.get(text, text if text in QUESTION_TYPE_LABELS else "综合分析")
+
+
+def _infer_question_type_label(text: str) -> str:
+    haystack = str(text or "")
+    for label, keywords in QUESTION_TYPE_KEYWORDS:
+        if any(keyword in haystack for keyword in keywords):
+            return label
+    return "综合分析"
 
 
 def _priority_by_rank(index: int) -> str:
@@ -586,11 +678,11 @@ def _meta_list(meta: dict, key: str) -> list[str]:
 
 
 def _question_type_label(question: Question, meta: dict) -> str:
-    return (
+    raw_label = (
         str(meta.get("questionTypeCategory") or "").strip()
         or str(meta.get("questionType") or "").split("·", 1)[0].strip()
-        or _dimension_label(question.dimension)
     )
+    return _normalize_question_type_label(raw_label) if raw_label else _infer_question_type_label(question.stem)
 
 
 def _target_filters_from_request(data: FocusAnalysisRequest | GenerateQuestionsRequest) -> dict:
@@ -697,10 +789,11 @@ def _sanitize_focus_payload(raw: dict | None) -> dict:
     for item in raw.get("coreFocus") or []:
         if not isinstance(item, dict):
             continue
-        name = str(item.get("name") or "").strip()
+        dimension_key, name = _normalize_ability_dimension(item.get("dimensionKey") or item.get("name"))
         if not name:
             continue
         core_focus.append({
+            "dimensionKey": dimension_key,
             "name": name,
             "weight": _clamp_int(item.get("weight"), default=20, min_value=0, max_value=100),
             "desc": str(item.get("desc") or "").strip(),
@@ -711,10 +804,11 @@ def _sanitize_focus_payload(raw: dict | None) -> dict:
     for item in raw.get("highFreqTypes") or []:
         if not isinstance(item, dict):
             continue
-        type_name = str(item.get("type") or "").strip()
+        type_name = _normalize_question_type_label(item.get("questionTypeKey") or item.get("type"))
         if not type_name:
             continue
         high_freq_types.append({
+            "questionTypeKey": type_name,
             "type": type_name,
             "frequency": str(item.get("frequency") or "中").strip(),
             "example": str(item.get("example") or "").strip(),
@@ -724,7 +818,8 @@ def _sanitize_focus_payload(raw: dict | None) -> dict:
     focus_areas = []
     for index, item in enumerate(core_focus):
         focus_areas.append({
-            "type": item["name"],
+            "type": item.get("dimensionKey") or item["name"],
+            "dimensionKey": item.get("dimensionKey", ""),
             "label": item["name"],
             "description": item["desc"],
             "priority": _priority_by_rank(index),
@@ -830,7 +925,8 @@ def _build_real_focus_response(data: FocusAnalysisRequest, questions: list[Quest
 
     for question in questions:
         meta = _question_meta_from_keywords(question.keywords)
-        dimension_counter[question.dimension or "analysis"] += 1
+        dimension_key, _ = _normalize_ability_dimension(question.dimension or "analysis")
+        dimension_counter[dimension_key] += 1
         type_counter[_question_type_label(question, meta)] += 1
         source = str(meta.get("sourceDocument") or meta.get("sourceLabel") or "").strip()
         if source:
@@ -847,6 +943,7 @@ def _build_real_focus_response(data: FocusAnalysisRequest, questions: list[Quest
         weight = max(10, round(count / total * 100))
         name = _dimension_label(dimension)
         core_focus.append({
+            "dimensionKey": dimension,
             "name": name,
             "weight": weight,
             "desc": f"基于当前题库中 {count} 道匹配题统计，{province_name}{position_name}方向较常考{name}能力。",
@@ -856,6 +953,7 @@ def _build_real_focus_response(data: FocusAnalysisRequest, questions: list[Quest
     high_freq_types = []
     for index, (type_name, count) in enumerate(type_counter.most_common(5)):
         high_freq_types.append({
+            "questionTypeKey": type_name,
             "type": type_name,
             "frequency": _frequency_by_rank(index, count),
             "example": f"当前匹配题库中出现 {count} 次，建议结合真实套题反复练习。",
@@ -869,6 +967,7 @@ def _build_real_focus_response(data: FocusAnalysisRequest, questions: list[Quest
     focus_areas = [
         {
             "type": dimension,
+            "dimensionKey": dimension,
             "label": _dimension_label(dimension),
             "description": item["desc"],
             "priority": _priority_by_rank(index),
@@ -906,6 +1005,15 @@ def _build_real_focus_response(data: FocusAnalysisRequest, questions: list[Quest
 
 @router.get("/positions")
 def get_positions():
+    """
+    get_positions 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     return {
         "tree": TARGETED_POSITION_TREE,
         "legacy": POSITIONS,
@@ -914,6 +1022,17 @@ def get_positions():
 
 @router.post("/targeted/focus")
 async def get_focus(data: FocusAnalysisRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    get_focus 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+
+    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     ensure_paid_access(current_user, detail="定向备考需付费开通后使用")
     config = _load_focus_config(db, data)
     if config and config.enabled:
@@ -943,6 +1062,30 @@ async def get_focus_admin_config(
     current_user: AuthUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """
+    get_focus_admin_config 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+
+    @param targetCode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param province: 地区筛选值；只表示地域，不替代考试体系或岗位方向。
+    @param position: 岗位/方向筛选值；允许为空表示不限，避免无题库分类被误判为通用模板。
+    @param examCategory: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param examSubcategory: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param subcategory: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param subcategory2: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param year: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param targetName: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param interviewFormat: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param timingMode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param questionCount: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param prepTime: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param answerTime: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     ensure_admin_access(current_user)
     target_payload = {
         "targetCode": targetCode,
@@ -984,6 +1127,17 @@ async def save_focus_admin_config(
     current_user: AuthUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """
+    save_focus_admin_config 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+
+    @param body: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    """
     ensure_admin_access(current_user)
     target_payload = body.get("target") if isinstance(body.get("target"), dict) else body
     target_payload = _focus_request_payload(target_payload if isinstance(target_payload, dict) else {})
@@ -1019,6 +1173,17 @@ async def disable_focus_admin_config(
     current_user: AuthUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """
+    disable_focus_admin_config 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+
+    @param body: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     ensure_admin_access(current_user)
     target_payload = body.get("target") if isinstance(body.get("target"), dict) else body
     target_payload = _focus_request_payload(target_payload if isinstance(target_payload, dict) else {})
@@ -1034,6 +1199,17 @@ async def disable_focus_admin_config(
 
 @router.post("/targeted/generate")
 async def targeted_generate(data: GenerateQuestionsRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    targeted_generate 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+
+    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     ensure_paid_access(current_user, detail="定向备考需付费开通后使用")
     questions = await generate_questions_by_position(
         db,
@@ -1053,6 +1229,17 @@ async def targeted_generate(data: GenerateQuestionsRequest, current_user: AuthUs
 
 @router.post("/training/generate")
 async def training_generate(data: TrainingGenerateRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    training_generate 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+
+    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     ensure_paid_access(current_user, detail="专项训练需付费开通后使用")
     target_filters = _target_filters_from_request(data)
     questions = await generate_training_questions(

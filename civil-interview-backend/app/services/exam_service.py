@@ -1,4 +1,11 @@
-"""Exam service: start, upload, complete"""
+"""
+这个文件处理考试创建、答题提交和整场完成；专项练习和全真模拟共用它，是为了让计时、题目顺序和结果保存走同一套规则。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
+import hashlib
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -21,6 +28,17 @@ def _sanitize_upload_name(raw_name: str) -> str:
 
 
 def start_exam(db: Session, data: ExamStartRequest, username: str) -> dict:
+    """
+    创建考试记录前先确认题目存在，避免坏题号进入后续上传、评分和历史链路。
+
+    专项练习和全真模拟都走这里，所以题目去重和顺序保留必须在服务端统一处理。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
+    @param username: 账号唯一标识；历史记录、权益和订单仍以用户名串联，需保持向后兼容。
+    @return: 新建考试 ID、确认后的题目顺序和开始时间。
+    @raises HTTPException: 题目不存在时抛出 404，避免创建无法评分的考试。
+    """
     question_ids = list(dict.fromkeys(data.questionIds))
     existing_ids = {
         row[0]
@@ -57,6 +75,21 @@ def upload_recording(
     media_type: str = "",
     source: str = "live_recording",
 ) -> dict:
+    """
+    保存答题媒体并挂到对应考试题目上，方便后续 ASR、评分结果和人工排查互相追溯。
+
+    文件名会被重新生成，是为了防止用户上传的原文件名覆盖本地文件或泄露奇怪路径。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param exam_id: 考试记录标识；用于把多题作答、扣权益和历史结果绑定到同一次练习。
+    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
+    @param filename: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
+    @param content: 上传文件的字节内容；用于落盘和生成内容哈希。
+    @param media_type: 端侧上报的 MIME 类型；为空时按二进制文件兜底。
+    @param source: 媒体来源标记；用于区分现场录制、补传或测试素材。
+    @return: 上传成功标记、访问路径、文件名、媒体类型和哈希信息。
+    @raises HTTPException: 考试不存在时抛出 404。
+    """
     exam = db.query(Exam).filter(Exam.id == exam_id).first()
     if not exam:
         raise HTTPException(status_code=404, detail="考试未找到")
@@ -81,6 +114,8 @@ def upload_recording(
         "originalFilename": original_name,
         "mediaType": media_type or "application/octet-stream",
         "source": source or "live_recording",
+        "contentSha256": hashlib.sha256(content).hexdigest(),
+        "contentBytes": len(content),
         "uploadedAt": datetime.now(timezone.utc).isoformat(),
     }
     existing_result = answer.score_result if isinstance(answer.score_result, dict) else {}
@@ -92,6 +127,16 @@ def upload_recording(
 
 
 def complete_exam(db: Session, exam_id: str) -> dict:
+    """
+    结束考试时汇总已评分答案并写入历史记录，让结果页和历史页看到同一份成绩。
+
+    这里按已完成评分的题目计算平均分；未评分答案不会被硬算成低分。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param exam_id: 考试记录标识；用于把多题作答、扣权益和历史结果绑定到同一次练习。
+    @return: 完成后的考试状态、平均分、等级和历史记录摘要。
+    @raises HTTPException, IntegrityError: 考试不存在或历史记录写入冲突时抛出。
+    """
     exam = db.query(Exam).filter(Exam.id == exam_id).first()
     if not exam:
         raise HTTPException(status_code=404, detail="考试未找到")

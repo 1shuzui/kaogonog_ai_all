@@ -1,3 +1,10 @@
+<!--
+这个页面给管理员维护定向备面入口和重点分析；增添、上传和编辑都放在这里，避免普通用户看到后台词条。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <div class="targeted-admin page-container">
     <div class="targeted-admin__header">
@@ -42,6 +49,8 @@
           <a-select
             v-model:value="selectedTargetCode"
             class="targeted-admin__select"
+            placeholder="不限"
+            allow-clear
             :disabled="!currentDirections.length"
             @change="handleDirectionChange"
           >
@@ -219,9 +228,13 @@ const currentRegions = computed(() => selectedCategory.value?.children || [])
 const selectedRegion = computed(() => currentRegions.value.find((item) => item.id === selectedRegionId.value) || currentRegions.value[0] || null)
 const currentDirections = computed(() => selectedRegion.value?.directions || [])
 const hasDirectionLevel = computed(() => currentDirections.value.length > 0)
-const selectedDirection = computed(() => currentDirections.value.find((item) => item.id === selectedTargetCode.value) || currentDirections.value[0] || null)
+const selectedDirection = computed(() => (
+  selectedTargetCode.value
+    ? currentDirections.value.find((item) => item.id === selectedTargetCode.value) || null
+    : null
+))
 const selectedTarget = computed(() => (
-  selectedCategory.value && selectedRegion.value && (!hasDirectionLevel.value || selectedDirection.value)
+  selectedCategory.value && selectedRegion.value
     ? mergeTargetPayload(selectedCategory.value, selectedRegion.value, selectedDirection.value || {})
     : null
 ))
@@ -366,18 +379,15 @@ function applySelection(category, region, direction) {
 
 function selectCategory(category) {
   const region = category?.children?.[0]
-  const direction = region?.directions?.[0]
-  applySelection(category, region, direction || null)
+  applySelection(category, region, null)
 }
 
 function selectRegion(region) {
-  const direction = region?.directions?.[0]
-  applySelection(selectedCategory.value, region, direction || null)
+  applySelection(selectedCategory.value, region, null)
 }
 
 function selectDirection(direction) {
-  if (!direction) return
-  selectedTargetCode.value = direction.id || direction.code
+  selectedTargetCode.value = direction?.id || direction?.code || ''
 }
 
 function handleCategoryChange(categoryId) {
@@ -389,7 +399,7 @@ function handleRegionChange(regionId) {
 }
 
 function handleDirectionChange(directionId) {
-  selectDirection(currentDirections.value.find((item) => item.id === directionId))
+  selectDirection(currentDirections.value.find((item) => item.id === directionId) || null)
 }
 
 function queryFromTarget() {

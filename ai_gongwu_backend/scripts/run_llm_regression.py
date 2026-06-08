@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""真实大模型回归与标定脚本。
+"""
+这个脚本跑真实 LLM 回归；它用来观察模型升级或提示词调整后评分口径有没有漂移。
 
-用途：
-1. 强制走真实 LLM 评分链路，不接受确定性兜底冒充成功
-2. 批量执行 regressionCases，并优先使用 llmExpectedMin/llmExpectedMax 判定
-3. 输出 JSON / Markdown 报表，供后续分析模型漂移
-4. 可选把本次实测结果回写到题库 JSON，完成 LLM 区间标定
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
 """
 
 from __future__ import annotations
@@ -34,6 +33,15 @@ from app.models.schemas import RegressionCase, ScoreBand
 
 @dataclass
 class RegressionRow:
+    """
+    RegressionRow 作为公共类型保留，是为了让调用方共享同一套业务语义和数据边界。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
     question_id: str
     sample_label: str
     sample_path: str
@@ -53,6 +61,15 @@ class RegressionRow:
 
 @dataclass(frozen=True)
 class WritebackDecision:
+    """
+    WritebackDecision 作为公共类型保留，是为了让调用方共享同一套业务语义和数据边界。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
     question_id: str
     allowed: bool
     updated: bool = False
@@ -60,6 +77,15 @@ class WritebackDecision:
 
 
 def parse_args() -> argparse.Namespace:
+    """
+    parse_args 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     parser = argparse.ArgumentParser(description="运行真实大模型回归并可选标定 llmExpected 区间。")
     parser.add_argument(
         "--question-id",
@@ -114,6 +140,15 @@ def parse_args() -> argparse.Namespace:
 
 
 def configure_logging(quiet: bool) -> None:
+    """
+    configure_logging 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param quiet: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     if not quiet:
         return
     logging.getLogger().setLevel(logging.WARNING)
@@ -122,6 +157,15 @@ def configure_logging(quiet: bool) -> None:
 
 
 def resolve_sample_path(sample_path: str) -> Path:
+    """
+    resolve_sample_path 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param sample_path: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises FileNotFoundError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    """
     candidates = [
         Path(sample_path),
         REPO_ROOT / sample_path,
@@ -135,6 +179,15 @@ def resolve_sample_path(sample_path: str) -> Path:
 
 
 def resolve_question_json_path(question_id: str) -> Path:
+    """
+    resolve_question_json_path 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises FileNotFoundError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    """
     candidates = sorted((BACKEND_ROOT / "assets" / "questions").rglob(f"{question_id}.json"))
     if not candidates:
         raise FileNotFoundError(f"未找到题目 JSON: {question_id}")
@@ -142,6 +195,16 @@ def resolve_question_json_path(question_id: str) -> Path:
 
 
 def pick_band(score: float, score_bands: Iterable[ScoreBand]) -> str:
+    """
+    pick_band 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param score: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param score_bands: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     for band in score_bands:
         if band.min_score <= score <= band.max_score:
             return band.label
@@ -149,6 +212,15 @@ def pick_band(score: float, score_bands: Iterable[ScoreBand]) -> str:
 
 
 def infer_case_level(case: RegressionCase) -> str:
+    """
+    infer_case_level 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param case: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     sample_name = Path(case.sample_path).name.lower()
     if "high" in sample_name or "高分" in case.label:
         return "high"
@@ -160,18 +232,47 @@ def infer_case_level(case: RegressionCase) -> str:
 
 
 def select_expected_range(case: RegressionCase) -> tuple[float, float, str]:
+    """
+    select_expected_range 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param case: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     if case.llmExpectedMin is not None and case.llmExpectedMax is not None:
         return float(case.llmExpectedMin), float(case.llmExpectedMax), "llmExpected"
     return float(case.expected_min), float(case.expected_max), "deterministicExpected"
 
 
 def expected_band_name(case: RegressionCase, score_bands: Iterable[ScoreBand]) -> str:
+    """
+    expected_band_name 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param case: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param score_bands: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     expected_min, expected_max, _ = select_expected_range(case)
     midpoint = round((expected_min + expected_max) / 2, 1)
     return pick_band(midpoint, score_bands)
 
 
 def render_markdown(rows: list[RegressionRow], generated_at: str) -> str:
+    """
+    render_markdown 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param rows: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param generated_at: 时间边界值；用于保持统计、计费或展示口径一致，需注意时区约定。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     lines = [
         "# LLM 回归测试报告",
         "",
@@ -219,12 +320,32 @@ def render_markdown(rows: list[RegressionRow], generated_at: str) -> str:
 
 
 def emit(message: str) -> None:
-    """统一输出进度，并强制刷新，避免长任务时看起来像卡死。"""
+    """
+    统一输出进度，并强制刷新，避免长任务时看起来像卡死。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param message: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     print(message, flush=True)
 
 
 def normalize_range(lower: float, upper: float, *, lower_bound: float, upper_bound: float) -> tuple[float, float]:
+    """
+    normalize_range 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param lower: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param upper: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param lower_bound: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param upper_bound: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     upper_bound = max(upper_bound, lower_bound)
     lower = round(min(max(lower_bound, lower), upper_bound), 1)
     upper = round(min(max(lower_bound, upper), upper_bound), 1)
@@ -238,6 +359,16 @@ def normalize_range(lower: float, upper: float, *, lower_bound: float, upper_bou
 
 
 def build_calibrated_ranges(rows: list[RegressionRow], question) -> dict[str, tuple[float, float]]:
+    """
+    build_calibrated_ranges 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param rows: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param question: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     margin_by_level = {
         "high": max(1.5, question.fullScore * 0.03),
         "mid": max(2.0, question.fullScore * 0.04),
@@ -299,6 +430,16 @@ def build_calibrated_ranges(rows: list[RegressionRow], question) -> dict[str, tu
 
 
 def assess_writeback_stability(rows: list[RegressionRow], question) -> tuple[bool, str]:
+    """
+    assess_writeback_stability 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param rows: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param question: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     core_levels = {"high", "mid", "low"}
     core_rows = [row for row in rows if row.level in core_levels]
     if not core_rows:
@@ -345,6 +486,17 @@ def assess_writeback_stability(rows: list[RegressionRow], question) -> tuple[boo
 
 
 def writeback_llm_ranges(question_id: str, rows: list[RegressionRow], question) -> WritebackDecision:
+    """
+    writeback_llm_ranges 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
+    @param rows: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param question: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     allowed, reason = assess_writeback_stability(rows, question)
     if not allowed:
         return WritebackDecision(question_id=question_id, allowed=False, updated=False, reason=reason)
@@ -390,6 +542,15 @@ def writeback_llm_ranges(question_id: str, rows: list[RegressionRow], question) 
 
 
 def main() -> int:
+    """
+    main 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises RuntimeError, SystemExit: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    """
     args = parse_args()
     if args.repeat < 1:
         raise SystemExit("--repeat 至少为 1。")

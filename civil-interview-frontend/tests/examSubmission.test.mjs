@@ -1,3 +1,10 @@
+/**
+ * 这个前端测试文件守住 `examSubmission.test` 的回归行为；它让提交表单、页面联动这类细节不会悄悄退化。
+ *
+ * @param 无；测试数据在用例内部构造，避免依赖浏览器录音环境。
+ * @return 通过断言验证上传表单和空录音判断仍符合业务边界。
+ * @raises AssertionError 当提交字段或空录音规则被改坏时由测试框架抛出。
+ */
 import test from 'node:test'
 import assert from 'node:assert/strict'
 

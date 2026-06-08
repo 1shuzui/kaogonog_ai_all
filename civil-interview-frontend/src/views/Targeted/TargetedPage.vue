@@ -1,3 +1,10 @@
+<!--
+这个页面给普通用户做定向备面选择；它只展示可选层级和分析入口，不能把无题库地区伪装成有重点分析。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <div class="targeted-page page-container">
     <div class="targeted-hero card">
@@ -40,7 +47,8 @@
         <a-select
           v-model:value="selectedTargetCode"
           class="targeted-picker__select"
-          placeholder="请选择练习方向"
+          placeholder="不限"
+          allow-clear
           :disabled="!currentDirections.length"
           @change="handleDirectionChange"
         >
@@ -162,9 +170,13 @@ const currentRegions = computed(() => selectedCategory.value?.children || [])
 const selectedRegion = computed(() => currentRegions.value.find((item) => item.id === selectedRegionId.value) || currentRegions.value[0] || null)
 const currentDirections = computed(() => selectedRegion.value?.directions || [])
 const hasDirectionLevel = computed(() => currentDirections.value.length > 0)
-const selectedDirection = computed(() => currentDirections.value.find((item) => item.id === selectedTargetCode.value) || currentDirections.value[0] || null)
+const selectedDirection = computed(() => (
+  selectedTargetCode.value
+    ? currentDirections.value.find((item) => item.id === selectedTargetCode.value) || null
+    : null
+))
 const activeTarget = computed(() => {
-  if (!(selectedCategory.value && selectedRegion.value && (!hasDirectionLevel.value || selectedDirection.value))) {
+  if (!(selectedCategory.value && selectedRegion.value)) {
     return null
   }
   const merged = mergeTargetPayload(selectedCategory.value, selectedRegion.value, selectedDirection.value || {})
@@ -176,7 +188,7 @@ const activeTarget = computed(() => {
 const selectedPathLabel = computed(() => [
   selectedCategory.value?.name,
   selectedRegion.value?.name,
-  hasDirectionLevel.value ? selectedDirection.value?.name : ''
+  hasDirectionLevel.value && selectedDirection.value ? selectedDirection.value?.name : ''
 ].filter(Boolean).join(' / '))
 const selectedModeHints = computed(() => {
   const target = activeTarget.value || {}
@@ -218,18 +230,15 @@ function applyLocation(location) {
 
 function selectCategory(category) {
   const region = category?.children?.[0]
-  const direction = region?.directions?.[0]
-  applyLocation(category && region ? { category, region, direction: direction || null } : null)
+  applyLocation(category && region ? { category, region, direction: null } : null)
 }
 
 function selectRegion(region) {
-  const direction = region?.directions?.[0]
-  applyLocation(selectedCategory.value && region ? { category: selectedCategory.value, region, direction: direction || null } : null)
+  applyLocation(selectedCategory.value && region ? { category: selectedCategory.value, region, direction: null } : null)
 }
 
 function selectDirection(direction) {
-  if (!direction) return
-  selectedTargetCode.value = direction.id || direction.code
+  selectedTargetCode.value = direction?.id || direction?.code || ''
 }
 
 function handleCategoryChange(categoryId) {
@@ -241,7 +250,7 @@ function handleRegionChange(regionId) {
 }
 
 function handleDirectionChange(directionId) {
-  selectDirection(currentDirections.value.find((item) => item.id === directionId))
+  selectDirection(currentDirections.value.find((item) => item.id === directionId) || null)
 }
 
 function initializeSelection() {

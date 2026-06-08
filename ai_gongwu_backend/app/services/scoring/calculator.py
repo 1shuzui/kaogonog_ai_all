@@ -1,4 +1,10 @@
-"""两阶段评分的后处理与证据校验模块。"""
+"""
+这个文件负责旧后端本地评分计算；它把采分点、扣分项和维度分合成可回归的确定性结果。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 
 import difflib
 import json
@@ -168,7 +174,17 @@ def compute_speech_rate_feedback(
     source: str,
     duration_seconds: float | None,
 ) -> dict[str, Any]:
-    """基于真实媒体时长计算语速与建议。"""
+    """
+    基于真实媒体时长计算语速与建议。
+
+    评分子模块封装关键词、分值和提示词策略，注释用于区分题型分类与能力维度。
+
+    @param transcript: 语音转写后的答题文本；评分链路依赖它，但不得把低置信 ASR 当成标准答案。
+    @param source: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param duration_seconds: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     if source not in {"audio", "video"}:
         return {
@@ -1093,7 +1109,17 @@ def build_deterministic_stage_two_payload(
     question: QuestionDefinition,
     evidence_packet: EvidenceExtractionPayload,
 ) -> Dict[str, Any]:
-    """在无模型时构造一个可落入统一后处理链路的确定性评分结果。"""
+    """
+    在无模型时构造一个可落入统一后处理链路的确定性评分结果。
+
+    评分子模块封装关键词、分值和提示词策略，注释用于区分题型分类与能力维度。
+
+    @param transcript: 语音转写后的答题文本；评分链路依赖它，但不得把低置信 ASR 当成标准答案。
+    @param question: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param evidence_packet: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     matched_keywords = match_all_categories(transcript, question.model_dump())
     dimension_scores, scoring_notes = _compute_rule_based_dimension_scores(
@@ -1209,7 +1235,17 @@ def prepare_evidence_packet(
     transcript: str,
     question: QuestionDefinition,
 ) -> tuple[EvidenceExtractionPayload, list[str]]:
-    """整理第一阶段证据抽取结果，并补充规则型缺失证据。"""
+    """
+    整理第一阶段证据抽取结果，并补充规则型缺失证据。
+
+    评分子模块封装关键词、分值和提示词策略，注释用于区分题型分类与能力维度。
+
+    @param raw_llm_result: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param transcript: 语音转写后的答题文本；评分链路依赖它，但不得把低置信 ASR 当成标准答案。
+    @param question: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises ValueError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    """
 
     validation_notes: list[str] = []
 
@@ -1464,7 +1500,20 @@ def apply_post_processing(
     visual_observation: str | None = None,
     extra_validation_notes: Sequence[str] | None = None,
 ) -> EvaluationResult:
-    """把第二阶段评分结果整理成最终可信结果。"""
+    """
+    把第二阶段评分结果整理成最终可信结果。
+
+    评分子模块封装关键词、分值和提示词策略，注释用于区分题型分类与能力维度。
+
+    @param raw_llm_result: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param transcript: 语音转写后的答题文本；评分链路依赖它，但不得把低置信 ASR 当成标准答案。
+    @param question: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param evidence_packet: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param visual_observation: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param extra_validation_notes: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     parsed_result = _parse_raw_result(raw_llm_result)
     validation_notes = list(extra_validation_notes or [])

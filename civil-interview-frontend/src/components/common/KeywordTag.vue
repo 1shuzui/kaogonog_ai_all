@@ -1,3 +1,10 @@
+<!--
+这个标签组件展示采分、扣分和亮点关键词，统一颜色语义，避免用户把扣分项看成加分项。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <span class="keyword-tag" :class="[`keyword-tag--${type}`, { 'keyword-tag--missed': !matched }]">
     <span class="keyword-tag__word">{{ word }}</span>

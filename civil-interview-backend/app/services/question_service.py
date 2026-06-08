@@ -1,4 +1,10 @@
-"""Question service: CRUD, random, import, generate"""
+"""
+这个文件负责题库的增删改查、导入清洗和随机抽题；真实套题信息、题型维度和地区筛选都在这里尽量保持不串味。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 import json
 import random
 import re
@@ -826,6 +832,15 @@ def _upsert_normalized_question(
 
 
 def sync_curated_question_assets(db: Session) -> dict:
+    """
+    sync_curated_question_assets 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    题库服务承担真实套题元数据、筛选和导入缓存的兼容边界，避免前端用展示分类反推题源。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     if not CURATED_QUESTION_DIR.exists():
         return {"synced": 0, "updated": 0}
 
@@ -1208,6 +1223,25 @@ def list_questions(
     current: int = 1,
     page_size: int = 10,
 ) -> dict:
+    """
+    list_questions 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    题库服务承担真实套题元数据、筛选和导入缓存的兼容边界，避免前端用展示分类反推题源。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param keyword: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param dimension: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param province: 地区筛选值；只表示地域，不替代考试体系或岗位方向。
+    @param position: 岗位/方向筛选值；允许为空表示不限，避免无题库分类被误判为通用模板。
+    @param subcategory: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param subcategory2: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param examCategory: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param year: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param current: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param page_size: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     current = max(1, int(current or 1))
     page_size = max(1, min(int(page_size or 10), 1000))
     query = db.query(Question)
@@ -1251,6 +1285,19 @@ def list_questions(
 
 
 def get_random_questions(db: Session, province: str = "national", count: int = 5, dimension: str = "", position: str = "") -> List[dict]:
+    """
+    get_random_questions 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    题库服务承担真实套题元数据、筛选和导入缓存的兼容边界，避免前端用展示分类反推题源。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param province: 地区筛选值；只表示地域，不替代考试体系或岗位方向。
+    @param count: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param dimension: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param position: 岗位/方向筛选值；允许为空表示不限，避免无题库分类被误判为通用模板。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     count = max(1, min(int(count or 5), 100))
     query = _question_base_query(db, province=province, dimension=dimension)
 
@@ -1271,6 +1318,16 @@ def get_random_questions(db: Session, province: str = "national", count: int = 5
 
 
 def get_question(db: Session, question_id: str) -> dict:
+    """
+    get_question 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    题库服务承担真实套题元数据、筛选和导入缓存的兼容边界，避免前端用展示分类反推题源。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    """
     q = db.query(Question).filter(Question.id == question_id).first()
     if not q:
         raise HTTPException(status_code=404, detail="题目未找到")
@@ -1278,6 +1335,16 @@ def get_question(db: Session, question_id: str) -> dict:
 
 
 def create_question(db: Session, data: QuestionCreate) -> dict:
+    """
+    create_question 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    题库服务承担真实套题元数据、筛选和导入缓存的兼容边界，避免前端用展示分类反推题源。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     q = Question(
         id=f"q_{uuid.uuid4().hex[:8]}",
         stem=data.stem,
@@ -1302,6 +1369,17 @@ def create_question(db: Session, data: QuestionCreate) -> dict:
 
 
 def update_question(db: Session, question_id: str, data: QuestionUpdate) -> dict:
+    """
+    update_question 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    题库服务承担真实套题元数据、筛选和导入缓存的兼容边界，避免前端用展示分类反推题源。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
+    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    """
     q = db.query(Question).filter(Question.id == question_id).first()
     if not q:
         raise HTTPException(status_code=404, detail="题目未找到")
@@ -1327,6 +1405,16 @@ def update_question(db: Session, question_id: str, data: QuestionUpdate) -> dict
 
 
 def delete_question(db: Session, question_id: str) -> dict:
+    """
+    delete_question 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    题库服务承担真实套题元数据、筛选和导入缓存的兼容边界，避免前端用展示分类反推题源。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    """
     q = db.query(Question).filter(Question.id == question_id).first()
     if not q:
         raise HTTPException(status_code=404, detail="题目未找到")
@@ -1339,6 +1427,17 @@ def delete_question(db: Session, question_id: str) -> dict:
 
 
 def import_questions(db: Session, content: bytes, filename: str) -> dict:
+    """
+    import_questions 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    题库服务承担真实套题元数据、筛选和导入缓存的兼容边界，避免前端用展示分类反推题源。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param content: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param filename: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    """
     imported, failed = 0, 0
     fname = filename.lower() if filename else ""
 
@@ -1567,7 +1666,18 @@ def import_questions(db: Session, content: bytes, filename: str) -> dict:
 
 
 def import_from_docx(db: Session, file_content: bytes, filename: str, province: str) -> dict:
-    """Import questions from a .docx file by running the import script and syncing to DB."""
+    """
+    import_from_docx 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    题库服务承担真实套题元数据、筛选和导入缓存的兼容边界，避免前端用展示分类反推题源。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param file_content: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
+    @param filename: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
+    @param province: 地区筛选值；只表示地域，不替代考试体系或岗位方向。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    """
     import subprocess
     import tempfile
     import uuid as _uuid
@@ -1641,6 +1751,20 @@ async def generate_questions_by_position(
     source_mode: str = "local",
     target_filters: dict | None = None,
 ) -> List[dict]:
+    """
+    generate_questions_by_position 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    题库服务承担真实套题元数据、筛选和导入缓存的兼容边界，避免前端用展示分类反推题源。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param province: 地区筛选值；只表示地域，不替代考试体系或岗位方向。
+    @param position: 岗位/方向筛选值；允许为空表示不限，避免无题库分类被误判为通用模板。
+    @param count: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param source_mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param target_filters: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     count = min(count, 10)
     sync_curated_question_assets(db)
     normalized_mode = str(source_mode or "local").strip().lower()
@@ -1686,6 +1810,20 @@ async def generate_training_questions(
     province: str = "national",
     target_filters: dict | None = None,
 ) -> List[dict]:
+    """
+    generate_training_questions 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    题库服务承担真实套题元数据、筛选和导入缓存的兼容边界，避免前端用展示分类反推题源。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param dimension: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param count: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param source_mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param province: 地区筛选值；只表示地域，不替代考试体系或岗位方向。
+    @param target_filters: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     count = min(count, 10)
     sync_curated_question_assets(db)
     normalized_mode = str(source_mode or "local").strip().lower()

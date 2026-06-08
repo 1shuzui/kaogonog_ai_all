@@ -1,3 +1,10 @@
+<!--
+这个组件展示题目元数据标签，负责把套题、年份、题型等信息压缩成可扫读的小标签。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <div v-if="allTags.length || keywordTags.length" class="question-meta-tags" :class="{ 'is-emphasis': emphasis, 'is-compact': compact }">
     <div v-if="allTags.length" class="question-meta-tags__row">

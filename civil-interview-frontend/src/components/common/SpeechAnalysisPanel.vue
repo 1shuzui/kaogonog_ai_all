@@ -1,3 +1,10 @@
+<!--
+这个面板展示语速、口头禅和流畅度等辅助反馈，它只补充表达分析，不替代正式评分。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <div class="speech-panel card" v-if="analysis && analysis.fluencyScore > 0">
     <h3><SoundOutlined /> 普通话与表达分析</h3>

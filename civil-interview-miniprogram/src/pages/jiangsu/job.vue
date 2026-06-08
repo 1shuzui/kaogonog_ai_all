@@ -1,3 +1,10 @@
+<!--
+这个小程序江苏岗位页按岗位展示事业单位练习入口，用户侧不再暴露 ABCDE 类文案。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <view class="page">
     <view class="job-hero card">
@@ -95,6 +102,7 @@ import {
   JIANGSU_YEAR_FILTERS,
   getJiangsuJobCategory
 } from '../../utils/jiangsuJobs'
+import { hasToken, promptLoginForAction } from '../../utils/navigation'
 
 const categoryKey = ref('a')
 const loading = ref(false)
@@ -121,6 +129,7 @@ const filteredItems = computed(() => allItems.value.filter((item) => {
 
 onLoad((query) => {
   categoryKey.value = query?.category || 'a'
+  if (!hasToken()) return
   loadQuestions()
 })
 
@@ -163,7 +172,9 @@ async function loadQuestions() {
 
 function goPractice(item) {
   if (!item?.id) return
-  uni.navigateTo({ url: `/pages/exam/prepare?source=jiangsu&mode=free&questionId=${encodeURIComponent(item.id)}` })
+  const url = `/pages/exam/prepare?source=jiangsu&mode=free&questionId=${encodeURIComponent(item.id)}`
+  if (!promptLoginForAction('开始江苏分岗刷题', url)) return
+  uni.navigateTo({ url })
 }
 </script>
 

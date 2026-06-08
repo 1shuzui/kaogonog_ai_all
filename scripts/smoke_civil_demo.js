@@ -1,3 +1,10 @@
+/**
+ * 这个冒烟脚本检查本地演示服务的关键页面和接口；部署前跑它可以快速发现前后端是否断开。
+ *
+ * @param 无；文件级模块依赖导出函数、组合式 API 或调用方传入上下文。
+ * @return 导出可复用的端侧能力，具体返回值由各公共函数保持兼容。
+ * @raises 不主动吞掉业务异常；请求失败、权限不足和运行时错误交由调用方或全局拦截器处理。
+ */
 const frontendBase = process.env.CIVIL_FRONTEND_BASE || 'http://127.0.0.1:3001'
 const proxyBase = `${frontendBase}/api`
 const username = `smoke_${Date.now()}`

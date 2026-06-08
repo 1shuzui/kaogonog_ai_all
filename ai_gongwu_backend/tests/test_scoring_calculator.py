@@ -1,4 +1,10 @@
-"""两阶段评分后处理测试。"""
+"""
+这个测试文件守住 `test_scoring_calculator` 对应的回归场景；它记录的是以前容易出错的业务边界，而不是普通示例代码。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 
 import unittest
 from pathlib import Path
@@ -17,15 +23,41 @@ from app.services.scoring.calculator import (
 
 
 class ScoringCalculatorTestCase(unittest.TestCase):
-    """验证证据抽取校验和证据约束评分。"""
+    """
+    验证证据抽取校验和证据约束评分。
+
+    测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     @classmethod
     def setUpClass(cls):
+        """
+        setUpClass 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         bank = QuestionBank(settings.QUESTION_DB_PATH)
         cls.question = bank.get_question("HN-LX-20200606-01")
         cls.imported_question = bank.get_question("HN-20200816-01")
 
     def test_prepare_evidence_packet_filters_fake_quotes_and_adds_absence_evidence(self):
+        """
+        test_prepare_evidence_packet_filters_fake_quotes_and_adds_absence_evidence 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         transcript = "我觉得要因地制宜，不能一刀切，但没有提河南省情。"
         stage_one_payload = {
             "evidence_items": [
@@ -61,6 +93,15 @@ class ScoringCalculatorTestCase(unittest.TestCase):
         self.assertTrue(notes)
 
     def test_compute_speech_rate_feedback_returns_slow_normal_and_fast(self):
+        """
+        test_compute_speech_rate_feedback_returns_slow_normal_and_fast 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         slow = compute_speech_rate_feedback(
             transcript="这是一段用于测试语速的中文作答内容",
             source="audio",
@@ -85,6 +126,15 @@ class ScoringCalculatorTestCase(unittest.TestCase):
         self.assertIn("适当放慢语速", fast["speech_rate_advice"])
 
     def test_compute_speech_rate_feedback_skips_text_submission(self):
+        """
+        test_compute_speech_rate_feedback_skips_text_submission 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         result = compute_speech_rate_feedback(
             transcript="纯文本提交不应伪造语速",
             source="text",
@@ -96,6 +146,15 @@ class ScoringCalculatorTestCase(unittest.TestCase):
         self.assertEqual(result["speech_rate_advice"], "")
 
     def test_post_processing_requires_evidence_binding_for_deductions(self):
+        """
+        test_post_processing_requires_evidence_binding_for_deductions 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         transcript = (
             "我觉得A市不能一刀切，应该因地制宜，完善农村物流，"
             "帮助农民把农产品包装好。"
@@ -171,6 +230,15 @@ class ScoringCalculatorTestCase(unittest.TestCase):
         self.assertGreater(result.total_score, 0)
 
     def test_post_processing_applies_generic_high_score_floor(self):
+        """
+        test_post_processing_applies_generic_high_score_floor 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         transcript = (
             "A市这样做初衷是好的，想通过县长直播带货推广本地农产品。"
             "但硬性要求必须参加并排名通报，容易把探索创新变成一刀切。"
@@ -256,6 +324,15 @@ class ScoringCalculatorTestCase(unittest.TestCase):
         )
 
     def test_extract_salvageable_fragment_can_recover_non_exact_quote(self):
+        """
+        test_extract_salvageable_fragment_can_recover_non_exact_quote 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         transcript = (
             "这种做法也存在几个值得商榷和警惕的问题。"
             "一刀切与形式主义风险。成功的县长直播带货，往往基于当地特色产业的成熟度。"
@@ -269,6 +346,15 @@ class ScoringCalculatorTestCase(unittest.TestCase):
         self.assertGreaterEqual(len(recovered), 8)
 
     def test_rule_based_scores_can_separate_sample_bands(self):
+        """
+        test_rule_based_scores_can_separate_sample_bands 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         repo_root = Path(__file__).resolve().parents[2]
         expected_files = [
             "低分1.txt",
@@ -309,6 +395,15 @@ class ScoringCalculatorTestCase(unittest.TestCase):
         self.assertGreater(scores["26分.txt"], scores["21分左右.txt"])
 
     def test_imported_reference_answer_can_be_scored_high_without_llm(self):
+        """
+        test_imported_reference_answer_can_be_scored_high_without_llm 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         transcript = self.imported_question.referenceAnswer
         evidence_packet, evidence_notes = prepare_evidence_packet(
             raw_llm_result={},
@@ -336,6 +431,15 @@ class ScoringCalculatorTestCase(unittest.TestCase):
         self.assertTrue(result.matched_keywords["core"])
 
     def test_reference_answer_similarity_floor_can_rescue_under_scored_imported_answer(self):
+        """
+        test_reference_answer_similarity_floor_can_rescue_under_scored_imported_answer 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         transcript = self.imported_question.referenceAnswer
         evidence_packet, evidence_notes = prepare_evidence_packet(
             raw_llm_result={},
@@ -367,6 +471,15 @@ class ScoringCalculatorTestCase(unittest.TestCase):
         )
 
     def test_generic_calibration_can_cap_shallow_imported_answer(self):
+        """
+        test_generic_calibration_can_cap_shallow_imported_answer 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         transcript = (
             "我觉得这个事情总体方向是对的。"
             "如果让我来处理，我会先加强宣传，再做好沟通解释，最后抓好落实。"
@@ -402,6 +515,15 @@ class ScoringCalculatorTestCase(unittest.TestCase):
         )
 
     def test_prepare_evidence_packet_can_normalize_language_alias_dimension_hint(self):
+        """
+        test_prepare_evidence_packet_can_normalize_language_alias_dimension_hint 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         question = QuestionDefinition(
             id="AH-ALIAS-001",
             type="人际沟通",
@@ -449,6 +571,15 @@ class ScoringCalculatorTestCase(unittest.TestCase):
         self.assertTrue(any("已归一到 [⑤语言逻辑]" in note for note in notes))
 
     def test_post_processing_can_resolve_generic_dimension_alias_from_reason_context(self):
+        """
+        test_post_processing_can_resolve_generic_dimension_alias_from_reason_context 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         question = QuestionDefinition(
             id="AH-ALIAS-002",
             type="人际沟通",

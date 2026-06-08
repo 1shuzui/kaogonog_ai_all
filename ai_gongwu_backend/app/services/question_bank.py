@@ -1,14 +1,9 @@
-"""题库服务。
+"""
+这个文件读取旧后端题库资产；它让导入生成的 JSON 能被接口和回归脚本按同一规则使用。
 
-这个模块解决两个问题：
-1. 启动时如何把题库 JSON 正确读进来
-2. 运行时如何根据 question_id 找到对应题目
-
-把题库逻辑单独抽出来后，后续如果你想：
-- 从单题 JSON 升级成多题 JSON
-- 从本地文件升级成数据库
-- 增加题目版本管理
-都可以在这里平滑扩展。
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
 """
 
 import logging
@@ -25,14 +20,26 @@ logger = logging.getLogger(__name__)
 
 
 class QuestionNotFoundError(ValueError):
-    """请求的题目 ID 不存在时抛出的异常。"""
+    """
+    请求的题目 ID 不存在时抛出的异常。
+
+    旧后端服务仍承担回归和迁移参考价值，注释用于说明双轨维护期间的兼容原因。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
 
 class QuestionBank:
-    """基于 JSON 文件的内存题库。
+    """
+    基于 JSON 文件的内存题库。 “内存题库” 的意思是： 程序启动后先读一次文件，之后都从内存查，不再反复读磁盘。
 
-    “内存题库” 的意思是：
-    程序启动后先读一次文件，之后都从内存查，不再反复读磁盘。
+    旧后端服务仍承担回归和迁移参考价值，注释用于说明双轨维护期间的兼容原因。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
     """
 
     def __init__(self, source_path: str | Path):
@@ -42,22 +49,54 @@ class QuestionBank:
 
     @property
     def count(self) -> int:
-        """返回题库中的题目总数。"""
+        """
+        返回题库中的题目总数。
+
+        旧后端服务仍承担回归和迁移参考价值，注释用于说明双轨维护期间的兼容原因。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
 
         return len(self._questions)
 
     def list_ids(self) -> List[str]:
-        """返回所有题目的 ID 列表。"""
+        """
+        返回所有题目的 ID 列表。
+
+        旧后端服务仍承担回归和迁移参考价值，注释用于说明双轨维护期间的兼容原因。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
 
         return sorted(self._questions.keys())
 
     def list_questions(self) -> List[QuestionDefinition]:
-        """返回按题目 ID 排序的题目列表。"""
+        """
+        返回按题目 ID 排序的题目列表。
+
+        旧后端服务仍承担回归和迁移参考价值，注释用于说明双轨维护期间的兼容原因。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
 
         return [self._questions[question_id] for question_id in sorted(self._questions)]
 
     def get_question(self, question_id: str) -> QuestionDefinition:
-        """根据 question_id 返回一条已经校验过结构的题目。"""
+        """
+        根据 question_id 返回一条已经校验过结构的题目。
+
+        旧后端服务仍承担回归和迁移参考价值，注释用于说明双轨维护期间的兼容原因。
+
+        @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
+        @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+        @raises QuestionNotFoundError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+        """
 
         if question_id not in self._questions:
             available_ids = ", ".join(self.list_ids()) or "无"

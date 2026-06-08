@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Small-batch benchmark for Whisper vs FunASR."""
+"""
+这个脚本用样本音频比较 ASR 效果；调 FunASR 参数时先看它输出的错字率和耗时。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 
 from __future__ import annotations
 
@@ -30,6 +36,15 @@ from app.services.media.audio_transcriber import get_transcriber
 
 @dataclass
 class ASRRow:
+    """
+    ASRRow 作为公共类型保留，是为了让调用方共享同一套业务语义和数据边界。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
     sample_name: str
     provider: str
     audio_path: str
@@ -67,6 +82,15 @@ DEFAULT_SAMPLE_SET = [
 
 
 def parse_args() -> argparse.Namespace:
+    """
+    parse_args 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     parser = argparse.ArgumentParser(description="对比 Whisper 与 FunASR 的小批量 ASR 结果。")
     parser.add_argument(
         "--samples",
@@ -88,6 +112,16 @@ def parse_args() -> argparse.Namespace:
 
 
 def pick_writable_dir(preferred: str | Path, fallback_name: str) -> Path:
+    """
+    pick_writable_dir 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param preferred: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param fallback_name: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises RuntimeError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    """
     for candidate in (Path(preferred).resolve(), Path(tempfile.gettempdir()) / fallback_name):
         try:
             candidate.mkdir(parents=True, exist_ok=True)
@@ -101,12 +135,31 @@ def pick_writable_dir(preferred: str | Path, fallback_name: str) -> Path:
 
 
 def normalize_text(text: str) -> str:
+    """
+    normalize_text 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     return "".join(
         ch for ch in text.lower().strip() if ch.isalnum() or "\u4e00" <= ch <= "\u9fff"
     )
 
 
 def levenshtein(a: str, b: str) -> int:
+    """
+    levenshtein 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param a: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param b: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     if not a:
         return len(b)
     if not b:
@@ -124,6 +177,16 @@ def levenshtein(a: str, b: str) -> int:
 
 
 def cer(pred: str, gold: str) -> float:
+    """
+    cer 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param pred: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param gold: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     pred_norm = normalize_text(pred)
     gold_norm = normalize_text(gold)
     if not gold_norm:
@@ -132,6 +195,15 @@ def cer(pred: str, gold: str) -> float:
 
 
 def load_samples(sample_paths: list[str] | None) -> list[dict[str, object]]:
+    """
+    load_samples 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param sample_paths: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     if not sample_paths:
         return DEFAULT_SAMPLE_SET
     samples: list[dict[str, object]] = []
@@ -142,11 +214,30 @@ def load_samples(sample_paths: list[str] | None) -> list[dict[str, object]]:
 
 
 def download_file(url: str, target: Path) -> None:
+    """
+    download_file 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param url: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param target: 定向备面目标；承载考试体系、地区和岗位组合，不能只靠关键词推断。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     target.parent.mkdir(parents=True, exist_ok=True)
     urllib.request.urlretrieve(url, target)
 
 
 def maybe_copy_funasr_examples(samples: list[dict[str, object]]) -> bool:
+    """
+    maybe_copy_funasr_examples 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param samples: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     cache_dir = os.environ.get("MODELSCOPE_CACHE")
     if not cache_dir:
         return False
@@ -170,6 +261,15 @@ def maybe_copy_funasr_examples(samples: list[dict[str, object]]) -> bool:
 
 
 def build_samples_from_local_examples(samples: list[dict[str, object]]) -> bool:
+    """
+    build_samples_from_local_examples 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param samples: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     cache_dir = os.environ.get("MODELSCOPE_CACHE")
     if not cache_dir:
         return False
@@ -192,6 +292,15 @@ def build_samples_from_local_examples(samples: list[dict[str, object]]) -> bool:
 
 
 def create_clip(sample: dict[str, object]) -> None:
+    """
+    create_clip 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param sample: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     source_path = Path(str(sample["source_path"]))
     target_path = Path(str(sample["path"]))
     if target_path.exists():
@@ -237,6 +346,15 @@ def create_clip(sample: dict[str, object]) -> None:
 
 
 def prepare_samples(samples: list[dict[str, object]]) -> None:
+    """
+    prepare_samples 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param samples: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     if not build_samples_from_local_examples(samples):
         writable_asset_dir = pick_writable_dir(ASSET_DIR, "kaogong_ai_asr_samples")
         for sample in samples:
@@ -264,6 +382,16 @@ def prepare_samples(samples: list[dict[str, object]]) -> None:
 
 
 def run_provider(provider: str, samples: list[dict[str, object]]) -> list[ASRRow]:
+    """
+    run_provider 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param provider: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param samples: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     transcriber = get_transcriber(provider)
     rows: list[ASRRow] = []
 
@@ -312,6 +440,16 @@ def run_provider(provider: str, samples: list[dict[str, object]]) -> list[ASRRow
 
 
 def summarize(rows: list[ASRRow], provider: str) -> dict[str, float]:
+    """
+    summarize 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param rows: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param provider: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     provider_rows = [row for row in rows if row.provider == provider]
     if not provider_rows:
         return {"avg_cer": 1.0, "avg_seconds": 0.0}
@@ -322,6 +460,15 @@ def summarize(rows: list[ASRRow], provider: str) -> dict[str, float]:
 
 
 def choose_winner(rows: list[ASRRow]) -> str:
+    """
+    choose_winner 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param rows: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     whisper = summarize(rows, "whisper")
     funasr = summarize(rows, "funasr")
     if funasr["avg_cer"] < whisper["avg_cer"]:
@@ -336,6 +483,16 @@ def choose_winner(rows: list[ASRRow]) -> str:
 
 
 def render_markdown(rows: list[ASRRow], generated_at: str) -> str:
+    """
+    render_markdown 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param rows: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param generated_at: 时间边界值；用于保持统计、计费或展示口径一致，需注意时区约定。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     whisper = summarize(rows, "whisper")
     funasr = summarize(rows, "funasr")
     winner = choose_winner(rows)
@@ -359,6 +516,15 @@ def render_markdown(rows: list[ASRRow], generated_at: str) -> str:
 
 
 def main() -> int:
+    """
+    main 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     args = parse_args()
     samples = load_samples(args.samples)
     if not args.skip_prepare:

@@ -1,3 +1,10 @@
+"""
+这个文件处理试用版资格和完成状态；试用题也要求登录，是为了防止同一用户反复领取免费权益。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 from datetime import date
 
 from fastapi import HTTPException
@@ -85,6 +92,16 @@ def _sync_preferences_trial(user: User, subscription: UserSubscription):
 
 
 def get_trial_status(db: Session, current_user: AuthUser) -> dict:
+    """
+    get_trial_status 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     user = get_user_or_404(db, current_user.username)
     subscription = _get_or_create_trial_subscription(db, user.username)
     trial_completed = bool(subscription.trial_completed)
@@ -101,6 +118,16 @@ def get_trial_status(db: Session, current_user: AuthUser) -> dict:
 
 
 def get_trial_question(db: Session, current_user: AuthUser) -> dict:
+    """
+    get_trial_question 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     get_user_or_404(db, current_user.username)
     question = _pick_trial_question(db)
     if not question:
@@ -117,6 +144,16 @@ def get_trial_question(db: Session, current_user: AuthUser) -> dict:
 
 
 def complete_trial(db: Session, current_user: AuthUser) -> dict:
+    """
+    complete_trial 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     user = get_user_or_404(db, current_user.username)
     subscription = _get_or_create_trial_subscription(db, user.username)
     subscription.is_trial = True

@@ -1,3 +1,10 @@
+<!--
+这个小程序题库页展示筛选入口和题目列表，未登录可以浏览结构，真实练习前再拦登录。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <view class="page page--tab">
     <view class="bank-header">
@@ -21,8 +28,7 @@
       </view>
     </view>
 
-    <template v-else>
-      <view class="card filter-card">
+    <view class="card filter-card">
         <picker :range="examCategoryNames" :value="examCategoryIndex" @change="onExamCategoryChange">
           <view class="filter-row">
             <text>考试类型</text>
@@ -74,8 +80,9 @@
         <view class="quick-actions">
           <button class="secondary-button quick-actions__btn" @tap="startRandomPractice">随机练习</button>
         </view>
-      </view>
+    </view>
 
+    <template v-if="!readonlyMode">
       <view v-if="bankStore.questions.length">
         <view v-for="q in bankStore.questions" :key="q.id" class="card bank-item" @tap="openDetail(q)">
           <view class="bank-item__header">
@@ -163,7 +170,7 @@ import { useUserStore } from '../../stores/user'
 import { hasPremiumAccess } from '../../utils/access'
 import { EXAM_CATEGORIES, PROVINCES, QUESTION_CATEGORIES, SUBCATEGORY_LABELS, YEAR_OPTIONS } from '../../utils/constants'
 import { JIANGSU_TARGETED_POSITIONS } from '../../utils/jiangsuJobs'
-import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
+import { hideLoading, hasToken, promptLoginForAction, showLoading, toast } from '../../utils/navigation'
 
 const billingStore = useBillingStore()
 const bankStore = useQuestionBankStore()
@@ -253,7 +260,11 @@ const docxProvinceIndex = computed(() => Math.max(0, DOCX_PROVINCES.findIndex((i
 const docxProvinceLabel = computed(() => DOCX_PROVINCES[docxProvinceIndex.value]?.name || '全国通用')
 
 onShow(async () => {
-  if (!requireLogin()) return
+  if (!hasToken()) {
+    bankStore.questions = []
+    bankStore.pagination.total = 0
+    return
+  }
   await Promise.allSettled([
     userStore.loadProvinces(),
     userStore.loadUserInfo(),
@@ -293,6 +304,7 @@ function onProvinceChange(event) {
   const selected = provinceOptions.value[Number(event.detail.value)]
   selectedProvince.value = selected?.code || 'national'
   if (selectedProvince.value !== 'jiangsu') selectedPosition.value = ''
+  if (!hasToken()) return
   onFilterChange()
 }
 
@@ -301,30 +313,35 @@ function onExamCategoryChange(event) {
   examCategoryFilter.value = selected?.code || ''
   subcategoryFilter.value = ''
   subcategory2Filter.value = ''
+  if (!hasToken()) return
   onFilterChange()
 }
 
 function onCategoryChange(event) {
   const selected = QUESTION_CATEGORIES[Number(event.detail.value)]
   selectedDimension.value = selected?.key || ''
+  if (!hasToken()) return
   onFilterChange()
 }
 
 function onDimensionChange(event) {
   const selected = dimensionOptions.value[Number(event.detail.value)]
   selectedDimension.value = selected?.key || ''
+  if (!hasToken()) return
   onFilterChange()
 }
 
 function onPositionChange(event) {
   const selected = positionOptions.value[Number(event.detail.value)]
   selectedPosition.value = selected?.code || ''
+  if (!hasToken()) return
   onFilterChange()
 }
 
 function onCategoryReviewChange(event) {
   const selected = categoryReviewOptions.value[Number(event.detail.value)]
   categoryReviewFilter.value = selected?.value || ''
+  if (!hasToken()) return
   onFilterChange()
 }
 
@@ -333,17 +350,20 @@ function onYearChange(event) {
 }
 
 function onFilterChange() {
+  if (!promptLoginForAction('检索题库', '/pages/bank/index')) return
   if (readonlyMode.value) return
   bankStore.setFilters(buildFilters())
   fetchFirstPage()
 }
 
 function goPage(page) {
+  if (!promptLoginForAction('浏览题库列表', '/pages/bank/index')) return
   if (readonlyMode.value) return
   bankStore.fetchQuestions({ current: page, pageSize: bankStore.pagination.pageSize })
 }
 
 function openDetail(question) {
+  if (!promptLoginForAction('查看题目详情', `/pages/bank/detail?id=${encodeURIComponent(question.id)}`)) return
   if (readonlyMode.value) return
   uni.navigateTo({ url: `/pages/bank/detail?id=${encodeURIComponent(question.id)}` })
 }
@@ -362,26 +382,32 @@ async function onDelete(question) {
 }
 
 function goEdit(question) {
+  if (!promptLoginForAction('编辑题目', `/pages/admin/question-edit?id=${encodeURIComponent(question.id)}`)) return
   uni.navigateTo({ url: `/pages/admin/question-edit?id=${encodeURIComponent(question.id)}` })
 }
 
 function goAdd() {
+  if (!promptLoginForAction('新增题目', '/pages/admin/question-edit')) return
   uni.navigateTo({ url: '/pages/admin/question-edit' })
 }
 
 function goImport() {
+  if (!promptLoginForAction('导入题库', '/pages/admin/import')) return
   uni.navigateTo({ url: '/pages/admin/import' })
 }
 
 function goPricing() {
+  if (!promptLoginForAction('开通套餐', '/pages/pricing/index')) return
   uni.navigateTo({ url: '/pages/pricing/index' })
 }
 
 function startTrial() {
+  if (!promptLoginForAction('试用 1 题', '/pages/exam/prepare?trial=1')) return
   uni.navigateTo({ url: '/pages/exam/prepare?trial=1' })
 }
 
 async function startRandomPractice() {
+  if (!promptLoginForAction('随机练习', '/pages/bank/index')) return
   if (readonlyMode.value) return
   try {
     const questions = await bankStore.fetchRandom({ count: 1, province: selectedProvince.value || '' })

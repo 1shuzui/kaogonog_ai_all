@@ -1,4 +1,10 @@
-"""One-shot script: refund all sandbox paid orders via WeChat virtual payment API."""
+"""
+这个脚本用于沙箱或人工场景下测试退款查询；它直接碰支付接口，运行前要确认订单和环境不是误指现网。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -11,6 +17,15 @@ import uuid
 
 
 def main():
+    """
+    main 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    运维脚本直接触达现网配置或订单数据，注释用于提醒执行前提和可追溯风险。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     db = SessionLocal()
     try:
         orders = db.query(PaymentOrder).filter(PaymentOrder.status == "paid").all()

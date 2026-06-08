@@ -1,3 +1,10 @@
+<!--
+这个弱项分析组件展示能力短板和改进方向，和题型分类分开，避免把“能力维度”当训练分类。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <div class="weakness-analysis card">
     <h3 class="weakness-analysis__title">

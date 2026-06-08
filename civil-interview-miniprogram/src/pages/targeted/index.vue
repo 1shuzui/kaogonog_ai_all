@@ -1,3 +1,10 @@
+<!--
+这个小程序页面让用户按考试体系、地区和方向选择定向备面；方向可以不限，开始练习前再要求登录和权益。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <view class="page page--tab">
     <text class="page-title">定向备面</text>
@@ -18,24 +25,24 @@
       <view class="section-head">
         <text class="section-title">选择考试方向</text>
       </view>
-      <picker :range="categoryNames" :value="categoryIndex" @change="onCategoryPickerChange">
+      <LightSelector title="考试体系" :options="categoryNames" :value="categoryIndex" @change="onCategoryPickerChange">
         <view class="picker-row">
           <text>考试体系</text>
           <text class="picker-row__value">{{ selectedCategoryName }}</text>
         </view>
-      </picker>
-      <picker :range="regionNames" :value="regionIndex" @change="onRegionPickerChange">
+      </LightSelector>
+      <LightSelector :title="regionLevelLabel" :options="regionNames" :value="regionIndex" @change="onRegionPickerChange">
         <view class="picker-row">
           <text>{{ regionLevelLabel }}</text>
           <text class="picker-row__value">{{ selectedRegionName }}</text>
         </view>
-      </picker>
-      <picker v-if="hasDirectionLevel" :range="directionNames" :value="directionIndex" @change="onDirectionPickerChange">
+      </LightSelector>
+      <LightSelector v-if="hasDirectionLevel" :title="directionLevelLabel" :options="directionNames" :value="directionIndex" @change="onDirectionPickerChange">
         <view class="picker-row">
           <text>{{ directionLevelLabel }}</text>
           <text class="picker-row__value">{{ selectedDirectionName }}</text>
         </view>
-      </picker>
+      </LightSelector>
       <view class="picker-row picker-row--year" @tap="showYearPicker = true">
         <text>年份</text>
         <text class="picker-row__value">{{ yearLabel }}</text>
@@ -98,6 +105,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import LightSelector from '../../components/LightSelector.vue'
 import QuestionCard from '../../components/QuestionCard.vue'
 import { useBillingStore } from '../../stores/billing'
 import { useExamStore } from '../../stores/exam'
@@ -108,7 +116,7 @@ import { hasPremiumAccess } from '../../utils/access'
 import { mergeTargetPayload } from '../../utils/targetedOptions'
 import { YEAR_OPTIONS } from '../../utils/constants'
 import { isQuestionScoringSupported, getScoringUnavailableMessage } from '../../utils/questionPresentation'
-import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
+import { promptLoginForAction, showLoading, toast, hideLoading } from '../../utils/navigation'
 
 const billingStore = useBillingStore()
 const subscriptionStore = useSubscriptionStore()
@@ -129,19 +137,25 @@ const currentRegions = computed(() => selectedCategory.value?.children || [])
 const selectedRegion = computed(() => currentRegions.value.find((item) => item.id === selectedRegionId.value) || currentRegions.value[0] || null)
 const currentDirections = computed(() => selectedRegion.value?.directions || [])
 const hasDirectionLevel = computed(() => currentDirections.value.length > 0)
-const selectedDirection = computed(() => currentDirections.value.find((item) => item.id === selectedTargetCode.value) || currentDirections.value[0] || null)
+const selectedDirection = computed(() => (
+  selectedTargetCode.value
+    ? currentDirections.value.find((item) => item.id === selectedTargetCode.value) || null
+    : null
+))
 const categoryNames = computed(() => positionTree.value.map((item) => item.name))
 const regionNames = computed(() => currentRegions.value.map((item) => item.name))
-const directionNames = computed(() => currentDirections.value.map((item) => item.name))
+const directionNames = computed(() => ['不限', ...currentDirections.value.map((item) => item.name)])
 const categoryIndex = computed(() => Math.max(0, positionTree.value.findIndex((item) => item.id === selectedCategoryId.value)))
 const regionIndex = computed(() => Math.max(0, currentRegions.value.findIndex((item) => item.id === selectedRegionId.value)))
-const directionIndex = computed(() => Math.max(0, currentDirections.value.findIndex((item) => item.id === selectedTargetCode.value)))
+const directionIndex = computed(() => {
+  const index = currentDirections.value.findIndex((item) => item.id === selectedTargetCode.value)
+  return index >= 0 ? index + 1 : 0
+})
 const selectedCategoryName = computed(() => selectedCategory.value?.name || '请选择')
 const selectedRegionName = computed(() => selectedRegion.value?.name || '请选择')
-const selectedDirectionName = computed(() => selectedDirection.value?.name || '请选择')
+const selectedDirectionName = computed(() => selectedDirection.value?.name || '不限')
 const activeTarget = computed(() => {
   if (!selectedCategory.value || !selectedRegion.value) return null
-  if (hasDirectionLevel.value && !selectedDirection.value) return null
   const merged = mergeTargetPayload(selectedCategory.value, selectedRegion.value, selectedDirection.value || {})
   if (selectedYears.value.length) {
     merged.year = selectedYears.value
@@ -151,7 +165,7 @@ const activeTarget = computed(() => {
 const selectedPathLabel = computed(() => [
   selectedCategoryName.value,
   selectedRegionName.value,
-  hasDirectionLevel.value ? selectedDirectionName.value : ''
+  hasDirectionLevel.value && selectedDirection.value ? selectedDirectionName.value : ''
 ].filter((item) => item && item !== '请选择').join(' / '))
 const selectedModeHints = computed(() => {
   const target = activeTarget.value || {}
@@ -197,18 +211,15 @@ function applyLocation(location) {
 
 function selectCategory(category) {
   const region = category?.children?.[0]
-  const direction = region?.directions?.[0]
-  applyLocation(category && region ? { category, region, direction: direction || null } : null)
+  applyLocation(category && region ? { category, region, direction: null } : null)
 }
 
 function selectRegion(region) {
-  const direction = region?.directions?.[0]
-  applyLocation(selectedCategory.value && region ? { category: selectedCategory.value, region, direction: direction || null } : null)
+  applyLocation(selectedCategory.value && region ? { category: selectedCategory.value, region, direction: null } : null)
 }
 
 function selectDirection(direction) {
-  if (!direction) return
-  selectedTargetCode.value = direction.id || direction.code
+  selectedTargetCode.value = direction?.id || direction?.code || ''
 }
 
 function onCategoryPickerChange(event) {
@@ -220,7 +231,8 @@ function onRegionPickerChange(event) {
 }
 
 function onDirectionPickerChange(event) {
-  selectDirection(currentDirections.value[Number(event.detail.value)])
+  const index = Number(event.detail.value)
+  selectDirection(index <= 0 ? null : currentDirections.value[index - 1])
 }
 
 function onYearChange(event) {
@@ -240,7 +252,6 @@ function initializeSelection() {
 watch(positionTree, initializeSelection, { immediate: true })
 
 onShow(() => {
-  if (!requireLogin()) return
   targetedStore.fetchPositionTree().then(initializeSelection).catch(initializeSelection)
   refreshAccessState().catch(() => null)
 })
@@ -266,18 +277,23 @@ function buildFocusUrl() {
 }
 
 function goFocus() {
-  if (readonlyMode.value) return
   if (!canProceed.value) return
+  const url = buildFocusUrl()
+  if (!promptLoginForAction('分析面试重点', url)) return
+  if (readonlyMode.value) {
+    toast('请先开通套餐后使用定向备面')
+    return
+  }
   syncSelection()
-  uni.navigateTo({ url: buildFocusUrl() })
+  uni.navigateTo({ url })
 }
 
 async function generate() {
-  if (readonlyMode.value) return
   if (!canProceed.value) {
     toast('请先选择考试方向')
     return
   }
+  if (!promptLoginForAction('生成定向训练题', '/pages/targeted/index')) return
   await refreshAccessState().catch(() => null)
   if (readonlyMode.value) {
     toast('请先开通套餐后使用定向备面')
@@ -299,6 +315,7 @@ async function generate() {
 }
 
 async function startQuestion(question) {
+  if (!promptLoginForAction('开始定向练习', '/pages/targeted/index')) return
   if (readonlyMode.value) return
   if (!isQuestionScoringSupported(question)) {
     toast(getScoringUnavailableMessage(1))
@@ -324,15 +341,18 @@ async function startQuestion(question) {
 }
 
 function startGeneratedPractice() {
+  if (!promptLoginForAction('开始定向练习', '/pages/exam/prepare?source=targeted')) return
   if (readonlyMode.value) return
   uni.navigateTo({ url: '/pages/exam/prepare?source=targeted' })
 }
 
 function goPricing() {
+  if (!promptLoginForAction('开通套餐', '/pages/pricing/index')) return
   uni.navigateTo({ url: '/pages/pricing/index' })
 }
 
 function startTrial() {
+  if (!promptLoginForAction('试用 1 题', '/pages/exam/prepare?trial=1')) return
   uni.navigateTo({ url: '/pages/exam/prepare?trial=1' })
 }
 </script>

@@ -1,3 +1,10 @@
+<!--
+这个全真考场组件按真实套题推进作答，负责题序、计时和录制状态，不在作答前展示题目分数。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <div v-if="examStore.currentQuestion" class="full-exam-room">
     <div class="full-exam-room__bg" :style="{ backgroundImage: `url(${fullExamRoomBg})` }"></div>
@@ -320,6 +327,8 @@ import AudioWaveform from '@/components/recording/AudioWaveform.vue'
 import VideoPreview from '@/components/recording/VideoPreview.vue'
 import QuestionMetaTags from '@/components/common/QuestionMetaTags.vue'
 import QuestionRichContent from '@/components/common/QuestionRichContent.vue'
+import { reportUsage } from '@/api/usage'
+import { useBillingStore } from '@/stores/billing'
 import { logger } from '@/utils/logger'
 import fullExamRoomBg from '@/assets/exam/full-exam-room-ai-clean.jpg'
 import fullExamRoomReference from '@/assets/exam/full-exam-room-live-current.jpg'
@@ -327,6 +336,7 @@ import fullExamRoomReference from '@/assets/exam/full-exam-room-live-current.jpg
 const router = useRouter()
 const route = useRoute()
 const examStore = useExamStore()
+const billingStore = useBillingStore()
 const recorder = useMediaRecorder()
 const { isOnline } = useNetworkStatus()
 
@@ -741,14 +751,42 @@ async function submitCurrentAnswer(options = {}) {
   if (finishRequested.value || examStore.status !== EXAM_STATUS.ANSWERING) return
 
   try {
+    const usageSeconds = Math.max(1, Math.ceil(Number(recorderDuration.value) || 0))
     const blob = await recorder.stopRecording()
-    await examStore.submitAnswer(blob)
+    const answer = await examStore.submitAnswer(blob)
+    await syncUsage(answer, usageSeconds)
 
     if (finishAfterSubmit || totalRemainingSeconds.value <= 0) {
       await finishExam()
     }
   } catch (error) {
     message.error(`提交失败：${error?.message || '未知错误'}`)
+  }
+}
+
+async function syncUsage(answer, usageSeconds) {
+  if (!answer?.examId || !answer?.questionId) return
+  try {
+    const result = await reportUsage({
+      examId: answer.examId,
+      questionId: answer.questionId,
+      usageSeconds,
+      usageType: 'full_exam'
+    })
+    billingStore.$patch({
+      remainingMinutes: Math.max(0, Number(result?.remainingMinutes ?? 0)),
+      remainingDailyMinutes: Math.max(0, Number(result?.remainingDailyMinutes ?? 0)),
+      usedMinutes: Math.max(0, Number(result?.usedMinutes ?? billingStore.usedMinutes)),
+      dailyLimitMinutes: Math.max(0, Number(result?.dailyLimitMinutes ?? billingStore.dailyLimitMinutes))
+    })
+    billingStore.persist()
+  } catch (error) {
+    logger.warn('Usage report failed', {
+      component: 'FullExamRoom',
+      examId: answer.examId,
+      questionId: answer.questionId,
+      error: error?.message
+    })
   }
 }
 

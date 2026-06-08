@@ -1,3 +1,10 @@
+<!--
+这个小程序页面展示套餐和开通入口；审核要求虚拟权益走微信虚拟支付，所以页面文案要克制，发起支付前也要确认登录。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <view class="page">
     <text class="page-title">套餐中心</text>
@@ -64,7 +71,7 @@ import { ref } from 'vue'
 import { confirmVirtualPaymentOrder, createPaymentOrder, getPaymentOrder } from '../../api/payment'
 import { useBillingStore } from '../../stores/billing'
 import { useUserStore } from '../../stores/user'
-import { toast } from '../../utils/navigation'
+import { promptLoginForAction, toast } from '../../utils/navigation'
 import { getWechatLoginCode } from '../../utils/wechatLogin'
 
 const billingStore = useBillingStore()
@@ -144,9 +151,8 @@ function validateWechatVirtualPayParams(payParams = {}) {
 }
 
 async function ensureLoginForVirtualPayment() {
-  if (userStore.isAuthenticated) return
-  const code = await getWechatLoginCode()
-  await userStore.loginWithWechat(code, '2026-05-12')
+  if (userStore.isAuthenticated) return true
+  return promptLoginForAction('开通套餐', '/pages/pricing/index')
 }
 
 function loginForPayCode() {
@@ -188,7 +194,7 @@ async function activate(plan) {
   if (!PACKAGE_BY_PLAN[plan] || loadingPlan.value) return
   loadingPlan.value = plan
   try {
-    await ensureLoginForVirtualPayment()
+    if (!await ensureLoginForVirtualPayment()) return
     const code = await loginForPayCode()
     const order = await createPaymentOrder({
       packageCode: PACKAGE_BY_PLAN[plan],
@@ -228,6 +234,7 @@ async function activate(plan) {
 }
 
 function startTrial() {
+  if (!promptLoginForAction('试用 1 题', '/pages/exam/prepare?trial=1')) return
   uni.navigateTo({ url: '/pages/exam/prepare?trial=1' })
 }
 </script>

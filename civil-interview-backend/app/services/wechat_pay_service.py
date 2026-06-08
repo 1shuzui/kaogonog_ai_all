@@ -1,3 +1,10 @@
+"""
+这个文件只负责和微信虚拟支付接口打交道；签名、现网/沙箱、查询和退款都集中在这里，便于排查审核或支付失败。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 from datetime import datetime, timezone
 import hashlib
 import hmac
@@ -20,10 +27,30 @@ X_PAY_REFUND_ORDER_URL = f"https://api.weixin.qq.com{X_PAY_REFUND_ORDER_PATH}"
 
 
 class WechatPayService:
+    """
+    WechatPayService 作为公共类型保留，是为了让调用方共享同一套业务语义和数据边界。
+
+    微信支付服务对接外部平台，注释需要说明现网配置、回调和退款查询的风险边界。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
     _access_token: str = ""
     _access_token_expires_at: int = 0
 
     def get_pay_payload(self, order: PaymentOrder, package: SubscriptionPackage, data: PaymentOrderCreateRequest) -> dict:
+        """
+        get_pay_payload 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+        微信支付服务对接外部平台，注释需要说明现网配置、回调和退款查询的风险边界。
+
+        @param order: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+        @param package: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+        @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
+        @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+        @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+        """
         if data.payChannel != "wechat_virtual":
             raise HTTPException(status_code=400, detail="虚拟商品购买只能使用微信官方小程序虚拟支付")
         if data.scene != VIRTUAL_PAY_SCENE:
@@ -33,6 +60,16 @@ class WechatPayService:
         return self._build_virtual_payment_payload(order, package, data)
 
     def query_virtual_order(self, order: PaymentOrder, package: SubscriptionPackage) -> dict:
+        """
+        query_virtual_order 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+        微信支付服务对接外部平台，注释需要说明现网配置、回调和退款查询的风险边界。
+
+        @param order: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+        @param package: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+        @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+        @raises HTTPException, ValueError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+        """
         extra_payload = order.extra_payload if isinstance(order.extra_payload, dict) else {}
         openid = str(extra_payload.get("openId") or "")
         if not openid:
@@ -81,6 +118,20 @@ class WechatPayService:
         }
 
     def refund_virtual_order(self, order: PaymentOrder, refund_order_id: str, left_fee: int, refund_fee: int, refund_reason: str = "1", req_from: str = "1") -> dict:
+        """
+        refund_virtual_order 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+        微信支付服务对接外部平台，注释需要说明现网配置、回调和退款查询的风险边界。
+
+        @param order: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+        @param refund_order_id: 业务对象标识；用于跨接口追溯同一条记录，调用方应避免传入展示名。
+        @param left_fee: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+        @param refund_fee: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+        @param refund_reason: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+        @param req_from: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+        @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+        @raises HTTPException, ValueError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+        """
         extra_payload = order.extra_payload if isinstance(order.extra_payload, dict) else {}
         openid = str(extra_payload.get("openId") or "")
         if not openid:

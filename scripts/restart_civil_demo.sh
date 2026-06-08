@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# 这个脚本重启本地演示环境；它会同时拉起后端和前端，方便改完后做人工冒烟。
+# @param: 无；脚本从仓库路径推导运行目录和日志位置。
+# @return: 启动本地后端与前端服务，并在日志中保留失败原因。
+# @raises: 当 Python 环境缺依赖、服务探活失败或前端启动失败时返回非零状态。
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

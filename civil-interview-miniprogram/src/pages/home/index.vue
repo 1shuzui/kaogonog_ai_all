@@ -1,3 +1,10 @@
+<!--
+这个小程序首页负责未登录可浏览内容、练习入口和用户偏好弹窗；它不能一进来就索要手机号、头像或昵称。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <view class="page page--tab">
     <view class="home-hero">
@@ -13,6 +20,14 @@
         label="平均分"
         color="#ffffff"
       />
+    </view>
+
+    <view v-if="!isLoggedIn" class="guest-tip card">
+      <view class="guest-tip__copy">
+        <text class="guest-tip__title">可先浏览功能</text>
+        <text class="guest-tip__desc">登录后可使用试用题、保存练习记录并开通训练权益。</text>
+      </view>
+      <button class="secondary-button guest-tip__button" @tap="goLogin">登录</button>
     </view>
 
     <StatGrid :items="statItems" />
@@ -118,7 +133,7 @@
       </view>
     </view>
     <view v-else-if="sectionOpen.recent" class="card">
-      <EmptyState title="暂无练习记录" desc="完成一次模考后，这里会展示近期得分和趋势。" mark="0" />
+      <EmptyState :title="isLoggedIn ? '暂无练习记录' : '登录后查看练习记录'" :desc="isLoggedIn ? '完成一次模考后，这里会展示近期得分和趋势。' : '你可以先浏览功能，准备试用或练习时再登录。'" mark="0" />
     </view>
 
     <view v-if="historyStore.stats?.dimensionAverages?.length" class="section-toggle" @tap="toggleSection('ability')">
@@ -179,7 +194,7 @@
           </view>
         </view>
       </scroll-view>
-      <EmptyState v-else title="暂无趋势数据" desc="完成几次练习后，这里会显示成绩变化。" mark="-" />
+      <EmptyState v-else :title="isLoggedIn ? '暂无趋势数据' : '登录后查看成绩趋势'" :desc="isLoggedIn ? '完成几次练习后，这里会显示成绩变化。' : '浏览功能无需登录，开始试用或练习后会保存成绩趋势。'" mark="-" />
     </view>
 
     <view class="section-toggle" @tap="toggleSection('weakness')">
@@ -203,7 +218,7 @@
           <text v-if="item.isWeak && item.tip" class="weakness-item__tip">{{ item.tip }}</text>
         </view>
       </view>
-      <EmptyState v-else title="暂无维度数据" desc="完成评分后会生成薄弱维度建议。" mark="-" />
+      <EmptyState v-else :title="isLoggedIn ? '暂无维度数据' : '登录后查看薄弱维度'" :desc="isLoggedIn ? '完成评分后会生成薄弱维度建议。' : '答题评分后会在这里呈现维度短板。'" mark="-" />
     </view>
 
     <view class="section-toggle" @tap="toggleSection('recommendation')">
@@ -256,7 +271,7 @@ import {
 import { formatDate } from '../../utils/format'
 import { JIANGSU_JOB_CATEGORIES } from '../../utils/jiangsuJobs'
 import { DEFAULT_TARGETED_POSITION_TREE } from '../../utils/targetedOptions'
-import { requireLogin, toast } from '../../utils/navigation'
+import { hasToken, promptLoginForAction, toast } from '../../utils/navigation'
 
 const historyStore = useHistoryStore()
 const userStore = useUserStore()
@@ -284,6 +299,7 @@ const TREND_BASELINE_Y = TREND_PLOT_TOP + TREND_PLOT_HEIGHT
 const TREND_CURVE_STEPS = 8
 const preferredQuestionOptions = QUESTION_CATEGORIES.filter((item) => item.key)
 
+const isLoggedIn = computed(() => userStore.isAuthenticated || hasToken())
 const showJiangsuEntry = computed(() => userStore.selectedProvince === 'jiangsu')
 const hasFullAccess = computed(() => (
   userStore.isAdmin
@@ -443,12 +459,12 @@ const weakDimensionKeys = computed(() => weaknessDimensions.value
   .filter((item, index, list) => list.indexOf(item) === index)
 )
 const recommendationEmptyText = computed(() => {
+  if (!isLoggedIn.value) return '登录后会根据练习记录推荐适合你的真实题。'
   if (!weakDimensionKeys.value.length) return '当前维度表现较均衡，完成更多练习后会继续更新推荐。'
   return '暂未匹配到新的真实题库推荐，可稍后刷新。'
 })
 
 onShow(() => {
-  if (!requireLogin()) return
   loadHome()
 })
 
@@ -458,6 +474,10 @@ onPullDownRefresh(async () => {
 })
 
 async function loadHome() {
+  if (!isLoggedIn.value) {
+    recommendations.value = []
+    return
+  }
   await Promise.allSettled([
     userStore.loadProvinces(),
     userStore.loadUserInfo(),
@@ -470,13 +490,15 @@ async function loadHome() {
 }
 
 async function goPractice(mode = 'free') {
-  await userStore.loadUserInfo().catch(() => null)
   const targetMode = mode === 'fullExam' ? 'fullExam' : 'free'
   const baseUrl = `/pages/exam/prepare?mode=${targetMode}`
+  if (!promptLoginForAction(targetMode === 'fullExam' ? '全真练习' : '专项练习', baseUrl)) return
+  await userStore.loadUserInfo().catch(() => null)
   uni.navigateTo({ url: hasFullAccess.value ? baseUrl : `${baseUrl}&trial=1` })
 }
 
 function goPricing() {
+  if (!promptLoginForAction('开通套餐', '/pages/pricing/index')) return
   uni.navigateTo({ url: '/pages/pricing/index' })
 }
 
@@ -485,11 +507,17 @@ function goJiangsuJob(category) {
 }
 
 function goHistory() {
+  if (!promptLoginForAction('查看练习记录', '/pages/history/index')) return
   uni.navigateTo({ url: '/pages/history/index' })
 }
 
 function openResult(record) {
+  if (!promptLoginForAction('查看测评结果', `/pages/result/index?examId=${encodeURIComponent(record.examId)}`)) return
   uni.navigateTo({ url: `/pages/result/index?examId=${encodeURIComponent(record.examId)}` })
+}
+
+function goLogin() {
+  uni.navigateTo({ url: '/pages/login/index?redirect=%2Fpages%2Fhome%2Findex' })
 }
 
 function readSectionOpenState() {
@@ -577,6 +605,7 @@ function toggleOnboardingQuestion(key) {
 }
 
 async function savePreferenceSetup() {
+  if (!promptLoginForAction('保存考试设置', '/pages/home/index')) return
   if (preferenceSaving.value) return
   preferenceSaving.value = true
   try {
@@ -623,6 +652,11 @@ function markRecommendationPracticed(questionId) {
 }
 
 async function refreshRecommendations(showResultToast = false) {
+  if (!isLoggedIn.value) {
+    recommendations.value = []
+    if (showResultToast) promptLoginForAction('刷新智能推荐', '/pages/home/index')
+    return
+  }
   if (!weakDimensionKeys.value.length) {
     recommendations.value = []
     return
@@ -661,6 +695,7 @@ async function refreshRecommendations(showResultToast = false) {
 
 function startRecommendedPractice(item) {
   if (!item?.id) return
+  if (!promptLoginForAction('开始推荐练习', `/pages/exam/prepare?mode=free&questionId=${encodeURIComponent(item.id)}`)) return
   markRecommendationPracticed(item.id)
   uni.navigateTo({ url: `/pages/exam/prepare?mode=free&questionId=${encodeURIComponent(item.id)}` })
 }
@@ -715,6 +750,36 @@ function startRecommendedPractice(item) {
   padding: 0 8rpx;
   font-size: 26rpx;
   font-weight: 800;
+}
+
+.guest-tip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 144rpx;
+  gap: 18rpx;
+  align-items: center;
+}
+
+.guest-tip__title,
+.guest-tip__desc {
+  display: block;
+}
+
+.guest-tip__title {
+  color: #1a1a2e;
+  font-size: 29rpx;
+  font-weight: 900;
+}
+
+.guest-tip__desc {
+  margin-top: 6rpx;
+  color: #6f7c8f;
+  font-size: 23rpx;
+  line-height: 1.5;
+}
+
+.guest-tip__button {
+  min-height: 72rpx;
+  font-size: 25rpx;
 }
 
 .preference-modal {

@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""把题库提取文本导入为后端可读取的结构化 JSON。"""
+"""
+这个脚本把 Word 真题解析成标准题库 JSON；套题标题、题号、分值和分类元数据都在这里尽量从原文提取。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 
 from __future__ import annotations
 
@@ -23,7 +29,15 @@ REGRESSION_SAMPLE_ROOT = BACKEND_ROOT / "assets" / "regression_samples"
 
 @dataclass(frozen=True)
 class ImportProfile:
-    """导入 profile 配置。"""
+    """
+    导入 profile 配置。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     name: str
     default_province: str
@@ -36,7 +50,15 @@ class ImportProfile:
 
 
 def normalize_profile_key(raw_name: str) -> str:
-    """把 profile 名称规整成适合目录名和 CLI 的 key。"""
+    """
+    把 profile 名称规整成适合目录名和 CLI 的 key。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param raw_name: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     normalized = re.sub(r"\s+", "_", raw_name.strip().lower())
     normalized = re.sub(r"[^0-9A-Za-z_\-\u4e00-\u9fff]+", "_", normalized)
@@ -44,14 +66,30 @@ def normalize_profile_key(raw_name: str) -> str:
 
 
 def build_source_priority(source_files: tuple[Path, ...]) -> dict[str, int]:
-    """按声明顺序生成去重优先级，越靠前优先级越高。"""
+    """
+    按声明顺序生成去重优先级，越靠前优先级越高。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param source_files: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     total = len(source_files)
     return {path.name: total - index for index, path in enumerate(source_files)}
 
 
 def resolve_cli_path(raw_path: str | Path) -> Path:
-    """解析 CLI 传入的路径，优先按当前工作目录，其次回退到仓库根目录。"""
+    """
+    解析 CLI 传入的路径，优先按当前工作目录，其次回退到仓库根目录。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param raw_path: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     path = Path(raw_path).expanduser()
     if path.is_absolute():
@@ -73,7 +111,17 @@ def build_runtime_profile(
     province: str,
     source_files: list[str | Path],
 ) -> ImportProfile:
-    """根据 CLI 参数构造一个临时 profile，适合未来新增地区直接导入。"""
+    """
+    根据 CLI 参数构造一个临时 profile，适合未来新增地区直接导入。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param profile_name: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
+    @param province: 地区筛选值；只表示地域，不替代考试体系或岗位方向。
+    @param source_files: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises ValueError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    """
 
     profile_key = normalize_profile_key(profile_name)
     if not profile_key:
@@ -163,7 +211,15 @@ DEFAULT_PROVINCE = ACTIVE_PROFILE.default_province
 
 
 def activate_profile(profile_name: str | ImportProfile) -> ImportProfile:
-    """切换当前导入 profile，并同步兼容全局常量。"""
+    """
+    切换当前导入 profile，并同步兼容全局常量。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param profile_name: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     global ACTIVE_PROFILE
     global QUESTION_OUTPUT_DIR
@@ -455,7 +511,15 @@ PROVINCE_SUFFIX_MUNICIPALITIES = {"北京", "上海", "天津", "重庆"}
 
 @dataclass
 class QuestionBlockContext:
-    """题号块对应的套题上下文。"""
+    """
+    题号块对应的套题上下文。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     block: str
     suite_id: str = ""
@@ -470,7 +534,15 @@ class QuestionBlockContext:
 
 @dataclass
 class ParsedQuestion:
-    """单道题在导入阶段的临时结构。"""
+    """
+    单道题在导入阶段的临时结构。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     data: dict
     source_path: Path
@@ -479,7 +551,15 @@ class ParsedQuestion:
 
 @dataclass(frozen=True)
 class GeneratedSample:
-    """程序化生成后的回归样本。"""
+    """
+    程序化生成后的回归样本。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     label: str
     filename: str
@@ -518,7 +598,15 @@ def _is_jiangsu_civil_service_category(position_type: str) -> bool:
 
 
 def normalize_province_label(value: str) -> str:
-    """把省份/直辖市名称整理成展示用全称。"""
+    """
+    把省份/直辖市名称整理成展示用全称。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param value: 待规范化的原始值；兼容旧数据时应优先保留可解释结果。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     province = re.sub(r"\s+", "", str(value or "").strip())
     if not province:
@@ -538,7 +626,16 @@ def normalize_province_label(value: str) -> str:
 
 
 def infer_region_parts(text: str, province: str) -> tuple[str, str]:
-    """从套题标题里抽取城市和区县，抽不到则留空。"""
+    """
+    从套题标题里抽取城市和区县，抽不到则留空。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @param province: 地区筛选值；只表示地域，不替代考试体系或岗位方向。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     value = re.sub(r"\s+", "", str(text or ""))
     province_name = normalize_province_label(province)
@@ -562,7 +659,15 @@ def infer_region_parts(text: str, province: str) -> tuple[str, str]:
 
 
 def infer_job_level(text: str) -> str:
-    """识别招录层级。"""
+    """
+    识别招录层级。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     value = str(text or "")
     for label, aliases in (
@@ -583,7 +688,17 @@ def infer_exam_category(
     source_document: str,
     default_province: str,
 ) -> tuple[str, str, str]:
-    """识别一级考试大类、二级分类和分类依据。"""
+    """
+    识别一级考试大类、二级分类和分类依据。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @param source_document: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param default_province: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     value = f"{text} {source_document}"
     province_name = normalize_province_label(default_province)
@@ -606,14 +721,33 @@ def infer_exam_category(
 
 
 def infer_question_type_category(question_type: str, question_text: str = "") -> str:
-    """把详细题型归入六类能力题型之一。"""
+    """
+    把详细题型归入六类能力题型之一。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_type: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param question_text: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     text = f"{question_type} {question_text}"
     return _first_rule_match(text, QUESTION_TYPE_CATEGORY_RULES) or "综合分析"
 
 
 def infer_subcategories(source_text: str, exam_category: str, province: str) -> tuple[str | None, str | None]:
-    """从题源文本中提取二级/三级分类标签（如公安、监狱、省考等）。"""
+    """
+    从题源文本中提取二级/三级分类标签（如公安、监狱、省考等）。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param source_text: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param exam_category: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param province: 地区筛选值；只表示地域，不替代考试体系或岗位方向。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     system_map = {
         "公安": "公安系统",
@@ -644,7 +778,25 @@ def build_classification_metadata(
     question_score: float | int | None,
     suite_key: str,
 ) -> dict[str, Any]:
-    """根据真实来源和上下文生成多层级考试分类元数据。"""
+    """
+    根据真实来源和上下文生成多层级考试分类元数据。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param source_document: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param province: 地区筛选值；只表示地域，不替代考试体系或岗位方向。
+    @param suite_name: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param source_title_raw: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param position: 岗位/方向筛选值；允许为空表示不限，避免无题库分类被误判为通用模板。
+    @param batch: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param question_type: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param question_text: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param question_no: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param question_score: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param suite_key: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     source_evidence_text = " ".join(
         str(value or "")
@@ -707,7 +859,15 @@ def build_classification_metadata(
 
 
 def normalize_question_id(raw_id: str) -> str:
-    """统一题号格式，便于落库、去重和生成文件名。"""
+    """
+    统一题号格式，便于落库、去重和生成文件名。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param raw_id: 业务对象标识；用于跨接口追溯同一条记录，调用方应避免传入展示名。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     normalized = raw_id.strip().upper()
     normalized = re.sub(r"[\s_]+", "-", normalized)
@@ -717,7 +877,15 @@ def normalize_question_id(raw_id: str) -> str:
 
 
 def normalize_section_index(raw_index: str) -> str:
-    """把中文/数字 section 序号统一成阿拉伯数字。"""
+    """
+    把中文/数字 section 序号统一成阿拉伯数字。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param raw_index: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     index = raw_index.strip()
     if index.isdigit():
@@ -726,7 +894,16 @@ def normalize_section_index(raw_index: str) -> str:
 
 
 def normalize_source_text(raw_text: str, source_name: str) -> str:
-    """把文档提取文本先整理成更容易正则处理的形态。"""
+    """
+    把文档提取文本先整理成更容易正则处理的形态。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param raw_text: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param source_name: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     text = raw_text.replace("\r", "\n").replace("\u3000", " ")
     text = text.replace("－", "-").replace("＋", "+").replace("／", "/")
@@ -792,7 +969,15 @@ def normalize_source_text(raw_text: str, source_name: str) -> str:
 
 
 def extract_docx_text(input_path: str | Path) -> str:
-    """从 .docx XML 中提取段落文本，避免依赖手工维护的中间文本。"""
+    """
+    从 .docx XML 中提取段落文本，避免依赖手工维护的中间文本。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param input_path: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     docx_path = Path(input_path)
     with zipfile.ZipFile(docx_path) as archive:
@@ -808,7 +993,15 @@ def extract_docx_text(input_path: str | Path) -> str:
 
 
 def source_extracted_text_path(source_path: Path) -> Path:
-    """定位 legacy .doc 或兼容模式下的 .extracted.txt 兜底文件。"""
+    """
+    定位 legacy .doc 或兼容模式下的 .extracted.txt 兜底文件。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param source_path: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     if source_path.name.endswith(".extracted.txt"):
         return source_path
@@ -816,7 +1009,15 @@ def source_extracted_text_path(source_path: Path) -> Path:
 
 
 def read_source_text(source_path: Path) -> tuple[str, str]:
-    """读取导入源文本，并返回读取方式说明。"""
+    """
+    读取导入源文本，并返回读取方式说明。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param source_path: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises FileNotFoundError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    """
 
     suffix = source_path.suffix.lower()
     if suffix == ".docx":
@@ -830,7 +1031,15 @@ def read_source_text(source_path: Path) -> tuple[str, str]:
 
 
 def infer_source_document(source_path: Path) -> str:
-    """把 extracted 文本映射回用户真正提供的源文档名。"""
+    """
+    把 extracted 文本映射回用户真正提供的源文档名。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param source_path: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     if source_path.suffix.lower() in {".docx", ".doc"}:
         return source_path.name
@@ -844,7 +1053,15 @@ def infer_source_document(source_path: Path) -> str:
 
 
 def parse_chinese_exam_date(text: str) -> str:
-    """把中文日期提取为 YYYY-MM-DD。"""
+    """
+    把中文日期提取为 YYYY-MM-DD。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     match = CHINESE_DATE_PATTERN.search(str(text or ""))
     if not match:
@@ -854,7 +1071,15 @@ def parse_chinese_exam_date(text: str) -> str:
 
 
 def parse_compact_exam_date(text: str) -> str:
-    """从题号中的 20250705 这类日期提取 YYYY-MM-DD。"""
+    """
+    从题号中的 20250705 这类日期提取 YYYY-MM-DD。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     match = COMPACT_DATE_PATTERN.search(str(text or ""))
     if not match:
@@ -864,7 +1089,15 @@ def parse_compact_exam_date(text: str) -> str:
 
 
 def format_exam_date_zh(exam_date: str) -> str:
-    """把 YYYY-MM-DD 转回中文日期。"""
+    """
+    把 YYYY-MM-DD 转回中文日期。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param exam_date: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     match = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})", str(exam_date or ""))
     if not match:
@@ -874,7 +1107,16 @@ def format_exam_date_zh(exam_date: str) -> str:
 
 
 def clean_suite_title(raw_title: str, default_province: str = "") -> str:
-    """清洗真实套题标题，保留可读主体并去掉模板噪声。"""
+    """
+    清洗真实套题标题，保留可读主体并去掉模板噪声。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param raw_title: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param default_province: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     raw = re.sub(r"\s+", "", str(raw_title or "").strip())
     if not raw:
@@ -899,7 +1141,15 @@ def clean_suite_title(raw_title: str, default_province: str = "") -> str:
 
 
 def infer_suite_position(text: str) -> str:
-    """从标题/文件名中提取岗位或批次性质。"""
+    """
+    从标题/文件名中提取岗位或批次性质。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     value = str(text or "")
     candidates = (
@@ -924,7 +1174,15 @@ def infer_suite_position(text: str) -> str:
 
 
 def infer_suite_batch(text: str) -> str:
-    """从标题里提取批次类信息。"""
+    """
+    从标题里提取批次类信息。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     value = str(text or "")
     match = re.search(r"(第一批次|第二批次|第三批次|补录|统考|遴选|普通|乡镇岗|通用岗|监狱岗)", value)
@@ -932,7 +1190,15 @@ def infer_suite_batch(text: str) -> str:
 
 
 def title_candidates_from_segment(segment: str) -> list[str]:
-    """在题号前置片段里找可能的套题标题行。"""
+    """
+    在题号前置片段里找可能的套题标题行。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param segment: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     candidates: list[str] = []
     seen: set[str] = set()
@@ -955,7 +1221,16 @@ def title_candidates_from_segment(segment: str) -> list[str]:
 
 
 def infer_suite_title_from_source(source_path: Path, question_id: str) -> tuple[str, str, str, str]:
-    """缺少标题行时，根据源文件和题号给套题一个真实可读的兜底标题。"""
+    """
+    缺少标题行时，根据源文件和题号给套题一个真实可读的兜底标题。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param source_path: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     source_document = infer_source_document(source_path)
     exam_date = parse_compact_exam_date(question_id)
@@ -972,7 +1247,15 @@ def infer_suite_title_from_source(source_path: Path, question_id: str) -> tuple[
 
 
 def iter_question_blocks(text: str) -> list[str]:
-    """按题号切分题目块。"""
+    """
+    按题号切分题目块。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     matches = list(QUESTION_ID_PATTERN.finditer(text))
     blocks: list[str] = []
@@ -984,7 +1267,17 @@ def iter_question_blocks(text: str) -> list[str]:
 
 
 def iter_question_blocks_with_context(text: str, source_path: Path, source_document_type: str = "") -> list[QuestionBlockContext]:
-    """按题号切分题目块，并附带最近的真实套题标题。"""
+    """
+    按题号切分题目块，并附带最近的真实套题标题。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @param source_path: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param source_document_type: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     matches = list(QUESTION_ID_PATTERN.finditer(text))
     contexts: list[QuestionBlockContext] = []
@@ -1035,7 +1328,15 @@ def iter_question_blocks_with_context(text: str, source_path: Path, source_docum
 
 
 def canonical_section_name(raw_name: str) -> str:
-    """把不同写法归并到统一节名。"""
+    """
+    把不同写法归并到统一节名。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param raw_name: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     if raw_name.startswith("核心观点"):
         return "核心观点（多维）"
@@ -1053,7 +1354,15 @@ def canonical_section_name(raw_name: str) -> str:
 
 
 def extract_sections(block: str) -> dict[str, str]:
-    """抽出 1~12 节的正文内容。"""
+    """
+    抽出 1~12 节的正文内容。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param block: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     sections: dict[str, str] = {}
     matches = list(SECTION_PATTERN.finditer(block))
@@ -1066,7 +1375,16 @@ def extract_sections(block: str) -> dict[str, str]:
 
 
 def extract_field(text: str, patterns: list[str]) -> str:
-    """按多个候选正则提取字段。"""
+    """
+    按多个候选正则提取字段。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @param patterns: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     for pattern in patterns:
         match = re.search(pattern, text)
@@ -1076,7 +1394,15 @@ def extract_field(text: str, patterns: list[str]) -> str:
 
 
 def resolve_question_province(raw_province: str) -> str:
-    """把“适用地区”里的市县写法归并为当前 profile 的省份。"""
+    """
+    把“适用地区”里的市县写法归并为当前 profile 的省份。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param raw_province: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     default_province = DEFAULT_PROVINCE.strip()
     province = re.sub(r"\s+", "", raw_province.strip())
@@ -1090,7 +1416,16 @@ def resolve_question_province(raw_province: str) -> str:
 
 
 def extract_score_with_pattern(text: str, pattern: re.Pattern[str]) -> float | None:
-    """从文本里提取单个分值。"""
+    """
+    从文本里提取单个分值。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @param pattern: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     if not text:
         return None
@@ -1105,7 +1440,16 @@ def choose_consensus_score(
     *,
     priority: tuple[str, ...],
 ) -> float:
-    """在多个候选分值中优先选择一致来源，平票时按来源优先级决策。"""
+    """
+    在多个候选分值中优先选择一致来源，平票时按来源优先级决策。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param candidates: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param priority: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises ValueError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    """
 
     grouped: dict[float, list[str]] = {}
     for source, value in candidates:
@@ -1136,7 +1480,19 @@ def resolve_full_score(
     ai_text: str,
     dimensions: list[dict],
 ) -> float:
-    """综合多个来源决定题目的真实满分，避免被结构化脏值覆盖。"""
+    """
+    综合多个来源决定题目的真实满分，避免被结构化脏值覆盖。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_text: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param header_description: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param scoring_section_text: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param ai_text: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param dimensions: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     explicit_candidates: list[tuple[str, float]] = []
     for source, value in (
@@ -1167,7 +1523,16 @@ def resolve_full_score(
 
 
 def split_list(text: str, *, include_whitespace: bool = False) -> list[str]:
-    """把“关键词、标签”类字符串拆成列表。"""
+    """
+    把“关键词、标签”类字符串拆成列表。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @param include_whitespace: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     cleaned = re.sub(r"（说明：[^）]*）", "", text).strip()
     if not cleaned:
@@ -1189,7 +1554,15 @@ def split_list(text: str, *, include_whitespace: bool = False) -> list[str]:
 
 
 def is_tag_noise(tag: str) -> bool:
-    """过滤 Word 样式碎片、纯数字和明显异常标签。"""
+    """
+    过滤 Word 样式碎片、纯数字和明显异常标签。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param tag: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     value = tag.strip()
     if not value:
@@ -1214,7 +1587,15 @@ def is_tag_noise(tag: str) -> bool:
 
 
 def extract_type_tags(question_type: str) -> list[str]:
-    """从题型文本里提取一小组可读标签，供标签兜底重建。"""
+    """
+    从题型文本里提取一小组可读标签，供标签兜底重建。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_type: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     if not question_type:
         return []
@@ -1233,7 +1614,16 @@ def extract_type_tags(question_type: str) -> list[str]:
 
 
 def build_fallback_tags(question_type: str, keyword_groups: list[list[str]] | None = None) -> list[str]:
-    """当检索标签为空或疑似污染时，用题型和关键词重建一组精简标签。"""
+    """
+    当检索标签为空或疑似污染时，用题型和关键词重建一组精简标签。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_type: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param keyword_groups: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     values: list[str] = []
     seen = set()
@@ -1262,7 +1652,17 @@ def build_tags(
     question_type: str = "",
     keyword_groups: list[list[str]] | None = None,
 ) -> list[str]:
-    """标签单独清洗，去掉跨块残留和 Word 样式垃圾。"""
+    """
+    标签单独清洗，去掉跨块残留和 Word 样式垃圾。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @param question_type: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param keyword_groups: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     text = cut_text_before_markers(text, TAG_HARD_STOP_MARKERS)
     tags = [
@@ -1278,7 +1678,16 @@ def build_tags(
 
 
 def cut_text_before_markers(text: str, markers: tuple[str, ...]) -> str:
-    """Trim noisy trailing metadata once any marker appears."""
+    """
+    cut_text_before_markers 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @param markers: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     indices = [text.find(marker) for marker in markers if marker in text]
     if not indices:
@@ -1287,7 +1696,16 @@ def cut_text_before_markers(text: str, markers: tuple[str, ...]) -> str:
 
 
 def clean_dimension_fragment(text: str, *, limit: int = 14) -> str:
-    """Normalize a short dimension label."""
+    """
+    clean_dimension_fragment 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @param limit: 调用方给定的数量上限；用于控制题库抽样或列表返回的成本。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     value = re.sub(r"^[：:\s]+", "", text.strip())
     value = re.split(r"[：:；;，,。]", value, maxsplit=1)[0]
@@ -1296,7 +1714,15 @@ def clean_dimension_fragment(text: str, *, limit: int = 14) -> str:
 
 
 def is_explicit_dimension_title(title: str) -> bool:
-    """Decide whether a short scored-item prefix is a real dimension title."""
+    """
+    is_explicit_dimension_title 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param title: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     value = clean_dimension_fragment(title, limit=20)
     if not value or len(value) > 12:
@@ -1320,7 +1746,15 @@ def is_explicit_dimension_title(title: str) -> bool:
 
 
 def normalize_scored_section_text(section_text: str) -> str:
-    """Collapse scored criteria text into one line for parsing."""
+    """
+    normalize_scored_section_text 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param section_text: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     normalized = " ".join(section_text.split())
     normalized = LEADING_NOTE_PATTERN.sub("", normalized)
@@ -1329,7 +1763,15 @@ def normalize_scored_section_text(section_text: str) -> str:
 
 
 def is_scored_item_boundary(prefix: str) -> bool:
-    """判断评分项标题前是否是自然分隔符。"""
+    """
+    判断评分项标题前是否是自然分隔符。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param prefix: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     stripped = prefix.rstrip()
     if not stripped:
@@ -1345,13 +1787,29 @@ def is_scored_item_boundary(prefix: str) -> bool:
 
 
 def strip_item_marker(text: str) -> str:
-    """去掉评分项前的 ① / 1. / 一、 等枚举符。"""
+    """
+    去掉评分项前的 ① / 1. / 一、 等枚举符。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     return LEADING_ITEM_MARKER_PATTERN.sub("", text).strip()
 
 
 def normalize_scored_item_text(item: str) -> str:
-    """把“标题8分，说明”规整为“标题（8分）：说明”。"""
+    """
+    把“标题8分，说明”规整为“标题（8分）：说明”。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param item: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     cleaned = strip_item_marker(item.strip("；; "))
     return LEADING_PLAIN_SCORE_PATTERN.sub(
@@ -1362,7 +1820,15 @@ def normalize_scored_item_text(item: str) -> str:
 
 
 def find_explicit_score_matches(normalized: str) -> list[re.Match[str]]:
-    """找出评分标准里的显式分值项，兼容有无括号两种写法。"""
+    """
+    找出评分标准里的显式分值项，兼容有无括号两种写法。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param normalized: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     matches: list[re.Match[str]] = []
     for pattern in (EXPLICIT_SCORED_ITEM_PATTERN, PLAIN_SCORED_ITEM_PATTERN):
@@ -1391,7 +1857,15 @@ def find_explicit_score_matches(normalized: str) -> list[re.Match[str]]:
 
 
 def parse_scored_items(section_text: str) -> list[str]:
-    """从“得分标准”中提取每条评分项。"""
+    """
+    从“得分标准”中提取每条评分项。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param section_text: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     normalized = normalize_scored_section_text(section_text)
     if not normalized:
@@ -1427,7 +1901,15 @@ def parse_scored_items(section_text: str) -> list[str]:
 
 
 def parse_deduction_items(section_text: str) -> list[str]:
-    """从“扣分标准”中提取每条扣分项。"""
+    """
+    从“扣分标准”中提取每条扣分项。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param section_text: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     normalized = " ".join(section_text.split())
     cursor = 0
@@ -1449,7 +1931,15 @@ def parse_deduction_items(section_text: str) -> list[str]:
 
 
 def extract_score(item_text: str) -> float:
-    """提取评分项里的分值。"""
+    """
+    提取评分项里的分值。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param item_text: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises ValueError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    """
 
     match = re.search(r"（(\d+(?:\.\d+)?)分）", item_text) or re.search(r"(\d+(?:\.\d+)?)\s*分", item_text)
     if not match:
@@ -1458,7 +1948,16 @@ def extract_score(item_text: str) -> float:
 
 
 def build_fallback_scoring_items(scoring_text: str, ai_text: str) -> list[str]:
-    """当老题只有档位描述时，生成稳定的通用分项。"""
+    """
+    当老题只有档位描述时，生成稳定的通用分项。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param scoring_text: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param ai_text: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     raw_full_score = extract_field(scoring_text, FIELD_PATTERNS["full_score"]) or extract_field(ai_text, FIELD_PATTERNS["full_score"])
     if not raw_full_score:
@@ -1484,7 +1983,15 @@ def build_fallback_scoring_items(scoring_text: str, ai_text: str) -> list[str]:
 
 
 def split_criterion_title_and_body(criterion_text: str) -> tuple[str, str]:
-    """Split `标题（分值）：说明` style criteria into title/body."""
+    """
+    Split `标题（分值）：说明` style criteria into title/body.
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param criterion_text: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     text = normalize_scored_section_text(criterion_text)
     match = EXPLICIT_DIMENSION_TITLE_PATTERN.match(text)
@@ -1496,7 +2003,16 @@ def split_criterion_title_and_body(criterion_text: str) -> tuple[str, str]:
 
 
 def infer_dimension_base_name(title: str, criterion_text: str) -> str:
-    """Infer the base dimension name before duplicate disambiguation."""
+    """
+    infer_dimension_base_name 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param title: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param criterion_text: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     if title:
         return clean_dimension_fragment(title)
@@ -1546,7 +2062,17 @@ def infer_dimension_base_name(title: str, criterion_text: str) -> str:
 
 
 def infer_dimension_direction_hint(base_name: str, title: str, criterion_text: str) -> str:
-    """Try to turn a duplicate base name into a readable direction suffix."""
+    """
+    infer_dimension_direction_hint 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param base_name: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param title: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param criterion_text: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     cleaned_title = clean_dimension_fragment(title)
     if cleaned_title and cleaned_title != base_name:
@@ -1608,7 +2134,15 @@ def infer_dimension_direction_hint(base_name: str, title: str, criterion_text: s
 
 
 def build_dimensions(scoring_criteria: list[str]) -> list[dict]:
-    """从评分标准构造 schema 里的 dimensions 字段。"""
+    """
+    从评分标准构造 schema 里的 dimensions 字段。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param scoring_criteria: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     parsed_items: list[tuple[str, str, str, str]] = []
     for item in scoring_criteria:
@@ -1645,7 +2179,16 @@ def build_dimensions(scoring_criteria: list[str]) -> list[dict]:
 
 
 def scale_dimensions_to_full_score(dimensions: list[dict], target_total: float) -> list[dict]:
-    """把维度分值按比例缩放到目标总分。"""
+    """
+    把维度分值按比例缩放到目标总分。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param dimensions: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param target_total: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     current_total = round(sum(item["score"] for item in dimensions), 1)
     if not dimensions or abs(current_total - target_total) < 0.1:
@@ -1668,13 +2211,29 @@ def scale_dimensions_to_full_score(dimensions: list[dict], target_total: float) 
 
 
 def effective_length(text: str) -> int:
-    """按评分器口径统计有效长度。"""
+    """
+    按评分器口径统计有效长度。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     return len(re.sub(r"\s+", "", text or ""))
 
 
 def normalize_reference_answer(text: str) -> str:
-    """把高分参考答案整理成便于切句和降级的形态。"""
+    """
+    把高分参考答案整理成便于切句和降级的形态。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     normalized = text.replace("\r", "\n")
     normalized = re.sub(r"\n+", "\n", normalized)
@@ -1684,7 +2243,15 @@ def normalize_reference_answer(text: str) -> str:
 
 
 def split_answer_sentences(text: str) -> list[str]:
-    """把参考答案切成可重组的句子列表。"""
+    """
+    把参考答案切成可重组的句子列表。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     normalized = normalize_reference_answer(text)
     raw_sentences = re.split(r"(?<=[。！？；])\s*", normalized)
@@ -1706,7 +2273,15 @@ def split_answer_sentences(text: str) -> list[str]:
 
 
 def genericize_keyword(keyword: str) -> str:
-    """把题库里的强识别词替换成更泛化的说法，主动拉开分档。"""
+    """
+    把题库里的强识别词替换成更泛化的说法，主动拉开分档。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param keyword: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     if any(token in keyword for token in ("企业", "商户", "主体", "群众", "农民", "居民", "学生", "旅客", "游客", "老人")):
         return "相关群体"
@@ -1722,7 +2297,16 @@ def genericize_keyword(keyword: str) -> str:
 
 
 def keywords_for_sanitization(question_data: dict[str, Any], level: str) -> list[str]:
-    """按强度决定要泛化哪些关键词。"""
+    """
+    按强度决定要泛化哪些关键词。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param level: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     if level == "none":
         keywords: list[str] = []
@@ -1753,7 +2337,17 @@ def keywords_for_sanitization(question_data: dict[str, Any], level: str) -> list
 
 
 def apply_keyword_sanitization(text: str, question_data: dict[str, Any], level: str) -> str:
-    """用泛化替换主动削弱关键词命中率。"""
+    """
+    用泛化替换主动削弱关键词命中率。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param level: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     sanitized = text
     for keyword in keywords_for_sanitization(question_data, level):
@@ -1762,7 +2356,15 @@ def apply_keyword_sanitization(text: str, question_data: dict[str, Any], level: 
 
 
 def soften_low_sample_tone(text: str) -> str:
-    """低档样本适度去掉完整结构，让答案更像“方向对但不够成熟”。"""
+    """
+    低档样本适度去掉完整结构，让答案更像“方向对但不够成熟”。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     softened = text
     softened = softened.replace("首先", "先")
@@ -1777,7 +2379,15 @@ def soften_low_sample_tone(text: str) -> str:
 
 
 def clean_generated_sample_text(text: str) -> str:
-    """收尾清理，避免替换后出现多余空格和重复标点。"""
+    """
+    收尾清理，避免替换后出现多余空格和重复标点。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     cleaned = text.replace("\u3000", " ")
     cleaned = re.sub(r"\s+", " ", cleaned)
@@ -1788,7 +2398,15 @@ def clean_generated_sample_text(text: str) -> str:
 
 
 def is_measure_sentence(sentence: str) -> bool:
-    """识别明显的措施/流程句。"""
+    """
+    识别明显的措施/流程句。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param sentence: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     return bool(
         re.search(r"^(首先|其次|再次|最后|一是|二是|三是|四是|五是|六是|另外|同时)", sentence)
@@ -1797,19 +2415,43 @@ def is_measure_sentence(sentence: str) -> bool:
 
 
 def is_innovation_sentence(sentence: str) -> bool:
-    """识别亮点/创新类句子。"""
+    """
+    识别亮点/创新类句子。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param sentence: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     return any(marker in sentence for marker in ("创新", "亮点", "特色", "探索", "机制", "开放日", "案例", "参观"))
 
 
 def is_dialogue_sentence(sentence: str) -> bool:
-    """识别人际/现场模拟里更像真实沟通的话术。"""
+    """
+    识别人际/现场模拟里更像真实沟通的话术。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param sentence: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     return any(marker in sentence for marker in ("爸", "妈", "您好", "你", "您", "担心", "理解", "放心", "支持", "沟通", "解释"))
 
 
 def is_detail_heavy_sentence(sentence: str) -> bool:
-    """识别组织策划题里细节密度过高的句子，低档样本尽量回避。"""
+    """
+    识别组织策划题里细节密度过高的句子，低档样本尽量回避。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param sentence: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     heading_markers = (
         "活动时间",
@@ -1850,7 +2492,15 @@ def is_detail_heavy_sentence(sentence: str) -> bool:
 
 
 def is_role_conclusion_sentence(sentence: str) -> bool:
-    """识别结尾里容易把分数抬高的岗位化/表态化收束句。"""
+    """
+    识别结尾里容易把分数抬高的岗位化/表态化收束句。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param sentence: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     stripped = sentence.strip()
     direct_markers = (
@@ -1877,7 +2527,16 @@ def is_role_conclusion_sentence(sentence: str) -> bool:
 
 
 def dilute_confident_phrases(text: str, mode: str) -> str:
-    """把高分话术压平，降低 LLM 对文采和定性力度的额外加分。"""
+    """
+    把高分话术压平，降低 LLM 对文采和定性力度的额外加分。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @param mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     replacements = {
         "意义重大": "值得重视",
@@ -1925,7 +2584,16 @@ def dilute_confident_phrases(text: str, mode: str) -> str:
 
 
 def strip_role_conclusion(text: str, mode: str) -> str:
-    """去掉结尾里最像高分模板的总结句。"""
+    """
+    去掉结尾里最像高分模板的总结句。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @param mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     sentences = split_answer_sentences(text)
     if not sentences:
@@ -1944,7 +2612,15 @@ def strip_role_conclusion(text: str, mode: str) -> str:
 
 
 def build_low_generic_opener(question_data: dict[str, Any]) -> str:
-    """给低档样本换一个更像真实临场表达的开头。"""
+    """
+    给低档样本换一个更像真实临场表达的开头。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     family = detect_template_family(question_data)
     question_text = question_data.get("question", "")
@@ -1971,7 +2647,16 @@ def build_low_generic_opener(question_data: dict[str, Any]) -> str:
 
 
 def rewrite_low_opening(text: str, question_data: dict[str, Any]) -> str:
-    """把低档样本开头里的高分总论句压平。"""
+    """
+    把低档样本开头里的高分总论句压平。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     sentences = split_answer_sentences(text)
     if not sentences:
@@ -1985,7 +2670,16 @@ def rewrite_low_opening(text: str, question_data: dict[str, Any]) -> str:
 
 
 def desired_length_bounds(reference_length: int, mode: str) -> tuple[int, int]:
-    """给中低档样本设置更贴近真实作答的长度目标。"""
+    """
+    给中低档样本设置更贴近真实作答的长度目标。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param reference_length: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     if mode == "mid":
         lower = min(max(520, int(reference_length * 0.42)), 1100)
@@ -1997,7 +2691,16 @@ def desired_length_bounds(reference_length: int, mode: str) -> tuple[int, int]:
 
 
 def sentence_count_candidates(total_sentences: int, mode: str) -> list[int]:
-    """根据答案长度生成候选抽句数量。"""
+    """
+    根据答案长度生成候选抽句数量。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param total_sentences: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     if total_sentences <= 1:
         return [1]
@@ -2021,7 +2724,17 @@ def sentence_count_candidates(total_sentences: int, mode: str) -> list[int]:
 
 
 def select_sentence_indices(sentences: list[str], strategy: str, count: int) -> list[int]:
-    """按不同策略选取句子索引。"""
+    """
+    按不同策略选取句子索引。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param sentences: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param strategy: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param count: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     total = len(sentences)
     count = max(1, min(count, total))
@@ -2123,21 +2836,45 @@ def select_sentence_indices(sentences: list[str], strategy: str, count: int) -> 
 
 
 def is_slogan_organization_question(question_data: dict[str, Any]) -> bool:
-    """Whether the organization question is really asking for a slogan or theme line."""
+    """
+    is_slogan_organization_question 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     haystack = build_question_haystack(question_data)
     return any(marker in haystack for marker in ("宣传语", "标语", "口号", "主题句"))
 
 
 def is_word_expression_scene(question_data: dict[str, Any]) -> bool:
-    """Whether the scene question is actually a word-expression / 串词表达 prompt."""
+    """
+    Whether the scene question is actually a word-expression / 串词表达 prompt.
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     haystack = build_question_haystack(question_data)
     return any(marker in haystack for marker in ("串词表达", "串词", "词语"))
 
 
 def is_speech_scene(question_data: dict[str, Any]) -> bool:
-    """Whether the scene question is actually a short speech / 演讲表达 prompt."""
+    """
+    Whether the scene question is actually a short speech / 演讲表达 prompt.
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     question_text = question_data.get("question", "")
     question_type = question_data.get("type", "")
@@ -2145,7 +2882,16 @@ def is_speech_scene(question_data: dict[str, Any]) -> bool:
 
 
 def generic_bridge_sentences(question_data: dict[str, Any], mode: str) -> list[str]:
-    """长度不足时补几句低信息密度的桥接语，但按题型家族区分。"""
+    """
+    长度不足时补几句低信息密度的桥接语，但按题型家族区分。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     family = detect_template_family(question_data)
     province = question_data.get("province", "当地") or "当地"
@@ -2203,7 +2949,18 @@ def generic_bridge_sentences(question_data: dict[str, Any], mode: str) -> list[s
 
 
 def extend_variant_length(text: str, question_data: dict[str, Any], mode: str, minimum_length: int) -> str:
-    """如果候选文本过短，就补几句低信息密度的桥接语。"""
+    """
+    如果候选文本过短，就补几句低信息密度的桥接语。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param minimum_length: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     extended = text
     family = detect_template_family(question_data)
@@ -2231,7 +2988,15 @@ def extend_variant_length(text: str, question_data: dict[str, Any], mode: str, m
 
 
 def count_repeated_sentences(text: str) -> int:
-    """统计样本中重复句子的数量，避免桥接句循环拼接。"""
+    """
+    统计样本中重复句子的数量，避免桥接句循环拼接。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     sentences = [clean_generated_sample_text(sentence) for sentence in split_answer_sentences(text)]
     counts = Counter(sentences)
@@ -2239,7 +3004,17 @@ def count_repeated_sentences(text: str) -> int:
 
 
 def count_bridge_sentence_hits(text: str, question_data: dict[str, Any], mode: str) -> int:
-    """统计样本里命中的通用桥接句数量。"""
+    """
+    统计样本里命中的通用桥接句数量。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     bridge_set = {
         clean_generated_sample_text(sentence)
@@ -2253,7 +3028,16 @@ def count_bridge_sentence_hits(text: str, question_data: dict[str, Any], mode: s
 
 
 def sample_focus_hits(text: str, question_data: dict[str, Any]) -> int:
-    """粗略统计样本是否保留了题目自身的主题、对象或岗位语境。"""
+    """
+    粗略统计样本是否保留了题目自身的主题、对象或岗位语境。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     markers = [
         infer_topic_phrase(question_data, generic=False),
@@ -2272,7 +3056,15 @@ def sample_focus_hits(text: str, question_data: dict[str, Any]) -> int:
 
 
 def placeholder_content_penalty(text: str) -> int:
-    """识别“相关内容”“演讲完毕”这类占位式空话。"""
+    """
+    识别“相关内容”“演讲完毕”这类占位式空话。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     penalty = max(0, text.count("相关内容") - 1) * 2
     if "演讲的题目是《相关内容" in text:
@@ -2285,7 +3077,17 @@ def placeholder_content_penalty(text: str) -> int:
 
 
 def sample_quality_penalty(text: str, question_data: dict[str, Any], mode: str) -> int:
-    """给桥接过重、主题过空的候选样本打惩罚分。"""
+    """
+    给桥接过重、主题过空的候选样本打惩罚分。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     repeated = count_repeated_sentences(text)
     bridge_hits = count_bridge_sentence_hits(text, question_data, mode)
@@ -2309,7 +3111,16 @@ def sample_quality_penalty(text: str, question_data: dict[str, Any], mode: str) 
 
 
 def sample_strategy_penalty(strategy: str, mode: str) -> int:
-    """对容易生成空泛样本的策略适度降权。"""
+    """
+    对容易生成空泛样本的策略适度降权。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param strategy: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     if strategy.startswith("template_"):
         return 2 if ACTIVE_PROFILE.name == "jiangsu_shiye" and mode == "mid" else 0
@@ -2322,7 +3133,17 @@ def sample_strategy_penalty(strategy: str, mode: str) -> int:
 
 
 def should_skip_candidate(text: str, question_data: dict[str, Any], mode: str) -> bool:
-    """直接拦掉明显坏掉的占位样本或桥接循环样本。"""
+    """
+    直接拦掉明显坏掉的占位样本或桥接循环样本。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     if count_repeated_sentences(text) > 0:
         return True
@@ -2332,7 +3153,15 @@ def should_skip_candidate(text: str, question_data: dict[str, Any], mode: str) -
 
 
 def sample_detail_score(text: str) -> float:
-    """粗略估计样本里“具体细节堆砌”的密度。"""
+    """
+    粗略估计样本里“具体细节堆砌”的密度。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     digit_count = len(re.findall(r"\d", text))
     ordered_marker_count = len(re.findall(r"[一二三四五六七八九十][、是]|首先|其次|再次|最后", text))
@@ -2351,7 +3180,15 @@ def sample_detail_score(text: str) -> float:
 
 
 def build_question_haystack(question_data: dict[str, Any]) -> str:
-    """把题型识别所需信息拼成统一文本。"""
+    """
+    把题型识别所需信息拼成统一文本。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     return " ".join(
         [
@@ -2365,7 +3202,15 @@ def build_question_haystack(question_data: dict[str, Any]) -> str:
 
 
 def detect_template_family(question_data: dict[str, Any]) -> str | None:
-    """识别适合走独立模板生成的题型。"""
+    """
+    识别适合走独立模板生成的题型。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     haystack = build_question_haystack(question_data)
     question_text = question_data.get("question", "")
@@ -2423,7 +3268,15 @@ def detect_template_family(question_data: dict[str, Any]) -> str | None:
 
 
 def resolve_sample_template_family(question_data: dict[str, Any]) -> str | None:
-    """在不扩大通用题型识别影响面的前提下，为江苏样本补充题型兜底。"""
+    """
+    在不扩大通用题型识别影响面的前提下，为江苏样本补充题型兜底。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     family = detect_template_family(question_data)
     if family or ACTIVE_PROFILE.name != "jiangsu_shiye":
@@ -2446,7 +3299,16 @@ def resolve_sample_template_family(question_data: dict[str, Any]) -> str | None:
 
 
 def ordered_keywords(question_data: dict[str, Any], *, generic: bool = False) -> list[str]:
-    """取一组去重后的关键词，供模板拼句使用。"""
+    """
+    取一组去重后的关键词，供模板拼句使用。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param generic: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     values: list[str] = []
     seen = set()
@@ -2465,7 +3327,15 @@ def ordered_keywords(question_data: dict[str, Any], *, generic: bool = False) ->
 
 
 def extract_word_expression_terms(question_data: dict[str, Any]) -> list[str]:
-    """尽量从串词题题干里提取可直接落笔的原始词语。"""
+    """
+    尽量从串词题题干里提取可直接落笔的原始词语。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     question_text = question_data.get("question", "")
     candidates = re.findall(r"[“\"]([^”\"]{2,120})[”\"]", question_text)
@@ -2498,7 +3368,15 @@ def extract_word_expression_terms(question_data: dict[str, Any]) -> list[str]:
 
 
 def infer_role_focus(question_data: dict[str, Any]) -> str:
-    """粗略提炼题目对应的岗位/工作语境。"""
+    """
+    粗略提炼题目对应的岗位/工作语境。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     haystack = build_question_haystack(question_data)
     mappings = (
@@ -2520,7 +3398,16 @@ def infer_role_focus(question_data: dict[str, Any]) -> str:
 
 
 def infer_target_group(question_data: dict[str, Any], *, generic: bool = False) -> str:
-    """提炼组织策划题的服务对象。"""
+    """
+    提炼组织策划题的服务对象。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param generic: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     question_first_haystack = " ".join(
         [
@@ -2565,7 +3452,16 @@ def infer_target_group(question_data: dict[str, Any], *, generic: bool = False) 
 
 
 def infer_topic_phrase(question_data: dict[str, Any], *, generic: bool = False) -> str:
-    """提炼题目的主题词。"""
+    """
+    提炼题目的主题词。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param generic: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     noise = {"相关群体", "有关部门", "有关要求", "相关机制", "相关工作", "相关内容"}
     skip_markers = (
@@ -2644,7 +3540,15 @@ TOPIC_PREFERRED_MARKERS = (
 
 
 def clean_sample_topic_candidate(value: str) -> str:
-    """清洗从题干/题型里抓出的短主题。"""
+    """
+    清洗从题干/题型里抓出的短主题。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param value: 待规范化的原始值；兼容旧数据时应优先保留可解释结果。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     cleaned = re.sub(r"^[：:，,。\s]+", "", value)
     cleaned = re.sub(r"(?:类|题|工作|问题)$", "", cleaned.strip(" ；;，,。"))
@@ -2653,7 +3557,15 @@ def clean_sample_topic_candidate(value: str) -> str:
 
 
 def topic_candidate_score(value: str) -> tuple[int, int]:
-    """给江苏兜底主题排序，优先保留有领域信息的短语。"""
+    """
+    给江苏兜底主题排序，优先保留有领域信息的短语。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param value: 待规范化的原始值；兼容旧数据时应优先保留可解释结果。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     preferred = sum(1 for marker in TOPIC_PREFERRED_MARKERS if marker in value)
     noise = sum(1 for marker in TOPIC_NOISE_MARKERS if marker in value)
@@ -2661,7 +3573,15 @@ def topic_candidate_score(value: str) -> tuple[int, int]:
 
 
 def specific_sample_topic_phrase(question_data: dict[str, Any]) -> str:
-    """优先返回适合写进样本答案的具体主题，避免“这项工作/相关内容”。"""
+    """
+    优先返回适合写进样本答案的具体主题，避免“这项工作/相关内容”。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     topic = infer_topic_phrase(question_data, generic=False)
     if topic not in GENERIC_TOPIC_PHRASES and topic not in PROVINCE_LEVEL_NAMES:
@@ -2827,7 +3747,16 @@ def _build_interpersonal_mid_closing(question_data: dict[str, Any]) -> str:
 
 
 def clean_question_type(raw_type: str, header_description: str) -> str:
-    """Sanitize polluted type text and fall back to header description when needed."""
+    """
+    clean_question_type 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param raw_type: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param header_description: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     for candidate in (raw_type or "", header_description or ""):
         text = candidate.splitlines()[0].strip()
@@ -2845,7 +3774,16 @@ def clean_question_type(raw_type: str, header_description: str) -> str:
 
 
 def build_analysis_template_texts(question_data: dict[str, Any], mode: str) -> list[tuple[str, str, bool]]:
-    """为综合分析/价值判断题生成中低档模板文本。"""
+    """
+    为综合分析/价值判断题生成中低档模板文本。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     topic = specific_sample_topic_phrase(question_data)
     topic2 = ordered_keywords(question_data, generic=False)[1:2]
@@ -2916,7 +3854,16 @@ def build_analysis_template_texts(question_data: dict[str, Any], mode: str) -> l
 
 
 def build_organization_template_texts(question_data: dict[str, Any], mode: str) -> list[tuple[str, str, bool]]:
-    """为计划组织题生成中低档模板文本。"""
+    """
+    为计划组织题生成中低档模板文本。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     slogan_question = is_slogan_organization_question(question_data)
     target_group = infer_target_group(question_data, generic=False)
@@ -3044,7 +3991,16 @@ def build_organization_template_texts(question_data: dict[str, Any], mode: str) 
 
 
 def build_interpersonal_template_texts(question_data: dict[str, Any], mode: str) -> list[tuple[str, str, bool]]:
-    """为人际沟通题生成中低档模板文本。"""
+    """
+    为人际沟通题生成中低档模板文本。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     target_group = infer_target_group(question_data, generic=False)
     topic = infer_topic_phrase(question_data, generic=False)
@@ -3114,7 +4070,16 @@ def build_interpersonal_template_texts(question_data: dict[str, Any], mode: str)
 
 
 def build_scene_template_texts(question_data: dict[str, Any], mode: str) -> list[tuple[str, str, bool]]:
-    """为现场模拟/宣讲表达类题生成中低档模板文本。"""
+    """
+    为现场模拟/宣讲表达类题生成中低档模板文本。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     target_group = infer_target_group(question_data, generic=False)
     topic = specific_sample_topic_phrase(question_data)
@@ -3316,7 +4281,17 @@ def build_template_candidates(
     question: QuestionDefinition,
     mode: str,
 ) -> list[GeneratedSample]:
-    """按题型走独立模板生成中低档样本。"""
+    """
+    按题型走独立模板生成中低档样本。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param question: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     family = resolve_sample_template_family(question_data)
     if family == "analysis":
@@ -3384,7 +4359,16 @@ def build_template_candidates(
 
 
 def truncate_sentence(sentence: str, trim_chars: int | None) -> str:
-    """把超长句子压缩成主干信息，降低相似度但保留可读性。"""
+    """
+    把超长句子压缩成主干信息，降低相似度但保留可读性。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param sentence: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param trim_chars: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     if trim_chars is None or len(sentence) <= trim_chars:
         return sentence.strip()
@@ -3416,7 +4400,21 @@ def build_answer_variant(
     sanitization: str,
     oral: bool = False,
 ) -> str:
-    """基于高分答案构造一个降档版本。"""
+    """
+    基于高分答案构造一个降档版本。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param strategy: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param count: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param trim_chars: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param sanitization: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param oral: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     sentences = split_answer_sentences(question_data["referenceAnswer"])
     if len(sentences) <= 1:
@@ -3460,7 +4458,17 @@ def build_fallback_candidates(
     question: QuestionDefinition,
     mode: str,
 ) -> list[GeneratedSample]:
-    """当常规枚举被过滤空时，补一组更稳妥的兜底候选。"""
+    """
+    当常规枚举被过滤空时，补一组更稳妥的兜底候选。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param question: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     sentences = split_answer_sentences(question_data["referenceAnswer"])
     if len(sentences) <= 1:
@@ -3521,7 +4529,16 @@ def build_jiangsu_mid_reference_candidates(
     question_data: dict[str, Any],
     question: QuestionDefinition,
 ) -> list[GeneratedSample]:
-    """江苏中档样本只取少量较短的参考答案压缩候选，避免证据抽取被长文本拖垮。"""
+    """
+    江苏中档样本只取少量较短的参考答案压缩候选，避免证据抽取被长文本拖垮。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param question: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     sentences = split_answer_sentences(question_data["referenceAnswer"])
     if len(sentences) <= 1:
@@ -3571,7 +4588,16 @@ def build_jiangsu_mid_reference_candidates(
 
 
 def score_sample_deterministically(question: QuestionDefinition, transcript: str) -> float:
-    """直接复用后端确定性评分链路给样本打分。"""
+    """
+    直接复用后端确定性评分链路给样本打分。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param transcript: 语音转写后的答题文本；评分链路依赖它，但不得把低置信 ASR 当成标准答案。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     evidence_packet, evidence_notes = prepare_evidence_packet(
         raw_llm_result={},
@@ -3600,7 +4626,18 @@ def collect_generated_candidates(
     *,
     relaxed_length_floor: int | None = None,
 ) -> list[GeneratedSample]:
-    """枚举候选文本并计算确定性分数。"""
+    """
+    枚举候选文本并计算确定性分数。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param question: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param relaxed_length_floor: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     sentences = split_answer_sentences(question_data["referenceAnswer"])
     if len(sentences) <= 1:
@@ -3667,7 +4704,20 @@ def choose_low_sample(
     family: str | None = None,
     question_data: dict[str, Any] | None = None,
 ) -> GeneratedSample:
-    """优先挑一个稳定落在中低位的样本。"""
+    """
+    优先挑一个稳定落在中低位的样本。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param candidates: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param high_score: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param full_score: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param reference_length: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param family: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     target_ratio = 0.18 if family in {"organization", "interpersonal", "scene"} else 0.2
     target = round(full_score * target_ratio, 1)
@@ -3705,7 +4755,21 @@ def choose_mid_sample(
     family: str | None = None,
     question_data: dict[str, Any] | None = None,
 ) -> GeneratedSample:
-    """挑选介于高分与低分之间、且和低档拉开差距的样本。"""
+    """
+    挑选介于高分与低分之间、且和低档拉开差距的样本。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param candidates: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param low_score: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param high_score: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param full_score: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param reference_length: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param family: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     target_ratio = 0.48 if family in {"organization", "interpersonal", "scene"} else 0.52
     target = round(full_score * target_ratio, 1)
@@ -3769,7 +4833,19 @@ def ensure_mid_low_gap(
     low_candidates: list[GeneratedSample],
     full_score: float,
 ) -> tuple[GeneratedSample, GeneratedSample]:
-    """如果中低档差距太小，优先拉开分档距离。"""
+    """
+    如果中低档差距太小，优先拉开分档距离。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param mid_sample: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param low_sample: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param mid_candidates: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param low_candidates: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param full_score: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     desired_gap = max(3.0, round(full_score * 0.08, 1))
     if mid_sample.score >= low_sample.score + desired_gap:
@@ -3809,7 +4885,15 @@ def ensure_mid_low_gap(
 
 
 def build_reference_samples(question_data: dict[str, Any]) -> tuple[dict[str, GeneratedSample], dict[str, dict[str, Any]]]:
-    """为单道题构造高/中/低三档参考样本，并记录打分元数据。"""
+    """
+    为单道题构造高/中/低三档参考样本，并记录打分元数据。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises ValueError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    """
 
     question_payload = dict(question_data)
     question_payload["regressionCases"] = []
@@ -3927,7 +5011,15 @@ def build_reference_samples(question_data: dict[str, Any]) -> tuple[dict[str, Ge
 
 
 def build_score_bands(full_score: float) -> list[dict]:
-    """按统一比例生成分档。"""
+    """
+    按统一比例生成分档。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param full_score: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     low_max = round(full_score * 0.55, 1)
     pass_max = round(full_score * 0.7, 1)
@@ -3967,7 +5059,18 @@ def bounded_expected_range(
     lower_bound: float,
     upper_bound: float,
 ) -> tuple[float, float]:
-    """给程序化样本构造一个稳定且尽量不重叠的预期分数区间。"""
+    """
+    给程序化样本构造一个稳定且尽量不重叠的预期分数区间。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param score: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param margin: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param lower_bound: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param upper_bound: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     lower_bound = round(max(0.0, lower_bound), 1)
     upper_bound = round(max(0.0, upper_bound), 1)
@@ -3995,7 +5098,21 @@ def build_initial_llm_expected_range(
     upper_bound: float,
     family: str | None = None,
 ) -> tuple[float, float]:
-    """给 LLM 回归先写一组初始区间，后续可被正式标定脚本回写。"""
+    """
+    给 LLM 回归先写一组初始区间，后续可被正式标定脚本回写。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param level: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param deterministic_min: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param deterministic_max: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param full_score: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param lower_bound: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param upper_bound: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param family: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     if level == "high":
         return round(deterministic_min, 1), round(min(full_score, deterministic_max), 1)
@@ -4031,7 +5148,18 @@ def build_regression_cases(
     *,
     family: str | None = None,
 ) -> list[dict]:
-    """为每道题挂载高 / 中 / 低三档回归样本。"""
+    """
+    为每道题挂载高 / 中 / 低三档回归样本。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
+    @param full_score: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param samples: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param family: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     high_sample = samples["high"]
     mid_sample = samples["mid"]
@@ -4133,13 +5261,29 @@ def build_regression_cases(
 
 
 def clean_reference_answer_section(text: str) -> str:
-    """清理“核心采分/基准答案”拆行后残留的前缀。"""
+    """
+    清理“核心采分/基准答案”拆行后残留的前缀。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     return re.sub(r"^(?:核心采分)?基准答案\s*[：:]?\s*", "", text.strip())
 
 
 def infer_question_no(question_id: str) -> int | None:
-    """从题号后缀中提取套题内题序。"""
+    """
+    从题号后缀中提取套题内题序。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     match = re.search(r"-(\d{1,3})$", str(question_id or ""))
     if not match:
@@ -4148,7 +5292,15 @@ def infer_question_no(question_id: str) -> int | None:
 
 
 def has_counted_appearance_score(text: str) -> bool:
-    """判断文档里的仪态分是否计入整套总分。"""
+    """
+    判断文档里的仪态分是否计入整套总分。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     value = str(text or "")
     if "仪态分" not in value:
@@ -4167,7 +5319,17 @@ def parse_question_block(
     source_path: Path,
     context: QuestionBlockContext | None = None,
 ) -> ParsedQuestion:
-    """把单个题目块解析成 QuestionDefinition 所需的字典。"""
+    """
+    把单个题目块解析成 QuestionDefinition 所需的字典。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param block: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param source_path: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param context: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises ValueError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    """
 
     header_match = HEADER_PATTERN.search(block)
     if not header_match:
@@ -4290,7 +5452,16 @@ def parse_question_block(
 
 
 def should_replace(existing: ParsedQuestion, candidate: ParsedQuestion) -> bool:
-    """重复题号时，优先保留更高优先级或信息更完整的版本。"""
+    """
+    重复题号时，优先保留更高优先级或信息更完整的版本。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param existing: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param candidate: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     existing_priority = SOURCE_PRIORITY.get(existing.source_path.name, 0)
     candidate_priority = SOURCE_PRIORITY.get(candidate.source_path.name, 0)
@@ -4300,7 +5471,16 @@ def should_replace(existing: ParsedQuestion, candidate: ParsedQuestion) -> bool:
 
 
 def is_skippable_question_block_error(block: str, error: Exception) -> bool:
-    """识别卷首套题摘要等没有正文的题号空块。"""
+    """
+    识别卷首套题摘要等没有正文的题号空块。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param block: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param error: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     message = str(error)
     if "缺少题干" not in message:
@@ -4309,7 +5489,15 @@ def is_skippable_question_block_error(block: str, error: Exception) -> bool:
 
 
 def prepare_output_dirs() -> None:
-    """清理自动生成目录，避免旧文件残留。"""
+    """
+    清理自动生成目录，避免旧文件残留。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     QUESTION_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     SAMPLE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -4324,7 +5512,15 @@ def prepare_output_dirs() -> None:
 
 
 def apply_suite_score_totals(parsed_questions: dict[str, ParsedQuestion]) -> None:
-    """按套题汇总答题分和仪态分，回写到每道题元数据。"""
+    """
+    按套题汇总答题分和仪态分，回写到每道题元数据。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param parsed_questions: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     grouped: dict[str, list[ParsedQuestion]] = {}
     for parsed in parsed_questions.values():
@@ -4365,7 +5561,15 @@ def apply_suite_score_totals(parsed_questions: dict[str, ParsedQuestion]) -> Non
 
 
 def write_question_files(parsed_questions: dict[str, ParsedQuestion]) -> dict[str, dict[str, Any]]:
-    """把导入结果落成 JSON 与高/中/低参考答案样本。"""
+    """
+    把导入结果落成 JSON 与高/中/低参考答案样本。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param parsed_questions: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     sample_generation_summary: dict[str, dict[str, Any]] = {}
 
@@ -4404,7 +5608,20 @@ def write_summary(
     parse_failures: list[dict] | None = None,
     source_stats: list[dict] | None = None,
 ) -> None:
-    """输出导入摘要，便于核对。"""
+    """
+    输出导入摘要，便于核对。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param parsed_questions: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @param duplicates: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param sample_generation_summary: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param skipped_blocks: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param parse_failures: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param source_stats: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     summary = {
         "profile": ACTIVE_PROFILE.name,
@@ -4425,7 +5642,15 @@ def write_summary(
 
 
 def run_profile_import(profile_name: str | ImportProfile) -> int:
-    """执行指定 profile 的题库导入。"""
+    """
+    执行指定 profile 的题库导入。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param profile_name: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises FileNotFoundError, RuntimeError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    """
 
     activate_profile(profile_name)
     prepare_output_dirs()
@@ -4532,7 +5757,15 @@ def run_profile_import(profile_name: str | ImportProfile) -> int:
 
 
 def render_builtin_profiles() -> str:
-    """把当前内置 profile 列表渲染成终端可读文本。"""
+    """
+    把当前内置 profile 列表渲染成终端可读文本。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     lines = ["当前内置 profile："]
     for name, profile in sorted(IMPORT_PROFILES.items()):
@@ -4545,7 +5778,15 @@ def render_builtin_profiles() -> str:
 
 
 def build_argument_parser() -> argparse.ArgumentParser:
-    """构建 CLI 参数解析器。"""
+    """
+    构建 CLI 参数解析器。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     parser = argparse.ArgumentParser(description="导入 profile 化题库文本。")
     parser.add_argument(
@@ -4576,7 +5817,16 @@ def build_argument_parser() -> argparse.ArgumentParser:
 
 
 def resolve_profile_from_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> str | ImportProfile:
-    """把 CLI 参数转换成内置 profile 或临时 profile。"""
+    """
+    把 CLI 参数转换成内置 profile 或临时 profile。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param args: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param parser: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     custom_mode = bool(args.profile_name or args.province or args.source_files)
     if custom_mode:
@@ -4593,7 +5843,15 @@ def resolve_profile_from_args(args: argparse.Namespace, parser: argparse.Argumen
 
 
 def main(argv: list[str] | None = None) -> int:
-    """CLI 入口。"""
+    """
+    CLI 入口。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param argv: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     parser = build_argument_parser()
     args = parser.parse_args(argv)

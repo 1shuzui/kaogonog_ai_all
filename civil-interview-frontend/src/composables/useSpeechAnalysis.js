@@ -1,6 +1,9 @@
 /**
- * 语音分析 composable
- * 纯前端分析转写文本，计算语速、口头禅、流畅度等指标
+ * 这个组合式函数封装 `useSpeechAnalysis` 相关浏览器行为；页面复用它，是为了少碰底层 API 和生命周期细节。
+ *
+ * @param 无；文件级模块通过导出的 analyzeSpeech 接收转写文本和录音时长。
+ * @return 导出轻量语音表达分析能力，结果只作为练习反馈，不替代后端正式评分。
+ * @raises 不主动抛出业务异常；异常输入会被归一为空分析结果，避免结果页被辅助指标阻断。
  */
 
 // 常见口头禅/语气词
@@ -19,10 +22,12 @@ const FORMAL_PHRASES = [
 ]
 
 /**
- * 分析转写文本的语音表达质量
+ * 将语速和口头禅规则集中在这里，是为了让结果页和复盘页使用同一套辅助反馈口径。
+ *
  * @param {string} transcript - 转写文本
  * @param {number} durationSeconds - 录音时长（秒）
  * @returns {object} 分析结果
+ * @raises 不主动抛出业务异常；缺少文本或时长时返回无数据结构，保证主评分链路稳定。
  */
 export function analyzeSpeech(transcript, durationSeconds) {
   if (!transcript || !durationSeconds) {

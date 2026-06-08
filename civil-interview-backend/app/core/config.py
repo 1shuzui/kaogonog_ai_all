@@ -1,4 +1,10 @@
-"""Central configuration loaded from .env"""
+"""
+这个文件把环境变量翻译成后端配置；MySQL、Redis、FunASR、微信虚拟支付这些外部依赖都先从这里取口径。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 import os
 from pathlib import Path
 from urllib.parse import quote_plus
@@ -93,6 +99,15 @@ def _build_mysql_database_url() -> str:
 
 
 class Settings:
+    """
+    Settings 作为公共类型保留，是为了让调用方共享同一套业务语义和数据边界。
+
+    核心模块提供跨服务共享能力，注释用于标明配置、安全和外部依赖的统一边界。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
     secret_key: str = _env("SECRET_KEY", default="civil-demo-secret")
     algorithm: str = "HS256"
     access_token_expire_minutes: int = _env_int("ACCESS_TOKEN_EXPIRE_MINUTES", default=10080)

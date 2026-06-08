@@ -1,3 +1,10 @@
+<!--
+这个文件是小程序应用外壳；它只放全局生命周期和基础布局，具体业务页面不要塞到这里。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <script>
 import { API_BASE } from './api/request'
 import { logger } from './utils/logger'
@@ -17,6 +24,7 @@ page {
   min-height: 100%;
   background: #f0f5fa;
   color: #1a1a2e;
+  color-scheme: light;
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 30rpx;
 }

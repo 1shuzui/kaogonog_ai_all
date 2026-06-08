@@ -1,4 +1,10 @@
-"""Database models"""
+"""
+这个文件定义线上 MySQL 的核心表：用户、题目、考试、订单、权益和反馈；这里的字段名字会被接口、脚本和旧数据一起依赖，改动要格外保守。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 import uuid
 from datetime import datetime, timezone
 
@@ -9,10 +15,28 @@ from app.db.session import Base
 
 
 def gen_id(prefix=""):
+    """
+    gen_id 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    数据模型需要兼容已经上线的 MySQL 数据和多端接口，注释重点说明字段存在的业务原因。
+
+    @param prefix: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     return f"{prefix}{uuid.uuid4().hex[:8]}"
 
 
 class User(Base):
+    """
+    User 数据模型承载已上线数据契约，字段调整会影响接口、脚本和历史记录的兼容性。
+
+    数据模型需要兼容已经上线的 MySQL 数据和多端接口，注释重点说明字段存在的业务原因。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String(64), unique=True, nullable=False, index=True)
@@ -25,8 +49,11 @@ class User(Base):
     preferences = Column(JSON, default=dict)
     agreed_terms_version = Column(String(20), default="")
     agreed_terms_at = Column(DateTime, nullable=True)
+    last_login_at = Column(DateTime, nullable=True)
+    last_active_at = Column(DateTime, nullable=True)
     last_login_device = Column(String(200), default="")
     login_device_history = Column(JSON, default=list)
+    registered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     payment_orders = relationship("PaymentOrder", back_populates="user", cascade="all, delete-orphan")
@@ -35,6 +62,15 @@ class User(Base):
 
 
 class Question(Base):
+    """
+    Question 数据模型承载已上线数据契约，字段调整会影响接口、脚本和历史记录的兼容性。
+
+    数据模型需要兼容已经上线的 MySQL 数据和多端接口，注释重点说明字段存在的业务原因。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
     __tablename__ = "questions"
     __table_args__ = (
         Index("idx_questions_province_dimension", "province", "dimension"),
@@ -52,6 +88,15 @@ class Question(Base):
 
 
 class Exam(Base):
+    """
+    Exam 数据模型承载已上线数据契约，字段调整会影响接口、脚本和历史记录的兼容性。
+
+    数据模型需要兼容已经上线的 MySQL 数据和多端接口，注释重点说明字段存在的业务原因。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
     __tablename__ = "exams"
     id = Column(String(32), primary_key=True, default=lambda: gen_id("exam_"))
     user_id = Column(String(64), nullable=False, index=True)
@@ -64,6 +109,15 @@ class Exam(Base):
 
 
 class ExamAnswer(Base):
+    """
+    ExamAnswer 数据模型承载已上线数据契约，字段调整会影响接口、脚本和历史记录的兼容性。
+
+    数据模型需要兼容已经上线的 MySQL 数据和多端接口，注释重点说明字段存在的业务原因。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
     __tablename__ = "exam_answers"
     id = Column(Integer, primary_key=True, autoincrement=True)
     exam_id = Column(String(32), ForeignKey("exams.id"), nullable=False, index=True)
@@ -76,6 +130,15 @@ class ExamAnswer(Base):
 
 
 class HistoryRecord(Base):
+    """
+    HistoryRecord 数据模型承载已上线数据契约，字段调整会影响接口、脚本和历史记录的兼容性。
+
+    数据模型需要兼容已经上线的 MySQL 数据和多端接口，注释重点说明字段存在的业务原因。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
     __tablename__ = "history_records"
     id = Column(Integer, primary_key=True, autoincrement=True)
     exam_id = Column(String(32), unique=True, nullable=False, index=True)
@@ -90,6 +153,15 @@ class HistoryRecord(Base):
 
 
 class SubscriptionPackage(Base):
+    """
+    SubscriptionPackage 数据模型承载已上线数据契约，字段调整会影响接口、脚本和历史记录的兼容性。
+
+    数据模型需要兼容已经上线的 MySQL 数据和多端接口，注释重点说明字段存在的业务原因。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
     __tablename__ = "subscription_packages"
     id = Column(Integer, primary_key=True, autoincrement=True)
     package_code = Column(String(100), unique=True, nullable=False, index=True)
@@ -106,6 +178,15 @@ class SubscriptionPackage(Base):
 
 
 class PaymentOrder(Base):
+    """
+    PaymentOrder 数据模型承载已上线数据契约，字段调整会影响接口、脚本和历史记录的兼容性。
+
+    数据模型需要兼容已经上线的 MySQL 数据和多端接口，注释重点说明字段存在的业务原因。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
     __tablename__ = "payment_orders"
     id = Column(Integer, primary_key=True, autoincrement=True)
     order_no = Column(String(100), unique=True, nullable=False, index=True)
@@ -125,6 +206,15 @@ class PaymentOrder(Base):
 
 
 class SupportFeedback(Base):
+    """
+    SupportFeedback 数据模型承载已上线数据契约，字段调整会影响接口、脚本和历史记录的兼容性。
+
+    数据模型需要兼容已经上线的 MySQL 数据和多端接口，注释重点说明字段存在的业务原因。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
     __tablename__ = "support_feedback"
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String(64), nullable=False, index=True)
@@ -148,6 +238,15 @@ class SupportFeedback(Base):
 
 
 class TargetedFocusConfig(Base):
+    """
+    TargetedFocusConfig 数据模型承载已上线数据契约，字段调整会影响接口、脚本和历史记录的兼容性。
+
+    数据模型需要兼容已经上线的 MySQL 数据和多端接口，注释重点说明字段存在的业务原因。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
     __tablename__ = "targeted_focus_configs"
     id = Column(Integer, primary_key=True, autoincrement=True)
     target_key = Column(String(255), unique=True, nullable=False, index=True)
@@ -167,6 +266,15 @@ class TargetedFocusConfig(Base):
 
 
 class UserSubscription(Base):
+    """
+    UserSubscription 数据模型承载已上线数据契约，字段调整会影响接口、脚本和历史记录的兼容性。
+
+    数据模型需要兼容已经上线的 MySQL 数据和多端接口，注释重点说明字段存在的业务原因。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
     __tablename__ = "user_subscriptions"
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String(64), ForeignKey("users.username"), nullable=False, index=True)
@@ -191,6 +299,15 @@ class UserSubscription(Base):
 
 
 class UsageRecord(Base):
+    """
+    UsageRecord 数据模型承载已上线数据契约，字段调整会影响接口、脚本和历史记录的兼容性。
+
+    数据模型需要兼容已经上线的 MySQL 数据和多端接口，注释重点说明字段存在的业务原因。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
     __tablename__ = "usage_records"
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String(64), ForeignKey("users.username"), nullable=False, index=True)

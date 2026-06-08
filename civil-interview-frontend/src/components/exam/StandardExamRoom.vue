@@ -1,3 +1,10 @@
+<!--
+这个专项考场组件服务单题或少量题练习，复用录音录像和提交逻辑，但不承担套题组卷。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <div class="exam-room" v-if="examStore.currentQuestion">
     <div v-if="!isOnline" class="exam-room__offline-banner">
@@ -133,6 +140,8 @@ import RecordingControl from '@/components/recording/RecordingControl.vue'
 import ScoreRing from '@/components/common/ScoreRing.vue'
 import QuestionMetaTags from '@/components/common/QuestionMetaTags.vue'
 import QuestionRichContent from '@/components/common/QuestionRichContent.vue'
+import { reportUsage } from '@/api/usage'
+import { useBillingStore } from '@/stores/billing'
 import { message } from 'ant-design-vue'
 import { logger } from '@/utils/logger'
 
@@ -147,6 +156,7 @@ const cameraResizeHandles = Object.freeze(['n', 'e', 's', 'w', 'ne', 'se', 'sw',
 
 const router = useRouter()
 const examStore = useExamStore()
+const billingStore = useBillingStore()
 const recorder = useMediaRecorder()
 const { isOnline } = useNetworkStatus()
 const stream = recorder.stream
@@ -238,14 +248,42 @@ async function onSubmit() {
   if (finishRequested.value) return
   countdown.stop()
   try {
+    const usageSeconds = Math.max(1, Math.ceil(Number(recorderDuration.value) || 0))
     const blob = await recorder.stopRecording()
-    await examStore.submitAnswer(blob)
+    const answer = await examStore.submitAnswer(blob)
+    await syncUsage(answer, usageSeconds)
     if (!examStore.isLastQuestion) {
       message.success('本题已提交，后台评分中。')
       onNext()
     }
   } catch (error) {
     message.error(`提交失败: ${error.message || '未知错误'}`)
+  }
+}
+
+async function syncUsage(answer, usageSeconds) {
+  if (!answer?.examId || !answer?.questionId) return
+  try {
+    const result = await reportUsage({
+      examId: answer.examId,
+      questionId: answer.questionId,
+      usageSeconds,
+      usageType: examStore.fullExamMode ? 'full_exam' : 'practice'
+    })
+    billingStore.$patch({
+      remainingMinutes: Math.max(0, Number(result?.remainingMinutes ?? 0)),
+      remainingDailyMinutes: Math.max(0, Number(result?.remainingDailyMinutes ?? 0)),
+      usedMinutes: Math.max(0, Number(result?.usedMinutes ?? billingStore.usedMinutes)),
+      dailyLimitMinutes: Math.max(0, Number(result?.dailyLimitMinutes ?? billingStore.dailyLimitMinutes))
+    })
+    billingStore.persist()
+  } catch (error) {
+    logger.warn('Usage report failed', {
+      component: 'StandardExamRoom',
+      examId: answer.examId,
+      questionId: answer.questionId,
+      error: error?.message
+    })
   }
 }
 

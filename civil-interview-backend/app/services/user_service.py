@@ -1,4 +1,10 @@
-"""User service: profile, password, preferences, provinces"""
+"""
+这个文件处理用户资料、省份偏好、练习偏好和活跃时间；这些信息会影响首页默认筛选和后台统计，所以统一从这里读写。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 from datetime import datetime, timezone
 
 from fastapi import HTTPException
@@ -51,6 +57,16 @@ VALID_PREFERRED_QUESTION_DIMENSIONS = {
 
 
 def get_user_or_404(db: Session, username: str) -> User:
+    """
+    get_user_or_404 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param username: 账号唯一标识；历史记录、权益和订单仍以用户名串联，需保持向后兼容。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    """
     user = db.query(User).filter(User.username == username).first()
     if not user:
         raise HTTPException(status_code=404, detail="用户未找到")
@@ -88,6 +104,16 @@ def _normalize_preferences(prefs: dict | None) -> dict:
 
 
 def get_user_info(db: Session, current_user: AuthUser) -> dict:
+    """
+    get_user_info 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     user = get_user_or_404(db, current_user.username)
     normalized_preferences = _normalize_preferences(user.preferences)
     raw_preferences = user.preferences if isinstance(user.preferences, dict) else {}
@@ -101,6 +127,10 @@ def get_user_info(db: Session, current_user: AuthUser) -> dict:
         "avatar": user.avatar or "",
         "province": user.province or "national",
         "email": user.email or "",
+        "registeredAt": user.registered_at.isoformat() if user.registered_at else "",
+        "createdAt": user.created_at.isoformat() if user.created_at else "",
+        "lastLoginAt": user.last_login_at.isoformat() if user.last_login_at else "",
+        "lastActiveAt": user.last_active_at.isoformat() if user.last_active_at else "",
         "preferences": {
             key: normalized_preferences[key]
             for key in DEFAULT_PREFERENCES
@@ -121,6 +151,17 @@ def get_user_info(db: Session, current_user: AuthUser) -> dict:
 
 
 def update_user_profile(db: Session, current_user: AuthUser, data: UserProfileUpdate) -> dict:
+    """
+    update_user_profile 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    """
     user = get_user_or_404(db, current_user.username)
     if data.full_name is not None:
         user.full_name = data.full_name
@@ -137,6 +178,17 @@ def update_user_profile(db: Session, current_user: AuthUser, data: UserProfileUp
 
 
 def change_password(db: Session, current_user: AuthUser, data: UserPasswordUpdate) -> dict:
+    """
+    change_password 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    """
     user = get_user_or_404(db, current_user.username)
     if not verify_password(data.old_password, user.hashed_password):
         raise HTTPException(status_code=400, detail="原密码错误")
@@ -146,6 +198,17 @@ def change_password(db: Session, current_user: AuthUser, data: UserPasswordUpdat
 
 
 def update_preferences(db: Session, current_user: AuthUser, prefs: dict) -> dict:
+    """
+    update_preferences 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @param prefs: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     user = get_user_or_404(db, current_user.username)
     current = dict(user.preferences) if isinstance(user.preferences, dict) else {}
     incoming = dict(prefs) if isinstance(prefs, dict) else {}
@@ -155,10 +218,30 @@ def update_preferences(db: Session, current_user: AuthUser, prefs: dict) -> dict
 
 
 def get_provinces() -> list:
+    """
+    get_provinces 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     return PROVINCES
 
 
 def update_user_province(db: Session, username: str, province: str) -> dict:
+    """
+    update_user_province 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param username: 账号唯一标识；历史记录、权益和订单仍以用户名串联，需保持向后兼容。
+    @param province: 地区筛选值；只表示地域，不替代考试体系或岗位方向。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    """
     if province not in VALID_PROVINCES:
         raise HTTPException(status_code=400, detail="无效的省份代码")
     user = get_user_or_404(db, username)
@@ -168,6 +251,16 @@ def update_user_province(db: Session, username: str, province: str) -> dict:
 
 
 def get_terms_status(db: Session, username: str) -> dict:
+    """
+    get_terms_status 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param username: 账号唯一标识；历史记录、权益和订单仍以用户名串联，需保持向后兼容。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     user = get_user_or_404(db, username)
     agreed_version = user.agreed_terms_version or ""
     return {
@@ -180,6 +273,17 @@ def get_terms_status(db: Session, username: str) -> dict:
 
 
 def record_terms_agreement(db: Session, username: str, version: str) -> dict:
+    """
+    record_terms_agreement 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param username: 账号唯一标识；历史记录、权益和订单仍以用户名串联，需保持向后兼容。
+    @param version: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    """
     version = str(version or "").strip()
     if not version:
         raise HTTPException(status_code=400, detail="协议版本不能为空")
@@ -195,6 +299,17 @@ def record_terms_agreement(db: Session, username: str, version: str) -> dict:
 
 
 def check_device_risk(db: Session, username: str, device_id: str) -> dict:
+    """
+    check_device_risk 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+
+    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
+    @param username: 账号唯一标识；历史记录、权益和订单仍以用户名串联，需保持向后兼容。
+    @param device_id: 业务对象标识；用于跨接口追溯同一条记录，调用方应避免传入展示名。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     device_id = str(device_id or "").strip()
     if not device_id:
         return {

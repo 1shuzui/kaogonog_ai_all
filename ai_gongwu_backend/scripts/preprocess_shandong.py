@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Pre-process Shandong docx to standard format expected by import_question_bank.py.
+"""
+这个脚本预处理山东题库资料，负责把日期、地区和系统线索先整理出来，降低后续导入误分的概率。
 
-Converts:
-    第X题\n1. 题干
-to:
-    题号：SD-{YYYYMMDD}-{SYSTEM}-{QN}\n1. 题干
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
 """
 
 import re
@@ -29,6 +29,15 @@ SYSTEM_ALIASES = {
 
 
 def extract_docx_text(input_path: Path) -> str:
+    """
+    extract_docx_text 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param input_path: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     with zipfile.ZipFile(input_path) as archive:
         root = ElementTree.fromstring(archive.read("word/document.xml"))
     lines: list[str] = []
@@ -41,11 +50,29 @@ def extract_docx_text(input_path: Path) -> str:
 
 
 def parse_chinese_num(text: str) -> int:
+    """
+    parse_chinese_num 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     num = text.removeprefix("第").removesuffix("题")
     return CN_NUM_MAP.get(num, 0)
 
 
 def detect_system(header: str) -> str:
+    """
+    detect_system 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param header: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     for cn, abbr in SYSTEM_ALIASES.items():
         if cn in header:
             return abbr
@@ -61,6 +88,15 @@ Q_BOUNDARY_PATTERN = re.compile(r"(第[一二三四五六七八九十]+题)\s*\n
 
 
 def extract_date(text: str) -> str:
+    """
+    extract_date 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     m = re.search(r"(20\d{2})年(\d{1,2})月(\d{1,2})日", text)
     if not m:
         return "00000000"
@@ -75,6 +111,15 @@ def extract_date(text: str) -> str:
 
 
 def preprocess() -> str:
+    """
+    preprocess 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    脚本模块服务于题库处理、ASR 评测和回归验证，注释用于保留数据来源与执行风险。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises RuntimeError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    """
     text = extract_docx_text(SOURCE_DOCX)
     text = text.replace("\r", "\n")
 

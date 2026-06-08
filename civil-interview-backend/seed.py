@@ -1,4 +1,10 @@
-"""Seed the SQLite database with initial questions and a default admin user"""
+"""
+这个脚本写入基础账号、套餐或示例数据；本地初始化可用它，现网执行前要先确认不会覆盖真实数据。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 import json
 import os
 import sys
@@ -14,6 +20,15 @@ from app.core.security import get_password_hash
 
 def seed():
     # Create all tables
+    """
+    创建缺失表并写入默认管理员和示例题，保证空库能完成一次本地冒烟测试。
+
+    现网执行前需要确认 seed_questions.json 内容，避免把测试题误同步到真实题库。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     Base.metadata.create_all(bind=engine)
     print("[seed] Tables created (or already exist)")
 

@@ -1,3 +1,10 @@
+<!--
+这个小程序定向入口管理页给管理员维护分类和重点分析内容，不向普通用户开放编辑。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <view class="page">
     <view class="admin-header">
@@ -16,24 +23,24 @@
         <view class="section-head">
           <text class="section-title">选择维护范围</text>
         </view>
-        <picker :range="categoryNames" :value="categoryIndex" @change="onCategoryChange">
+        <LightSelector title="考试体系" :options="categoryNames" :value="categoryIndex" @change="onCategoryChange">
           <view class="picker-row">
             <text>考试体系</text>
             <text class="picker-row__value">{{ selectedCategoryName }}</text>
           </view>
-        </picker>
-        <picker :range="regionNames" :value="regionIndex" @change="onRegionChange">
+        </LightSelector>
+        <LightSelector :title="regionLevelLabel" :options="regionNames" :value="regionIndex" @change="onRegionChange">
           <view class="picker-row">
             <text>{{ regionLevelLabel }}</text>
             <text class="picker-row__value">{{ selectedRegionName }}</text>
           </view>
-        </picker>
-        <picker v-if="hasDirectionLevel" :range="directionNames" :value="directionIndex" @change="onDirectionChange">
+        </LightSelector>
+        <LightSelector v-if="hasDirectionLevel" :title="directionLevelLabel" :options="directionNames" :value="directionIndex" @change="onDirectionChange">
           <view class="picker-row picker-row--last">
             <text>{{ directionLevelLabel }}</text>
             <text class="picker-row__value">{{ selectedDirectionName }}</text>
           </view>
-        </picker>
+        </LightSelector>
       </view>
 
       <view v-if="selectedTarget" class="card detail-card">
@@ -186,6 +193,7 @@
 import { computed, ref, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import EmptyState from '../../components/EmptyState.vue'
+import LightSelector from '../../components/LightSelector.vue'
 import { importQuestions } from '../../api/questionBank'
 import { getFocusAdminConfig, saveFocusAdminConfig, disableFocusAdminConfig } from '../../api/targeted'
 import { useTargetedStore } from '../../stores/targeted'
@@ -215,18 +223,25 @@ const currentRegions = computed(() => selectedCategory.value?.children || [])
 const selectedRegion = computed(() => currentRegions.value.find((item) => item.id === selectedRegionId.value) || currentRegions.value[0] || null)
 const currentDirections = computed(() => selectedRegion.value?.directions || [])
 const hasDirectionLevel = computed(() => currentDirections.value.length > 0)
-const selectedDirection = computed(() => currentDirections.value.find((item) => item.id === selectedTargetCode.value) || currentDirections.value[0] || null)
+const selectedDirection = computed(() => (
+  selectedTargetCode.value
+    ? currentDirections.value.find((item) => item.id === selectedTargetCode.value) || null
+    : null
+))
 const categoryNames = computed(() => positionTree.value.map((item) => item.name))
 const regionNames = computed(() => currentRegions.value.map((item) => item.name))
-const directionNames = computed(() => currentDirections.value.map((item) => item.name))
+const directionNames = computed(() => ['不限', ...currentDirections.value.map((item) => item.name)])
 const categoryIndex = computed(() => Math.max(0, positionTree.value.findIndex((item) => item.id === selectedCategoryId.value)))
 const regionIndex = computed(() => Math.max(0, currentRegions.value.findIndex((item) => item.id === selectedRegionId.value)))
-const directionIndex = computed(() => Math.max(0, currentDirections.value.findIndex((item) => item.id === selectedTargetCode.value)))
+const directionIndex = computed(() => {
+  const index = currentDirections.value.findIndex((item) => item.id === selectedTargetCode.value)
+  return index >= 0 ? index + 1 : 0
+})
 const selectedCategoryName = computed(() => selectedCategory.value?.name || '请选择')
 const selectedRegionName = computed(() => selectedRegion.value?.name || '请选择')
-const selectedDirectionName = computed(() => selectedDirection.value?.name || '请选择')
+const selectedDirectionName = computed(() => selectedDirection.value?.name || '不限')
 const selectedTarget = computed(() => (
-  selectedCategory.value && selectedRegion.value && (!hasDirectionLevel.value || selectedDirection.value)
+  selectedCategory.value && selectedRegion.value
     ? mergeTargetPayload(selectedCategory.value, selectedRegion.value, selectedDirection.value || {})
     : null
 ))
@@ -363,18 +378,15 @@ function applySelection(category, region, direction) {
 
 function selectCategory(category) {
   const region = category?.children?.[0]
-  const direction = region?.directions?.[0]
-  applySelection(category, region, direction || null)
+  applySelection(category, region, null)
 }
 
 function selectRegion(region) {
-  const direction = region?.directions?.[0]
-  applySelection(selectedCategory.value, region, direction || null)
+  applySelection(selectedCategory.value, region, null)
 }
 
 function selectDirection(direction) {
-  if (!direction) return
-  selectedTargetCode.value = direction.id || direction.code
+  selectedTargetCode.value = direction?.id || direction?.code || ''
 }
 
 function onCategoryChange(event) {
@@ -386,7 +398,8 @@ function onRegionChange(event) {
 }
 
 function onDirectionChange(event) {
-  selectDirection(currentDirections.value[Number(event.detail.value)])
+  const index = Number(event.detail.value)
+  selectDirection(index <= 0 ? null : currentDirections.value[index - 1])
 }
 
 function queryFromTarget() {

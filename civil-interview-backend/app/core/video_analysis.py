@@ -1,10 +1,25 @@
-"""Lightweight video behavior analysis for interview demos."""
+"""
+这个文件做视频行为的轻量分析；如果 OpenCV 或视频文件不可用，它会返回可读提示，避免评分链路直接崩掉。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 from __future__ import annotations
 
 from pathlib import Path
 
 
 def analyze_video_behavior(video_path: str) -> str:
+    """
+    这个函数抽样读取视频帧，只给评分链路补充“入镜是否稳定、距离是否合适”这类仪态观察。
+
+    它故意把 OpenCV 缺失、文件不存在和识别不到人脸都转成中文提示，避免视频分析失败拖垮文字评分。
+
+    @param video_path: 本地视频文件路径；评分服务传入上传后的视频位置，用于抽样分析考生入镜状态。
+    @return: 返回一段可直接放进评分上下文的中文观察，不返回结构化分数。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     try:
         import cv2
     except ImportError:

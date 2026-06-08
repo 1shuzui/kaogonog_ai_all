@@ -1,3 +1,10 @@
+<!--
+这个小程序训练首页展示题型分类入口，未登录用户可以看入口，生成真实题目前再登录。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <view class="page page--tab">
     <text class="page-title">专项训练</text>
@@ -23,16 +30,10 @@
 </template>
 
 <script setup>
-import { onShow } from '@dcloudio/uni-app'
 import { useTrainingStore } from '../../stores/training'
 import { TRAINING_CATEGORIES } from '../../utils/constants'
-import { requireLogin } from '../../utils/navigation'
 
 const trainingStore = useTrainingStore()
-
-onShow(() => {
-  requireLogin()
-})
 
 function progressText(key) {
   const progress = trainingStore.getDimensionProgress(key)

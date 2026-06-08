@@ -1,3 +1,10 @@
+"""
+这个文件收口管理员和登录权限判断；后台页面、退款管理和题库维护都依赖这里挡住普通用户。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
@@ -18,6 +25,15 @@ VALID_BILLING_PLANS = {
 
 
 def normalize_billing_state(raw_state: dict | None = None) -> dict:
+    """
+    统一整理旧版本地权益字段，避免历史用户的 preferences 形状不同导致权限判断前后不一致。
+
+    这里仍兼容 billing 字典，是因为早期订单和新订阅表会在一段时间内并存。
+
+    @param raw_state: 用户偏好里的 billing 字典；可能来自旧版前端、本地测试或历史订单快照。
+    @return: 规范后的权益状态，包含套餐类型、剩余秒数、月卡到期时间和订单摘要。
+    @raises: 不主动包装底层错误；异常会沿调用栈向上传递。
+    """
     raw_state = raw_state if isinstance(raw_state, dict) else {}
     plan_type = str(raw_state.get("planType") or BILLING_PLAN_TRIAL)
     if plan_type not in VALID_BILLING_PLANS:
@@ -50,10 +66,29 @@ def normalize_billing_state(raw_state: dict | None = None) -> dict:
 
 
 def is_admin_username(username: str | None) -> bool:
+    """
+    判断内置管理员账号，避免各个后台路由分别硬编码 admin 名称。
+
+    当前项目没有完整 RBAC，先把管理员身份收在一个小函数里，后续迁移角色表时影响面更小。
+
+    @param username: 账号唯一标识；历史记录、权益和订单仍以用户名串联，需保持向后兼容。
+    @return: True 表示命中当前内置管理员账号，False 表示普通用户。
+    @raises: 不主动包装底层错误；异常会沿调用栈向上传递。
+    """
     return str(username or "").strip().lower() == ADMIN_USERNAME
 
 
 def has_paid_access_from_billing(billing_state: dict | None, now_ms: int | None = None) -> bool:
+    """
+    从旧版 billing 状态判断是否仍有付费权益，给还没迁到订阅表的用户兜底。
+
+    月卡看过期时间，小时包看剩余秒数；试用永远不能在这里被当成付费。
+
+    @param billing_state: 旧版本地权益状态；为空或字段异常时按试用处理。
+    @param now_ms: 当前时间戳毫秒值；测试可传固定时间以验证过期判断。
+    @return: True 表示旧版权益仍可访问付费功能，False 表示需要开通。
+    @raises: 不主动包装底层错误；异常会沿调用栈向上传递。
+    """
     state = normalize_billing_state(billing_state)
     current_ms = int(now_ms if now_ms is not None else time() * 1000)
 
@@ -157,6 +192,15 @@ def _latest_paid_subscription_snapshot(user) -> dict | None:
 
 
 def build_access_context(user) -> dict:
+    """
+    给当前用户生成统一权限快照，让 PC、小程序和后台拿到同一套 isAdmin/isPaid 判断。
+
+    这里同时读旧 billing 和新 subscription，是为了在支付迁移期不误伤已经购买的用户。
+
+    @param user: 当前业务用户对象；多端登录和权益扣减都依赖它保持同一账号口径。
+    @return: 权限快照，包含角色、付费状态和可访问模块。
+    @raises: 不主动包装底层错误；异常会沿调用栈向上传递。
+    """
     preferences = user.preferences if isinstance(getattr(user, "preferences", None), dict) else {}
     billing_state = normalize_billing_state(preferences.get("billing"))
     subscription_state = _latest_paid_subscription_snapshot(user)
@@ -185,6 +229,15 @@ def build_access_context(user) -> dict:
 
 
 def ensure_admin_access(current_user) -> None:
+    """
+    拦住非管理员访问题库、退款和定向备面维护入口。
+
+    管理端按钮隐藏只能改善体验，真正的权限必须在服务端再判断一次。
+
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @return: None；校验通过即静默返回。
+    @raises HTTPException: 当前用户不是管理员时抛出 403。
+    """
     if getattr(current_user, "isAdmin", False):
         return
     raise HTTPException(
@@ -194,6 +247,16 @@ def ensure_admin_access(current_user) -> None:
 
 
 def ensure_paid_access(current_user, detail: str = "当前功能需付费开通后使用") -> None:
+    """
+    拦住未开通用户进入需要消耗权益的练习和分析能力。
+
+    前端提示不可信，服务端需要在真正开始扣时长、评分或生成题目前再确认一次。
+
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @param detail: 权限不足时返回给端侧的提示文案。
+    @return: None；校验通过即静默返回。
+    @raises HTTPException: 当前用户没有管理员或付费权益时抛出 403。
+    """
     if getattr(current_user, "isAdmin", False):
         return
     permissions = getattr(current_user, "permissions", {}) or {}
@@ -203,6 +266,16 @@ def ensure_paid_access(current_user, detail: str = "当前功能需付费开通�
 
 
 def ensure_question_read_access(current_user, question_id: str) -> None:
+    """
+    限制试用用户只能查看指定试用题，避免直接请求题库接口绕过套餐。
+
+    管理员和付费用户放行；普通试用用户只允许访问 q001。
+
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
+    @return: None；校验通过即静默返回。
+    @raises HTTPException: 未付费用户读取非试用题时抛出 403。
+    """
     if getattr(current_user, "isAdmin", False):
         return
 
@@ -220,6 +293,16 @@ def ensure_question_read_access(current_user, question_id: str) -> None:
 
 
 def ensure_exam_start_access(current_user, question_ids: list[str] | None) -> None:
+    """
+    开始考试前检查题目集合，防止试用用户提交多题模考请求。
+
+    这一步放在考试创建前，是为了避免数据库里留下无权开始的半成品考试记录。
+
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @param question_ids: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
+    @return: None；校验通过即静默返回。
+    @raises HTTPException: 未付费用户尝试开始非试用考试时抛出 403。
+    """
     if getattr(current_user, "isAdmin", False):
         return
 
@@ -238,6 +321,16 @@ def ensure_exam_start_access(current_user, question_ids: list[str] | None) -> No
 
 
 def ensure_random_question_access(current_user, count: int) -> None:
+    """
+    控制随机抽题数量，保证未付费用户不能一次抽完整套题。
+
+    试用保留单题体验；多题抽取会消耗更重的题库和评分资源，需要开通后使用。
+
+    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
+    @param count: 请求抽取的题目数量；试用态最多允许 1 题。
+    @return: None；校验通过即静默返回。
+    @raises HTTPException: 未付费用户请求多题随机抽取时抛出 403。
+    """
     if getattr(current_user, "isAdmin", False):
         return
 

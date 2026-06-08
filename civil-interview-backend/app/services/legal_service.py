@@ -1,4 +1,10 @@
-"""Static legal documents served to PC and mini program clients."""
+"""
+这个文件提供协议和隐私政策文本；审核场景要求端侧能稳定展示这些文档，所以后端保留统一出口。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 
 LATEST_LEGAL_VERSION = "v1.0"
 LEGAL_UPDATED_AT = "2026-05-20"
@@ -95,4 +101,13 @@ LEGAL_DOCUMENTS = {
 
 
 def get_legal_documents() -> dict:
+    """
+    get_legal_documents 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     return LEGAL_DOCUMENTS

@@ -1,4 +1,10 @@
-"""LLM and ASR utilities"""
+"""
+这个文件封装 LLM 和 ASR 调用；FunASR、远程模型和降级提示都在这里收口，避免评分服务直接知道太多供应商细节。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 import asyncio
 import base64
 import hashlib
@@ -36,6 +42,7 @@ ASR_SAMPLE_RATE = 16000
 ASR_CACHE_SCHEMA = "funasr-onnx-v4"
 FUNASR_PROVIDER_ALIASES = {"funasr", "funasr_onnx", "paraformer", "paraformer_onnx"}
 FUNASR_ONNX_CACHE: dict[tuple, dict[str, object]] = {}
+LAST_ASR_TRACE: dict = {}
 FUNASR_MIN_AUDIO_RMS = 0.0008
 FUNASR_MIN_SEGMENT_RMS = 0.001
 FUNASR_VAD_MERGE_GAP_MS = 250
@@ -50,6 +57,23 @@ FUNASR_CONTEXTUAL_CORRECTIONS = (
     ("差异化预言", "差异化预研"),
     ("敢闯敢式", "敢闯敢试"),
     ("敢闯敢视", "敢闯敢试"),
+    ("营兆环境", "营商环境"),
+    ("主管复门", "主管部门"),
+    ("执轰复门", "执法部门"),
+    ("群众实机问题", "群众实际问题"),
+    ("群众实际问提", "群众实际问题"),
+    ("基层治里", "基层治理"),
+    ("政策请斜", "政策倾斜"),
+    ("动态调证", "动态调整"),
+    ("水土不府", "水土不服"),
+    ("落地适配行", "落地适配性"),
+    ("试点价直", "试点价值"),
+    ("万能摸板", "万能模板"),
+    ("稳扎稳大", "稳扎稳打"),
+    ("农民宫", "农民工"),
+    ("消防通到", "消防通道"),
+    ("商家信用品集", "商家信用评级"),
+    ("消费者", "消费者"),
 )
 
 # OpenAI-compatible client for the configured LLM provider
@@ -65,6 +89,15 @@ def _get_executor() -> ThreadPoolExecutor:
 
 
 def get_client() -> Optional[OpenAI]:
+    """
+    get_client 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    AI 网关承载 ASR/LLM 供应商差异，注释重点记录降级策略和真实服务缺失时的边界。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     global _client
     if not settings.llm_api_key:
         return None
@@ -83,7 +116,18 @@ def call_llm_api(
     temperature: float = 0.1,
     max_tokens: int = 2000,
 ) -> Optional[Dict]:
-    """Synchronous LLM call with exponential backoff retry (run via executor to avoid blocking)"""
+    """
+    call_llm_api 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    AI 网关承载 ASR/LLM 供应商差异，注释重点记录降级策略和真实服务缺失时的边界。
+
+    @param prompt: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param system_msg: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param temperature: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param max_tokens: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     import json
 
     client = get_client()
@@ -130,7 +174,18 @@ async def call_llm_api_async(
     temperature: float = 0.1,
     max_tokens: int = 2000,
 ) -> Optional[Dict]:
-    """Async wrapper using a dedicated thread pool to avoid starving the default executor"""
+    """
+    call_llm_api_async 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    AI 网关承载 ASR/LLM 供应商差异，注释重点记录降级策略和真实服务缺失时的边界。
+
+    @param prompt: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param system_msg: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param temperature: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param max_tokens: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(
         _get_executor(), lambda: call_llm_api(prompt, system_msg, temperature, max_tokens)
@@ -397,6 +452,9 @@ def _postprocess_funasr_transcript(text: str) -> str:
     transcript = re.sub(r"(点的)+点上", "点上", transcript)
     transcript = re.sub(r"(预研)(?:[，,、]?\1)+", r"\1", transcript)
     transcript = re.sub(r"(机制)(?:[，,、]?\1)+", r"\1", transcript)
+    transcript = re.sub(r"(你好[，,。]?){2,}", "你好，", transcript)
+    transcript = re.sub(r"(现在开始了?){2,}", "现在开始", transcript)
+    transcript = re.sub(r"(防单持)(?:[，,、]?\1)+", r"\1", transcript)
     transcript = re.sub(r"水土不服试点(?=一般|通常|往往|会)", "水土不服，试点", transcript)
     transcript = re.sub(r"推广失败不能直接否\s*定", "推广失败不能直接否定", transcript)
     transcript = re.sub(r"([，。！？；、])\1+", r"\1", transcript)
@@ -481,15 +539,45 @@ def _punctuate_funasr_text(text: str, punc_model) -> str:
         return text
 
 
+def _set_asr_trace(**updates) -> dict:
+    LAST_ASR_TRACE.clear()
+    LAST_ASR_TRACE.update({
+        "provider": settings.asr_provider,
+        "mode": "funasr_onnx_vad" if _is_funasr_provider() else "remote_asr",
+        "model": _resolve_asr_model(),
+        "vadModel": settings.funasr_vad_model_name,
+        "puncModel": settings.funasr_punc_model_name if settings.funasr_enable_punc else "",
+        "cacheHit": False,
+        "segmentCount": 0,
+        "recognizedSegmentCount": 0,
+        "durationSeconds": 0.0,
+        "audioRms": 0.0,
+        "transcriptChars": 0,
+        "status": "started",
+        "message": "",
+    })
+    LAST_ASR_TRACE.update(updates)
+    return dict(LAST_ASR_TRACE)
+
+
 def _transcribe_with_funasr_onnx(wav_path: str) -> str:
     import librosa
 
     models = _get_funasr_onnx_models()
     waveform, _ = librosa.load(wav_path, sr=ASR_SAMPLE_RATE, mono=True)
+    duration_seconds = round(float(waveform.size or 0) / ASR_SAMPLE_RATE, 2)
     if waveform.size == 0:
+        _set_asr_trace(status="empty_audio", message="音频为空，未能识别出有效语音")
         return ""
-    if _audio_rms(waveform) < FUNASR_MIN_AUDIO_RMS:
+    audio_rms = _audio_rms(waveform)
+    if audio_rms < FUNASR_MIN_AUDIO_RMS:
         logger.info("FunASR skipped near-silent audio before VAD")
+        _set_asr_trace(
+            status="silent_audio",
+            durationSeconds=duration_seconds,
+            audioRms=round(audio_rms, 6),
+            message="录音音量过低，未识别到有效语音",
+        )
         return ""
 
     vad_model = models["vad"]
@@ -514,7 +602,17 @@ def _transcribe_with_funasr_onnx(wav_path: str) -> str:
 
     transcript = _join_funasr_segments(parts)
     transcript = _punctuate_funasr_text(transcript, models.get("punc"))
-    return _postprocess_funasr_transcript(transcript)
+    transcript = _postprocess_funasr_transcript(transcript)
+    _set_asr_trace(
+        status="ok" if transcript else "no_speech",
+        segmentCount=len(segments),
+        recognizedSegmentCount=len(parts),
+        durationSeconds=duration_seconds,
+        audioRms=round(audio_rms, 6),
+        transcriptChars=len(transcript),
+        message="" if transcript else "未识别到有效语音，请重新录制",
+    )
+    return transcript
 
 
 def _transcribe_with_funasr(media_bytes: bytes, filename: str) -> str:
@@ -572,14 +670,34 @@ def _transcribe_with_dashscope_chat_asr(
     return _extract_text_from_message_content(response.choices[0].message.content)
 
 
-async def transcribe_audio_file(audio_bytes: bytes, filename: str = "answer.webm") -> str:
-    """Best-effort ASR with an honest fallback.
-
-    Do not fabricate transcripts. If no real ASR is configured, return a
-    placeholder so downstream scoring can degrade conservatively.
+async def transcribe_audio_file_with_meta(audio_bytes: bytes, filename: str = "answer.webm") -> dict:
     """
+    transcribe_audio_file_with_meta 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    AI 网关承载 ASR/LLM 供应商差异，注释重点记录降级策略和真实服务缺失时的边界。
+
+    @param audio_bytes: 上传音频的二进制内容；进入 ASR 前用于缓存和切片，避免长音频直接压垮模型。
+    @param filename: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
+    media_hash = hashlib.sha256(audio_bytes).hexdigest()
+    base_meta = {
+        "provider": settings.asr_provider,
+        "mode": "funasr_onnx_vad" if _is_funasr_provider() else "remote_asr",
+        "model": _resolve_asr_model(),
+        "vadModel": settings.funasr_vad_model_name,
+        "puncModel": settings.funasr_punc_model_name if settings.funasr_enable_punc else "",
+        "cacheHit": False,
+        "audioBytes": len(audio_bytes),
+        "audioSha256": media_hash,
+        "filename": filename or "answer.webm",
+        "status": "started",
+        "message": "",
+    }
     if len(audio_bytes) < 2048:
-        return SHORT_AUDIO_PLACEHOLDER
+        meta = {**base_meta, "status": "too_short", "message": "录音内容过短，请重新录制"}
+        return {"transcript": SHORT_AUDIO_PLACEHOLDER, "asrMeta": meta, "needsRetry": True, "message": meta["message"]}
 
     asr_model = _resolve_asr_model()
     remote_asr_model = _resolve_remote_asr_model()
@@ -597,15 +715,18 @@ async def transcribe_audio_file(audio_bytes: bytes, filename: str = "answer.webm
             ]
         ).encode("utf-8")
     ).hexdigest()[:12]
-    asr_cache_key = f"asr:transcript:{asr_cache_scope}:{hashlib.sha256(audio_bytes).hexdigest()}"
+    asr_cache_key = f"asr:transcript:{asr_cache_scope}:{media_hash}"
     cached_transcript = await cache_get_json(asr_cache_key)
     if isinstance(cached_transcript, str) and cached_transcript.strip():
         logger.info("ASR cache hit: %s", asr_cache_key)
-        return cached_transcript.strip()
+        transcript = cached_transcript.strip()
+        meta = {**base_meta, "cacheHit": True, "status": "ok", "transcriptChars": len(transcript)}
+        return {"transcript": transcript, "asrMeta": meta, "needsRetry": False, "message": ""}
 
     if _is_funasr_provider():
         try:
             text = _transcribe_with_funasr(audio_bytes, filename)
+            trace = dict(LAST_ASR_TRACE)
             if text.strip():
                 transcript = text.strip()
                 await cache_set_json(
@@ -613,9 +734,14 @@ async def transcribe_audio_file(audio_bytes: bytes, filename: str = "answer.webm
                     transcript,
                     settings.redis_cache_ttl_transcript,
                 )
-                return transcript
+                meta = {**base_meta, **trace, "audioSha256": media_hash, "audioBytes": len(audio_bytes), "status": "ok", "transcriptChars": len(transcript)}
+                return {"transcript": transcript, "asrMeta": meta, "needsRetry": False, "message": ""}
+            message = trace.get("message") or "未识别到有效语音，请重新录制"
+            meta = {**base_meta, **trace, "audioSha256": media_hash, "audioBytes": len(audio_bytes), "status": trace.get("status") or "no_speech", "message": message}
+            return {"transcript": "（未识别到有效语音，请重新录制）", "asrMeta": meta, "needsRetry": True, "message": message}
         except Exception as exc:
             logger.warning("FunASR transcription failed, falling back to remote ASR if configured: %s", exc)
+            base_meta = {**base_meta, "status": "funasr_error", "message": str(exc)[:200]}
 
     client = get_client()
     if client and remote_asr_model:
@@ -660,11 +786,30 @@ async def transcribe_audio_file(audio_bytes: bytes, filename: str = "answer.webm
                     transcript,
                     settings.redis_cache_ttl_transcript,
                 )
-                return transcript
+                meta = {**base_meta, "mode": "remote_asr", "status": "ok", "transcriptChars": len(transcript)}
+                return {"transcript": transcript, "asrMeta": meta, "needsRetry": False, "message": ""}
         except Exception as exc:
             logger.warning("Remote ASR transcription failed, falling back to placeholder: %s", exc)
+            base_meta = {**base_meta, "status": "remote_error", "message": str(exc)[:200]}
 
-    return ASR_UNAVAILABLE_PLACEHOLDER
+    message = "语音转写服务暂不可用，请稍后重试"
+    meta = {**base_meta, "status": base_meta.get("status") or "unavailable", "message": base_meta.get("message") or message}
+    return {"transcript": ASR_UNAVAILABLE_PLACEHOLDER, "asrMeta": meta, "needsRetry": True, "message": message}
+
+
+async def transcribe_audio_file(audio_bytes: bytes, filename: str = "answer.webm") -> str:
+    """
+    transcribe_audio_file 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+
+    AI 网关承载 ASR/LLM 供应商差异，注释重点记录降级策略和真实服务缺失时的边界。
+
+    @param audio_bytes: 上传音频的二进制内容；进入 ASR 前用于缓存和切片，避免长音频直接压垮模型。
+    @param filename: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
+    result = await transcribe_audio_file_with_meta(audio_bytes, filename=filename)
+    return str(result.get("transcript") or "")
 
 
 # Province name mapping

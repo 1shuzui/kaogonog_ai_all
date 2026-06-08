@@ -1,3 +1,10 @@
+/**
+ * 这个文件是小程序所有后端请求的入口；401、token 和错误提示都在这里统一处理，避免页面各自弹登录。
+ *
+ * @param 无；文件级模块依赖导出函数、组合式 API 或调用方传入上下文。
+ * @return 导出可复用的端侧能力，具体返回值由各公共函数保持兼容。
+ * @raises 不主动吞掉业务异常；请求失败、权限不足和运行时错误交由调用方或全局拦截器处理。
+ */
 import { TOKEN_STORAGE_KEY, USERNAME_STORAGE_KEY } from '../utils/constants'
 import { createRequestId, logger } from '../utils/logger'
 import { toast } from '../utils/navigation'

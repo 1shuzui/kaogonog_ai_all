@@ -1,3 +1,10 @@
+<!--
+这个小程序我的页聚合权益、订单、历史和管理员入口，个人数据必须登录后再加载。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <view class="page page--tab">
     <view class="profile-card">
@@ -19,6 +26,9 @@
     <view v-if="profileLoading" class="sync-strip">正在同步账户信息...</view>
     <view v-else-if="profileError" class="sync-strip sync-strip--error" @tap="refreshProfile">
       {{ profileError }}，点此重试
+    </view>
+    <view v-else-if="!userStore.isAuthenticated" class="sync-strip" @tap="goLogin">
+      登录后可查看权益、订单、历史记录并保存考试设置
     </view>
 
     <view class="card balance-card">
@@ -121,7 +131,7 @@
       <text class="about-text">公考面试AI智能测评系统小程序端 v1.0.0</text>
     </view>
 
-    <button class="secondary-button danger-button" @tap="logout">退出登录</button>
+    <button v-if="userStore.isAuthenticated" class="secondary-button danger-button" @tap="logout">退出登录</button>
   </view>
 </template>
 
@@ -135,7 +145,7 @@ import { useUserStore } from '../../stores/user'
 import { PROVINCES, QUESTION_CATEGORIES } from '../../utils/constants'
 import { DEFAULT_TARGETED_POSITION_TREE } from '../../utils/targetedOptions'
 import { logger } from '../../utils/logger'
-import { requireLogin, toast } from '../../utils/navigation'
+import { promptLoginForAction, toast } from '../../utils/navigation'
 
 const userStore = useUserStore()
 const historyStore = useHistoryStore()
@@ -207,7 +217,10 @@ const statItems = computed(() => [
 ])
 
 onShow(() => {
-  if (!requireLogin()) return
+  if (!userStore.isAuthenticated) {
+    applyPreferencesFromStore()
+    return
+  }
   refreshProfile()
 })
 
@@ -337,6 +350,7 @@ function togglePreferredQuestion(key) {
 }
 
 async function savePreferences() {
+  if (!promptLoginForAction('保存考试设置', '/pages/profile/index')) return
   await userStore.savePreferences({
     ...preferences,
     practicePreferenceConfirmed: true
@@ -345,30 +359,37 @@ async function savePreferences() {
 }
 
 function goHistory() {
+  if (!promptLoginForAction('查看历史记录', '/pages/history/index')) return
   uni.navigateTo({ url: '/pages/history/index' })
 }
 
 function goFavorites() {
+  if (!promptLoginForAction('查看错题本 / 收藏夹', '/pages/favorites/index')) return
   uni.navigateTo({ url: '/pages/favorites/index' })
 }
 
 function goPricing() {
+  if (!promptLoginForAction('开通套餐', '/pages/pricing/index')) return
   uni.navigateTo({ url: '/pages/pricing/index' })
 }
 
 function goSubscription() {
+  if (!promptLoginForAction('查看订阅权益', '/pages/subscription/index')) return
   uni.navigateTo({ url: '/pages/subscription/index' })
 }
 
 function goOrders() {
+  if (!promptLoginForAction('查看订单记录', '/pages/billing/orders')) return
   uni.navigateTo({ url: '/pages/billing/orders' })
 }
 
 function goSecurity() {
+  if (!promptLoginForAction('查看账号安全', '/pages/account/security')) return
   uni.navigateTo({ url: '/pages/account/security' })
 }
 
 function contactSupport() {
+  if (!promptLoginForAction('使用客服反馈中心', '/pages/support/index')) return
   uni.navigateTo({ url: '/pages/support/index' })
 }
 
@@ -377,7 +398,12 @@ function goLegalDocuments() {
 }
 
 function goAdmin() {
+  if (!promptLoginForAction('进入管理员中心', '/pages/admin/index')) return
   uni.navigateTo({ url: '/pages/admin/index' })
+}
+
+function goLogin() {
+  uni.navigateTo({ url: '/pages/login/index?redirect=%2Fpages%2Fprofile%2Findex' })
 }
 
 function logout() {

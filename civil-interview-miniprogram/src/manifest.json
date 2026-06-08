@@ -5,8 +5,10 @@
   "versionName": "1.0.0",
   "versionCode": "100",
   "transformPx": false,
+  "darkmode": false,
   "mp-weixin": {
     "appid": "wxa31c6e32dfa4b178",
+    "darkmode": false,
     "setting": {
       "urlCheck": false,
       "es6": true,

@@ -1,3 +1,10 @@
+<!--
+这个倒计时组件服务考前准备和答题阶段，统一处理剩余时间展示，避免每个考场页面自己算时间。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <div class="countdown-timer" :class="[`countdown-timer--${mode}`, { 'countdown-timer--blink': props.remaining <= 10 && props.remaining > 0, 'countdown-timer--warning': props.remaining <= 30 }]">
     <svg width="80" height="80" viewBox="0 0 80 80">

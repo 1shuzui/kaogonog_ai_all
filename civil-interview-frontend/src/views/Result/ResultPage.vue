@@ -1,3 +1,10 @@
+<!--
+这个网页结果页展示评分、文字稿、扣分点和改进建议；它消费后端评分结果，不重新发明评分规则。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <div class="result-page page-container">
     <div v-if="loading" class="result-skeleton">

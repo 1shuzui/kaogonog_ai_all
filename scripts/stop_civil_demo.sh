@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# 这个脚本停止本地演示环境；它同时处理 tmux 会话和 pid 文件，避免端口被残留进程占住。
+# @param: 无；脚本使用固定会话名和运行目录。
+# @return: 清理本地演示进程、会话标记和残留 pid 文件。
+# @raises: 该脚本尽量容错；严重 shell 错误仍会因 set -euo pipefail 终止。
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

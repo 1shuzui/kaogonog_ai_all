@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# 这个部署脚本负责重新构建并同步服务器产物；它会清理旧文件，避免前端旧 chunk 或后端旧代码留在现网。
+# @param: 通过环境变量覆盖 SSH_KEY、SERVER、REMOTE_ROOT 等部署上下文。
+# @return: 构建并同步前后端产物到远端 latest 目录。
+# @raises: 任一步构建、加密、复制或 SSH/rsync 失败都会因 set -euo pipefail 立即终止。
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

@@ -1,13 +1,9 @@
-"""音视频处理模块。
+"""
+这个文件处理旧后端视频拆音频和基础分析；让评分链路只关心最终文本和媒体摘要。
 
-这个文件负责把“原始媒体文件”转换成“可以评分的结构化输入”。
-
-视频处理包含两条线：
-1. 内容线：抽音频 -> Whisper 转文字
-2. 表现线：OpenCV 做一个非常轻量的人脸稳定性分析
-
-最终输出一个统一的 MediaExtractionResult，
-供后面的评分流程使用。
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
 """
 
 import logging
@@ -23,7 +19,15 @@ logger = logging.getLogger(__name__)
 
 
 def get_audio_duration_seconds(audio_path: str) -> float | None:
-    """读取音频时长，优先走本地库，必要时回退到 ffprobe。"""
+    """
+    读取音频时长，优先走本地库，必要时回退到 ffprobe。
+
+    媒体服务负责把音视频转成可评分文本，注释重点记录模型能力、缓存和降级边界。
+
+    @param audio_path: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises FileNotFoundError, ValueError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    """
 
     try:
         import soundfile as sf
@@ -61,9 +65,15 @@ def get_audio_duration_seconds(audio_path: str) -> float | None:
 
 
 def extract_audio(video_path: str, output_audio_path: str) -> str:
-    """使用 ffmpeg 从视频中提取单声道 16k 音频。
+    """
+    使用 ffmpeg 从视频中提取单声道 16k 音频。 16k / 单声道是 ASR 很常见的输入格式，通常更省资源。
 
-    16k / 单声道是 ASR 很常见的输入格式，通常更省资源。
+    媒体服务负责把音视频转成可评分文本，注释重点记录模型能力、缓存和降级边界。
+
+    @param video_path: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param output_audio_path: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises FileNotFoundError, RuntimeError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
     """
 
     command = [
@@ -97,15 +107,14 @@ def extract_audio(video_path: str, output_audio_path: str) -> str:
 
 
 def analyze_facial_behavior(video_path: str) -> str:
-    """执行一个轻量级的视觉分析。
+    """
+    执行一个轻量级的视觉分析。 注意： 这里不是做严肃的情绪识别，也不是做人脸身份鉴权。 它只是非常简单地观察： - 是否能检测到脸 - 头部上下位置变化是否过于频繁 所以返回结果只能当“弱观察”，不能当强结论。
 
-    注意：
-    这里不是做严肃的情绪识别，也不是做人脸身份鉴权。
-    它只是非常简单地观察：
-    - 是否能检测到脸
-    - 头部上下位置变化是否过于频繁
+    媒体服务负责把音视频转成可评分文本，注释重点记录模型能力、缓存和降级边界。
 
-    所以返回结果只能当“弱观察”，不能当强结论。
+    @param video_path: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises ValueError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
     """
 
     if not settings.ENABLE_VISUAL_ANALYSIS:
@@ -183,13 +192,14 @@ def analyze_facial_behavior(video_path: str) -> str:
 
 
 def process_video(video_path: str) -> MediaExtractionResult:
-    """处理视频文件。
+    """
+    处理视频文件。 步骤如下： 1. 先把视频里的音频提取出来 2. 用 Whisper 转成文字 3. 用 OpenCV 补一个轻量视觉观察 4. 返回统一结构
 
-    步骤如下：
-    1. 先把视频里的音频提取出来
-    2. 用 Whisper 转成文字
-    3. 用 OpenCV 补一个轻量视觉观察
-    4. 返回统一结构
+    媒体服务负责把音视频转成可评分文本，注释重点记录模型能力、缓存和降级边界。
+
+    @param video_path: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
     """
 
     temp_audio_path = None
@@ -223,7 +233,15 @@ def process_video(video_path: str) -> MediaExtractionResult:
 
 
 def process_audio(audio_path: str) -> MediaExtractionResult:
-    """处理纯音频文件。"""
+    """
+    处理纯音频文件。
+
+    媒体服务负责把音视频转成可评分文本，注释重点记录模型能力、缓存和降级边界。
+
+    @param audio_path: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
 
     duration_seconds = get_audio_duration_seconds(audio_path)
     transcriber = get_transcriber()

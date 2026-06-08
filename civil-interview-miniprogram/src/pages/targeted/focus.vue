@@ -1,3 +1,10 @@
+<!--
+这个小程序页面展示重点分析；它只消费真实题库统计或管理员发布内容，没有数据时不要展示通用模板。
+
+@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
+@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
+@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+-->
 <template>
   <view class="page">
     <view class="focus-header">
@@ -20,14 +27,6 @@
     </view>
 
     <view v-else-if="targetedStore.focusData" class="focus">
-      <!-- RadarChart for dimension visualization -->
-      <view v-if="radarDimensions.length" class="card">
-        <view class="section-head">
-          <text class="section-title">能力雷达图</text>
-        </view>
-        <RadarChart :dimensions="radarDimensions" size="medium" />
-      </view>
-
       <view v-if="coreFocus.length" class="card">
         <view class="section-head">
           <text class="section-title">核心能力权重</text>
@@ -109,7 +108,6 @@
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import EmptyState from '../../components/EmptyState.vue'
-import RadarChart from '../../components/RadarChart.vue'
 import { useBillingStore } from '../../stores/billing'
 import { useSubscriptionStore } from '../../stores/subscription'
 import { useTargetedStore } from '../../stores/targeted'
@@ -140,13 +138,6 @@ const selectionTags = computed(() => {
 const isEmptyFocus = computed(() => (
   targetedStore.focusData?.isFallback === true || Number(targetedStore.focusData?.questionCount || 0) <= 0
 ))
-const radarDimensions = computed(() => {
-  return coreFocus.value.map((item) => ({
-    name: item.name,
-    score: item.weight || 20,
-    maxScore: 40
-  }))
-})
 
 onLoad(async (options = {}) => {
   if (!requireLogin()) return

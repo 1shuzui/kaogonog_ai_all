@@ -1,3 +1,10 @@
+"""
+这个测试文件守住 `test_wechat_virtual_pay_service` 对应的回归场景；它记录的是以前容易出错的业务边界，而不是普通示例代码。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 import hashlib
 import hmac
 import json
@@ -12,6 +19,15 @@ from app.services.wechat_pay_service import wechat_pay_service
 
 
 def test_virtual_pay_payload_uses_code2session_and_official_params(monkeypatch):
+    """
+    test_virtual_pay_payload_uses_code2session_and_official_params 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+
+    @param monkeypatch: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     monkeypatch.setattr(settings, "wechat_pay_enabled", True)
     monkeypatch.setattr(settings, "wechat_pay_appid", "wx_test")
     monkeypatch.setattr(settings, "wechat_miniprogram_app_secret", "secret")
@@ -59,6 +75,15 @@ def test_virtual_pay_payload_uses_code2session_and_official_params(monkeypatch):
 
 
 def test_virtual_pay_payload_rejects_non_virtual_channel(monkeypatch):
+    """
+    test_virtual_pay_payload_rejects_non_virtual_channel 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+
+    @param monkeypatch: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises AssertionError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    """
     monkeypatch.setattr(settings, "wechat_pay_enabled", True)
     order = PaymentOrder(order_no="PAY_TEST_001A", username="alice", amount=Decimal("99.00"), extra_payload={})
     package = SubscriptionPackage(package_code="trial_3h", package_name="3小时套餐", package_type="hourly")
@@ -80,6 +105,15 @@ def test_virtual_pay_payload_rejects_non_virtual_channel(monkeypatch):
 
 
 def test_virtual_pay_order_amount_follows_actual_goods_price():
+    """
+    test_virtual_pay_order_amount_follows_actual_goods_price 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     order = PaymentOrder(order_no="PAY_TEST_002", username="alice", amount=Decimal("99.00"), extra_payload={})
 
     _sync_order_amount_to_virtual_goods_price(order, {"virtualPayMeta": {"goodsPrice": 1}})
@@ -88,6 +122,15 @@ def test_virtual_pay_order_amount_follows_actual_goods_price():
 
 
 def test_virtual_pay_confirm_extracts_transaction_id_from_raw_result():
+    """
+    test_virtual_pay_confirm_extracts_transaction_id_from_raw_result 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     data = type("Confirm", (), {
         "thirdPartyOrderNo": "",
         "rawResult": {"WeChatPayInfo": {"TransactionId": "420000000000000001"}},
@@ -97,6 +140,15 @@ def test_virtual_pay_confirm_extracts_transaction_id_from_raw_result():
 
 
 def test_virtual_pay_query_order_uses_access_token_and_pay_sig(monkeypatch):
+    """
+    test_virtual_pay_query_order_uses_access_token_and_pay_sig 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+
+    @param monkeypatch: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     monkeypatch.setattr(settings, "wechat_pay_appid", "wx_test")
     monkeypatch.setattr(settings, "wechat_miniprogram_app_secret", "secret")
     monkeypatch.setattr(settings, "wechat_virtual_pay_offer_id", "1450536341")
@@ -113,6 +165,15 @@ def test_virtual_pay_query_order_uses_access_token_and_pay_sig(monkeypatch):
             self._payload = payload
 
         def json(self):
+            """
+            json 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+            测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+
+            @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+            @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+            @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+            """
             return self._payload
 
     def fake_get(url, params, timeout):
@@ -153,6 +214,15 @@ def test_virtual_pay_query_order_uses_access_token_and_pay_sig(monkeypatch):
 
 
 def test_verify_order_with_wechat_persists_transaction_id(monkeypatch):
+    """
+    test_verify_order_with_wechat_persists_transaction_id 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+
+    @param monkeypatch: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     order = PaymentOrder(
         order_no="PAY_TEST_004",
         username="alice",
@@ -182,6 +252,15 @@ def test_verify_order_with_wechat_persists_transaction_id(monkeypatch):
 
 
 def test_virtual_pay_query_extracts_wechat_order_fields_from_nested_order():
+    """
+    test_virtual_pay_query_extracts_wechat_order_fields_from_nested_order 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+
+    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
     result = {
         "errcode": 0,
         "errmsg": "OK",

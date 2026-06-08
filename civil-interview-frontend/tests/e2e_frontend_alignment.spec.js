@@ -1,3 +1,10 @@
+/**
+ * 这个前端测试文件守住 `e2e_frontend_alignment.spec` 的回归行为；它让提交表单、页面联动这类细节不会悄悄退化。
+ *
+ * @param 无；文件级模块依赖导出函数、组合式 API 或调用方传入上下文。
+ * @return 导出可复用的端侧能力，具体返回值由各公共函数保持兼容。
+ * @raises 不主动吞掉业务异常；请求失败、权限不足和运行时错误交由调用方或全局拦截器处理。
+ */
 import { test, expect } from '@playwright/test'
 
 function uniqueUser(prefix) {

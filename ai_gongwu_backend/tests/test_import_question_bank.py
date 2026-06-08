@@ -1,4 +1,10 @@
-"""通用题库导入脚本回归测试。"""
+"""
+这个测试文件守住 `test_import_question_bank` 对应的回归场景；它记录的是以前容易出错的业务边界，而不是普通示例代码。
+
+@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
+@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
+@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+"""
 
 import unittest
 from pathlib import Path
@@ -20,9 +26,26 @@ from scripts.import_question_bank import (
 
 
 class ExtractDocxTextTestCase(unittest.TestCase):
-    """锁住 .docx 提取脚本的输出格式。"""
+    """
+    锁住 .docx 提取脚本的输出格式。
+
+    测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     def test_extract_docx_text_matches_existing_hunan_fixture(self):
+        """
+        test_extract_docx_text_matches_existing_hunan_fixture 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         repo_root = Path(__file__).resolve().parents[2]
         docx_path = repo_root / "湖南-2020-通用岗.docx"
         extracted_path = repo_root / "湖南-2020-通用岗.extracted.txt"
@@ -34,16 +57,42 @@ class ExtractDocxTextTestCase(unittest.TestCase):
 
 
 class ImportQuestionBankNormalizationTestCase(unittest.TestCase):
-    """锁住安徽兼容化归一规则。"""
+    """
+    锁住安徽兼容化归一规则。
+
+    测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
 
     maxDiff = None
 
     def test_normalize_question_id_supports_anhui_variants(self):
+        """
+        test_normalize_question_id_supports_anhui_variants 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         self.assertEqual(normalize_question_id("AHGWY 20201113PM 01"), "AHGWY-20201113PM-01")
         self.assertEqual(normalize_question_id("AHGWY20201114_01"), "AHGWY-20201114-01")
         self.assertEqual(normalize_question_id("AHGX20201226_01"), "AHGX-20201226-01")
 
     def test_normalize_source_text_repairs_inline_headers_and_chinese_section_labels(self):
+        """
+        test_normalize_source_text_repairs_inline_headers_and_chinese_section_labels 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         raw_text = """
 题号：AHGWY20210710_04（演讲·默默的坚守·基层奉献·非乡镇岗·16分）
 1.题干
@@ -73,6 +122,15 @@ class ImportQuestionBankNormalizationTestCase(unittest.TestCase):
         self.assertIn("本题总分计算规则", sections)
 
     def test_jiangsu_variants_parse_core_scoring_and_plain_score_items(self):
+        """
+        test_jiangsu_variants_parse_core_scoring_and_plain_score_items 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         original_profile = activate_profile("hunan")
         try:
             activate_profile("jiangsu_shiye")
@@ -113,6 +171,15 @@ class ImportQuestionBankNormalizationTestCase(unittest.TestCase):
             activate_profile(original_profile)
 
     def test_classification_keeps_real_source_separate_from_display_portals(self):
+        """
+        test_classification_keeps_real_source_separate_from_display_portals 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         original_profile = activate_profile("hunan")
         try:
             activate_profile("jiangsu_shiye")
@@ -178,6 +245,15 @@ class ImportQuestionBankNormalizationTestCase(unittest.TestCase):
             activate_profile(original_profile)
 
     def test_jiangsu_profile_normalizes_city_area_to_province(self):
+        """
+        test_jiangsu_profile_normalizes_city_area_to_province 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         original_profile = activate_profile("hunan")
         try:
             activate_profile("jiangsu_shiye")
@@ -188,6 +264,15 @@ class ImportQuestionBankNormalizationTestCase(unittest.TestCase):
             activate_profile(original_profile)
 
     def test_parse_scored_items_supports_old_jiangsu_band_only_fallback_source(self):
+        """
+        test_parse_scored_items_supports_old_jiangsu_band_only_fallback_source 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         items = parse_scored_items(
             "分项细则：政治站位服务理念6分、流程逻辑框架7分、"
             "资源整合落地7分、语言表达感染力6分、亮点创新3分、综合印象2分。"
@@ -198,6 +283,15 @@ class ImportQuestionBankNormalizationTestCase(unittest.TestCase):
         self.assertEqual(items[-1], "综合印象（2分）：")
 
     def test_detect_template_family_treats_anhui_new_types_as_existing_families(self):
+        """
+        test_detect_template_family_treats_anhui_new_types_as_existing_families 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         activate_profile("anhui")
 
         self.assertEqual(
@@ -226,6 +320,15 @@ class ImportQuestionBankNormalizationTestCase(unittest.TestCase):
         )
 
     def test_build_runtime_profile_supports_future_region_import_without_new_wrapper(self):
+        """
+        test_build_runtime_profile_supports_future_region_import_without_new_wrapper 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         temp_root = Path(__file__).resolve().parent / "_profile_args"
         source_a = temp_root / "广东-2025.extracted.txt"
         source_b = temp_root / "广东-2024.extracted.txt"
@@ -253,6 +356,15 @@ class ImportQuestionBankNormalizationTestCase(unittest.TestCase):
             activate_profile(original_profile)
 
     def test_interpersonal_mid_templates_cover_responsibility_and_followup(self):
+        """
+        test_interpersonal_mid_templates_cover_responsibility_and_followup 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         question_data = {
             "type": "人际沟通·责任担当",
             "province": "安徽",
@@ -279,6 +391,15 @@ class ImportQuestionBankNormalizationTestCase(unittest.TestCase):
         self.assertNotIn("参与对象", joined)
 
     def test_interpersonal_mid_templates_can_point_back_to_frontline_work_style(self):
+        """
+        test_interpersonal_mid_templates_can_point_back_to_frontline_work_style 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
         question_data = {
             "type": "人际沟通·同事劝导",
             "province": "安徽",

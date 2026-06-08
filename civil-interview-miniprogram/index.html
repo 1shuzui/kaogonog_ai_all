@@ -1,3 +1,10 @@
+<!--
+这个 HTML 入口给 uni-app H5/构建流程提供挂载点；真实页面仍由小程序 pages 配置和 Vue 代码驱动。
+
+@param: 无；uni 构建流程负责注入运行时资源。
+@return: 提供跨端应用挂载点，实际页面由 src/pages 配置驱动。
+@raises: 静态文件不主动抛错；构建产物缺失会由工具链暴露。
+-->
 <!doctype html>
 <html lang="zh-CN">
   <head>
