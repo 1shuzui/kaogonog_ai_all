@@ -61,7 +61,7 @@ function openDimension(category) {
   width: 92rpx;
   height: 92rpx;
   border-radius: 18rpx;
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 43rpx;
   font-weight: 900;
   line-height: 1;
@@ -74,21 +74,21 @@ function openDimension(category) {
 }
 
 .training-card__title {
-  color: #1a1a2e;
+  color: #172033;
   font-size: 31rpx;
   font-weight: 800;
 }
 
 .training-card__desc {
   margin-top: 6rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 23rpx;
   line-height: 1.5;
 }
 
 .training-card__meta {
   margin-top: 8rpx;
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 23rpx;
 }
 

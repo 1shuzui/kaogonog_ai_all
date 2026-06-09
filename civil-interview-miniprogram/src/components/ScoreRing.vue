@@ -44,7 +44,7 @@ const props = defineProps({
   },
   color: {
     type: String,
-    default: '#1b5faa'
+    default: '#2F7FD6'
   }
 })
 
@@ -88,7 +88,7 @@ const sizeValue = computed(() => {
 }
 
 .score-ring__score {
-  color: #1a1a2e;
+  color: #172033;
   font-size: 36rpx;
   font-weight: 800;
   line-height: 1.1;
@@ -96,7 +96,7 @@ const sizeValue = computed(() => {
 
 .score-ring__label {
   margin-top: 4rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 22rpx;
 }
 </style>

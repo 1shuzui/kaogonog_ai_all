@@ -382,10 +382,10 @@ async function submitForm() {
   align-items: center;
   min-height: 88rpx;
   padding: 0 24rpx;
-  border: 1rpx solid #d9e3ef;
+  border: 1rpx solid #DCEAF7;
   border-radius: 14rpx;
   background: #ffffff;
-  color: #1a1a2e;
+  color: #172033;
   font-size: 28rpx;
 }
 
@@ -405,12 +405,12 @@ async function submitForm() {
 }
 
 .advanced-toggle__text {
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 26rpx;
 }
 
 .advanced-toggle__icon {
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 22rpx;
 }
 

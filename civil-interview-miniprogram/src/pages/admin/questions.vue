@@ -270,7 +270,7 @@ async function removeQuestion(question) {
 }
 
 .filter-row__value {
-  color: #1b5faa;
+  color: #2F7FD6;
   font-weight: 600;
 }
 
@@ -308,19 +308,19 @@ async function removeQuestion(question) {
 }
 
 .question-item__id {
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 24rpx;
   font-weight: 800;
 }
 
 .question-item__source {
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 22rpx;
 }
 
 .question-item__stem {
   margin-top: 12rpx;
-  color: #1a1a2e;
+  color: #172033;
   font-size: 28rpx;
   font-weight: 700;
   line-height: 1.55;
@@ -331,7 +331,7 @@ async function removeQuestion(question) {
   flex-wrap: wrap;
   gap: 12rpx;
   margin-top: 14rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 23rpx;
 }
 

@@ -184,8 +184,9 @@ function formatCheckTime() {
 }
 
 .status-card {
-  background: #15477a;
-  color: #ffffff;
+  border: 1rpx solid #DCEAF7;
+  background: linear-gradient(135deg, #ffffff 0%, #EAF5FF 100%);
+  color: #172033;
 }
 
 .status-card__label,
@@ -230,14 +231,14 @@ function formatCheckTime() {
 }
 
 .metric__value {
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 34rpx;
   font-weight: 900;
 }
 
 .metric__label {
   margin-top: 6rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 22rpx;
 }
 
@@ -250,7 +251,7 @@ function formatCheckTime() {
 }
 
 .detail-row text:last-child {
-  color: #1a1a2e;
+  color: #172033;
   font-weight: 700;
 }
 
@@ -277,14 +278,14 @@ function formatCheckTime() {
 }
 
 .entitlement-item__title {
-  color: #1a1a2e;
+  color: #172033;
   font-size: 25rpx;
   font-weight: 800;
 }
 
 .entitlement-item__desc {
   margin-top: 6rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 22rpx;
 }
 
@@ -292,10 +293,10 @@ function formatCheckTime() {
   width: 150rpx;
   min-height: 58rpx;
   padding: 0;
-  border: 1rpx solid #1b5faa;
+  border: 1rpx solid #2F7FD6;
   border-radius: 8rpx;
   background: #ffffff;
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 22rpx;
   line-height: 58rpx;
 }
@@ -327,7 +328,7 @@ function formatCheckTime() {
 .access-time {
   display: block;
   margin-top: 8rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 22rpx;
 }
 </style>

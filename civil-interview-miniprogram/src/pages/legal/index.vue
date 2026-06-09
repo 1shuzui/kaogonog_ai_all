@@ -146,7 +146,7 @@ async function agreeLatest() {
 }
 
 .tab-card__item--active {
-  background: #e8f4fd;
+  background: #EAF5FF;
 }
 
 .tab-card__title,
@@ -161,7 +161,7 @@ async function agreeLatest() {
 .tab-card__title,
 .document-card__title,
 .document-card__heading {
-  color: #1a1a2e;
+  color: #172033;
   font-weight: 800;
 }
 
@@ -172,7 +172,7 @@ async function agreeLatest() {
 .tab-card__meta,
 .document-card__meta {
   margin-top: 8rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 23rpx;
 }
 

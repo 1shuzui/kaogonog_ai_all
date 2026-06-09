@@ -241,8 +241,9 @@ function startTrial() {
 
 <style scoped>
 .pricing-status {
-  background: linear-gradient(135deg, #15477a 0%, #1b5faa 66%, #5fa0e8 100%);
-  color: #ffffff;
+  border: 1rpx solid #DCEAF7;
+  background: linear-gradient(135deg, #ffffff 0%, #EAF5FF 60%, #DFF0FF 100%);
+  color: #172033;
 }
 
 .pricing-status__label,
@@ -286,21 +287,21 @@ function startTrial() {
 }
 
 .plan-card__title {
-  color: #1a1a2e;
+  color: #172033;
   font-size: 32rpx;
   font-weight: 800;
 }
 
 .plan-card__price {
   margin-top: 8rpx;
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 38rpx;
   font-weight: 900;
 }
 
 .plan-card__desc {
   margin-top: 8rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
   line-height: 1.6;
 }
@@ -315,8 +316,8 @@ function startTrial() {
 .feature-list text {
   padding: 6rpx 12rpx;
   border-radius: 999rpx;
-  background: #eef6ff;
-  color: #1b5faa;
+  background: #EAF5FF;
+  color: #2F7FD6;
   font-size: 22rpx;
   font-weight: 700;
 }
@@ -330,7 +331,7 @@ function startTrial() {
 
 .pricing-note text:first-child {
   margin-bottom: 8rpx;
-  color: #1a1a2e;
+  color: #172033;
   font-size: 30rpx;
   font-weight: 900;
 }

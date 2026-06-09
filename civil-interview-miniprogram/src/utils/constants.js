@@ -131,7 +131,7 @@ export const POSITION_SYSTEMS = [
 
 export const GRADE_CONFIG = {
   A: { label: '优秀', color: '#389e0d', min: 85 },
-  B: { label: '良好', color: '#1b5faa', min: 75 },
+  B: { label: '良好', color: '#2F7FD6', min: 75 },
   C: { label: '中等', color: '#d48806', min: 60 },
   D: { label: '待提升', color: '#cf1322', min: 0 }
 }

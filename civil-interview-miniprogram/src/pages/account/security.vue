@@ -369,12 +369,12 @@ function goLegalDocuments() {
 }
 
 .detail-row text:last-child {
-  color: #1a1a2e;
+  color: #172033;
   font-weight: 700;
 }
 
 .risk-tag {
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
   font-weight: 800;
 }

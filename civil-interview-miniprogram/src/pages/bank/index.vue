@@ -525,7 +525,7 @@ async function handleDocxImport() {
 }
 
 .filter-row__value {
-  color: #1b5faa;
+  color: #2F7FD6;
   font-weight: 600;
   text-align: right;
   max-width: 440rpx;
@@ -534,7 +534,7 @@ async function handleDocxImport() {
 .filter-input {
   flex: 1;
   text-align: right;
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 27rpx;
 }
 
@@ -573,7 +573,7 @@ async function handleDocxImport() {
 }
 
 .bank-item__points {
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 22rpx;
   margin-left: auto;
 }
@@ -624,7 +624,7 @@ async function handleDocxImport() {
 }
 
 .pagination__info {
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 26rpx;
 }
 
@@ -680,8 +680,8 @@ async function handleDocxImport() {
   margin-top: 10rpx;
   padding: 10rpx 16rpx;
   border-radius: 8rpx;
-  background: #eef6ff;
-  color: #1b5faa;
+  background: #EAF5FF;
+  color: #2F7FD6;
   font-size: 24rpx;
 }
 

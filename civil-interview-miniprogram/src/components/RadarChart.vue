@@ -74,10 +74,10 @@ function draw() {
           else ctx.lineTo(x, y)
         }
         ctx.closePath()
-        ctx.strokeStyle = 'rgba(27, 95, 170, 0.12)'
+        ctx.strokeStyle = 'rgba(47, 127, 214, 0.12)'
         ctx.lineWidth = 1
         ctx.stroke()
-        ctx.fillStyle = l % 2 === 0 ? 'rgba(27, 95, 170, 0.02)' : 'rgba(27, 95, 170, 0.04)'
+        ctx.fillStyle = l % 2 === 0 ? 'rgba(47, 127, 214, 0.02)' : 'rgba(47, 127, 214, 0.04)'
         ctx.fill()
       }
 
@@ -87,7 +87,7 @@ function draw() {
         ctx.beginPath()
         ctx.moveTo(cx, cy)
         ctx.lineTo(cx + radius * Math.cos(angle), cy + radius * Math.sin(angle))
-        ctx.strokeStyle = 'rgba(27, 95, 170, 0.12)'
+        ctx.strokeStyle = 'rgba(47, 127, 214, 0.12)'
         ctx.lineWidth = 1
         ctx.stroke()
       }
@@ -105,9 +105,9 @@ function draw() {
         else ctx.lineTo(x, y)
       }
       ctx.closePath()
-      ctx.fillStyle = 'rgba(27, 95, 170, 0.18)'
+      ctx.fillStyle = 'rgba(47, 127, 214, 0.16)'
       ctx.fill()
-      ctx.strokeStyle = '#1B5FAA'
+      ctx.strokeStyle = '#2F7FD6'
       ctx.lineWidth = 2
       ctx.stroke()
 
@@ -121,7 +121,7 @@ function draw() {
         const y = cy + r * Math.sin(angle)
         ctx.beginPath()
         ctx.arc(x, y, 4, 0, Math.PI * 2)
-        ctx.fillStyle = '#1B5FAA'
+        ctx.fillStyle = '#2F7FD6'
         ctx.fill()
       }
 

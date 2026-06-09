@@ -709,10 +709,12 @@ function startRecommendedPractice(item) {
   min-height: 240rpx;
   margin-bottom: 20rpx;
   padding: 32rpx;
+  border: 1rpx solid #DCEAF7;
   border-radius: 18rpx;
-  background: linear-gradient(135deg, #15477a 0%, #1b5faa 62%, #5fa0e8 100%);
-  color: #ffffff;
-  box-shadow: 0 18rpx 40rpx rgba(21, 71, 122, 0.2);
+  background: linear-gradient(135deg, #ffffff 0%, #EAF5FF 58%, #DFF0FF 100%);
+  color: #172033;
+  box-shadow: 0 18rpx 40rpx rgba(47, 127, 214, 0.12);
+  animation: motion-fade-up 240ms ease-out both;
 }
 
 .home-hero__kicker,
@@ -765,14 +767,14 @@ function startRecommendedPractice(item) {
 }
 
 .guest-tip__title {
-  color: #1a1a2e;
+  color: #172033;
   font-size: 29rpx;
   font-weight: 900;
 }
 
 .guest-tip__desc {
   margin-top: 6rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 23rpx;
   line-height: 1.5;
 }
@@ -798,6 +800,7 @@ function startRecommendedPractice(item) {
   bottom: 0;
   left: 0;
   background: rgba(18, 24, 38, 0.48);
+  animation: preference-mask-in 180ms ease-out both;
 }
 
 .preference-modal__panel {
@@ -811,6 +814,7 @@ function startRecommendedPractice(item) {
   background: #ffffff;
   box-shadow: 0 24rpx 80rpx rgba(18, 24, 38, 0.18);
   transform: translateY(-50%);
+  animation: preference-panel-in 220ms ease-out both;
 }
 
 .preference-modal__scroll {
@@ -828,21 +832,21 @@ function startRecommendedPractice(item) {
 }
 
 .preference-setup__kicker {
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 23rpx;
   font-weight: 800;
 }
 
 .preference-setup__title {
   margin-top: 8rpx;
-  color: #1a1a2e;
+  color: #172033;
   font-size: 32rpx;
   font-weight: 900;
 }
 
 .preference-setup__desc {
   margin-top: 8rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 23rpx;
   line-height: 1.5;
 }
@@ -859,7 +863,7 @@ function startRecommendedPractice(item) {
 }
 
 .preference-picker text:last-child {
-  color: #1b5faa;
+  color: #2F7FD6;
   font-weight: 800;
 }
 
@@ -872,7 +876,7 @@ function startRecommendedPractice(item) {
 
 .preference-chip {
   padding: 12rpx 18rpx;
-  border: 1rpx solid #d9e3ef;
+  border: 1rpx solid #DCEAF7;
   border-radius: 999rpx;
   background: #ffffff;
   color: #2a3648;
@@ -881,9 +885,9 @@ function startRecommendedPractice(item) {
 }
 
 .preference-chip--active {
-  border-color: #1b5faa;
-  background: #e8f4fd;
-  color: #1b5faa;
+  border-color: #2F7FD6;
+  background: #EAF5FF;
+  color: #2F7FD6;
 }
 
 .preference-setup__actions {
@@ -915,8 +919,8 @@ function startRecommendedPractice(item) {
   width: 46rpx;
   height: 46rpx;
   border-radius: 999rpx;
-  background: #eef5fc;
-  color: #1b5faa;
+  background: #EAF5FF;
+  color: #2F7FD6;
   font-size: 26rpx;
   font-weight: 900;
 }
@@ -933,7 +937,7 @@ function startRecommendedPractice(item) {
 
 .trend-tab {
   padding: 14rpx 10rpx;
-  border: 1rpx solid #d9e3ef;
+  border: 1rpx solid #DCEAF7;
   border-radius: 12rpx;
   background: #ffffff;
   color: #5f6f83;
@@ -943,9 +947,9 @@ function startRecommendedPractice(item) {
 }
 
 .trend-tab--active {
-  border-color: #1b5faa;
-  background: #e8f4fd;
-  color: #1b5faa;
+  border-color: #2F7FD6;
+  background: #EAF5FF;
+  color: #2F7FD6;
 }
 
 .trend-chart-scroll {
@@ -977,16 +981,19 @@ function startRecommendedPractice(item) {
   position: absolute;
   width: 8rpx;
   border-radius: 999rpx 999rpx 0 0;
-  background: linear-gradient(180deg, rgba(27, 95, 170, 0.18) 0%, rgba(27, 95, 170, 0.02) 100%);
+  background: linear-gradient(180deg, rgba(47, 127, 214, 0.14) 0%, rgba(47, 127, 214, 0.02) 100%);
+  animation: trend-column-in 260ms ease-out both;
+  transform-origin: bottom center;
 }
 
 .trend-chart__segment {
   position: absolute;
   height: 4rpx;
   border-radius: 999rpx;
-  background: #1b5faa;
-  box-shadow: 0 4rpx 12rpx rgba(27, 95, 170, 0.16);
+  background: #2F7FD6;
+  box-shadow: 0 4rpx 12rpx rgba(47, 127, 214, 0.14);
   transform-origin: left center;
+  animation: trend-line-in 300ms ease-out both;
 }
 
 .trend-chart__point {
@@ -995,10 +1002,11 @@ function startRecommendedPractice(item) {
   height: 18rpx;
   margin-top: -9rpx;
   margin-left: -9rpx;
-  border: 5rpx solid #1b5faa;
+  border: 5rpx solid #2F7FD6;
   border-radius: 999rpx;
   background: #ffffff;
-  box-shadow: 0 6rpx 18rpx rgba(27, 95, 170, 0.22);
+  box-shadow: 0 6rpx 18rpx rgba(47, 127, 214, 0.18);
+  animation: trend-point-pop 260ms ease-out both;
 }
 
 .trend-chart__score {
@@ -1008,7 +1016,7 @@ function startRecommendedPractice(item) {
   display: block;
   min-width: 58rpx;
   font-size: 20rpx;
-  color: #1b5faa;
+  color: #2F7FD6;
   font-weight: 900;
   line-height: 1.2;
   text-align: center;
@@ -1021,7 +1029,7 @@ function startRecommendedPractice(item) {
   display: block;
   width: 88rpx;
   overflow: hidden;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 21rpx;
   line-height: 1.2;
   text-align: center;
@@ -1064,7 +1072,8 @@ function startRecommendedPractice(item) {
 .weakness-item__bar {
   height: 100%;
   border-radius: 999rpx;
-  background: #1b5faa;
+  background: #2F7FD6;
+  transition: width 300ms ease-out;
 }
 
 .weakness-item__bar--weak {
@@ -1085,16 +1094,17 @@ function startRecommendedPractice(item) {
 
 .recommendation-status {
   padding: 28rpx 0;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
   text-align: center;
 }
 
 .recommendation-item {
   padding: 18rpx;
-  border: 1rpx solid #d9e3ef;
+  border: 1rpx solid #DCEAF7;
   border-radius: 14rpx;
   background: #f8fbff;
+  animation: motion-fade-up 220ms ease-out both;
 }
 
 .recommendation-item__head {
@@ -1108,8 +1118,8 @@ function startRecommendedPractice(item) {
   flex: 0 0 auto;
   padding: 6rpx 14rpx;
   border-radius: 999rpx;
-  background: #e8f4fd;
-  color: #1b5faa;
+  background: #EAF5FF;
+  color: #2F7FD6;
   font-size: 21rpx;
   font-weight: 800;
 }
@@ -1117,7 +1127,7 @@ function startRecommendedPractice(item) {
 .recommendation-item__reason {
   min-width: 0;
   overflow: hidden;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 22rpx;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1162,21 +1172,21 @@ function startRecommendedPractice(item) {
 }
 
 .jiangsu-entry__kicker {
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 23rpx;
   font-weight: 700;
 }
 
 .jiangsu-entry__title {
   margin-top: 8rpx;
-  color: #1a1a2e;
+  color: #172033;
   font-size: 34rpx;
   font-weight: 900;
 }
 
 .jiangsu-entry__desc {
   margin-top: 8rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
 }
 
@@ -1194,7 +1204,7 @@ function startRecommendedPractice(item) {
   align-items: center;
   margin-top: 20rpx;
   padding: 18rpx;
-  border: 1rpx solid #d9e3ef;
+  border: 1rpx solid #DCEAF7;
   border-radius: 14rpx;
   background: #f5f9fe;
 }
@@ -1208,7 +1218,7 @@ function startRecommendedPractice(item) {
 .jiangsu-feature__label {
   padding: 8rpx 12rpx;
   border-radius: 999rpx;
-  background: #1b5faa;
+  background: #2F7FD6;
   color: #ffffff;
   font-size: 22rpx;
   font-weight: 800;
@@ -1220,7 +1230,7 @@ function startRecommendedPractice(item) {
 }
 
 .jiangsu-feature__title {
-  color: #1a1a2e;
+  color: #172033;
   font-size: 27rpx;
   font-weight: 900;
 }
@@ -1239,9 +1249,16 @@ function startRecommendedPractice(item) {
   align-items: center;
   min-height: 100rpx;
   padding: 18rpx;
-  border: 1rpx solid #d9e3ef;
+  border: 1rpx solid #DCEAF7;
   border-radius: 14rpx;
   background: #ffffff;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.jiangsu-card:active {
+  border-color: #b9d7f3;
+  box-shadow: 0 8rpx 22rpx rgba(47, 127, 214, 0.10);
+  transform: translateY(-2rpx) scale(0.99);
 }
 
 .jiangsu-card__rank {
@@ -1251,8 +1268,8 @@ function startRecommendedPractice(item) {
   width: 54rpx;
   height: 54rpx;
   border-radius: 999rpx;
-  background: #e8f4fd;
-  color: #1b5faa;
+  background: #EAF5FF;
+  color: #2F7FD6;
   font-size: 25rpx;
   font-weight: 900;
 }
@@ -1264,7 +1281,7 @@ function startRecommendedPractice(item) {
 
 .jiangsu-card__title {
   overflow: hidden;
-  color: #1a1a2e;
+  color: #172033;
   font-size: 28rpx;
   font-weight: 800;
   text-overflow: ellipsis;
@@ -1274,7 +1291,7 @@ function startRecommendedPractice(item) {
 .jiangsu-card__desc {
   margin-top: 6rpx;
   overflow: hidden;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 23rpx;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1311,7 +1328,60 @@ function startRecommendedPractice(item) {
 .record-card__meta {
   display: block;
   margin-top: 10rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 23rpx;
+}
+
+@keyframes trend-column-in {
+  from {
+    opacity: 0;
+    transform: scaleY(0.18);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes trend-line-in {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes trend-point-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.62);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes preference-mask-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes preference-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(calc(-50% + 24rpx));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%);
+  }
 }
 </style>

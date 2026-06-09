@@ -504,14 +504,14 @@ async function uploadQuestions() {
 
 .picker-row__value {
   max-width: 420rpx;
-  color: #1b5faa;
+  color: #2F7FD6;
   text-align: right;
 }
 
 .admin-hint {
   display: block;
   margin-top: 8rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
   line-height: 1.6;
 }
@@ -560,7 +560,7 @@ async function uploadQuestions() {
 
 .detail-row__label {
   width: 160rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
   flex-shrink: 0;
 }
@@ -603,7 +603,7 @@ async function uploadQuestions() {
 
 .focus-editor__title {
   display: block;
-  color: #1a1a2e;
+  color: #172033;
   font-size: 28rpx;
   font-weight: 700;
 }
@@ -611,7 +611,7 @@ async function uploadQuestions() {
 .focus-editor__desc {
   display: block;
   margin-top: 4rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 22rpx;
 }
 
@@ -646,7 +646,7 @@ async function uploadQuestions() {
 
 .focus-field__label {
   width: 140rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
   font-weight: 600;
   flex-shrink: 0;

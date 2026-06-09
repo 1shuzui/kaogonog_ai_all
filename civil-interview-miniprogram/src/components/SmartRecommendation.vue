@@ -14,7 +14,7 @@
     <text class="smart-rec__source">真实题库推荐 · 按薄弱维度、省份与已练记录筛选</text>
 
     <view v-if="weakDimensions.length">
-      <view v-if="loadingRec" class="smart-rec__loading">
+      <view v-if="loadingRec" class="smart-rec__loading motion-shimmer">
         <text class="smart-rec__loading-text">正在分析推荐...</text>
       </view>
 
@@ -64,7 +64,7 @@ const recommendations = ref([])
 const RECOMMENDATION_STORAGE_KEY = 'civil_rec_practiced'
 
 const DIM_COLORS = {
-  legal: '#1B5FAA',
+  legal: '#2F7FD6',
   practical: '#389E0D',
   logic: '#722ED1',
   expression: '#D48806',
@@ -73,7 +73,7 @@ const DIM_COLORS = {
 }
 
 const DIM_COLORS_BG = {
-  legal: 'rgba(27, 95, 170, 0.08)',
+  legal: 'rgba(47, 127, 214, 0.08)',
   practical: 'rgba(56, 142, 13, 0.08)',
   logic: 'rgba(114, 46, 209, 0.08)',
   expression: 'rgba(212, 136, 6, 0.08)',
@@ -193,7 +193,7 @@ watch(() => props.province, () => {
 }
 
 .smart-rec__title {
-  color: #1a1a2e;
+  color: #172033;
   font-size: 32rpx;
   font-weight: 700;
 }
@@ -202,26 +202,34 @@ watch(() => props.province, () => {
   padding: 10rpx 24rpx;
   border-radius: 999rpx;
   background: #eef4ff;
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 24rpx;
   border: none;
   line-height: 1.35;
+  transition: transform 160ms ease, opacity 160ms ease, background-color 160ms ease;
+}
+
+.smart-rec__refresh:active {
+  opacity: 0.9;
+  transform: scale(0.96);
 }
 
 .smart-rec__source {
   display: block;
   margin-bottom: 18rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 22rpx;
 }
 
 .smart-rec__loading {
   padding: 40rpx 0;
+  border-radius: 16rpx;
+  background: #f7fbff;
   text-align: center;
 }
 
 .smart-rec__loading-text {
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 26rpx;
 }
 
@@ -230,7 +238,8 @@ watch(() => props.province, () => {
   background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
   border-radius: 16rpx;
   margin-bottom: 16rpx;
-  border: 1rpx solid rgba(27, 95, 170, 0.08);
+  border: 1rpx solid #DCEAF7;
+  animation: motion-fade-up 220ms ease-out both;
 }
 
 .smart-rec__item-header {
@@ -248,7 +257,7 @@ watch(() => props.province, () => {
 }
 
 .smart-rec__reason {
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 22rpx;
   line-height: 1.4;
 }
@@ -256,7 +265,7 @@ watch(() => props.province, () => {
 .smart-rec__empty {
   padding: 40rpx 0;
   text-align: center;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 26rpx;
 }
 
@@ -277,11 +286,23 @@ watch(() => props.province, () => {
   font-size: 32rpx;
   font-weight: 800;
   margin-bottom: 12rpx;
+  animation: balanced-check-pop 240ms ease-out both;
 }
 
 .smart-rec__balanced-text {
   display: block;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 26rpx;
+}
+
+@keyframes balanced-check-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 </style>

@@ -22,7 +22,7 @@
             :current="questionBookIndex"
             :indicator-dots="examStore.totalQuestions > 1"
             indicator-color="rgba(27,95,170,0.22)"
-            indicator-active-color="#1b5faa"
+            indicator-active-color="#2F7FD6"
             @change="onQuestionBookChange"
           >
             <swiper-item
@@ -79,12 +79,12 @@
                 </view>
               </view>
 
-              <view v-if="finishingExam" class="analysis-status">
+              <view v-if="finishingExam" class="analysis-status motion-shimmer">
                 <text>正在分析结果，请稍候</text>
               </view>
 
               <view class="record-panel">
-                <view class="record-panel__status">
+                <view class="record-panel__status" :class="{ 'record-panel__status--active': captureActive }">
                   <text>{{ captureStatusText }}</text>
                   <text v-if="captureReady" class="record-panel__ready">已记录</text>
                 </view>
@@ -186,12 +186,12 @@
               <text class="muted">{{ useVideoMode ? '录像 + 录音' : '仅录音' }}</text>
             </view>
 
-            <view v-if="finishingExam" class="analysis-status">
+            <view v-if="finishingExam" class="analysis-status motion-shimmer">
               <text>{{ scoringProgressText }}</text>
             </view>
 
             <view class="record-panel">
-              <view class="record-panel__status">
+              <view class="record-panel__status" :class="{ 'record-panel__status--active': captureActive }">
                 <text>{{ captureStatusText }}</text>
                 <text v-if="captureReady" class="record-panel__ready">已记录</text>
               </view>
@@ -1120,7 +1120,7 @@ function goBackHome() {
 <style scoped>
 .exam-room {
   min-height: 100vh;
-  background: #f0f5fa;
+  background: #F6FAFE;
 }
 
 .exam-room--full-exam {
@@ -1228,7 +1228,7 @@ function goBackHome() {
 }
 
 .question-book__meta {
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 23rpx;
   font-weight: 700;
 }
@@ -1295,8 +1295,8 @@ function goBackHome() {
 }
 
 .question-tag--blue {
-  background: #e8f4fd;
-  color: #1b5faa;
+  background: #EAF5FF;
+  color: #2F7FD6;
 }
 
 .reading-list {
@@ -1311,14 +1311,14 @@ function goBackHome() {
 }
 
 .reading-list__title {
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 25rpx;
   font-weight: 800;
 }
 
 .reading-list__item {
   margin-top: 8rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
   line-height: 1.5;
 }
@@ -1357,13 +1357,25 @@ function goBackHome() {
   color: #8a4d17;
   font-size: 25rpx;
   font-weight: 800;
+  overflow: hidden;
 }
 
 .record-panel__status {
   display: flex;
   justify-content: space-between;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
+  padding: 2rpx 0;
+  transition: color 180ms ease, transform 180ms ease;
+}
+
+.record-panel__status--active {
+  color: #2F7FD6;
+  transform: translateX(2rpx);
+}
+
+.record-panel__status--active text:first-child {
+  animation: recording-text-pulse 1.2s ease-in-out infinite;
 }
 
 .record-panel__ready {
@@ -1488,7 +1500,7 @@ function goBackHome() {
 }
 
 .exam-room--practice .room-header__count {
-  color: #1a1a2e;
+  color: #172033;
   font-size: 29rpx;
   font-weight: 800;
 }
@@ -1496,8 +1508,8 @@ function goBackHome() {
 .exam-room--practice .room-header__timer {
   padding: 8rpx 16rpx;
   border-radius: 999rpx;
-  background: #e8f4fd;
-  color: #1b5faa;
+  background: #EAF5FF;
+  color: #2F7FD6;
   font-size: 25rpx;
   font-weight: 700;
 }
@@ -1506,11 +1518,11 @@ function goBackHome() {
   flex: 1;
   min-height: 0;
   padding: 24rpx 28rpx;
-  background: #f0f5fa;
+  background: #F6FAFE;
 }
 
 .exam-room--practice .question-panel .card {
-  border-color: #d9e3ef;
+  border-color: #DCEAF7;
   background: #ffffff;
 }
 
@@ -1531,8 +1543,21 @@ function goBackHome() {
 .exam-room--practice .record-panel__status {
   display: flex;
   justify-content: space-between;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
+}
+
+.exam-room--practice .record-panel__status--active {
+  color: #2F7FD6;
+}
+
+@keyframes recording-text-pulse {
+  0%, 100% {
+    opacity: 0.72;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .exam-room--practice .record-panel__ready {

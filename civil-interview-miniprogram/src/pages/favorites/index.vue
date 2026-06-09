@@ -111,15 +111,15 @@ function confirmClear() {
 .tab-item {
   padding: 18rpx 8rpx;
   border-radius: 12rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 25rpx;
   font-weight: 800;
   text-align: center;
 }
 
 .tab-item--active {
-  background: #e8f4fd;
-  color: #1b5faa;
+  background: #EAF5FF;
+  color: #2F7FD6;
 }
 
 .favorite-card__head,
@@ -136,7 +136,7 @@ function confirmClear() {
 
 .favorite-card__score {
   margin-left: auto;
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 28rpx;
   font-weight: 900;
 }
@@ -169,7 +169,7 @@ function confirmClear() {
 .favorite-card__meta {
   justify-content: space-between;
   margin-top: 12rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 23rpx;
 }
 

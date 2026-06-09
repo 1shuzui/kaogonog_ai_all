@@ -216,8 +216,8 @@ const displayKeywords = computed(() => {
 
 .question-card__tag--blue,
 .question-card__tag--type {
-  background: #e8f4fd;
-  color: #1b5faa;
+  background: #EAF5FF;
+  color: #2F7FD6;
 }
 
 .question-card__tag--warning {
@@ -242,7 +242,7 @@ const displayKeywords = computed(() => {
 
 .question-card__points {
   flex-shrink: 0;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 22rpx;
 }
 
@@ -298,6 +298,16 @@ const displayKeywords = computed(() => {
   transition: max-height 0.25s ease;
 }
 
+.question-card {
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.question-card:active {
+  border-color: #b9d7f3;
+  box-shadow: 0 8rpx 22rpx rgba(47, 127, 214, 0.10);
+  transform: translateY(-2rpx) scale(0.992);
+}
+
 .question-card__body--collapsed {
   position: relative;
 }
@@ -329,12 +339,12 @@ const displayKeywords = computed(() => {
 }
 
 .question-card__toggle-text {
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 26rpx;
 }
 
 .question-card__toggle-icon {
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 20rpx;
 }
 
@@ -350,7 +360,7 @@ const displayKeywords = computed(() => {
   padding: 6rpx 12rpx;
   border-radius: 8rpx;
   background: #f6f8fb;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 22rpx;
 }
 

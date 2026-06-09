@@ -165,7 +165,7 @@
   ],
   "tabBar": {
     "color": "#8c8c8c",
-    "selectedColor": "#1b5faa",
+    "selectedColor": "#2F7FD6",
     "backgroundColor": "#ffffff",
     "borderStyle": "black",
     "list": [
@@ -205,6 +205,6 @@
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "公考面试AI测评",
     "navigationBarBackgroundColor": "#ffffff",
-    "backgroundColor": "#f0f5fa"
+    "backgroundColor": "#F6FAFE"
   }
 }

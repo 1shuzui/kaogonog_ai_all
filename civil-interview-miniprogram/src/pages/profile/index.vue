@@ -76,11 +76,11 @@
       </view>
       <view class="setting-slider">
         <text>准备时间 {{ preferences.defaultPrepTime }} 秒</text>
-        <slider :value="preferences.defaultPrepTime" min="30" max="300" step="10" activeColor="#1b5faa" @change="onPrepChange" />
+        <slider :value="preferences.defaultPrepTime" min="30" max="300" step="10" activeColor="#2F7FD6" @change="onPrepChange" />
       </view>
       <view class="setting-slider">
         <text>作答时间 {{ preferences.defaultAnswerTime }} 秒</text>
-        <slider :value="preferences.defaultAnswerTime" min="60" max="600" step="10" activeColor="#1b5faa" @change="onAnswerChange" />
+        <slider :value="preferences.defaultAnswerTime" min="60" max="600" step="10" activeColor="#2F7FD6" @change="onAnswerChange" />
       </view>
       <button class="primary-button" @tap="savePreferences">保存设置</button>
     </view>
@@ -420,7 +420,7 @@ function logout() {
   padding: 30rpx;
   border-radius: 18rpx;
   background: #ffffff;
-  box-shadow: 0 6rpx 18rpx rgba(23, 48, 78, 0.06);
+  box-shadow: 0 6rpx 18rpx rgba(47, 127, 214, 0.05);
 }
 
 .profile-card__avatar {
@@ -431,7 +431,7 @@ function logout() {
   height: 108rpx;
   margin-right: 24rpx;
   border-radius: 999rpx;
-  background: linear-gradient(135deg, #1b5faa 0%, #5fa0e8 100%);
+  background: linear-gradient(135deg, #2F7FD6 0%, #8BC7F7 100%);
   color: #ffffff;
   font-size: 42rpx;
   font-weight: 800;
@@ -440,7 +440,7 @@ function logout() {
 .profile-card__name {
   display: block;
   overflow: hidden;
-  color: #1a1a2e;
+  color: #172033;
   font-size: 36rpx;
   font-weight: 800;
   line-height: 1.25;
@@ -451,7 +451,7 @@ function logout() {
 .profile-card__meta {
   display: block;
   margin-top: 8rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
 }
 
@@ -465,8 +465,8 @@ function logout() {
   margin-top: 12rpx;
   padding: 6rpx 14rpx;
   border-radius: 999rpx;
-  background: #e8f4fd;
-  color: #1b5faa;
+  background: #EAF5FF;
+  color: #2F7FD6;
   font-size: 22rpx;
   font-weight: 700;
 }
@@ -482,17 +482,17 @@ function logout() {
   min-width: 0;
   min-height: 120rpx;
   padding: 22rpx 12rpx;
-  border: 1rpx solid rgba(27, 95, 170, 0.08);
+  border: 1rpx solid #DCEAF7;
   border-radius: 16rpx;
   background: #ffffff;
   text-align: center;
-  box-shadow: 0 6rpx 18rpx rgba(23, 48, 78, 0.05);
+  box-shadow: 0 6rpx 18rpx rgba(47, 127, 214, 0.04);
 }
 
 .profile-stats__value {
   display: block;
   overflow: hidden;
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 32rpx;
   font-weight: 800;
   line-height: 1.2;
@@ -503,17 +503,17 @@ function logout() {
 .profile-stats__label {
   display: block;
   margin-top: 8rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 23rpx;
 }
 
 .sync-strip {
   margin-bottom: 20rpx;
   padding: 16rpx 22rpx;
-  border: 1rpx solid #d9e3ef;
+  border: 1rpx solid #DCEAF7;
   border-radius: 14rpx;
   background: #f8fbff;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
 }
 
@@ -533,7 +533,7 @@ function logout() {
 }
 
 .setting-row text:last-child {
-  color: #1b5faa;
+  color: #2F7FD6;
   font-weight: 600;
 }
 
@@ -553,7 +553,7 @@ function logout() {
 .setting-block__head text:last-child {
   overflow: hidden;
   max-width: 430rpx;
-  color: #1b5faa;
+  color: #2F7FD6;
   font-weight: 700;
   text-align: right;
   text-overflow: ellipsis;
@@ -569,7 +569,7 @@ function logout() {
 
 .preference-chip {
   padding: 12rpx 18rpx;
-  border: 1rpx solid #d9e3ef;
+  border: 1rpx solid #DCEAF7;
   border-radius: 999rpx;
   background: #ffffff;
   color: #2a3648;
@@ -578,9 +578,9 @@ function logout() {
 }
 
 .preference-chip--active {
-  border-color: #1b5faa;
-  background: #e8f4fd;
-  color: #1b5faa;
+  border-color: #2F7FD6;
+  background: #EAF5FF;
+  color: #2F7FD6;
 }
 
 .setting-hint {
@@ -605,21 +605,21 @@ function logout() {
 }
 
 .balance-card__label {
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 23rpx;
   font-weight: 800;
 }
 
 .balance-card__title {
   margin-top: 6rpx;
-  color: #1a1a2e;
+  color: #172033;
   font-size: 32rpx;
   font-weight: 900;
 }
 
 .balance-card__desc {
   margin-top: 6rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
   line-height: 1.5;
 }
@@ -658,7 +658,7 @@ function logout() {
 }
 
 .about-text--muted {
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 23rpx;
 }
 </style>

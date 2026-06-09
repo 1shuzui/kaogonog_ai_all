@@ -502,7 +502,7 @@ function goLegalDocuments() {
   justify-content: center;
   min-height: 100vh;
   padding: 44rpx 30rpx;
-  background: linear-gradient(180deg, #e8f4fd 0%, #f0f5fa 42%, #f0f5fa 100%);
+  background: linear-gradient(180deg, #EAF5FF 0%, #F6FAFE 42%, #F6FAFE 100%);
 }
 
 .login-card {
@@ -510,7 +510,7 @@ function goLegalDocuments() {
   padding: 52rpx 34rpx 36rpx;
   border-radius: 20rpx;
   background: #ffffff;
-  box-shadow: 0 24rpx 60rpx rgba(21, 71, 122, 0.14);
+  box-shadow: 0 24rpx 60rpx rgba(47, 127, 214, 0.10);
 }
 
 .login-brand {
@@ -522,14 +522,14 @@ function goLegalDocuments() {
 }
 
 .login-brand__title {
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 42rpx;
   font-weight: 800;
 }
 
 .login-brand__subtitle {
   margin-top: 10rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 25rpx;
 }
 
@@ -540,13 +540,13 @@ function goLegalDocuments() {
   margin-bottom: 24rpx;
   padding: 8rpx;
   border-radius: 14rpx;
-  background: #f0f5fa;
+  background: #F6FAFE;
 }
 
 .login-tabs__item {
   padding: 18rpx 0;
   border-radius: 10rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 28rpx;
   font-weight: 600;
   text-align: center;
@@ -554,8 +554,8 @@ function goLegalDocuments() {
 
 .login-tabs__item--active {
   background: #ffffff;
-  color: #1b5faa;
-  box-shadow: 0 4rpx 12rpx rgba(23, 48, 78, 0.08);
+  color: #2F7FD6;
+  box-shadow: 0 4rpx 12rpx rgba(47, 127, 214, 0.07);
 }
 
 .login-submit {
@@ -572,7 +572,7 @@ function goLegalDocuments() {
 
 .browse-button {
   margin-top: 18rpx;
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 27rpx;
 }
 
@@ -591,7 +591,7 @@ function goLegalDocuments() {
 .agreement-box__text,
 .agreement-tip {
   display: block;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
   line-height: 1.7;
 }
@@ -605,7 +605,7 @@ function goLegalDocuments() {
 }
 
 .agreement-box__link {
-  color: #1b5faa;
+  color: #2F7FD6;
 }
 
 .privacy-auth-panel {
@@ -632,7 +632,7 @@ function goLegalDocuments() {
 .link-button {
   min-height: 64rpx;
   background: transparent;
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 25rpx;
 }
 
@@ -661,7 +661,7 @@ function goLegalDocuments() {
 .reset-tip {
   display: block;
   margin-top: 12rpx;
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 23rpx;
   line-height: 1.5;
 }
@@ -703,7 +703,7 @@ function goLegalDocuments() {
 
 .account-setup-panel__title {
   display: block;
-  color: #1a1a2e;
+  color: #172033;
   font-size: 34rpx;
   font-weight: 800;
 }

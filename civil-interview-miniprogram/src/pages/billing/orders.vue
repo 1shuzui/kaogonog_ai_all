@@ -170,7 +170,7 @@ async function selectOrder(order) {
 }
 
 .order-card__title {
-  color: #1a1a2e;
+  color: #172033;
   font-size: 30rpx;
   font-weight: 800;
 }
@@ -178,7 +178,7 @@ async function selectOrder(order) {
 .order-card__meta,
 .order-card__time {
   margin-top: 8rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 23rpx;
 }
 
@@ -188,14 +188,14 @@ async function selectOrder(order) {
 }
 
 .order-card__amount {
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 32rpx;
   font-weight: 900;
 }
 
 .order-card__status {
   margin-top: 8rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 23rpx;
   font-weight: 700;
 }
@@ -229,7 +229,7 @@ async function selectOrder(order) {
 
 .detail-row text:last-child {
   flex: 1;
-  color: #1a1a2e;
+  color: #172033;
   font-weight: 700;
   text-align: right;
   word-break: break-all;

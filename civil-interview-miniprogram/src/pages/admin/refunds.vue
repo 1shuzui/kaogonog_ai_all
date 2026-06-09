@@ -191,14 +191,14 @@ async function submitRefund() {
 }
 
 .metric__value {
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 32rpx;
   font-weight: 900;
 }
 
 .metric__label {
   margin-top: 6rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 22rpx;
 }
 
@@ -214,14 +214,14 @@ async function submitRefund() {
 }
 
 .refund-order__no {
-  color: #1a1a2e;
+  color: #172033;
   font-size: 25rpx;
   font-weight: 800;
 }
 
 .refund-order__amount {
   margin-top: 6rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 23rpx;
 }
 </style>

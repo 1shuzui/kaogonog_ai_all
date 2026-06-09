@@ -17,7 +17,7 @@
       <text v-for="tag in selectionTags" :key="tag" class="selection-tag">{{ tag }}</text>
     </view>
 
-    <view v-if="targetedStore.focusLoading" class="card loading-card">
+    <view v-if="targetedStore.focusLoading" class="card loading-card motion-shimmer">
       <text class="loading-card__title">AI正在分析面试重点...</text>
       <text class="loading-card__desc">请稍候，系统正在根据省份和岗位整理核心考点。</text>
     </view>
@@ -253,7 +253,7 @@ async function generateQuestions() {
 }
 
 .back-link {
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 27rpx;
   flex-shrink: 0;
 }
@@ -272,8 +272,8 @@ async function generateQuestions() {
 .selection-tag {
   padding: 8rpx 18rpx;
   border-radius: 999rpx;
-  background: #eaf3fc;
-  color: #1b5faa;
+  background: #EAF5FF;
+  color: #2F7FD6;
   font-size: 23rpx;
   font-weight: 600;
 }
@@ -301,13 +301,14 @@ async function generateQuestions() {
 .focus-row__bar {
   height: 100%;
   border-radius: 999rpx;
-  background: #1b5faa;
+  background: #2F7FD6;
+  transition: width 300ms ease-out;
 }
 
 .focus-row__desc {
   display: block;
   margin-top: 10rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
   line-height: 1.6;
 }
@@ -336,7 +337,7 @@ async function generateQuestions() {
 
 .loading-card__title {
   display: block;
-  color: #1a1a2e;
+  color: #172033;
   font-size: 28rpx;
   font-weight: 700;
 }
@@ -344,13 +345,13 @@ async function generateQuestions() {
 .loading-card__desc {
   display: block;
   margin-top: 10rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
   line-height: 1.6;
 }
 
 .list-item__title {
-  color: #1a1a2e;
+  color: #172033;
   font-size: 28rpx;
   font-weight: 700;
 }
@@ -358,7 +359,7 @@ async function generateQuestions() {
 .list-item__desc,
 .strategy-item {
   margin-top: 8rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
   line-height: 1.6;
 }
@@ -377,13 +378,14 @@ async function generateQuestions() {
   width: 44rpx;
   height: 44rpx;
   border-radius: 50%;
-  background: #1b5faa;
+  background: #2F7FD6;
   color: #fff;
   font-size: 24rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  animation: strategy-num-pop 220ms ease-out both;
 }
 
 .topic-cloud {
@@ -422,7 +424,7 @@ async function generateQuestions() {
 
 .generated-practice__title {
   display: block;
-  color: #1a1a2e;
+  color: #172033;
   font-size: 28rpx;
   font-weight: 700;
   margin-bottom: 6rpx;
@@ -430,7 +432,7 @@ async function generateQuestions() {
 
 .generated-practice__desc {
   display: block;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
 }
 
@@ -446,14 +448,25 @@ async function generateQuestions() {
   width: 44rpx;
   height: 44rpx;
   border-radius: 50%;
-  background: #eef6ff;
-  color: #1b5faa;
+  background: #EAF5FF;
+  color: #2F7FD6;
   font-size: 24rpx;
   font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+@keyframes strategy-num-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.78);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .generated-practice__stem {

@@ -284,7 +284,7 @@ function startTrial() {
   width: 100rpx;
   height: 100rpx;
   border-radius: 20rpx;
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 48rpx;
   font-weight: 900;
   line-height: 1;
@@ -296,14 +296,14 @@ function startTrial() {
 }
 
 .dimension-hero__title {
-  color: #1a1a2e;
+  color: #172033;
   font-size: 36rpx;
   font-weight: 800;
 }
 
 .dimension-hero__desc {
   margin-top: 8rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
   line-height: 1.5;
 }

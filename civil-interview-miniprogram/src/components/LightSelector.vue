@@ -85,6 +85,7 @@ function choose(index) {
   align-items: flex-end;
   justify-content: center;
   background: rgba(15, 23, 42, 0.42);
+  animation: selector-mask-in 180ms ease-out both;
 }
 
 .selector-panel {
@@ -93,8 +94,9 @@ function choose(index) {
   padding: 24rpx 28rpx calc(24rpx + env(safe-area-inset-bottom));
   border-radius: 24rpx 24rpx 0 0;
   background: #ffffff;
-  color: #1a1a2e;
-  box-shadow: 0 -12rpx 36rpx rgba(23, 48, 78, 0.14);
+  color: #172033;
+  box-shadow: 0 -12rpx 36rpx rgba(47, 127, 214, 0.10);
+  animation: selector-sheet-up 220ms ease-out both;
 }
 
 .selector-head {
@@ -105,13 +107,13 @@ function choose(index) {
 }
 
 .selector-title {
-  color: #1a1a2e;
+  color: #172033;
   font-size: 30rpx;
   font-weight: 700;
 }
 
 .selector-done {
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 26rpx;
   font-weight: 600;
 }
@@ -129,6 +131,7 @@ function choose(index) {
   border-bottom: 1rpx solid #eef2f6;
   color: #2a3648;
   font-size: 28rpx;
+  transition: transform 160ms ease, background-color 160ms ease, color 160ms ease;
 }
 
 .selector-option:last-child {
@@ -136,12 +139,48 @@ function choose(index) {
 }
 
 .selector-option--active {
-  color: #1b5faa;
+  padding: 0 16rpx;
+  border-radius: 12rpx;
+  background: #EAF5FF;
+  color: #2F7FD6;
   font-weight: 700;
+  transform: translateX(4rpx);
 }
 
 .selector-check {
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 28rpx;
+  animation: selector-check-pop 180ms ease-out both;
+}
+
+@keyframes selector-mask-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes selector-sheet-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 44rpx, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes selector-check-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 </style>

@@ -22,8 +22,8 @@ export default {
 <style>
 page {
   min-height: 100%;
-  background: #f0f5fa;
-  color: #1a1a2e;
+  background: #F6FAFE;
+  color: #172033;
   color-scheme: light;
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 30rpx;
@@ -43,6 +43,8 @@ button {
   margin: 0;
   border-radius: 12rpx;
   line-height: 1.3;
+  transition: transform 180ms ease, opacity 180ms ease, box-shadow 180ms ease, background-color 180ms ease, border-color 180ms ease;
+  transform: translateZ(0);
 }
 
 button::after {
@@ -53,6 +55,7 @@ button::after {
   min-height: 100vh;
   padding: 28rpx;
   padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
+  animation: motion-page-in 220ms ease-out both;
 }
 
 .page--tab {
@@ -62,7 +65,7 @@ button::after {
 .page-title {
   display: block;
   margin-bottom: 8rpx;
-  color: #1a1a2e;
+  color: #172033;
   font-size: 40rpx;
   font-weight: 700;
 }
@@ -70,7 +73,7 @@ button::after {
 .page-desc {
   display: block;
   margin-bottom: 28rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 26rpx;
   line-height: 1.6;
 }
@@ -78,10 +81,13 @@ button::after {
 .card {
   margin-bottom: 20rpx;
   padding: 28rpx;
-  border: 1rpx solid rgba(27, 95, 170, 0.08);
+  border: 1rpx solid #DCEAF7;
   border-radius: 16rpx;
   background: #ffffff;
-  box-shadow: 0 6rpx 18rpx rgba(23, 48, 78, 0.06);
+  box-shadow: 0 6rpx 18rpx rgba(47, 127, 214, 0.05);
+  animation: motion-fade-up 240ms ease-out both;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, opacity 180ms ease;
+  transform: translateZ(0);
 }
 
 .section-head {
@@ -92,13 +98,13 @@ button::after {
 }
 
 .section-title {
-  color: #1a1a2e;
+  color: #172033;
   font-size: 32rpx;
   font-weight: 700;
 }
 
 .muted {
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
 }
 
@@ -108,10 +114,16 @@ button::after {
   justify-content: center;
   min-height: 88rpx;
   border-radius: 14rpx;
-  background: #1b5faa;
+  background: #2F7FD6;
   color: #ffffff;
   font-size: 30rpx;
   font-weight: 600;
+}
+
+.primary-button:active {
+  opacity: 0.92;
+  transform: scale(0.985);
+  box-shadow: 0 8rpx 20rpx rgba(47, 127, 214, 0.14);
 }
 
 .secondary-button {
@@ -119,11 +131,17 @@ button::after {
   align-items: center;
   justify-content: center;
   min-height: 84rpx;
-  border: 1rpx solid #cbd9ea;
+  border: 1rpx solid #DCEAF7;
   border-radius: 14rpx;
   background: #ffffff;
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 28rpx;
+}
+
+.secondary-button:active {
+  background: #EAF5FF;
+  opacity: 0.94;
+  transform: scale(0.985);
 }
 
 .danger-button {
@@ -139,17 +157,22 @@ button::after {
 
 .chip {
   padding: 12rpx 22rpx;
-  border: 1rpx solid #d9e3ef;
+  border: 1rpx solid #DCEAF7;
   border-radius: 999rpx;
   background: #ffffff;
   color: #2a3648;
   font-size: 25rpx;
+  transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.chip:active {
+  transform: scale(0.96);
 }
 
 .chip--active {
-  border-color: #1b5faa;
-  background: #e8f4fd;
-  color: #1b5faa;
+  border-color: #2F7FD6;
+  background: #EAF5FF;
+  color: #2F7FD6;
   font-weight: 600;
 }
 
@@ -165,10 +188,10 @@ button::after {
   width: 100%;
   min-height: 88rpx;
   padding: 0 24rpx;
-  border: 1rpx solid #d9e3ef;
+  border: 1rpx solid #DCEAF7;
   border-radius: 14rpx;
   background: #ffffff;
-  color: #1a1a2e;
+  color: #172033;
   font-size: 28rpx;
 }
 
@@ -176,11 +199,84 @@ button::after {
   width: 100%;
   min-height: 240rpx;
   padding: 22rpx 24rpx;
-  border: 1rpx solid #d9e3ef;
+  border: 1rpx solid #DCEAF7;
   border-radius: 14rpx;
   background: #ffffff;
-  color: #1a1a2e;
+  color: #172033;
   font-size: 28rpx;
   line-height: 1.6;
+}
+
+.motion-fade-up {
+  animation: motion-fade-up 240ms ease-out both;
+}
+
+.motion-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.motion-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -60%;
+  width: 45%;
+  background: linear-gradient(90deg, transparent 0%, rgba(47, 127, 214, 0.12) 48%, transparent 100%);
+  animation: motion-shimmer 1.45s ease-in-out infinite;
+}
+
+.recording-pulse {
+  animation: motion-recording-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes motion-page-in {
+  from {
+    opacity: 0.96;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes motion-fade-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14rpx, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes motion-sheet-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 36rpx, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes motion-shimmer {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(360%);
+  }
+}
+
+@keyframes motion-recording-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(47, 127, 214, 0.20);
+  }
+  50% {
+    box-shadow: 0 0 0 12rpx rgba(47, 127, 214, 0);
+  }
 }
 </style>

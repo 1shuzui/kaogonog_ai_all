@@ -50,8 +50,8 @@ defineProps({
   height: 88rpx;
   margin-bottom: 18rpx;
   border-radius: 999rpx;
-  background: #e8f4fd;
-  color: #1b5faa;
+  background: #EAF5FF;
+  color: #2F7FD6;
   font-size: 42rpx;
   font-weight: 700;
 }
@@ -64,7 +64,7 @@ defineProps({
 
 .empty__desc {
   margin-top: 8rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
   line-height: 1.6;
 }

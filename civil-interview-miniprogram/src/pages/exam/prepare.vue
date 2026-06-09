@@ -166,6 +166,7 @@
     <button
       v-if="!readonlyMode"
       class="primary-button"
+      :class="{ 'motion-shimmer': loading || accessLoading || enteringExam }"
       :disabled="loading || accessLoading || enteringExam || asrUnavailable"
       :loading="loading"
       @tap="startPractice"
@@ -849,7 +850,7 @@ function goPricing() {
 
 .access-card__title,
 .service-card__title {
-  color: #1a1a2e;
+  color: #172033;
   font-size: 30rpx;
   font-weight: 800;
 }
@@ -887,7 +888,7 @@ function goPricing() {
 .config-row__value {
   flex: 1;
   margin-left: 24rpx;
-  color: #1b5faa;
+  color: #2F7FD6;
   font-weight: 700;
   text-align: right;
 }
@@ -909,7 +910,7 @@ function goPricing() {
 .suite-panel {
   margin-top: 16rpx;
   padding: 18rpx;
-  border: 1rpx solid #d9e3ef;
+  border: 1rpx solid #DCEAF7;
   border-radius: 14rpx;
   background: #f8fbff;
 }
@@ -924,14 +925,14 @@ function goPricing() {
   border: 1rpx solid #bfd7ef;
   border-radius: 12rpx;
   background: #ffffff;
-  color: #1a1a2e;
+  color: #172033;
   font-size: 25rpx;
   font-weight: 700;
 }
 
 .suite-picker__arrow {
   flex-shrink: 0;
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 23rpx;
 }
 
@@ -957,14 +958,14 @@ function goPricing() {
 }
 
 .fixed-practice-mode__title {
-  color: #1a1a2e;
+  color: #172033;
   font-size: 29rpx;
   font-weight: 800;
 }
 
 .fixed-practice-mode__desc {
   margin-top: 8rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 23rpx;
 }
 
@@ -982,19 +983,24 @@ function goPricing() {
 .type-chip {
   min-width: 148rpx;
   padding: 16rpx 20rpx;
-  border: 1rpx solid #d9e3ef;
+  border: 1rpx solid #DCEAF7;
   border-radius: 14rpx;
   background: #ffffff;
   color: #2a3648;
   font-size: 25rpx;
   font-weight: 700;
   text-align: center;
+  transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
+}
+
+.type-chip:active {
+  transform: scale(0.97);
 }
 
 .type-chip--active {
-  border-color: #1b5faa;
-  background: #e8f4fd;
-  color: #1b5faa;
+  border-color: #2F7FD6;
+  background: #EAF5FF;
+  color: #2F7FD6;
 }
 
 .type-chip--disabled {
@@ -1005,7 +1011,7 @@ function goPricing() {
   display: flex;
   align-items: center;
   overflow: hidden;
-  border: 1rpx solid #d9e3ef;
+  border: 1rpx solid #DCEAF7;
   border-radius: 12rpx;
 }
 
@@ -1014,13 +1020,13 @@ function goPricing() {
   height: 68rpx;
   border-radius: 0;
   background: #f6f8fb;
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 34rpx;
 }
 
 .stepper__value {
   width: 86rpx;
-  color: #1a1a2e;
+  color: #172033;
   font-size: 30rpx;
   font-weight: 800;
   text-align: center;
@@ -1036,14 +1042,20 @@ function goPricing() {
 .mode-card {
   min-height: 150rpx;
   padding: 22rpx;
-  border: 1rpx solid #d9e3ef;
+  border: 1rpx solid #DCEAF7;
   border-radius: 16rpx;
   background: #ffffff;
+  transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
 .mode-card--active {
-  border-color: #1b5faa;
-  background: #e8f4fd;
+  border-color: #2F7FD6;
+  background: #EAF5FF;
+  box-shadow: 0 8rpx 22rpx rgba(47, 127, 214, 0.10);
+}
+
+.mode-card:active {
+  transform: scale(0.985);
 }
 
 .mode-card__title,
@@ -1052,14 +1064,14 @@ function goPricing() {
 }
 
 .mode-card__title {
-  color: #1a1a2e;
+  color: #172033;
   font-size: 29rpx;
   font-weight: 800;
 }
 
 .mode-card__desc {
   margin-top: 10rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 23rpx;
   line-height: 1.5;
 }
@@ -1070,15 +1082,68 @@ function goPricing() {
 }
 
 .tips-card__title {
-  color: #1a1a2e;
+  color: #172033;
   font-size: 30rpx;
   font-weight: 800;
 }
 
 .tips-card__line {
   margin-top: 12rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
   line-height: 1.6;
+}
+
+.year-overlay {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.4);
+  animation: prepare-year-mask-in 180ms ease-out both;
+}
+
+.year-modal {
+  width: 100%;
+  max-height: 60vh;
+  overflow-y: auto;
+  border-radius: 24rpx 24rpx 0 0;
+  padding-bottom: env(safe-area-inset-bottom);
+  animation: prepare-year-sheet-up 220ms ease-out both;
+}
+
+.year-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 22rpx 0;
+  border-bottom: 1rpx solid #eef2f6;
+  color: #2a3648;
+  font-size: 27rpx;
+}
+
+@keyframes prepare-year-mask-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes prepare-year-sheet-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 36rpx, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
 }
 </style>

@@ -97,8 +97,8 @@ async function startPractice() {
   width: 44rpx;
   height: 44rpx;
   border-radius: 999rpx;
-  background: #e8f4fd;
-  color: #1b5faa;
+  background: #EAF5FF;
+  color: #2F7FD6;
   font-size: 24rpx;
   font-weight: 700;
 }

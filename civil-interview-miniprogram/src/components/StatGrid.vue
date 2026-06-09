@@ -34,16 +34,16 @@ defineProps({
 .stat-grid__item {
   min-height: 120rpx;
   padding: 22rpx 12rpx;
-  border: 1rpx solid rgba(27, 95, 170, 0.08);
+  border: 1rpx solid #DCEAF7;
   border-radius: 16rpx;
   background: #ffffff;
   text-align: center;
-  box-shadow: 0 6rpx 18rpx rgba(23, 48, 78, 0.05);
+  box-shadow: 0 6rpx 18rpx rgba(47, 127, 214, 0.04);
 }
 
 .stat-grid__value {
   display: block;
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 36rpx;
   font-weight: 800;
   line-height: 1.2;
@@ -52,7 +52,7 @@ defineProps({
 .stat-grid__label {
   display: block;
   margin-top: 8rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 23rpx;
 }
 </style>

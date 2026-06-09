@@ -191,21 +191,21 @@ function goPractice(item) {
 }
 
 .job-hero__eyebrow {
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 24rpx;
   font-weight: 700;
 }
 
 .job-hero__title {
   margin-top: 10rpx;
-  color: #1a1a2e;
+  color: #172033;
   font-size: 40rpx;
   font-weight: 900;
 }
 
 .job-hero__desc {
   margin-top: 8rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 25rpx;
 }
 
@@ -214,8 +214,8 @@ function goPractice(item) {
   margin-top: 18rpx;
   padding: 8rpx 18rpx;
   border-radius: 999rpx;
-  background: #e8f4fd;
-  color: #1b5faa;
+  background: #EAF5FF;
+  color: #2F7FD6;
   font-size: 23rpx;
   font-weight: 700;
 }
@@ -231,7 +231,7 @@ function goPractice(item) {
 .filter-block__label {
   display: block;
   margin-bottom: 14rpx;
-  color: #1a1a2e;
+  color: #172033;
   font-size: 27rpx;
   font-weight: 800;
 }
@@ -257,7 +257,7 @@ function goPractice(item) {
 .question-card__meta text {
   padding: 6rpx 14rpx;
   border-radius: 999rpx;
-  background: #f0f5fa;
+  background: #F6FAFE;
   color: #45617e;
   font-size: 22rpx;
 }
@@ -268,7 +268,7 @@ function goPractice(item) {
 }
 
 .question-card__title {
-  color: #1a1a2e;
+  color: #172033;
   font-size: 30rpx;
   font-weight: 800;
   line-height: 1.5;
@@ -276,7 +276,7 @@ function goPractice(item) {
 
 .question-card__stem {
   margin-top: 10rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 25rpx;
   line-height: 1.6;
 }

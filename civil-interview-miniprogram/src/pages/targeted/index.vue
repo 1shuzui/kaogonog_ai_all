@@ -402,6 +402,12 @@ function startTrial() {
   border-bottom: 1rpx solid #eef2f6;
   color: #2a3648;
   font-size: 27rpx;
+  transition: transform 160ms ease, background-color 160ms ease;
+}
+
+.picker-row:active {
+  background: #f8fbff;
+  transform: translateX(3rpx);
 }
 
 .picker-row--last {
@@ -410,13 +416,13 @@ function startTrial() {
 
 .picker-row__value {
   max-width: 440rpx;
-  color: #1b5faa;
+  color: #2F7FD6;
   text-align: right;
 }
 
 .picker-summary {
   margin-top: 12rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 23rpx;
   line-height: 1.5;
 }
@@ -432,8 +438,8 @@ function startTrial() {
   display: inline-flex;
   padding: 8rpx 12rpx;
   border-radius: 8rpx;
-  background: #eef6ff;
-  color: #1b5faa;
+  background: #EAF5FF;
+  color: #2F7FD6;
   font-size: 22rpx;
   line-height: 1.25;
 }
@@ -457,7 +463,7 @@ function startTrial() {
 .generated-start__desc {
   display: block;
   margin-top: 8rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
 }
 
@@ -472,6 +478,7 @@ function startTrial() {
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  animation: year-mask-in 180ms ease-out both;
 }
 
 .year-modal {
@@ -480,6 +487,7 @@ function startTrial() {
   border-radius: 24rpx 24rpx 0 0;
   overflow-y: auto;
   padding-bottom: env(safe-area-inset-bottom);
+  animation: year-sheet-up 220ms ease-out both;
 }
 
 .year-checkbox {
@@ -494,5 +502,25 @@ function startTrial() {
 
 .picker-row--year {
   cursor: pointer;
+}
+
+@keyframes year-mask-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes year-sheet-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 36rpx, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
 }
 </style>

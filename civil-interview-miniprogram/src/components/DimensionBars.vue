@@ -37,7 +37,7 @@ const normalized = computed(() => normalizeDimensions(props.dimensions))
 
 function barColor(percent) {
   if (percent >= 80) return '#389e0d'
-  if (percent >= 60) return '#1b5faa'
+  if (percent >= 60) return '#2F7FD6'
   if (percent >= 40) return '#d48806'
   return '#cf1322'
 }
@@ -63,7 +63,7 @@ function barColor(percent) {
 }
 
 .dimension-bars__score {
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
 }
 
@@ -78,5 +78,6 @@ function barColor(percent) {
 .dimension-bars__bar {
   height: 100%;
   border-radius: 999rpx;
+  transition: width 320ms ease-out;
 }
 </style>

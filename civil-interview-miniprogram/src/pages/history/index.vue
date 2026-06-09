@@ -190,7 +190,7 @@ function openResult(record) {
 }
 
 .filter-row__value {
-  color: #1b5faa;
+  color: #2F7FD6;
   font-weight: 700;
 }
 
@@ -209,13 +209,13 @@ function openResult(record) {
 
 .date-cell text {
   display: block;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 23rpx;
 }
 
 .date-cell text:last-child {
   margin-top: 8rpx;
-  color: #1a1a2e;
+  color: #172033;
   font-size: 26rpx;
   font-weight: 800;
 }
@@ -246,7 +246,7 @@ function openResult(record) {
 .history-card__meta {
   display: block;
   margin-top: 10rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 23rpx;
 }
 </style>

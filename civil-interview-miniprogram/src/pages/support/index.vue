@@ -460,10 +460,10 @@ function formatTime(value = '') {
   width: 160rpx;
   min-height: 64rpx;
   margin-bottom: 18rpx;
-  border: 1rpx solid #cbd9ea;
+  border: 1rpx solid #DCEAF7;
   border-radius: 999rpx;
   background: #ffffff;
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 26rpx;
   font-weight: 800;
 }
@@ -495,13 +495,13 @@ function formatTime(value = '') {
 }
 
 .stat-item__label {
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 22rpx;
 }
 
 .stat-item__value {
   margin-top: 10rpx;
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 34rpx;
   font-weight: 900;
 }
@@ -516,7 +516,7 @@ function formatTime(value = '') {
 }
 
 .filter-row__value {
-  color: #1b5faa;
+  color: #2F7FD6;
   font-weight: 700;
 }
 
@@ -548,7 +548,7 @@ function formatTime(value = '') {
 
 .record-item__type {
   overflow: hidden;
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 25rpx;
   font-weight: 800;
   text-overflow: ellipsis;
@@ -583,7 +583,7 @@ function formatTime(value = '') {
 
 .record-item__summary {
   margin-top: 10rpx;
-  color: #1a1a2e;
+  color: #172033;
   font-size: 28rpx;
   line-height: 1.7;
   white-space: pre-wrap;
@@ -651,7 +651,7 @@ function formatTime(value = '') {
 .attachment-hint {
   display: block;
   margin-top: 10rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 22rpx;
   line-height: 1.5;
 }
@@ -684,7 +684,7 @@ function formatTime(value = '') {
 
 .record-item__meta {
   margin-top: 8rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 23rpx;
 }
 
@@ -724,7 +724,7 @@ function formatTime(value = '') {
 
 .modal-card__title {
   margin-bottom: 10rpx;
-  color: #1a1a2e;
+  color: #172033;
   font-size: 32rpx;
   font-weight: 900;
 }

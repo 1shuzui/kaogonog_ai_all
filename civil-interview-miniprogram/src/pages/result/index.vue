@@ -434,13 +434,13 @@ function home() {
 }
 
 .result-hero__kicker {
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
 }
 
 .result-hero__score {
   margin-top: 8rpx;
-  color: #1a1a2e;
+  color: #172033;
   font-size: 52rpx;
   font-weight: 900;
 }
@@ -468,8 +468,8 @@ function home() {
   display: block;
   padding: 8rpx 14rpx;
   border-radius: 999rpx;
-  background: #e8f4fd;
-  color: #1b5faa;
+  background: #EAF5FF;
+  color: #2F7FD6;
   font-size: 23rpx;
   font-weight: 800;
 }
@@ -485,8 +485,8 @@ function home() {
 .improvement-card__source {
   padding: 6rpx 12rpx;
   border-radius: 999rpx;
-  background: #e8f4fd;
-  color: #1b5faa;
+  background: #EAF5FF;
+  color: #2F7FD6;
   font-size: 22rpx;
   font-weight: 800;
 }
@@ -515,13 +515,13 @@ function home() {
 .teacher-note {
   margin-top: 18rpx;
   padding: 18rpx;
-  border-left: 6rpx solid #1b5faa;
+  border-left: 6rpx solid #2F7FD6;
   border-radius: 12rpx;
   background: #f4f8fd;
 }
 
 .teacher-note__label {
-  color: #1b5faa;
+  color: #2F7FD6;
   font-size: 23rpx;
   font-weight: 800;
 }
@@ -539,7 +539,7 @@ function home() {
 
 .suggestion-block__title {
   margin-bottom: 12rpx;
-  color: #1a1a2e;
+  color: #172033;
   font-size: 27rpx;
   font-weight: 900;
 }
@@ -570,7 +570,7 @@ function home() {
   width: 44rpx;
   height: 44rpx;
   border-radius: 50%;
-  background: #1b5faa;
+  background: #2F7FD6;
   color: #ffffff;
   font-size: 23rpx;
   font-weight: 900;
@@ -582,7 +582,7 @@ function home() {
 }
 
 .focus-item__title {
-  color: #1a1a2e;
+  color: #172033;
   font-size: 26rpx;
   font-weight: 800;
 }
@@ -675,9 +675,10 @@ function home() {
 .share-card {
   overflow: hidden;
   padding: 28rpx;
+  border: 1rpx solid #DCEAF7;
   border-radius: 18rpx;
-  background: linear-gradient(135deg, #15477a 0%, #1b5faa 58%, #5fa0e8 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, #ffffff 0%, #EAF5FF 58%, #DFF0FF 100%);
+  color: #172033;
 }
 
 .share-card__header,
@@ -728,7 +729,7 @@ function home() {
 .share-card__dim {
   padding: 12rpx 14rpx;
   border-radius: 12rpx;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(47, 127, 214, 0.08);
   font-size: 23rpx;
 }
 

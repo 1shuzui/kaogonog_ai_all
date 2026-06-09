@@ -91,14 +91,14 @@ function goSupport() {
 }
 
 .menu-item__title {
-  color: #1a1a2e;
+  color: #172033;
   font-size: 30rpx;
   font-weight: 800;
 }
 
 .menu-item__desc {
   margin-top: 8rpx;
-  color: #6f7c8f;
+  color: #64748B;
   font-size: 24rpx;
 }
 
