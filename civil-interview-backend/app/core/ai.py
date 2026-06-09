@@ -836,7 +836,7 @@ DIMENSION_NAMES = {
     "analysis": "综合分析",
     "practical": "实务落地",
     "emergency": "应急应变",
-    "legal": "法治思维",
+    "legal": "行政思维",
     "logic": "逻辑结构",
     "expression": "语言表达",
 }

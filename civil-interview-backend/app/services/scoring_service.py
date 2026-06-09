@@ -43,9 +43,13 @@ DIM_MAPPING = {
     "analysis": "综合分析",
     "practical": "实务落地",
     "emergency": "应急应变",
-    "legal": "法治思维",
+    "legal": "行政思维",
     "logic": "逻辑结构",
     "expression": "语言表达",
+}
+
+DIMENSION_NAME_ALIASES = {
+    "法治思维": "行政思维",
 }
 
 STRUCTURE_MARKERS = (
@@ -196,6 +200,29 @@ def _is_placeholder_transcript(transcript: str) -> bool:
     return any(marker in normalized for marker in PLACEHOLDER_TRANSCRIPT_MARKERS)
 
 
+def _normalize_dimension_name(name: str) -> str:
+    normalized = str(name or "").strip()
+    return DIMENSION_NAME_ALIASES.get(normalized, normalized)
+
+
+def _normalize_result_dimensions(result: dict) -> dict:
+    if not isinstance(result, dict):
+        return result
+
+    dimensions = result.get("dimensions")
+    if not isinstance(dimensions, list):
+        return result
+
+    normalized_dimensions = []
+    for item in dimensions:
+        if not isinstance(item, dict):
+            continue
+        normalized_item = dict(item)
+        normalized_item["name"] = _normalize_dimension_name(normalized_item.get("name"))
+        normalized_dimensions.append(normalized_item)
+    return {**result, "dimensions": normalized_dimensions}
+
+
 def _build_frontend_result(frontend_dims: list[dict], rationale: str) -> dict:
     total = round(sum(dim["score"] for dim in frontend_dims), 2)
     max_score = 100
@@ -242,7 +269,7 @@ def _build_conservative_result(reason: str, effective_length: int) -> dict:
             "综合分析": 1.0,
             "实务落地": 1.0,
             "应急应变": 0.5,
-            "法治思维": 0.5,
+            "行政思维": 0.5,
             "逻辑结构": 1.0,
             "语言表达": 1.0,
         }
@@ -251,7 +278,7 @@ def _build_conservative_result(reason: str, effective_length: int) -> dict:
             "综合分析": 2.0,
             "实务落地": 2.0,
             "应急应变": 1.0,
-            "法治思维": 1.0,
+            "行政思维": 1.0,
             "逻辑结构": 2.0,
             "语言表达": 2.0,
         }
@@ -381,10 +408,16 @@ def _extract_dimension_scores(raw_scores, max_scores: dict[str, float]) -> dict[
         return {}
 
     display_to_key = {display_name: key for key, display_name in DIM_MAPPING.items()}
+    display_to_key.update({old_name: display_to_key.get(new_name, "") for old_name, new_name in DIMENSION_NAME_ALIASES.items()})
     extracted: dict[str, float] = {}
     for display_name, max_score in max_scores.items():
         raw_value = None
-        for candidate in (display_name, display_to_key.get(display_name, "")):
+        alias_candidates = [
+            old_name
+            for old_name, new_name in DIMENSION_NAME_ALIASES.items()
+            if new_name == display_name
+        ]
+        for candidate in (display_name, display_to_key.get(display_name, ""), *alias_candidates):
             if candidate and candidate in raw_scores:
                 raw_value = raw_scores.get(candidate)
                 break
@@ -1003,7 +1036,7 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
             {"name": "综合分析", "score": 20},
             {"name": "实务落地", "score": 20},
             {"name": "应急应变", "score": 15},
-            {"name": "法治思维", "score": 15},
+            {"name": "行政思维", "score": 15},
             {"name": "逻辑结构", "score": 15},
             {"name": "语言表达", "score": 15},
         ],
@@ -1168,6 +1201,7 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
 
 
 def _persist_result(db: Session, exam_id: Optional[str], question_id: str, transcript: str, result: dict) -> dict:
+    result = _normalize_result_dimensions(result)
     if not exam_id:
         return result
 
@@ -1210,4 +1244,4 @@ def get_scoring_result(db: Session, exam_id: str, question_id: str) -> dict:
     ).first()
     if not ans or not ans.score_result:
         raise HTTPException(status_code=404, detail="评分结果未找到")
-    return ans.score_result
+    return _normalize_result_dimensions(ans.score_result)

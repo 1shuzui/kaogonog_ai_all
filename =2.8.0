@@ -1,9 +1,0 @@
-Collecting PyJWT
-  Downloading pyjwt-2.13.0-py3-none-any.whl.metadata (3.4 kB)
-Requirement already satisfied: typing_extensions>=4.0 in /home/quyu/.local/lib/python3.10/site-packages (from PyJWT) (4.15.0)
-Downloading pyjwt-2.13.0-py3-none-any.whl (31 kB)
-Installing collected packages: PyJWT
-Successfully installed PyJWT-2.13.0
-
-[notice] A new release of pip is available: 26.0.1 -> 26.1.1
-[notice] To update, run: pip install --upgrade pip

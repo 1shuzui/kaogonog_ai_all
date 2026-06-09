@@ -12,14 +12,36 @@ from sqlalchemy.orm import Session
 
 from app.models.entities import Exam, ExamAnswer, HistoryRecord, Question
 
+DIMENSION_NAME_ALIASES = {
+    "法治思维": "行政思维",
+}
+
 DIM_DEFS = [
-    {"name": "法治思维", "maxScore": 20},
+    {"name": "行政思维", "maxScore": 20},
     {"name": "实务落地", "maxScore": 20},
     {"name": "逻辑结构", "maxScore": 15},
     {"name": "语言表达", "maxScore": 15},
     {"name": "综合分析", "maxScore": 15},
     {"name": "应急应变", "maxScore": 15},
 ]
+
+
+def _normalize_dimension_name(name: str) -> str:
+    normalized = str(name or "").strip()
+    return DIMENSION_NAME_ALIASES.get(normalized, normalized)
+
+
+def _normalize_dimensions(dimensions) -> list:
+    if not isinstance(dimensions, list):
+        return []
+    normalized = []
+    for item in dimensions:
+        if not isinstance(item, dict):
+            continue
+        next_item = dict(item)
+        next_item["name"] = _normalize_dimension_name(next_item.get("name"))
+        normalized.append(next_item)
+    return normalized
 
 
 def _has_final_score(answer: ExamAnswer) -> bool:
@@ -37,7 +59,7 @@ def _record_to_dict(r: HistoryRecord) -> dict:
         "maxScore": float(r.max_score or 100),
         "grade": r.grade,
         "province": r.province or "national",
-        "dimensions": r.dimensions or [],
+        "dimensions": _normalize_dimensions(r.dimensions),
         "completedAt": completed_at,
         "date": completed_at,
         "questionSummary": f"{question_count}题模拟练习" if question_count else "模拟练习记录",
@@ -139,14 +161,14 @@ def _build_exam_summary(exam: Exam, answers: list[ExamAnswer], question_lookup: 
     total_score = float(record.total_score or 0) if record else 0.0
     max_score = float(record.max_score or 100) if record else 100.0
     grade = record.grade if record and record.grade else ""
-    dimensions = record.dimensions or [] if record else []
+    dimensions = _normalize_dimensions(record.dimensions) if record else []
 
     if not record:
         for answer in scored_answers:
             sr = answer.score_result or {}
             total_score += float(sr.get("totalScore", 0) or 0)
             if sr.get("dimensions"):
-                dimensions = sr["dimensions"]
+                dimensions = _normalize_dimensions(sr["dimensions"])
         total_score = round(total_score / question_count, 2) if question_count else 0.0
         grade = _grade_for_score(total_score, max_score)
 
@@ -355,7 +377,7 @@ def get_history_stats(db: Session, username: str) -> dict:
     totals = {d["name"]: [] for d in DIM_DEFS}
     for r in rows:
         for dim in (r.dimensions or []):
-            name = dim.get("name")
+            name = _normalize_dimension_name(dim.get("name"))
             if name in totals:
                 totals[name].append(dim.get("score", 0))
     avgs = []

@@ -1,0 +1,141 @@
+{
+  "archiveRoot": "/home/quyu/doc_kaogong/question-bank",
+  "externalRoot": "/home/quyu/doc_kaogong/question-bank",
+  "items": [
+    {
+      "name": "2017-2025江苏事业单位真题题库.docx",
+      "originalRepoPath": "2017-2025江苏事业单位真题题库.docx",
+      "archivePath": "/home/quyu/doc_kaogong/question-bank/source/2017-2025江苏事业单位真题题库.docx",
+      "category": "question-bank-source",
+      "size": 10107951,
+      "sha256": "c5e4dce975671f6bbe803504ad5e7685ea1aa73879a802f6f255f268441b2fd2",
+      "note": "题库原始/抽取资料，仓库保留索引"
+    },
+    {
+      "name": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "originalRepoPath": "2017-2025江苏事业单位真题题库.extracted.txt",
+      "archivePath": "/home/quyu/doc_kaogong/question-bank/source/2017-2025江苏事业单位真题题库.extracted.txt",
+      "category": "question-bank-source",
+      "size": 4984586,
+      "sha256": "91820a00c546fe55beaa75a6fbaa834aa39332b0db3f527f0e4790c410800661",
+      "note": "题库原始/抽取资料，仓库保留索引"
+    },
+    {
+      "name": "2020-2025第二批次完全版.docx",
+      "originalRepoPath": "2020-2025第二批次完全版.docx",
+      "archivePath": "/home/quyu/doc_kaogong/question-bank/source/2020-2025第二批次完全版.docx",
+      "category": "question-bank-source",
+      "size": 8164471,
+      "sha256": "2dbbdb6bb38c33eeaec8e206dd2fa2f8a5ca40323ed3482a756e1239c5e78856",
+      "note": "题库原始/抽取资料，仓库保留索引"
+    },
+    {
+      "name": "2020-2025第二批次完全版.extracted.txt",
+      "originalRepoPath": "2020-2025第二批次完全版.extracted.txt",
+      "archivePath": "/home/quyu/doc_kaogong/question-bank/source/2020-2025第二批次完全版.extracted.txt",
+      "category": "question-bank-source",
+      "size": 1134969,
+      "sha256": "73a4038960190209c65c58457589cb0440184916ac7785f04ba955a585e221ac",
+      "note": "题库原始/抽取资料，仓库保留索引"
+    },
+    {
+      "name": "湖南-2020-通用岗.docx",
+      "originalRepoPath": "湖南-2020-通用岗.docx",
+      "archivePath": "/home/quyu/doc_kaogong/question-bank/source/湖南-2020-通用岗.docx",
+      "category": "question-bank-source",
+      "size": 467269,
+      "sha256": "c2e16a0acf73359a6dc3393cf5cce3689dd65cb502bf2df5301ee9ea5d3c1a92",
+      "note": "题库原始/抽取资料，仓库保留索引"
+    },
+    {
+      "name": "湖南-2020-通用岗.extracted.txt",
+      "originalRepoPath": "湖南-2020-通用岗.extracted.txt",
+      "archivePath": "/home/quyu/doc_kaogong/question-bank/source/湖南-2020-通用岗.extracted.txt",
+      "category": "question-bank-source",
+      "size": 40899,
+      "sha256": "e3aea255fdb43a907ea76ef464f78225133f0aa10876545c65016daf444aa499",
+      "note": "题库原始/抽取资料，仓库保留索引"
+    },
+    {
+      "name": "湖南-2020-乡镇岗、遴选岗全.docx",
+      "originalRepoPath": "湖南-2020-乡镇岗、遴选岗全.docx",
+      "archivePath": "/home/quyu/doc_kaogong/question-bank/source/湖南-2020-乡镇岗、遴选岗全.docx",
+      "category": "question-bank-source",
+      "size": 7504885,
+      "sha256": "3caead401d34a005f03faef7452218edbce9932344f9ef8616ff1bb35da95699",
+      "note": "题库原始/抽取资料，仓库保留索引"
+    },
+    {
+      "name": "湖南-2020-乡镇岗、遴选岗全.extracted.txt",
+      "originalRepoPath": "湖南-2020-乡镇岗、遴选岗全.extracted.txt",
+      "archivePath": "/home/quyu/doc_kaogong/question-bank/source/湖南-2020-乡镇岗、遴选岗全.extracted.txt",
+      "category": "question-bank-source",
+      "size": 262895,
+      "sha256": "bb6d03fad6e78784d6e0f96c1f733f1b83e0dfe12546b1e8c6a6118f4cd2d80b",
+      "note": "题库原始/抽取资料，仓库保留索引"
+    },
+    {
+      "name": "湖南-监狱-2020.docx",
+      "originalRepoPath": "湖南-监狱-2020.docx",
+      "archivePath": "/home/quyu/doc_kaogong/question-bank/source/湖南-监狱-2020.docx",
+      "category": "question-bank-source",
+      "size": 303305,
+      "sha256": "17bf704c83813f026ef7c72a028fca9bd0433c04f3919491f8d36a49de4d8721",
+      "note": "题库原始/抽取资料，仓库保留索引"
+    },
+    {
+      "name": "湖南-监狱-2020.extracted.txt",
+      "originalRepoPath": "湖南-监狱-2020.extracted.txt",
+      "archivePath": "/home/quyu/doc_kaogong/question-bank/source/湖南-监狱-2020.extracted.txt",
+      "category": "question-bank-source",
+      "size": 40097,
+      "sha256": "76c40ff9df662980393b2d7be77876cf727665b0253c9c6e5931fc95cc61fe29",
+      "note": "题库原始/抽取资料，仓库保留索引"
+    },
+    {
+      "name": "湖南-税务系统补录-2020-816.doc",
+      "originalRepoPath": "湖南-税务系统补录-2020-816.doc",
+      "archivePath": "/home/quyu/doc_kaogong/question-bank/source/湖南-税务系统补录-2020-816.doc",
+      "category": "question-bank-source",
+      "size": 289280,
+      "sha256": "0ad93d5341d4ca9272bc3872f7c320f8a355198f3d16262709319ec014b4ec86",
+      "note": "题库原始/抽取资料，仓库保留索引"
+    },
+    {
+      "name": "湖南-税务系统补录-2020-816.extracted.txt",
+      "originalRepoPath": "湖南-税务系统补录-2020-816.extracted.txt",
+      "archivePath": "/home/quyu/doc_kaogong/question-bank/source/湖南-税务系统补录-2020-816.extracted.txt",
+      "category": "question-bank-source",
+      "size": 68241,
+      "sha256": "814ae868cb0853f06282bcfd8bd5c8486f622902649204566639722ab8862824",
+      "note": "题库原始/抽取资料，仓库保留索引"
+    },
+    {
+      "name": "山东公务员真题库（V7详细得分标准版）.docx",
+      "originalRepoPath": "山东公务员真题库（V7详细得分标准版）.docx",
+      "archivePath": "/home/quyu/doc_kaogong/question-bank/source/山东公务员真题库（V7详细得分标准版）.docx",
+      "category": "question-bank-source",
+      "size": 151581,
+      "sha256": "69b5d1d734318368597a6b7f6182076a3fd2c3a59aefcbb92af22076404a9038",
+      "note": "题库原始/抽取资料，仓库保留索引"
+    },
+    {
+      "name": "山东公务员真题库_normalized.txt",
+      "originalRepoPath": "山东公务员真题库_normalized.txt",
+      "archivePath": "/home/quyu/doc_kaogong/question-bank/source/山东公务员真题库_normalized.txt",
+      "category": "question-bank-source",
+      "size": 964199,
+      "sha256": "1287510dbcdd6129437cba4416f398a728f75f8a4a24be50f583032f7df4377c",
+      "note": "题库原始/抽取资料，仓库保留索引"
+    },
+    {
+      "name": "山东公务员真题库_抽样检查报告.md",
+      "originalRepoPath": "山东公务员真题库_抽样检查报告.md",
+      "archivePath": "/home/quyu/doc_kaogong/question-bank/reports/山东公务员真题库_抽样检查报告.md",
+      "category": "question-bank-report",
+      "size": 182111,
+      "sha256": "93820d5cda9832626f0d11d059230691c5ff75c51703f8a27735aed21210d15b",
+      "note": "题库抽样报告，迁到外部题库资料区"
+    }
+  ]
+}

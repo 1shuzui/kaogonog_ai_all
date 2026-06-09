@@ -8,6 +8,8 @@
 import { defineStore } from 'pinia'
 import { getHistoryList, getHistoryDetail, getHistoryTrend, getHistoryStats } from '@/api/history'
 
+const normalizeDimensionName = (name) => (name === '法治思维' ? '行政思维' : name)
+
 export const useHistoryStore = defineStore('history', {
   state: () => ({
     records: [],
@@ -25,7 +27,7 @@ export const useHistoryStore = defineStore('history', {
       return state.stats?.bestScore || 0
     },
     weakestDimension(state) {
-      return state.stats?.weakestDimension || ''
+      return normalizeDimensionName(state.stats?.weakestDimension || '')
     }
   },
 
