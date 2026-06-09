@@ -240,6 +240,40 @@ class SubscriptionSwitchRequest(BaseModel):
     subscriptionId: int = Field(validation_alias=AliasChoices("subscriptionId", "subscription_id"))
 
 
+class EntitlementGrantRequest(BaseModel):
+    """
+    EntitlementGrantRequest 固定管理员补发权益的输入边界，避免人工补偿被误写成微信支付订单。
+
+    Schema 层固定端侧契约，注释用于说明字段兼容和错误边界，避免页面直接猜测后端结构。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
+    totalMinutes: int = Field(gt=0, validation_alias=AliasChoices("totalMinutes", "total_minutes"))
+    dailyLimitMinutes: int = Field(ge=0, validation_alias=AliasChoices("dailyLimitMinutes", "daily_limit_minutes"))
+    startAt: str = Field(min_length=1, validation_alias=AliasChoices("startAt", "start_at"))
+    endAt: str = Field(min_length=1, validation_alias=AliasChoices("endAt", "end_at"))
+    reasonType: str = Field(min_length=1, validation_alias=AliasChoices("reasonType", "reason_type"))
+    remark: str = Field(min_length=1, max_length=1000)
+
+
+class EntitlementDeductRequest(BaseModel):
+    """
+    EntitlementDeductRequest 固定管理员扣减权益的输入边界，扣减只作用于指定权益，不改历史用量流水。
+
+    Schema 层固定端侧契约，注释用于说明字段兼容和错误边界，避免页面直接猜测后端结构。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
+    subscriptionId: int = Field(gt=0, validation_alias=AliasChoices("subscriptionId", "subscription_id"))
+    deductMinutes: int = Field(gt=0, validation_alias=AliasChoices("deductMinutes", "deduct_minutes"))
+    reasonType: str = Field(min_length=1, validation_alias=AliasChoices("reasonType", "reason_type"))
+    remark: str = Field(min_length=1, max_length=1000)
+
+
 # ===== Question =====
 class QuestionCreate(BaseModel):
     """

@@ -8,7 +8,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, Date, DateTime, Float, ForeignKey, Index, Integer, Numeric, String, Text, JSON
+from sqlalchemy import BigInteger, Boolean, Column, Date, DateTime, Float, ForeignKey, Index, Integer, Numeric, String, Text, JSON
 from sqlalchemy.orm import relationship
 
 from app.db.session import Base
@@ -59,6 +59,7 @@ class User(Base):
     payment_orders = relationship("PaymentOrder", back_populates="user", cascade="all, delete-orphan")
     subscriptions = relationship("UserSubscription", back_populates="user", cascade="all, delete-orphan")
     usage_records = relationship("UsageRecord", back_populates="user", cascade="all, delete-orphan")
+    entitlement_adjustments = relationship("EntitlementAdjustment", back_populates="user", cascade="all, delete-orphan")
 
 
 class Question(Base):
@@ -296,6 +297,33 @@ class UserSubscription(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="subscriptions")
+
+
+class EntitlementAdjustment(Base):
+    """
+    EntitlementAdjustment 记录人工权益调整流水；它不替代订单和用量记录，只负责让管理员补发、扣减有账可查。
+
+    人工补偿和售后扣减不能混进微信支付订单，否则支付审核、退款和客服核查都会失去边界。
+
+    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
+    @return: 返回可被调用方实例化或引用的公共类型。
+    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    """
+    __tablename__ = "entitlement_adjustments"
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    target_username = Column(String(100), ForeignKey("users.username"), nullable=False, index=True)
+    subscription_id = Column(BigInteger, ForeignKey("user_subscriptions.id"), nullable=True, index=True)
+    action_type = Column(String(30), nullable=False, index=True)
+    minutes_delta = Column(Integer, nullable=False, default=0)
+    before_snapshot = Column(JSON, default=dict)
+    after_snapshot = Column(JSON, default=dict)
+    reason_type = Column(String(64), nullable=False, default="其他", index=True)
+    remark = Column(Text, default="")
+    operator = Column(String(64), nullable=False, default="", index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+    user = relationship("User", back_populates="entitlement_adjustments")
+    subscription = relationship("UserSubscription")
 
 
 class UsageRecord(Base):

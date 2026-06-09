@@ -259,6 +259,30 @@ TABLE_STATEMENTS = [
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     """,
     """
+    CREATE TABLE IF NOT EXISTS entitlement_adjustments (
+        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+        target_username VARCHAR(100) NOT NULL,
+        subscription_id BIGINT NULL,
+        action_type VARCHAR(30) NOT NULL,
+        minutes_delta INT NOT NULL DEFAULT 0,
+        before_snapshot JSON NULL,
+        after_snapshot JSON NULL,
+        reason_type VARCHAR(64) NOT NULL DEFAULT '其他',
+        remark TEXT NULL,
+        operator VARCHAR(100) NOT NULL DEFAULT '',
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_ea_user FOREIGN KEY (target_username) REFERENCES users(username)
+            ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT fk_ea_subscription FOREIGN KEY (subscription_id) REFERENCES user_subscriptions(id)
+            ON DELETE SET NULL ON UPDATE CASCADE,
+        INDEX idx_ea_target_created (target_username, created_at),
+        INDEX idx_ea_subscription (subscription_id),
+        INDEX idx_ea_action_created (action_type, created_at),
+        INDEX idx_ea_operator_created (operator, created_at),
+        INDEX idx_ea_reason (reason_type)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    """,
+    """
     CREATE TABLE IF NOT EXISTS targeted_focus_configs (
         id BIGINT PRIMARY KEY AUTO_INCREMENT,
         target_key VARCHAR(255) NOT NULL UNIQUE,

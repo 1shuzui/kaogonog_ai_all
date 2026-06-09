@@ -138,6 +138,24 @@ const routes = [
     meta: { title: '订单记录', layout: 'simple' }
   },
   {
+    path: '/admin',
+    name: 'AdminDashboard',
+    component: () => import('@/views/Admin/AdminDashboard.vue'),
+    meta: { title: '管理员工作台', layout: 'simple', requiresAdmin: true }
+  },
+  {
+    path: '/admin/entitlements',
+    name: 'EntitlementAdmin',
+    component: () => import('@/views/Admin/EntitlementAdminPage.vue'),
+    meta: { title: '用户权益管理', layout: 'simple', requiresAdmin: true }
+  },
+  {
+    path: '/admin/entitlement-adjustments',
+    name: 'EntitlementAdjustments',
+    component: () => import('@/views/Admin/EntitlementAdjustmentsPage.vue'),
+    meta: { title: '权益调整流水', layout: 'simple', requiresAdmin: true }
+  },
+  {
     path: '/admin/refunds',
     name: 'RefundAdmin',
     component: () => import('@/views/Billing/RefundAdminPage.vue'),

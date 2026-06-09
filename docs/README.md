@@ -17,6 +17,7 @@
 | --- | --- |
 | [本地开发与运行](ops/local-development.md) | 后端、PC、小程序本地启动和构建命令。 |
 | [部署与同步手册](ops/deployment-runbook.md) | 同步服务器、构建前检查、部署后验证。 |
+| [管理员权益管理](ops/admin-entitlement-management.md) | PC 管理员补发、扣减、查流水和误操作纠正流程。 |
 | [密钥与本地配置恢复](ops/secrets-and-local-config.md) | 从 `/home/quyu/doc_kaogong/doc_secret` 恢复 `.env` 和证书。 |
 | [清理候选清单](ops/cleanup-candidates.md) | 记录可重建大目录和后续可删除候选，不直接删除。 |
 | [外部归档索引](ops/archive-index.md) | 查看迁出文件分类、归档根目录和恢复原则。 |
@@ -29,6 +30,7 @@
 | [整理决策 ADR](decisions/ADR-001-local-project-organization.md) | 记录本次项目整理的核心取舍。 |
 | [题库源文档外置 ADR](decisions/ADR-002-externalize-question-source-assets.md) | 记录为什么源 Word/抽取文本不再放 Git。 |
 | [敏感配置外置 ADR](decisions/ADR-003-externalize-secrets.md) | 记录为什么真实密钥迁出仓库。 |
+| [管理员权益调整 ADR](decisions/ADR-004-admin-entitlement-adjustments.md) | 记录人工权益和微信支付订单分离、反向调整保留审计的决策。 |
 
 ## 旧文档
 

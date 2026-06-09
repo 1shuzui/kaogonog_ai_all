@@ -66,7 +66,7 @@
       </div>
       <div class="card menu-item" @click="$router.push('/support')">
         <CustomerServiceOutlined class="menu-item__icon" />
-        <span class="menu-item__label">{{ userStore.isAdmin ? '客服反馈后台' : '客服反馈中心' }}</span>
+        <span class="menu-item__label">客服反馈中心</span>
         <RightOutlined class="menu-item__arrow" />
       </div>
       <div class="card menu-item" @click="$router.push('/profile/orders')">
@@ -74,14 +74,9 @@
         <span class="menu-item__label">订单记录</span>
         <RightOutlined class="menu-item__arrow" />
       </div>
-      <div v-if="userStore.isAdmin" class="card menu-item" @click="$router.push('/admin/refunds')">
-        <UndoOutlined class="menu-item__icon" />
-        <span class="menu-item__label">余额与退款</span>
-        <RightOutlined class="menu-item__arrow" />
-      </div>
-      <div v-if="userStore.isAdmin" class="card menu-item" @click="$router.push('/admin/targeted')">
-        <AimOutlined class="menu-item__icon" />
-        <span class="menu-item__label">定向入口管理</span>
+      <div v-if="userStore.isAdmin" class="card menu-item" @click="$router.push('/admin')">
+        <ControlOutlined class="menu-item__icon" />
+        <span class="menu-item__label">管理员工作台</span>
         <RightOutlined class="menu-item__arrow" />
       </div>
       <div class="card menu-item" @click="$router.push('/profile/account')">
@@ -159,9 +154,8 @@ import {
   HistoryOutlined,
   StarOutlined,
   SettingOutlined,
-  UndoOutlined,
   WalletOutlined,
-  AimOutlined,
+  ControlOutlined,
   RightOutlined
 } from '@ant-design/icons-vue'
 import { useUserStore } from '@/stores/user'
