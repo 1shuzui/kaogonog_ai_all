@@ -1,9 +1,12 @@
 """
-这个文件封装 LLM 和 ASR 调用；FunASR、远程模型和降级提示都在这里收口，避免评分服务直接知道太多供应商细节。
+AI 能力网关模块。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+评分、转写和题目生成都需要模型能力，但业务层不应该关心供应商细节，所以这里统一封装 OpenAI 兼容 LLM、DashScope 远程 ASR、FunASR Paraformer ONNX、本地 VAD 切句、音频格式转换、缓存和常见中文纠错。长音频必须先走 VAD 分段再识别，避免把几分钟录音一次性塞进模型；真实 ASR 不可用时返回明确占位文本，防止评分误以为那是考生原稿。
+
+@param: 模块本身无入参；业务输入来自评分/训练服务传入的 prompt、音频路径、模型配置和缓存键。
+@return: 导出 LLM/ASR 调用函数，返回 JSON 评分辅助结果、转写文本或可解释的降级占位。
+@raises ImportError: 缺少模型、音频处理或 OpenAI 兼容客户端依赖时可能在导入或首次调用阶段失败。
+@raises RuntimeError: 本地模型文件、ffmpeg 或 ONNX 运行时不可用时，调用链会按函数策略记录并降级或向上抛出。
 """
 import asyncio
 import base64
@@ -90,13 +93,13 @@ def _get_executor() -> ThreadPoolExecutor:
 
 def get_client() -> Optional[OpenAI]:
     """
-    get_client 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    获取 OpenAI 兼容客户端。
 
-    AI 网关承载 ASR/LLM 供应商差异，注释重点记录降级策略和真实服务缺失时的边界。
+    项目同时把 LLM 和部分远程 ASR 接到 OpenAI 兼容接口上；没有配置 API key 时返回 None，让调用方走规则兜底或本地 FunASR，而不是启动时直接失败。
 
-    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param: 无；读取 settings 中的 LLM base_url、api_key、timeout。
+    @return: 可复用的 OpenAI 客户端；未配置真实模型服务时返回 None。
+    @raises Exception: 客户端构造阶段的配置错误会向上抛出。
     """
     global _client
     if not settings.llm_api_key:
@@ -117,16 +120,16 @@ def call_llm_api(
     max_tokens: int = 2000,
 ) -> Optional[Dict]:
     """
-    call_llm_api 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    同步调用 LLM 并解析 JSON 响应。
 
-    AI 网关承载 ASR/LLM 供应商差异，注释重点记录降级策略和真实服务缺失时的边界。
+    评分和题目生成都期望结构化 JSON；这里统一剥离 markdown code fence、设置重试和超时，失败时返回 None，让服务层使用规则兜底，避免模型波动直接打断用户答题。
 
-    @param prompt: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param system_msg: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param temperature: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param max_tokens: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param prompt: 用户侧业务 prompt。
+    @param system_msg: 系统提示词，默认要求公务员面试专家且只输出 JSON。
+    @param temperature: 采样温度；评分场景通常保持低温。
+    @param max_tokens: 最大输出 token 数。
+    @return: 解析后的 dict；未配置模型、调用失败或 JSON 解析失败时返回 None。
+    @raises: 不主动向上抛模型异常；最后一次失败会记录 error 并返回 None。
     """
     import json
 
@@ -175,16 +178,16 @@ async def call_llm_api_async(
     max_tokens: int = 2000,
 ) -> Optional[Dict]:
     """
-    call_llm_api_async 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    异步包装 LLM 调用。
 
-    AI 网关承载 ASR/LLM 供应商差异，注释重点记录降级策略和真实服务缺失时的边界。
+    OpenAI 兼容客户端当前使用同步 SDK；为了不阻塞 FastAPI 事件循环，这里把同步调用丢到线程池执行。
 
-    @param prompt: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param system_msg: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param temperature: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param max_tokens: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param prompt: 用户侧业务 prompt。
+    @param system_msg: 系统提示词。
+    @param temperature: 采样温度。
+    @param max_tokens: 最大输出 token 数。
+    @return: 解析后的 dict；失败时返回 None。
+    @raises: 不主动向上抛模型异常；沿用 call_llm_api 的降级策略。
     """
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(
@@ -672,14 +675,14 @@ def _transcribe_with_dashscope_chat_asr(
 
 async def transcribe_audio_file_with_meta(audio_bytes: bytes, filename: str = "answer.webm") -> dict:
     """
-    transcribe_audio_file_with_meta 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    转写音频并返回诊断元数据。
 
-    AI 网关承载 ASR/LLM 供应商差异，注释重点记录降级策略和真实服务缺失时的边界。
+    长音频会优先走 FunASR + FSMN-VAD 分段识别，避免把整段录音一次性送进 Paraformer；如果本地模型不可用，再按配置尝试远程 ASR。返回 asrMeta 是为了让前端和排障脚本区分“识别为空”“录音过短”“服务未配置”和“模型失败”。
 
-    @param audio_bytes: 上传音频的二进制内容；进入 ASR 前用于缓存和切片，避免长音频直接压垮模型。
-    @param filename: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param audio_bytes: 上传的音频/视频二进制内容。
+    @param filename: 原始文件名，用于格式推断、缓存诊断和临时文件后缀。
+    @return: dict，包含 transcript、asrMeta、needsRetry 和 message。
+    @raises: 不主动向上抛常规 ASR 失败；模型、远程服务或缓存异常会转成可解释状态。
     """
     media_hash = hashlib.sha256(audio_bytes).hexdigest()
     base_meta = {
@@ -799,14 +802,14 @@ async def transcribe_audio_file_with_meta(audio_bytes: bytes, filename: str = "a
 
 async def transcribe_audio_file(audio_bytes: bytes, filename: str = "answer.webm") -> str:
     """
-    transcribe_audio_file 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    只返回文本的转写兼容入口。
 
-    AI 网关承载 ASR/LLM 供应商差异，注释重点记录降级策略和真实服务缺失时的边界。
+    旧评分服务只需要 transcript 字符串，所以保留这个薄封装；新调用方需要排障信息时应优先使用 transcribe_audio_file_with_meta。
 
-    @param audio_bytes: 上传音频的二进制内容；进入 ASR 前用于缓存和切片，避免长音频直接压垮模型。
-    @param filename: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param audio_bytes: 上传的音频/视频二进制内容。
+    @param filename: 原始文件名。
+    @return: 转写文本；失败时返回明确占位文本或空字符串。
+    @raises: 不主动向上抛常规 ASR 失败。
     """
     result = await transcribe_audio_file_with_meta(audio_bytes, filename=filename)
     return str(result.get("transcript") or "")

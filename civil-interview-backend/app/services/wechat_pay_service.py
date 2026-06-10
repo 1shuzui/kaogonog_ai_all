@@ -1,9 +1,13 @@
 """
-这个文件只负责和微信虚拟支付接口打交道；签名、现网/沙箱、查询和退款都集中在这里，便于排查审核或支付失败。
+微信小程序虚拟支付适配层，只负责组装官方虚拟支付参数、查询虚拟订单和发起虚拟支付退款。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+本项目卖的是虚拟训练权益，不能退回普通微信支付或自建支付口径。这里把 appId、offerId、env、goodsId、openId、
+订单号签名和官方 XPay 接口集中封装，方便审核不通过或手机端拉不起支付时快速排查。服务层只关心“订单是否被微信确认”，
+不在这里直接发放权益，避免支付接口异常时出现订单和权益状态不一致。
+
+@param: 方法接收套餐、订单、微信 openId、退款金额或官方接口返回载荷。
+@return: 返回小程序可拉起支付的参数、微信查询结果或退款结果摘要。
+@raises HTTPException: 虚拟支付配置缺失、openId 缺失、微信接口失败、签名参数不完整或退款接口返回异常时抛出 HTTP 错误。
 """
 from datetime import datetime, timezone
 import hashlib
@@ -28,28 +32,31 @@ X_PAY_REFUND_ORDER_URL = f"https://api.weixin.qq.com{X_PAY_REFUND_ORDER_PATH}"
 
 class WechatPayService:
     """
-    WechatPayService 作为公共类型保留，是为了让调用方共享同一套业务语义和数据边界。
+    微信虚拟支付网关，隔离官方 XPay 协议细节和本地订单/权益服务。
 
-    微信支付服务对接外部平台，注释需要说明现网配置、回调和退款查询的风险边界。
+    这里不直接创建订单、不发放权益，也不决定套餐价格；这些规则留在 payment/subscription 服务里。
+    本类只负责把本地订单转换成微信能识别的虚拟支付请求，并把微信查询/退款结果翻译成后端可以审计的结构。
+    这样做是为了在微信审核、iOS 支付路由或 openId 缺失时，把“平台协议错误”和“业务发货错误”分开排查。
 
-    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
-    @return: 返回可被调用方实例化或引用的公共类型。
-    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    @param: 无；实例只缓存 access_token，具体订单、套餐和退款参数由方法传入。
+    @return: 可复用的微信虚拟支付服务实例。
+    @raises HTTPException: 配置缺失、微信接口异常、签名失败或订单身份信息不足时由方法抛出。
     """
     _access_token: str = ""
     _access_token_expires_at: int = 0
 
     def get_pay_payload(self, order: PaymentOrder, package: SubscriptionPackage, data: PaymentOrderCreateRequest) -> dict:
         """
-        get_pay_payload 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+        为小程序官方虚拟支付生成前端需要的拉起参数。
 
-        微信支付服务对接外部平台，注释需要说明现网配置、回调和退款查询的风险边界。
+        虚拟商品不能走普通微信支付或 PC 支付兜底，所以这里强制 payChannel=wechat_virtual 且 scene=mini_program_virtual。
+        审核环境和 iOS 端最终都依赖这条链路，不能在页面层绕开。
 
-        @param order: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-        @param package: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-        @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-        @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-        @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+        @param order: 已创建的本地订单，必须带有订单号、用户名和支付场景。
+        @param package: 本地套餐配置，用于映射微信虚拟支付道具 ID。
+        @param data: 下单请求，包含支付渠道、场景、openId 和客户端来源。
+        @return: 小程序端调用 wx.requestVirtualPayment 所需的 payload。
+        @raises HTTPException: 渠道/场景不符合虚拟支付、虚拟支付未启用或道具配置缺失时抛出。
         """
         if data.payChannel != "wechat_virtual":
             raise HTTPException(status_code=400, detail="虚拟商品购买只能使用微信官方小程序虚拟支付")
@@ -61,14 +68,16 @@ class WechatPayService:
 
     def query_virtual_order(self, order: PaymentOrder, package: SubscriptionPackage) -> dict:
         """
-        query_virtual_order 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+        向微信查询虚拟支付订单是否真实支付成功。
 
-        微信支付服务对接外部平台，注释需要说明现网配置、回调和退款查询的风险边界。
+        本地订单状态不能直接作为到账依据，必须带 openId、order_id、env 和 product_id 去微信侧核验。
+        openId 从订单 extra_payload 读取，缺失时会直接拒绝查询；这能暴露下单时没有绑定微信身份的问题，
+        避免微信返回 502 后被误判成平台故障。
 
-        @param order: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-        @param package: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-        @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-        @raises HTTPException, ValueError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+        @param order: 本地支付订单，extra_payload 中必须包含 openId 和虚拟支付环境。
+        @param package: 套餐配置，用于补齐 product_id。
+        @return: 核验结果，包含 verified、transactionId、amountTotal、paidAt、微信原始响应和查询请求体。
+        @raises HTTPException: 缺少 openId/OfferID、微信 HTTP 失败、响应非 JSON 或 errcode 非 0 时抛出。
         """
         extra_payload = order.extra_payload if isinstance(order.extra_payload, dict) else {}
         openid = str(extra_payload.get("openId") or "")
@@ -119,18 +128,19 @@ class WechatPayService:
 
     def refund_virtual_order(self, order: PaymentOrder, refund_order_id: str, left_fee: int, refund_fee: int, refund_reason: str = "1", req_from: str = "1") -> dict:
         """
-        refund_virtual_order 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+        调用微信小程序虚拟支付退款接口。
 
-        微信支付服务对接外部平台，注释需要说明现网配置、回调和退款查询的风险边界。
+        退款必须使用原订单 openId、虚拟支付环境和退款单号，不能只改本地订单状态。left_fee/refund_fee 由
+        上层退款服务计算后传入，本函数只负责按微信接口签名并转发，避免把财务规则和平台协议混在一起。
 
-        @param order: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-        @param refund_order_id: 业务对象标识；用于跨接口追溯同一条记录，调用方应避免传入展示名。
-        @param left_fee: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-        @param refund_fee: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-        @param refund_reason: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-        @param req_from: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-        @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-        @raises HTTPException, ValueError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+        @param order: 原本地支付订单，extra_payload 中必须包含 openId 和虚拟支付环境。
+        @param refund_order_id: 本地生成并传给微信的退款单号。
+        @param left_fee: 退款后剩余虚拟币/金额，单位遵循微信虚拟支付接口。
+        @param refund_fee: 本次退款虚拟币/金额，单位遵循微信虚拟支付接口。
+        @param refund_reason: 微信要求的退款原因编码。
+        @param req_from: 微信要求的请求来源编码。
+        @return: 微信退款响应，并附带请求体用于排查。
+        @raises HTTPException: 缺少 openId/OfferID、微信 HTTP 失败、响应非 JSON 或 errcode 非 0 时抛出。
         """
         extra_payload = order.extra_payload if isinstance(order.extra_payload, dict) else {}
         openid = str(extra_payload.get("openId") or "")

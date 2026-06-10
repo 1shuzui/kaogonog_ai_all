@@ -1,9 +1,13 @@
 /**
- * 这个路由文件维护网页端页面入口和访问守卫；管理员页、登录页和普通页面的跳转规则都从这里过。
+ * PC 端路由表和访问守卫，集中维护普通页面、考场页面、题库后台、管理员工作台和登录页的入口关系。
  *
- * @param 无；文件级模块依赖导出函数、组合式 API 或调用方传入上下文。
- * @return 导出可复用的端侧能力，具体返回值由各公共函数保持兼容。
- * @raises 不主动吞掉业务异常；请求失败、权限不足和运行时错误交由调用方或全局拦截器处理。
+ * 路由 meta 是页面权限的第一层提示，真正权限仍由后端接口校验。这里负责用户体验上的拦截：
+ * 未登录跳登录页，普通用户访问 `/admin` 回首页，考试/支付/题库页面按既有 store 做必要的状态恢复。
+ * 新增页面时优先在这里补齐 title、layout、requiresAuth 和 requiresAdmin，避免页面自己写跳转规则。
+ *
+ * @param 无；Vue Router 在浏览器导航时传入 to/from 路由对象。
+ * @return 导出 router 实例供 `main.js` 挂载。
+ * @raises Error: 动态组件加载失败或守卫中 store 初始化异常时由 Vue Router 抛出。
  */
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'

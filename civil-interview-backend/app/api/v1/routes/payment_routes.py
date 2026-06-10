@@ -1,9 +1,12 @@
 """
-这个路由文件提供套餐订单、微信虚拟支付确认和退款管理接口；它只做请求参数、鉴权依赖和服务层转发，业务规则尽量留在 service 里。
+支付路由，暴露套餐订单、微信小程序虚拟支付确认、订单查询、退款申请和管理员退款管理接口。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+所有付费训练权益都必须通过微信官方小程序虚拟支付确认，不在路由层提供普通支付兜底。支付接口只处理真实购买和退款；
+人工补发、测试账号赠送、客服扣减走订阅管理员接口，避免审核和财务口径混在一张订单表里。
+
+@param: FastAPI 注入支付请求、退款请求、当前用户和数据库 Session。
+@return: 返回套餐列表、订单信息、虚拟支付参数、支付确认结果、退款统计或退款处理结果。
+@raises HTTPException: 未登录、非管理员、套餐不存在、订单状态不合法、微信支付查询失败或退款越界时返回 HTTP 错误。
 """
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -33,15 +36,15 @@ router = APIRouter(prefix="/payment", tags=["payment"])
 @router.post("/orders")
 def payment_create_order(data: PaymentOrderCreateRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    payment_create_order 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    创建支付订单的 HTTP 路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    所有付费虚拟训练权益都应从这里进入微信小程序虚拟支付链路，路由层只做鉴权和请求转发。
 
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param data: 下单请求体。
+    @param current_user: Bearer token 解析出的当前用户。
+    @param db: 请求级数据库会话。
+    @return: 本地订单和虚拟支付拉起参数。
+    @raises HTTPException: 未登录、套餐无效或支付配置异常时抛出。
     """
     return create_payment_order(db, current_user, data)
 
@@ -49,14 +52,14 @@ def payment_create_order(data: PaymentOrderCreateRequest, current_user: AuthUser
 @router.get("/orders/me")
 def payment_list_orders(current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    payment_list_orders 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    当前用户订单中心列表路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    普通用户只能看自己的订单，管理员退款核查走独立后台接口。
 
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param current_user: Bearer token 解析出的当前用户。
+    @param db: 请求级数据库会话。
+    @return: 用户订单列表。
+    @raises HTTPException: 未登录或用户不存在时抛出。
     """
     return list_payment_orders(db, current_user)
 
@@ -64,15 +67,15 @@ def payment_list_orders(current_user: AuthUser = Depends(get_current_user), db: 
 @router.get("/orders/{order_no}")
 def payment_get_order(order_no: str, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    payment_get_order 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    读取当前用户单个订单的路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    该接口只用于订单详情展示，不重新生成支付签名，避免刷新详情页造成支付参数混乱。
 
-    @param order_no: 内部订单号；退款、回调和人工核查都以它作为可追溯主键。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param orderNo: 本地订单号。
+    @param current_user: Bearer token 解析出的当前用户。
+    @param db: 请求级数据库会话。
+    @return: 订单详情和只读查询提示。
+    @raises HTTPException: 订单不存在或无权访问时抛出。
     """
     return get_payment_order(db, current_user, order_no)
 
@@ -80,15 +83,15 @@ def payment_get_order(order_no: str, current_user: AuthUser = Depends(get_curren
 @router.post("/orders/{order_no}/virtual/verify")
 def payment_verify_virtual_order(order_no: str, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    payment_verify_virtual_order 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    用户主动补核微信虚拟支付订单的路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    当小程序支付完成但本地状态未及时刷新时，端侧可以调用这里让服务端向微信查单。
 
-    @param order_no: 内部订单号；退款、回调和人工核查都以它作为可追溯主键。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param orderNo: 本地订单号。
+    @param current_user: Bearer token 解析出的当前用户。
+    @param db: 请求级数据库会话。
+    @return: 核验后的订单和微信查询结果。
+    @raises HTTPException: 订单不存在、缺少 openId 或微信查单失败时抛出。
     """
     return verify_virtual_payment_order(db, current_user, order_no)
 
@@ -96,15 +99,15 @@ def payment_verify_virtual_order(order_no: str, current_user: AuthUser = Depends
 @router.post("/admin/refund-stats")
 def payment_refund_stats(data: RefundBalanceStatsRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    payment_refund_stats 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    管理员退款余额统计路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    该接口给退款后台做决策辅助，不代表已经发起退款；真正退款必须调用 apply_refund。
 
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param data: 查询条件。
+    @param current_user: 当前管理员用户。
+    @param db: 请求级数据库会话。
+    @return: 可退款订单和汇总数据。
+    @raises HTTPException: 非管理员访问时抛出 403。
     """
     return get_refund_balance_stats(db, current_user, data)
 
@@ -112,15 +115,15 @@ def payment_refund_stats(data: RefundBalanceStatsRequest, current_user: AuthUser
 @router.post("/admin/refund")
 def payment_apply_refund(data: RefundApplyRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    payment_apply_refund 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    管理员发起微信虚拟支付退款的路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    退款动作会影响订单和权益状态，必须经过管理员鉴权，并由服务层完成微信查单、退款和本地审计写入。
 
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param data: 退款申请。
+    @param current_user: 当前管理员用户。
+    @param db: 请求级数据库会话。
+    @return: 退款提交结果。
+    @raises HTTPException: 非管理员、订单不可退或微信退款失败时抛出。
     """
     return apply_refund(db, current_user, data)
 
@@ -128,15 +131,15 @@ def payment_apply_refund(data: RefundApplyRequest, current_user: AuthUser = Depe
 @router.post("/orders/{order_no}/virtual/confirm")
 def payment_virtual_confirm(order_no: str, data: PaymentVirtualConfirmRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    payment_virtual_confirm 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    小程序支付成功后的确认路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    该路由用于把微信虚拟支付结果同步为本地 paid 订单和用户权益；普通支付或失败支付不能走这里。
 
-    @param order_no: 内部订单号；退款、回调和人工核查都以它作为可追溯主键。
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param orderNo: 本地订单号。
+    @param data: 小程序支付结果。
+    @param current_user: Bearer token 解析出的当前用户。
+    @param db: 请求级数据库会话。
+    @return: 支付确认结果和最新权益。
+    @raises HTTPException: 场景不匹配、支付未成功或订单核验失败时抛出。
     """
     return confirm_virtual_payment_order(db, current_user, order_no, data)

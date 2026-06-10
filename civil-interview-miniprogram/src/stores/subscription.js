@@ -1,9 +1,12 @@
 /**
- * 这个状态仓库保存 `subscription` 相关跨页面状态；把它放在 Pinia 里，是为了切页面后仍能复用同一份数据。
+ * 小程序权益状态仓库，保存当前套餐、剩余总分钟、每日剩余分钟、试用状态和权益刷新时间。
  *
- * @param 无；文件级模块依赖导出函数、组合式 API 或调用方传入上下文。
- * @return 导出可复用的端侧能力，具体返回值由各公共函数保持兼容。
- * @raises 不主动吞掉业务异常；请求失败、权限不足和运行时错误交由调用方或全局拦截器处理。
+ * 练习、定向、试用和支付页面都依赖这里判断可用性。实际扣量在后端完成，store 只展示后端返回的快照，
+ * 防止端侧时间或本地缓存影响真实权益余额。
+ *
+ * @param 无；actions 接收刷新请求、权益切换请求或访问校验场景。
+ * @return 导出 Pinia store，供首页、套餐中心、准备页和个人中心读取权益状态。
+ * @raises Error: 未登录、接口失败或权益不可用时由 action 抛给页面处理。
  */
 import { defineStore } from 'pinia'
 import { checkSubscriptionAccess, getSubscriptionStatus, switchSubscription } from '../api/subscription'

@@ -1,9 +1,12 @@
 """
-这个测试文件守住 `test_auth_and_payment_missing_endpoints` 对应的回归场景；它记录的是以前容易出错的业务边界，而不是普通示例代码。
+登录、找回密码和退款测试锁定前端已经依赖的补齐接口。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+这些接口曾经容易因为 PC、小程序发布节奏不同而缺失：小程序微信登录后要能补全 PC 用户名，
+密码重置要在无短信服务的本地环境可回归，管理员退款还要同时更新订单和权益状态。这里用隔离库验证这些路径不再“页面有入口、后端没接口”。
+
+@param: 无；每个用例在内存库中准备账号、订单、套餐和权益。
+@return: 无直接返回；断言通过表示路由注册和核心服务行为仍匹配前端入口。
+@raises ImportError: FastAPI 路由、SQLAlchemy 模型或认证/支付服务导入失败时会暴露。
 """
 import unittest
 from datetime import datetime, timezone
@@ -38,13 +41,14 @@ from app.services.payment_service import apply_refund, get_refund_balance_stats
 
 class DummyAuthUser:
     """
-    DummyAuthUser 作为公共类型保留，是为了让调用方共享同一套业务语义和数据边界。
+    测试用认证用户，模拟路由层已经完成管理员鉴权后的身份对象。
 
-    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+    退款服务只关心 username、isAdmin 和 permissions；用轻量替身可以把测试重点放在订单和权益状态同步上。
 
-    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
-    @return: 返回可被调用方实例化或引用的公共类型。
-    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    @param username: 要模拟的登录用户名。
+    @param is_admin: 是否模拟管理员身份。
+    @return: 测试用认证用户对象。
+    @raises: 不主动抛出异常；字段值由具体测试场景控制。
     """
     def __init__(self, username="admin", is_admin=True):
         self.username = username
@@ -54,23 +58,24 @@ class DummyAuthUser:
 
 class AuthAndPaymentEndpointTestCase(unittest.TestCase):
     """
-    AuthAndPaymentEndpointTestCase 作为公共类型保留，是为了让调用方共享同一套业务语义和数据边界。
+    登录、找回密码和退款补齐接口的回归用例集合。
 
-    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+    这些路径都曾经表现为“前端已有入口，但后端路由或服务还没补齐”。测试直接覆盖路由注册和核心服务，
+    防止 PC、小程序、管理员工作台发布节奏不同导致用户点到 404 或退款状态不同步。
 
-    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
-    @return: 返回可被调用方实例化或引用的公共类型。
-    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    @param: 无；unittest 负责实例化测试类。
+    @return: unittest 测试用例类。
+    @raises AssertionError: 路由缺失、账号绑定失败、密码重置失败或退款状态不同步时由断言报告。
     """
     def setUp(self):
         """
-        setUp 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        为认证和退款回归测试创建隔离内存库。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        这些用例验证路由注册和服务闭环，不需要现网 MySQL 数据；内存库能让用户、套餐、订单和权益状态互不污染。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；由 unittest 在每个用例前调用。
+        @return: None；SQLAlchemy 会话和表结构准备完成。
+        @raises AssertionError: 数据库初始化失败会由测试框架报告。
         """
         self.engine = create_engine("sqlite:///:memory:")
         Base.metadata.create_all(bind=self.engine)
@@ -79,26 +84,26 @@ class AuthAndPaymentEndpointTestCase(unittest.TestCase):
 
     def tearDown(self):
         """
-        tearDown 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        释放认证和退款回归测试使用的内存库。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        显式关闭会话和 engine，避免同一进程内后续测试复用已经废弃的连接状态。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；由 unittest 在每个用例后调用。
+        @return: None；数据库会话关闭且 engine 释放。
+        @raises AssertionError: 资源释放失败会由测试框架报告。
         """
         self.db.close()
         self.engine.dispose()
 
     def test_missing_frontend_routes_are_registered(self):
         """
-        test_missing_frontend_routes_are_registered 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        PC 和小程序已经调用的认证/退款路由必须全部注册。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        这里不测业务结果，只守住路由存在性；这样路由拆分、重命名或挂载遗漏会在构建前暴露。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；直接读取 `api_router.routes`。
+        @return: None；所有前端依赖路径存在时通过。
+        @raises AssertionError: 任一必需路由没有挂载到 v1 router 时失败。
         """
         route_paths = {route.path for route in api_router.routes}
 
@@ -116,13 +121,14 @@ class AuthAndPaymentEndpointTestCase(unittest.TestCase):
 
     def test_wechat_login_creates_account_and_account_setup_renames_it(self):
         """
-        test_wechat_login_creates_account_and_account_setup_renames_it 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        小程序微信登录创建的临时账号必须能补全为 PC 可登录账号。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        审核要求用户先浏览后主动登录，但真正登录后还要打通 PC 账号体系；
+        这个用例防止 openId 绑定成功后，用户名和密码补全链路断掉。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；用 fake code2session 隔离微信网络请求。
+        @return: None；临时账号创建、协议版本保存、账号重命名和密码写入都成功时通过。
+        @raises AssertionError: 微信身份绑定、账号补全或密码校验任一环节失败时报告。
         """
         old_appid = settings.wechat_pay_appid
         old_secret = settings.wechat_miniprogram_app_secret
@@ -170,13 +176,13 @@ class AuthAndPaymentEndpointTestCase(unittest.TestCase):
 
     def test_password_reset_generates_verifies_and_confirms_code(self):
         """
-        test_password_reset_generates_verifies_and_confirms_code 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        本地密码重置要覆盖“生成、校验、确认”完整闭环。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        当前没有接入真实短信服务，debugCode 是本地和测试环境排查账号问题的兜底；确认成功后必须清掉临时重置状态。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；先写入测试用户，再执行三步重置流程。
+        @return: None；新密码可校验且 preferences 中不残留 passwordReset 时通过。
+        @raises AssertionError: 验证码、密码更新或临时状态清理失败时报告。
         """
         self.db.add(User(username="alice", hashed_password="old"))
         self.db.commit()
@@ -198,13 +204,13 @@ class AuthAndPaymentEndpointTestCase(unittest.TestCase):
 
     def test_admin_refund_stats_and_apply_refund_update_order_and_subscription(self):
         """
-        test_admin_refund_stats_and_apply_refund_update_order_and_subscription 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        管理员退款必须同时更新订单状态和对应权益状态。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        用户看到的可退余额来自订单和权益共同计算；只退订单、不关停权益会让用户继续消耗已退款时长。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；构造一笔 paid 虚拟支付订单和对应 active 权益。
+        @return: None；退款统计、退款申请、订单状态和权益状态都符合预期时通过。
+        @raises AssertionError: 可退时长计算错误、退款未落库或权益未同步失效时失败。
         """
         user = User(username="buyer", hashed_password="x")
         admin = User(username="admin", hashed_password="x")

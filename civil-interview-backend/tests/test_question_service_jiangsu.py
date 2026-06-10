@@ -1,9 +1,12 @@
 """
-这个测试文件守住 `test_question_service_jiangsu` 对应的回归场景；它记录的是以前容易出错的业务边界，而不是普通示例代码。
+江苏题库测试守住事业单位岗位筛选和年份兜底提取。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+江苏事业单位统考首页只展示岗位名称，不再把 A/B/C/D/E 当作用户可见分类；同时题号或考试日期里带年份的题目必须能被年份筛选命中。
+这些用例防止题库展示回到“省份、岗位、题型混在一起”的旧口径。
+
+@param: 无；setUp 写入江苏事业单位代表题和日期字段。
+@return: 无直接返回；断言通过表示岗位和年份筛选仍符合当前分类规则。
+@raises ImportError: 题库服务、ORM 模型或数据库依赖缺失时会失败。
 """
 import unittest
 
@@ -17,23 +20,25 @@ from app.services.question_service import list_questions
 
 class TestJiangsuQuestionFiltering(unittest.TestCase):
     """
-    TestJiangsuQuestionFiltering 作为公共类型保留，是为了让调用方共享同一套业务语义和数据边界。
+    江苏题库筛选用例集合，确认岗位标签和年份来源不会回到旧分类口径。
 
-    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+    江苏事业单位入口用户侧隐藏 A/B/C/D/E 文案，但内部仍需要用 positionTags 精准筛题；
+    同时年份可能来自题号、套题名或 examDate，不能只看单一字段。
 
-    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
-    @return: 返回可被调用方实例化或引用的公共类型。
-    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    @param: 无；unittest 负责实例化测试类。
+    @return: unittest 测试用例类。
+    @raises AssertionError: 江苏岗位或年份筛选口径退化时由断言报告。
     """
     def setUp(self):
         """
-        setUp 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        准备江苏岗位标签题和一条只靠套题日期识别年份的事业单位题。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        用户侧已经不展示 A/B/C/D/E，但内部筛选还要靠旧 key 命中真实题；
+        年份筛选也要覆盖 `examDate`，否则类似连云港 2025 真题会在年份下拉里消失。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；由 unittest 在每个用例前调用。
+        @return: None；江苏代表题写入内存数据库。
+        @raises AssertionError: 测试数据无法提交或题目元数据不兼容时由后续断言暴露。
         """
         self.engine = create_engine("sqlite:///:memory:")
         Base.metadata.create_all(bind=self.engine)
@@ -77,26 +82,26 @@ class TestJiangsuQuestionFiltering(unittest.TestCase):
 
     def tearDown(self):
         """
-        tearDown 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        释放江苏题库筛选用例的数据库会话。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        岗位和年份筛选都依赖同一张 questions 表；每个用例独立清理可以避免旧题干影响新断言。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；由 unittest 在每个用例后调用。
+        @return: None；数据库会话和引擎被释放。
+        @raises: 不主动抛出业务异常；底层连接关闭异常会按测试失败暴露。
         """
         self.db.close()
         self.engine.dispose()
 
     def test_jiangsu_position_filter_prefers_explicit_position_tags(self):
         """
-        test_jiangsu_position_filter_prefers_explicit_position_tags 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        江苏岗位筛选优先使用显式 positionTags。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        题干或维度里可能出现相似词，不能靠关键词猜岗位；显式标签可以避免 A/B 岗位互串，也能让不存在的 D 岗返回空。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；使用 setUp 中的 A/B 岗位题和一条无岗位标签题。
+        @return: None；A/B 各自只命中自己的题，D 岗为空时通过。
+        @raises AssertionError: 岗位标签筛选串题或无题岗位返回伪数据时失败。
         """
         a_result = list_questions(self.db, province="jiangsu", position="jiangsu_a", page_size=20)
         b_result = list_questions(self.db, province="jiangsu", position="jiangsu_b", page_size=20)
@@ -108,13 +113,14 @@ class TestJiangsuQuestionFiltering(unittest.TestCase):
 
     def test_year_filter_falls_back_to_exam_date(self):
         """
-        test_year_filter_falls_back_to_exam_date 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        年份筛选必须能从套题考试日期兜底提取年份。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        导入资产里不一定有显式 year 字段；如果只查题号或固定 year 列，
+        `JS-LYG-LYQ20250705-01` 这类真题会在 2025 年筛选中漏掉。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；使用 setUp 中的连云港事业单位题。
+        @return: None；年份筛选命中该题并返回 `["2025"]` 时通过。
+        @raises AssertionError: 年份兜底提取或返回字段格式退化时失败。
         """
         result = list_questions(self.db, province="jiangsu", year="2025", page_size=20)
 

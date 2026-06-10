@@ -1,9 +1,9 @@
 <!--
-这个倒计时组件服务考前准备和答题阶段，统一处理剩余时间展示，避免每个考场页面自己算时间。
+倒计时组件，用于考场和准备流程展示剩余时间，避免多个页面各自实现计时格式。
 
-@param: 无；页面运行时从 props、路由参数、Pinia 状态和用户点击中拿数据。
-@return: 渲染当前业务界面，并把按钮、表单或跳转事件交给既有流程处理。
-@raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
+@param: 通过 props、slot 和事件接收页面上下文；不直接拥有业务真源。
+@return: 渲染可复用 UI，并通过 emit 或插槽把操作交还给父页面。
+@raises: 不主动抛业务异常；异常状态应由父页面、请求层或兜底 UI 承接。
 -->
 <template>
   <div class="countdown-timer" :class="[`countdown-timer--${mode}`, { 'countdown-timer--blink': props.remaining <= 10 && props.remaining > 0, 'countdown-timer--warning': props.remaining <= 30 }]">

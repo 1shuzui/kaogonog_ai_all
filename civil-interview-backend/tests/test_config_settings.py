@@ -1,9 +1,12 @@
 """
-这个测试文件守住 `test_config_settings` 对应的回归场景；它记录的是以前容易出错的业务边界，而不是普通示例代码。
+配置兼容测试确认 `.env` 恢复后仍能暴露现网需要的关键字段。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+项目从 Whisper 切到 FunASR、从模拟支付切到微信虚拟支付、从 SQLite 开发切到 MySQL 后，配置字段数量明显增加。
+这个测试不验证字段值是否正确，只防止重构 Settings 时删掉运行链路仍会读取的属性。
+
+@param: 无；直接读取 `app.core.config.settings`。
+@return: 无直接返回；断言通过表示配置对象仍保留必要属性。
+@raises ImportError: 配置模块或 pydantic 设置依赖异常时，导入阶段会失败。
 """
 import unittest
 
@@ -12,23 +15,23 @@ from app.core.config import settings
 
 class SettingsCompatibilityTestCase(unittest.TestCase):
     """
-    SettingsCompatibilityTestCase 作为公共类型保留，是为了让调用方共享同一套业务语义和数据边界。
+    配置兼容用例集合，确认关键配置字段在 Settings 重构后仍可被读取。
 
-    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+    这不是配置值正确性测试，而是“字段存在性”护栏；字段缺失会让服务在运行时才爆，而不是启动时提醒。
 
-    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
-    @return: 返回可被调用方实例化或引用的公共类型。
-    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    @param: 无；unittest 负责实例化测试类。
+    @return: unittest 测试用例类。
+    @raises AssertionError: 任一关键配置字段被删掉或改名时由断言报告。
     """
     def test_settings_exposes_llm_fields(self):
         """
-        test_settings_exposes_llm_fields 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        LLM、Redis 和 FunASR 相关字段必须继续挂在 settings 上。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        后端多处代码直接读取这些字段；即使默认值以后调整，字段本身也不能在没有迁移的情况下消失。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；直接检查全局 settings 实例。
+        @return: None；所有被运行链路读取的字段存在时通过。
+        @raises AssertionError: 配置字段缺失时失败。
         """
         self.assertTrue(hasattr(settings, "llm_provider"))
         self.assertTrue(hasattr(settings, "llm_api_key"))

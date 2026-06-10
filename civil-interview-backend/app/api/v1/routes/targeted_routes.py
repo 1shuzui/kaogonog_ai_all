@@ -1,9 +1,13 @@
 """
-这个路由文件提供定向备面分类、重点分析和管理员维护接口；它只做请求参数、鉴权依赖和服务层转发，业务规则尽量留在 service 里。
+定向备面路由，提供多层级分类树、真实题库重点分析、管理员发布重点和定向/专项训练抽题。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+这里承载了题库分类重构后的核心口径：真实考试体系、地区来源、岗位方向、系统单位、面试形式和题型维度必须分开；
+银行、医疗、法检可以是展示入口，但不能抢掉题目的真实来源。重点分析只能来自真实题库统计或管理员发布内容，
+没有匹配题库时返回明确空态，不能用其他地区或通用模板伪装。
+
+@param: FastAPI 注入定向选择参数、管理员配置请求、当前用户和数据库 Session。
+@return: 返回分类树、重点分析、管理员配置、训练题或生成题结果。
+@raises HTTPException: 未登录、非管理员、参数缺失、题库不足或目标配置不存在时返回 HTTP 错误。
 """
 import re
 from collections import Counter
@@ -602,13 +606,13 @@ FOCUS_TARGET_FIELDS = (
 
 def parse_timing_format(text: str) -> tuple[int | None, int | None]:
     """
-    Parse timing format strings like '8+12' or '15分钟包干' → (prepTime, answerTime) in seconds.
+    解析真实套题时间模式。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    定向分类里会出现“8+12”“15分钟包干”“5+5/15分钟包干”等中文时间表达；这里把可确定的读题/答题时间转为秒，原文不明确时保持兜底，避免端侧自行猜。
 
-    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param timing: 原始时间模式文本。
+    @return: (prepTime, answerTime) 秒数元组；无法拆分时返回包干或默认值。
+    @raises: 不主动抛业务异常；无法识别时按兜底规则返回。
     """
     if not text:
         return None, None
@@ -1006,13 +1010,13 @@ def _build_real_focus_response(data: FocusAnalysisRequest, questions: list[Quest
 @router.get("/positions")
 def get_positions():
     """
-    get_positions 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    返回定向备面分类树。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    分类树体现真实考试体系和特色入口的展示关系，PC、小程序和管理员页都应复用这里，避免各端出现不同层级。
 
-    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param: 无；分类树由后端静态结构和题库元数据共同维护。
+    @return: 考试体系、动态层级标签、地区/来源、方向和时间模式信息。
+    @raises: 不主动抛业务异常。
     """
     return {
         "tree": TARGETED_POSITION_TREE,
@@ -1023,15 +1027,14 @@ def get_positions():
 @router.post("/targeted/focus")
 async def get_focus(data: FocusAnalysisRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    get_focus 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    生成或读取定向备面重点分析。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    普通用户优先看到管理员已发布内容；没有发布内容时只使用真实题库统计，题库不足则返回空态，不能套用其他地区模板。
 
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param body: 考试体系、地区/来源、方向和可选时间模式。
+    @param db: 请求级数据库会话。
+    @return: 重点分析结构，包含能力重点、题型高频、热点和策略。
+    @raises HTTPException: 请求体非法或服务端分析失败时抛出。
     """
     ensure_paid_access(current_user, detail="定向备考需付费开通后使用")
     config = _load_focus_config(db, data)
@@ -1063,28 +1066,15 @@ async def get_focus_admin_config(
     db: Session = Depends(get_db),
 ):
     """
-    get_focus_admin_config 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    管理员读取重点分析配置的路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    管理员页面需要同时看到自动分析、已发布内容和可编辑字段，因此这里按目标 key 聚合配置，而不是让前端自己拼。
 
-    @param targetCode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param province: 地区筛选值；只表示地域，不替代考试体系或岗位方向。
-    @param position: 岗位/方向筛选值；允许为空表示不限，避免无题库分类被误判为通用模板。
-    @param examCategory: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param examSubcategory: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param subcategory: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param subcategory2: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param year: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param targetName: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param interviewFormat: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param timingMode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param questionCount: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
-    @param prepTime: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param answerTime: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param targetCode: 可选目标编码。
+    @param current_user: 当前管理员用户。
+    @param db: 请求级数据库会话。
+    @return: 当前目标的自动分析、发布状态和编辑内容。
+    @raises HTTPException: 非管理员访问时抛出 403。
     """
     ensure_admin_access(current_user)
     target_payload = {
@@ -1128,15 +1118,15 @@ async def save_focus_admin_config(
     db: Session = Depends(get_db),
 ):
     """
-    save_focus_admin_config 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    管理员保存并可发布重点分析配置。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    发布内容会优先覆盖自动统计，适合题库不足或需要人工修正文案的场景；保存时仍保留目标分类字段，方便停用后回到自动分析。
 
-    @param body: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    @param body: 管理员编辑后的重点分析内容和发布状态。
+    @param current_user: 当前管理员用户。
+    @param db: 请求级数据库会话。
+    @return: 保存后的配置。
+    @raises HTTPException: 非管理员、字段非法或数据库写入失败时抛出。
     """
     ensure_admin_access(current_user)
     target_payload = body.get("target") if isinstance(body.get("target"), dict) else body
@@ -1174,15 +1164,15 @@ async def disable_focus_admin_config(
     db: Session = Depends(get_db),
 ):
     """
-    disable_focus_admin_config 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    管理员停用已发布重点分析配置。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    停用不会删除历史配置，只让普通用户重新走自动统计或空态，便于管理员回滚误发布。
 
-    @param body: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param body: 目标分类定位字段。
+    @param current_user: 当前管理员用户。
+    @param db: 请求级数据库会话。
+    @return: 停用结果。
+    @raises HTTPException: 非管理员或目标不存在时抛出。
     """
     ensure_admin_access(current_user)
     target_payload = body.get("target") if isinstance(body.get("target"), dict) else body
@@ -1200,15 +1190,15 @@ async def disable_focus_admin_config(
 @router.post("/targeted/generate")
 async def targeted_generate(data: GenerateQuestionsRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    targeted_generate 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    定向备面生成题目路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    生成逻辑应按真实分类筛选题库；方向为“不限”时放宽到考试体系和地区/来源，不能跨省或套用其他考试体系。
 
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param body: 定向生成条件。
+    @param current_user: Bearer token 解析出的当前用户。
+    @param db: 请求级数据库会话。
+    @return: 生成的练习题目和考试上下文。
+    @raises HTTPException: 未登录、权益不足或无可用题目时抛出。
     """
     ensure_paid_access(current_user, detail="定向备考需付费开通后使用")
     questions = await generate_questions_by_position(
@@ -1230,15 +1220,15 @@ async def targeted_generate(data: GenerateQuestionsRequest, current_user: AuthUs
 @router.post("/training/generate")
 async def training_generate(data: TrainingGenerateRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    training_generate 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    专项训练生成题目路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    专项训练使用题型分类，不能和考生能力维度混用；路由层只转发参数，筛题和兜底由生成逻辑处理。
 
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param body: 题型、地区和数量等训练条件。
+    @param current_user: Bearer token 解析出的当前用户。
+    @param db: 请求级数据库会话。
+    @return: 生成的专项训练题目。
+    @raises HTTPException: 未登录、权益不足或无可用题目时抛出。
     """
     ensure_paid_access(current_user, detail="专项训练需付费开通后使用")
     target_filters = _target_filters_from_request(data)

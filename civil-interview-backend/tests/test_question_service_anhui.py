@@ -1,9 +1,12 @@
 """
-这个测试文件守住 `test_question_service_anhui` 对应的回归场景；它记录的是以前容易出错的业务边界，而不是普通示例代码。
+安徽题库测试防止省考题被错误套进江苏 A/B/C/D/E 或事业单位分类。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+分类重构后，真实题源主分类、地区来源和题型维度必须分开保存；安徽公务员题只应该属于“省级公务员考试/安徽省”。
+这些用例验证资产导入和代码筛选都不会把安徽题串到江苏岗位入口。
+
+@param: 无；setUp 会写入代表性的安徽题库记录。
+@return: 无直接返回；断言通过表示安徽题库筛选口径仍正确。
+@raises ImportError: 题库服务、ORM 模型或数据库依赖缺失时会失败。
 """
 import unittest
 
@@ -17,23 +20,23 @@ from app.services.question_service import _normalize_json_payload, list_question
 
 class TestAnhuiQuestionImport(unittest.TestCase):
     """
-    TestAnhuiQuestionImport 作为公共类型保留，是为了让调用方共享同一套业务语义和数据边界。
+    安徽题库导入与筛选用例集合，确认“安徽”相关来源统一归到安徽省代码。
 
-    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+    分类重构后，题型维度、岗位方向和省份字段分开维护；这里专门防止“安徽消防”等来源被误拆成新省份或串到江苏岗位。
 
-    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
-    @return: 返回可被调用方实例化或引用的公共类型。
-    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    @param: 无；unittest 负责实例化测试类。
+    @return: unittest 测试用例类。
+    @raises AssertionError: 安徽题库省份归一或筛选口径退化时由断言报告。
     """
     def setUp(self):
         """
-        setUp 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        准备两条安徽来源题，覆盖普通省份名和带系统词的省份名。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        分类纠偏时最容易把“安徽消防”当成独立地区或题型标签；这里用内存库固定筛选应看到的真实行。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；由 unittest 在每个用例前调用。
+        @return: None；安徽代表题写入内存数据库。
+        @raises AssertionError: 测试数据无法提交或省份字段不兼容时由后续断言暴露。
         """
         self.engine = create_engine("sqlite:///:memory:")
         Base.metadata.create_all(bind=self.engine)
@@ -61,26 +64,26 @@ class TestAnhuiQuestionImport(unittest.TestCase):
 
     def tearDown(self):
         """
-        tearDown 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        释放安徽题库筛选用例的数据库会话。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        题库筛选测试会复用全量 metadata，关闭会话和引擎可以避免其他省份用例读到残留题目。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；由 unittest 在每个用例后调用。
+        @return: None；数据库会话和引擎被释放。
+        @raises: 不主动抛出业务异常；底层连接关闭异常会按测试失败暴露。
         """
         self.db.close()
         self.engine.dispose()
 
     def test_anhui_assets_normalize_to_code(self):
         """
-        test_anhui_assets_normalize_to_code 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        原始资产里的“安徽”“安徽消防”都应归一为 `anhui`。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        文件标题和章节标题可能带系统词，但系统词不应替代地区字段；否则定向筛选会找不到安徽题。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；直接构造两条原始题库资产。
+        @return: None；归一后的 province 都是 `anhui` 时通过。
+        @raises AssertionError: 系统词污染省份代码时失败。
         """
         items = _normalize_json_payload([
             {"id": "raw_ah", "province": "安徽", "question": "安徽事业单位题目"},
@@ -91,13 +94,13 @@ class TestAnhuiQuestionImport(unittest.TestCase):
 
     def test_anhui_code_filter_returns_all_anhui_rows(self):
         """
-        test_anhui_code_filter_returns_all_anhui_rows 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        省份代码筛选应返回安徽普通题和安徽系统题。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        这个断言防止筛选逻辑只命中普通“安徽”文本，漏掉带消防、税务等系统来源的安徽省考题。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；使用 setUp 中的两条安徽题。
+        @return: None；返回两条安徽题时通过。
+        @raises AssertionError: 安徽系统题被省份筛选漏掉时失败。
         """
         result = list_questions(self.db, province="anhui", page_size=20)
 

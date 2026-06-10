@@ -1,9 +1,12 @@
 """
-这个测试文件守住 `test_support_feedback_service` 对应的回归场景；它记录的是以前容易出错的业务边界，而不是普通示例代码。
+反馈服务测试确认用户提交的问题能被管理员看见并维护状态。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+客服反馈同时服务小程序“我的”页面和 PC 管理员工作台；如果接口只保存本地临时状态，
+管理员就无法追踪审核、支付或 ASR 问题。这里验证反馈创建、列表、更新和非管理员拦截都走数据库记录。
+
+@param: 无；setUp 创建隔离数据库和测试用户。
+@return: 无直接返回；断言通过表示反馈接口和管理员权限仍匹配。
+@raises ImportError: 反馈服务、路由或 ORM 依赖缺失时会失败。
 """
 import unittest
 from datetime import datetime, timezone
@@ -26,13 +29,14 @@ from app.services.support_service import (
 
 class DummyAuthUser:
     """
-    DummyAuthUser 作为公共类型保留，是为了让调用方共享同一套业务语义和数据边界。
+    构造最小鉴权用户，模拟普通用户和管理员两种反馈操作身份。
 
-    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+    反馈服务只读取 username 和 isAdmin；使用轻量对象能避免把测试焦点带到登录、token 或权限构造细节上。
 
-    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
-    @return: 返回可被调用方实例化或引用的公共类型。
-    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    @param username: 操作反馈的用户名称。
+    @param is_admin: 是否管理员，用于验证反馈状态维护权限。
+    @return: 可传给反馈服务函数的鉴权用户替身。
+    @raises: 不主动抛出异常；权限不足由被测服务抛出 HTTPException。
     """
     def __init__(self, username="alice", is_admin=False):
         self.username = username
@@ -41,23 +45,24 @@ class DummyAuthUser:
 
 class SupportFeedbackServiceTestCase(unittest.TestCase):
     """
-    SupportFeedbackServiceTestCase 作为公共类型保留，是为了让调用方共享同一套业务语义和数据边界。
+    客服反馈用例集合，覆盖用户提交、管理员查看处理和普通用户越权拦截。
 
-    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+    这条链路是运营排查审核、支付、ASR 和题库问题的入口；如果只测接口返回不测数据库记录，
+    管理员工作台就可能看不到真实用户反馈。
 
-    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
-    @return: 返回可被调用方实例化或引用的公共类型。
-    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    @param: 无；unittest 负责实例化测试类。
+    @return: unittest 测试用例类。
+    @raises AssertionError: 反馈持久化、路由注册或权限边界退化时由断言报告。
     """
     def setUp(self):
         """
-        setUp 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        创建隔离反馈库和三类账号，避免不同反馈用例互相串数据。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        alice/bob/admin 分别代表本人反馈、其他用户反馈和管理员视角，足够覆盖列表过滤和状态维护边界。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；测试框架自动调用。
+        @return: None；数据库会话写入实例字段供用例使用。
+        @raises AssertionError: 建库或建表失败时由测试框架报告。
         """
         self.engine = create_engine("sqlite:///:memory:")
         Base.metadata.create_all(bind=self.engine)
@@ -72,26 +77,26 @@ class SupportFeedbackServiceTestCase(unittest.TestCase):
 
     def tearDown(self):
         """
-        tearDown 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        关闭反馈测试库连接，确保下一条用例从空库开始。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        这里不做业务断言，只清理 SQLAlchemy 会话和内存库连接。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；测试框架自动调用。
+        @return: None；关闭会话和引擎。
+        @raises: 不主动抛出业务异常；连接释放异常会由测试框架暴露。
         """
         self.db.close()
         self.engine.dispose()
 
     def test_support_routes_are_registered(self):
         """
-        test_support_routes_are_registered 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        小程序和 PC 管理端依赖的反馈路由必须挂在 v1 router 上。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        路由拆分或管理员工作台重构时，最常见的问题是 service 还在但 router 漏注册，页面会直接 404。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；直接读取 `api_router.routes`。
+        @return: None；反馈列表、附件和详情维护路由都存在时通过。
+        @raises AssertionError: 任一前端依赖路由缺失时失败。
         """
         route_paths = {route.path for route in api_router.routes}
 
@@ -101,13 +106,14 @@ class SupportFeedbackServiceTestCase(unittest.TestCase):
 
     def test_feedback_create_list_update_delete_uses_database_records(self):
         """
-        test_feedback_create_list_update_delete_uses_database_records 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        反馈创建、列表、处理和删除都必须围绕数据库记录流转。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        管理员端需要看到所有用户反馈，普通用户只看自己的反馈；状态变更和处理备注也必须持久化，
+        否则客服排查会丢失上下文。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；构造本人反馈、其他用户反馈和管理员操作。
+        @return: None；过滤、汇总、处理备注和删除都符合预期时通过。
+        @raises AssertionError: 反馈没有进库、权限视图错误或状态维护失败时失败。
         """
         alice = DummyAuthUser("alice")
         admin = DummyAuthUser("admin", is_admin=True)
@@ -170,13 +176,13 @@ class SupportFeedbackServiceTestCase(unittest.TestCase):
 
     def test_non_admin_cannot_update_feedback_status(self):
         """
-        test_non_admin_cannot_update_feedback_status 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        普通用户不能把自己的反馈标记为已处理。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        反馈状态是客服/管理员处理结果，不是用户侧可编辑字段；否则运营台会失去真实待处理队列。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+        @param: 无；先由普通用户创建反馈，再尝试更新状态。
+        @return: None；服务抛出权限异常时通过。
+        @raises HTTPException: 被测服务按预期拒绝普通用户更新状态。
         """
         created = create_support_feedback(
             self.db,

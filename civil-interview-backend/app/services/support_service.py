@@ -1,9 +1,13 @@
 """
-这个文件保存用户反馈和管理员处理记录；题目纠错、支付问题和体验建议都靠这里留下可追溯线索。
+客服反馈服务层，负责保存用户反馈、附件、管理员备注、处理状态和删除操作。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+反馈可能来自题目纠错、支付失败、ASR 转写问题、页面体验或其他售后线索。这里的职责是留痕和分派，
+不直接改题库、不直接退款、不直接调整权益；管理员需要根据反馈跳转到题库、支付或权益后台完成后续动作。
+附件保存在后端 uploads/support 下，限制文件类型和大小是为了避免把反馈入口变成任意文件存储。
+
+@param: 服务函数接收数据库 Session、当前用户、反馈创建/更新请求、附件文件或筛选条件。
+@return: 返回反馈列表、反馈详情、创建结果、附件信息、状态更新结果或删除结果。
+@raises HTTPException: 非管理员、反馈不存在、附件过大/类型不支持或用户无权访问时抛出 HTTP 错误。
 """
 from datetime import datetime, timezone
 from pathlib import Path
@@ -172,17 +176,17 @@ def list_support_feedback(
 
     反馈列表在服务端收口，是为了避免端侧漏筛导致用户看到别人的联系方式或截图。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param current: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param page_size: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param feedback_type: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param status: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param province: 地区筛选值；只表示地域，不替代考试体系或岗位方向。
-    @param keyword: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param scope: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param db: 当前请求复用的数据库会话。
+    @param current_user: 鉴权层解析出的用户身份。
+    @param current: 当前页码。
+    @param page_size: 每页条数。
+    @param feedback_type: 反馈类型筛选。
+    @param status: 处理状态筛选。
+    @param province: 反馈关联地区筛选。
+    @param keyword: 标题、正文、题号或用户名搜索词。
+    @param scope: 普通用户通常为 `mine`，管理员可请求全量范围。
+    @return: 分页反馈列表和当前筛选下的统计摘要。
+    @raises HTTPException: 非管理员请求全量范围时由可见性查询抛出越权错误。
     """
     current = max(1, int(current or 1))
     page_size = min(max(1, int(page_size or 10)), 200)
@@ -224,11 +228,11 @@ def create_support_feedback(db: Session, current_user: AuthUser, data: SupportFe
 
     描述不能为空，是为了避免后台出现无法处理的空工单。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    @param db: 当前请求复用的数据库会话。
+    @param current_user: 鉴权层解析出的用户身份。
+    @param data: 反馈创建请求。
+    @return: 新建反馈详情。
+    @raises HTTPException: 反馈描述为空或保存失败时抛出。
     """
     summary = _clean_text(data.summary)
     if not summary:
@@ -256,12 +260,12 @@ def update_support_feedback(db: Session, current_user: AuthUser, feedback_id: in
 
     普通用户不能改状态，否则待处理数量和处理人记录会失真。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param feedback_id: 业务对象标识；用于跨接口追溯同一条记录，调用方应避免传入展示名。
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    @param db: 当前请求复用的数据库会话。
+    @param current_user: 鉴权层解析出的用户身份。
+    @param feedback_id: 反馈记录 ID。
+    @param data: 状态和管理员备注更新请求。
+    @return: 更新后的反馈详情。
+    @raises HTTPException: 非管理员、反馈不存在或状态值无效时抛出。
     """
     if not getattr(current_user, "isAdmin", False):
         raise HTTPException(status_code=403, detail="仅管理员可处理客服反馈")
@@ -294,11 +298,11 @@ def delete_support_feedback(db: Session, current_user: AuthUser, feedback_id: in
 
     删除动作不开放给普通用户，是为了保留问题追踪和审核排查记录。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param feedback_id: 业务对象标识；用于跨接口追溯同一条记录，调用方应避免传入展示名。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    @param db: 当前请求复用的数据库会话。
+    @param current_user: 鉴权层解析出的用户身份。
+    @param feedback_id: 反馈记录 ID。
+    @return: 删除成功标记。
+    @raises HTTPException: 非管理员或反馈不存在时抛出。
     """
     if not getattr(current_user, "isAdmin", False):
         raise HTTPException(status_code=403, detail="仅管理员可删除客服反馈")
@@ -316,9 +320,9 @@ async def save_support_feedback_attachment(file: UploadFile) -> dict:
 
     上传结果只返回相对路径和文件信息，便于前端绑定到后续反馈表单。
 
-    @param file: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    @param file: 用户上传的反馈截图。
+    @return: 附件相对路径、原始文件名、大小和类型。
+    @raises HTTPException: 文件为空、超过大小限制、类型不支持或写入失败时抛出。
     """
     content = await file.read()
     if not content:

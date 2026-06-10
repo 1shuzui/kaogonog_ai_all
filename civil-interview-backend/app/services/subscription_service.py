@@ -1,9 +1,13 @@
 """
-这个文件负责权益套餐的有效期、每日限额和用时余额；所有练习入口都应该从这里确认还能不能继续使用。
+权益余额服务层，统一计算套餐有效期、总剩余分钟、每日剩余分钟、试用权益和当前选中的可用权益。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+练习、定向备面、全真模拟、试用题和小程序套餐页都依赖这里判断用户还能不能继续使用。这里不创建支付订单，
+也不记录真实答题用量；它只根据 `user_subscriptions` 的状态和使用分钟计算可用性，并在跨天时重置每日用量。
+多份权益并存时通过用户偏好记录当前选择，避免系统自动切到用户不想消耗的套餐。
+
+@param: 服务函数接收数据库 Session、当前用户、权益 ID 或需要消耗的分钟数。
+@return: 返回权益状态、可用性检查结果、切换后的当前权益或同步后的用户偏好快照。
+@raises HTTPException: 用户不存在、权益不存在、权益不可用或剩余分钟不足时抛出 HTTP 错误。
 """
 from datetime import date, datetime
 
@@ -180,14 +184,15 @@ def _sync_user_preferences_subscription(
 
 def get_subscription_status(db: Session, current_user: AuthUser) -> dict:
     """
-    get_subscription_status 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    读取当前用户最适合使用的权益快照。
 
-    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+    用户可能同时有试用、小时包、月卡和人工补发权益；这里按 active preference、可用付费权益、试用权益
+    的顺序选中当前权益，并把完整 entitlements 列表同步回 preferences，保证 PC 和小程序看到同一余额。
 
     @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
     @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @return: 当前权益快照，包含剩余总时长、今日剩余、可用状态、选中权益和全部权益列表。
+    @raises HTTPException: 当前用户在数据库中不存在时由 get_user_or_404 抛出 404。
     """
     user = get_user_or_404(db, current_user.username)
     subscriptions = _list_user_subscriptions(db, user.username)
@@ -227,15 +232,16 @@ def _select_subscription(user: User, subscriptions: list[UserSubscription]) -> U
 
 def switch_subscription(db: Session, current_user: AuthUser, subscription_id: int) -> dict:
     """
-    switch_subscription 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    手动切换当前消耗的权益。
 
-    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+    同一用户可能拥有多条可用权益，允许用户切换是为了优先消耗指定套餐；但只能切到本人且当前可用的权益，
+    避免端侧传入过期或他人 subscriptionId 造成扣量错位。
 
     @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
     @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param subscription_id: 业务对象标识；用于跨接口追溯同一条记录，调用方应避免传入展示名。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    @param subscription_id: 目标 UserSubscription 主键。
+    @return: 切换后的权益快照。
+    @raises HTTPException: 权益不存在时抛出 404，权益不可用时抛出 400。
     """
     user = get_user_or_404(db, current_user.username)
     subscriptions = _list_user_subscriptions(db, user.username)
@@ -253,15 +259,16 @@ def switch_subscription(db: Session, current_user: AuthUser, subscription_id: in
 
 def check_subscription_access(db: Session, current_user: AuthUser, mode: str = "practice") -> dict:
     """
-    check_subscription_access 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    检查当前用户是否还能进入指定训练模式。
 
-    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+    前端可以禁用按钮，但额度判断必须以后端为准。这里复用 get_subscription_status 的快照，并把不可用原因
+    转成用户可读文案，方便套餐页、考场页和定向备面共用同一解释。
 
     @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
     @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param mode: 调用场景标识，例如 practice、exam 或 targeted；当前主要用于响应回显和前端提示。
+    @return: allowed、reason、mode 和完整 subscription 快照。
+    @raises HTTPException: 当前用户不存在时由 get_subscription_status 向上抛出。
     """
     subscription = get_subscription_status(db, current_user)
     allowed = subscription["canUse"]

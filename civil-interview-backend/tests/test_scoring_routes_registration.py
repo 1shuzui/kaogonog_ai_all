@@ -1,9 +1,12 @@
 """
-这个测试文件守住 `test_scoring_routes_registration` 对应的回归场景；它记录的是以前容易出错的业务边界，而不是普通示例代码。
+评分路由注册测试防止前端仍在调用的入口被重构漏挂。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+评分链路曾经同时存在普通评分、带媒体评分和历史查询入口；路由拆分时如果只改 service 不检查 router，
+PC 或小程序会表现为“提交评分失败”，但本地函数测试仍可能通过。
+
+@param: 无；直接读取 v1 router 的已注册路径。
+@return: 无直接返回；断言通过表示评分入口仍暴露给前端。
+@raises ImportError: API router 或评分路由模块导入失败时会失败。
 """
 import unittest
 
@@ -12,23 +15,24 @@ from app.api.v1 import api_router
 
 class ScoringRouteRegistrationTestCase(unittest.TestCase):
     """
-    ScoringRouteRegistrationTestCase 作为公共类型保留，是为了让调用方共享同一套业务语义和数据边界。
+    评分路由注册用例集合，确认评分相关入口没有在 router 重构时漏挂。
 
-    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+    PC 和小程序提交评分、查看结果、查询 ASR 状态都依赖这些路径；service 存在但 router 漏挂时，
+    页面会直接失败，所以这里单独守路由层。
 
-    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
-    @return: 返回可被调用方实例化或引用的公共类型。
-    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    @param: 无；unittest 负责实例化测试类。
+    @return: unittest 测试用例类。
+    @raises AssertionError: 任一前端依赖评分路由缺失时由断言报告。
     """
     def test_scoring_routes_are_registered(self):
         """
-        test_scoring_routes_are_registered 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        评分、转写、结果和法律文档入口必须注册到 v1 router。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        法律文档入口放在同一断言里，是因为登录/评分页可能在提交前同步拉取协议内容。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；直接读取 `api_router.routes`。
+        @return: None；必需路径全部存在时通过。
+        @raises AssertionError: 路由漏挂或路径被误改时失败。
         """
         route_paths = {route.path for route in api_router.routes}
 

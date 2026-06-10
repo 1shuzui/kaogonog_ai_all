@@ -1,9 +1,12 @@
 /**
- * 这个状态仓库保存 `targeted` 相关跨页面状态；把它放在 Pinia 里，是为了切页面后仍能复用同一份数据。
+ * PC 定向备面状态仓库，保存考试体系分类树、用户选择、重点分析结果和生成训练题状态。
  *
- * @param 无；文件级模块依赖导出函数、组合式 API 或调用方传入上下文。
- * @return 导出可复用的端侧能力，具体返回值由各公共函数保持兼容。
- * @raises 不主动吞掉业务异常；请求失败、权限不足和运行时错误交由调用方或全局拦截器处理。
+ * 这里维护的是筛选与展示状态，不负责改写题库真实分类。方向允许“不限”，无题库数据时保留空态，不能用通用模板伪造重点分析。
+ * 管理员发布内容和自动统计结果都来自后端，前端只做展示和刷新。
+ *
+ * @param 无；actions 接收分类选择、重点分析请求或生成训练题参数。
+ * @return 导出 Pinia store，供定向页、重点分析页和管理员定向页复用。
+ * @raises Error: 分类加载、重点分析或题目生成失败时由 action 抛给页面处理。
  */
 import { defineStore } from 'pinia'
 import { getPositions, getFocusAnalysis, generateQuestions } from '@/api/targeted'

@@ -1,9 +1,12 @@
 """
-这个测试文件守住 `test_user_service_provinces` 对应的回归场景；它记录的是以前容易出错的业务边界，而不是普通示例代码。
+省份配置测试确认用户引导里仍能选择已经支持的省份。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+题库分类重构后，省份不再等同于考试体系，但注册偏好、首页推荐和定向备面仍需要合法省份列表。
+这个用例单独锁定安徽可用，是为了防止新增分类树时把真实省份从用户配置里误删。
+
+@param: 无；直接读取用户服务暴露的省份配置。
+@return: 无直接返回；断言通过表示省份入口仍可被注册和偏好流程使用。
+@raises ImportError: 用户服务或配置依赖缺失时会失败。
 """
 import unittest
 
@@ -12,23 +15,23 @@ from app.services.user_service import VALID_PROVINCES, get_provinces
 
 class TestUserServiceProvinces(unittest.TestCase):
     """
-    TestUserServiceProvinces 作为公共类型保留，是为了让调用方共享同一套业务语义和数据边界。
+    用户省份配置用例集合，确认注册引导和偏好配置仍能选择真实省份。
 
-    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+    定向备面分类树可以按考试体系重排，但用户偏好里的省份列表不能因此缺项。
 
-    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
-    @return: 返回可被调用方实例化或引用的公共类型。
-    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    @param: 无；unittest 负责实例化测试类。
+    @return: unittest 测试用例类。
+    @raises AssertionError: 已支持省份从展示列表或合法代码集合中丢失时由断言报告。
     """
     def test_anhui_is_available_and_valid(self):
         """
-        test_anhui_is_available_and_valid 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        安徽必须同时存在于展示列表和合法省份代码集合中。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        省份展示列表和校验集合任一缺失，都会导致用户能看见但不能保存，或后端能保存但前端无法选择。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；直接读取 `get_provinces` 和 `VALID_PROVINCES`。
+        @return: None；展示和校验两边都包含安徽时通过。
+        @raises AssertionError: 安徽入口缺失或校验不通过时失败。
         """
         provinces = get_provinces()
 

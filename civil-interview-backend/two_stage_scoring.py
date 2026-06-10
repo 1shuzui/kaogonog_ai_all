@@ -1,9 +1,13 @@
 """
-这个根目录文件是两阶段评分的兼容副本；保留它是为了旧脚本或人工调试不必马上改导入路径。
+两阶段评分提示词的根目录兼容副本，保留给旧脚本和人工调试入口。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+主评分链路已经迁到 `app/services/two_stage_scoring.py` 与 `scoring_service.py`，这里不连接数据库、不扣权益、
+不调用外部 LLM，只负责生成证据抽取和基于证据评分的 prompt，并解析返回 JSON。维护时要保证两份提示词口径一致，
+否则人工调试结果和真实评分会出现解释不一致。
+
+@param: 无；函数调用时再传入答题文本、题目数据或 LLM 原始输出。
+@return: 无模块级返回；公开函数返回 prompt 文本或解析后的评分结构。
+@raises ImportError: 标准库依赖异常极少见；JSON 解析错误由具体函数按自身逻辑处理。
 """
 import json
 import re
@@ -15,9 +19,9 @@ def build_evidence_extraction_prompt(answer, question_data):
 
     这个兼容副本和服务目录里的两阶段提示词保持同一口径，方便旧脚本继续调试评分流程。
 
-    @param answer: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param answer: 考生答题文字稿。
     @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @return: 可发送给 LLM 的证据抽取提示词。
     @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
     """
     dims = question_data.get('dimensions', [])
@@ -93,9 +97,9 @@ def build_evidence_based_scoring_prompt(evidence, question_data):
 
     这个兼容副本和服务目录里的两阶段提示词保持同一口径，方便旧脚本继续调试评分流程。
 
-    @param evidence: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param evidence: 阶段一产出的证据包。
     @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @return: 可发送给 LLM 的基于证据评分提示词。
     @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
     """
     dims = question_data.get('dimensions', [])
@@ -161,9 +165,9 @@ def validate_evidence(evidence, answer_text):
 
     这个兼容副本和服务目录里的两阶段提示词保持同一口径，方便旧脚本继续调试评分流程。
 
-    @param evidence: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param answer_text: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @param evidence: LLM 返回的原始证据包。
+    @param answer_text: 考生答题原文。
+    @return: 清洗后的 present、absent、penalty、bonus 证据。
     @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
     """
     validated = {
@@ -206,10 +210,10 @@ def validate_scoring_result(result, evidence, max_scores):
 
     这个兼容副本和服务目录里的两阶段提示词保持同一口径，方便旧脚本继续调试评分流程。
 
-    @param result: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param evidence: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param max_scores: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @param result: LLM 返回的评分 JSON。
+    @param evidence: 阶段一证据包；保留参数用于兼容旧调用。
+    @param max_scores: 各能力维度满分。
+    @return: `(是否完全合法, 错误列表, 修正后的评分结果)`。
     @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
     """
     errors = []
@@ -239,10 +243,10 @@ def fallback_scoring(answer, question_data, evidence=None):
 
     这个兼容副本和服务目录里的两阶段提示词保持同一口径，方便旧脚本继续调试评分流程。
 
-    @param answer: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
+    @param answer: 考生答题文字稿。
     @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
-    @param evidence: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @param evidence: 可选证据包；保留参数用于兼容旧调用。
+    @return: 本地规则生成的维度分、总分和改进建议。
     @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
     """
     dims = question_data.get('dimensions', [])

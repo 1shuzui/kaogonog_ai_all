@@ -1,9 +1,13 @@
 """
-这个文件整理用户历史成绩、趋势和详情；它只消费已经完成的考试结果，避免结果页和历史页各自重新算分。
+历史成绩服务层，负责读取已完成考试的成绩列表、趋势、统计卡片和单场复盘详情。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+结果页、历史页和“我的”页都需要复用同一份历史数据，所以这里只消费已经保存的 `HistoryRecord`、
+`ExamAnswer` 和题目元数据，不重新调用评分模型。能力维度名称在这里做兼容归一，例如旧数据里的“法治思维”映射为“行政思维”，
+避免前端薄弱维度展示和当前评分维度不一致。
+
+@param: 服务函数接收数据库 Session、当前用户、分页参数或考试 ID。
+@return: 返回历史列表、趋势点、统计摘要或复盘详情。
+@raises HTTPException: 历史记录不存在、用户无权查看或考试结果缺失时抛出 HTTP 错误。
 """
 from datetime import datetime, timezone, timedelta
 
@@ -242,15 +246,15 @@ def get_history_list(
 
     省份和日期筛选放在这里，是为了 PC 和小程序看到同一套分页结果。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param username: 账号唯一标识；历史记录、权益和订单仍以用户名串联，需保持向后兼容。
-    @param current: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param page_size: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param province: 地区筛选值；只表示地域，不替代考试体系或岗位方向。
-    @param start_date: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param end_date: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param db: 当前请求复用的数据库会话。
+    @param username: 历史记录归属用户名。
+    @param current: 当前页码。
+    @param page_size: 每页条数。
+    @param province: 地区筛选，只用于历史列表过滤。
+    @param start_date: 起始日期字符串。
+    @param end_date: 结束日期字符串。
+    @return: 分页历史列表。
+    @raises: 不主动包装数据库异常，查询失败会沿调用栈上抛。
     """
     records = (
         db.query(HistoryRecord)
@@ -318,10 +322,10 @@ def get_history_detail(db: Session, exam_id: str) -> dict:
 
     这里允许没有 HistoryRecord 但已有评分答案的考试展示，是为了兼容异步写历史的场景。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param exam_id: 考试记录标识；用于把多题作答、扣权益和历史结果绑定到同一次练习。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    @param db: 当前请求复用的数据库会话。
+    @param exam_id: 考试记录 ID。
+    @return: 单次考试详情、题目序列、答案、媒体和评分结果。
+    @raises HTTPException: 考试和历史记录都不存在，或考试尚无评分答案时抛出 404。
     """
     r = db.query(HistoryRecord).filter(HistoryRecord.exam_id == exam_id).first()
     exam = db.query(Exam).filter(Exam.id == exam_id).first()
@@ -360,10 +364,10 @@ def get_history_stats(db: Session, username: str) -> dict:
 
     能力维度固定使用评分维度，不能把题型分类混进来凑雷达或薄弱项。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param username: 账号唯一标识；历史记录、权益和订单仍以用户名串联，需保持向后兼容。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param db: 当前请求复用的数据库会话。
+    @param username: 需要统计的用户名。
+    @return: 练习次数、均分、最高分、薄弱能力维度和能力平均分。
+    @raises: 不主动包装数据库异常，查询失败会沿调用栈上抛。
     """
     rows = db.query(HistoryRecord).filter(HistoryRecord.username == username).all()
     empty = {
@@ -405,11 +409,11 @@ def get_history_trend(db: Session, username: str, days: int = 30) -> list:
 
     只取已完成历史记录，是为了避免正在评分中的考试把趋势线拉低。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param username: 账号唯一标识；历史记录、权益和订单仍以用户名串联，需保持向后兼容。
-    @param days: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param db: 当前请求复用的数据库会话。
+    @param username: 需要查询趋势的用户名。
+    @param days: 向前统计的天数，最少按 1 天处理。
+    @return: 按完成时间升序排列的趋势点。
+    @raises: 不主动包装数据库异常，查询失败会沿调用栈上抛。
     """
     cutoff = datetime.now(timezone.utc) - timedelta(days=max(days, 1))
     rows = (

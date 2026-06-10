@@ -1,9 +1,13 @@
 """
-这个文件处理试用版资格和完成状态；试用题也要求登录，是为了防止同一用户反复领取免费权益。
+试用权益服务层，负责查询试用资格、发放试用题和标记试用完成。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+微信审核要求用户能先浏览功能，但试用本身必须登录，因为它依赖用户身份记录领取状态，防止同一账号重复领取。
+试用权益和付费权益都落在 `user_subscriptions`，这样练习入口可以用同一套权益判断；试用题完成后只更新试用状态，
+不绕过正式用量和历史记录链路。
+
+@param: 服务函数接收数据库 Session 和当前用户。
+@return: 返回试用状态、试用题或试用完成结果。
+@raises HTTPException: 用户不存在、试用已完成、题库没有可用试用题或权益状态异常时抛出 HTTP 错误。
 """
 from datetime import date
 
@@ -93,14 +97,14 @@ def _sync_preferences_trial(user: User, subscription: UserSubscription):
 
 def get_trial_status(db: Session, current_user: AuthUser) -> dict:
     """
-    get_trial_status 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    计算当前用户是否还可以使用试用题。
 
-    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+    试用状态既要看是否已完成，也要兼容自动创建的试用订阅；集中在服务层可以避免首页、套餐页和训练入口判断不一致。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param db: 请求级数据库会话。
+    @param current_user: 当前登录用户。
+    @return: 试用可用状态、完成状态和剩余提示。
+    @raises HTTPException: 当前用户不存在时抛出。
     """
     user = get_user_or_404(db, current_user.username)
     subscription = _get_or_create_trial_subscription(db, user.username)
@@ -119,14 +123,14 @@ def get_trial_status(db: Session, current_user: AuthUser) -> dict:
 
 def get_trial_question(db: Session, current_user: AuthUser) -> dict:
     """
-    get_trial_question 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    返回当前用户可领取的试用题。
 
-    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+    试用题不是公开题库浏览，必须登录后领取，便于记录一次性试用状态并防止重复消耗。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param db: 请求级数据库会话。
+    @param current_user: 当前登录用户。
+    @return: 试用题详情和试用状态。
+    @raises HTTPException: 用户不存在、已完成试用或题目不可用时抛出。
     """
     get_user_or_404(db, current_user.username)
     question = _pick_trial_question(db)
@@ -145,14 +149,15 @@ def get_trial_question(db: Session, current_user: AuthUser) -> dict:
 
 def complete_trial(db: Session, current_user: AuthUser) -> dict:
     """
-    complete_trial 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    标记当前用户试用流程完成。
 
-    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+    完成后不删除试用记录，而是写完成标记，方便后续客服核查和端侧展示“已体验”。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param db: 请求级数据库会话。
+    @param current_user: 当前登录用户。
+    @param data: 试用完成请求。
+    @return: 更新后的试用状态。
+    @raises HTTPException: 用户不存在或试用状态不合法时抛出。
     """
     user = get_user_or_404(db, current_user.username)
     subscription = _get_or_create_trial_subscription(db, user.username)

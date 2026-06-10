@@ -1,9 +1,11 @@
 """
-这个文件把 Redis 当作加速层使用；缓存命中能省时间，缓存失败也不能影响题库、ASR 或评分主流程。
+可选 Redis 缓存模块。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+当前缓存主要服务 ASR、评分和高频读取场景，用来降低重复模型调用和接口等待时间。Redis 在这个项目里只是加速层，不是数据真源：连接失败、读失败或写失败都只记录 warning 并返回空结果，主流程必须继续回源计算，避免缓存服务波动拖垮答题、转写或重点分析。
+
+@param: 模块本身无入参；业务输入来自调用方传入的缓存 key、JSON 值和 TTL。
+@return: 导出 Redis 连接、关闭、JSON 读写函数；缓存不可用时返回 None 或 False。
+@raises ImportError: 缺少 redis.asyncio 或配置依赖时会在导入阶段失败。
 """
 import json
 import logging
@@ -24,13 +26,14 @@ def _redis_url() -> str:
 
 async def get_redis() -> Optional[aioredis.Redis]:
     """
-    get_redis 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    获取共享连接池上的 Redis 客户端。
 
-    缓存模块把 Redis 作为可选加速层，注释需要说明缓存失败不应影响主流程。
+    Redis URL 为空或连接池初始化失败时返回 None，而不是抛错；ASR 和评分链路必须能在没有缓存的环境
+    继续运行。本函数只创建连接池，不主动验证每个 key 是否存在。
 
-    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param: 无；读取 settings.redis_url 作为连接来源。
+    @return: Redis 客户端；缓存未配置或初始化失败时返回 None。
+    @raises: 不主动向上抛连接异常；异常会被记录为 warning 并降级。
     """
     global _pool
     redis_url = _redis_url()
@@ -53,13 +56,14 @@ async def get_redis() -> Optional[aioredis.Redis]:
 
 async def close_redis() -> None:
     """
-    close_redis 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    应用关闭时释放 Redis 连接池。
 
-    缓存模块把 Redis 作为可选加速层，注释需要说明缓存失败不应影响主流程。
+    FastAPI lifespan 会调用这里。显式断开连接池是为了让部署重启、测试进程和热更新不留下悬挂连接；
+    未创建连接池时直接跳过。
 
-    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param: 无；使用模块级连接池状态。
+    @return: None。
+    @raises Exception: Redis 客户端底层断开异常会向上抛出，lifespan 可统一处理。
     """
     global _pool
     if _pool is not None:
@@ -69,13 +73,14 @@ async def close_redis() -> None:
 
 async def cache_get_json(key: str) -> Any | None:
     """
-    cache_get_json 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    从 Redis 读取 JSON 缓存并反序列化。
 
-    缓存模块把 Redis 作为可选加速层，注释需要说明缓存失败不应影响主流程。
+    读取失败、JSON 损坏或缓存未配置都返回 None，调用方应回源重新计算；这样可以避免一次坏缓存影响
+    评分、转写或重点分析主流程。
 
-    @param key: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param key: 缓存键；调用方负责包含业务前缀和版本号，避免不同结构共用同一键。
+    @return: 反序列化后的 JSON 值；未命中或不可用时返回 None。
+    @raises: 不主动向上抛缓存读取异常；异常会被记录为 warning 并降级。
     """
     client = await get_redis()
     if client is None:
@@ -92,15 +97,16 @@ async def cache_get_json(key: str) -> Any | None:
 
 async def cache_set_json(key: str, value: Any, ttl_seconds: int) -> bool:
     """
-    cache_set_json 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    将可 JSON 序列化的结果写入 Redis。
 
-    缓存模块把 Redis 作为可选加速层，注释需要说明缓存失败不应影响主流程。
+    写缓存失败只返回 False，不回滚业务结果；缓存值必须能被 json.dumps 处理，复杂对象应先在调用处
+    转成普通 dict/list，避免把 ORM 或文件句柄塞进缓存层。
 
-    @param key: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param value: 待规范化的原始值；兼容旧数据时应优先保留可解释结果。
-    @param ttl_seconds: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param key: 缓存键；建议包含业务名和 schema 版本。
+    @param value: 可 JSON 序列化的数据。
+    @param ttl_seconds: 缓存秒数；小于 1 时按 1 秒兜底。
+    @return: True 表示写入成功，False 表示缓存未配置或写入失败。
+    @raises: 不主动向上抛缓存写入异常；异常会被记录为 warning 并降级。
     """
     client = await get_redis()
     if client is None:

@@ -1,9 +1,12 @@
 """
-这个路由文件提供用户资料、省份偏好和账号状态接口；它只做请求参数、鉴权依赖和服务层转发，业务规则尽量留在 service 里。
+用户资料路由，提供个人资料、密码、省份偏好、练习偏好、协议同意和设备风险相关接口。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+这些接口会影响首页默认筛选、定向备面默认值、活跃用户统计和账号安全提示。路由层不直接拼权益、
+历史或支付数据，只把用户态请求交给 `user_service.py`，让用户表周边信息保持一个出口。
+
+@param: FastAPI 注入当前用户、数据库 Session、请求体和可选设备头。
+@return: 返回用户资料、更新结果、可选省份、协议状态或设备风险结果。
+@raises HTTPException: 未登录、用户不存在、密码错误、参数不合法或设备风险异常时返回 HTTP 错误。
 """
 from fastapi import APIRouter, Depends, Header
 from sqlalchemy.orm import Session
@@ -34,14 +37,14 @@ router = APIRouter(prefix="/user", tags=["user"])
 @router.get("/info")
 def user_info(current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    user_info 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    读取当前用户资料和权限快照。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    个人中心、路由守卫和管理员入口都依赖这个接口；真正权限由后端生成，前端只负责展示。
 
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param current_user: Bearer token 解析出的当前用户。
+    @param db: 请求级数据库会话。
+    @return: 用户资料、偏好、管理员标记和权益摘要。
+    @raises HTTPException: 未登录或用户不存在时抛出。
     """
     return get_user_info(db, current_user)
 
@@ -50,15 +53,15 @@ def user_info(current_user: AuthUser = Depends(get_current_user), db: Session = 
 @router.put("/profile")
 def update_profile(data: UserProfileUpdate, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    update_profile 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    更新当前用户基础资料。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    这里只允许用户改自己的展示资料，不处理权益、订单或管理员标记，避免个人设置页越界。
 
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param data: 资料更新请求。
+    @param current_user: Bearer token 解析出的当前用户。
+    @param db: 请求级数据库会话。
+    @return: 更新后的用户资料。
+    @raises HTTPException: 未登录、用户不存在或字段非法时抛出。
     """
     return update_user_profile(db, current_user, data)
 
@@ -66,15 +69,15 @@ def update_profile(data: UserProfileUpdate, current_user: AuthUser = Depends(get
 @router.put("/password")
 def update_password(data: UserPasswordUpdate, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    update_password 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    当前用户修改密码。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    改密必须校验旧密码，并通过安全模块生成新哈希；路由层不接触哈希细节。
 
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param data: 旧密码和新密码。
+    @param current_user: Bearer token 解析出的当前用户。
+    @param db: 请求级数据库会话。
+    @return: 修改成功提示。
+    @raises HTTPException: 未登录、旧密码错误或用户不存在时抛出。
     """
     return change_password(db, current_user, data)
 
@@ -82,15 +85,15 @@ def update_password(data: UserPasswordUpdate, current_user: AuthUser = Depends(g
 @router.put("/preferences")
 def update_prefs(data: UserPreferencesUpdate, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    update_prefs 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    更新用户偏好设置。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    偏好可以保存省份、首页弹窗和端侧设置，但权益快照会由订阅服务同步，避免前端通过 preferences 伪造余额。
 
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param data: 偏好更新请求。
+    @param current_user: Bearer token 解析出的当前用户。
+    @param db: 请求级数据库会话。
+    @return: 更新后的偏好和用户资料。
+    @raises HTTPException: 未登录或用户不存在时抛出。
     """
     return update_preferences(db, current_user, data.model_dump(exclude_none=True))
 
@@ -98,13 +101,13 @@ def update_prefs(data: UserPreferencesUpdate, current_user: AuthUser = Depends(g
 @router.get("/provinces")
 def provinces():
     """
-    provinces 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    返回可选省份列表。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    省份用于用户偏好和筛选入口，不代表题库真实考试体系；题库分类仍以 examCategory/examSubcategory 为准。
 
-    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param: 无。
+    @return: 省份列表和默认值。
+    @raises: 不主动抛业务异常。
     """
     return get_provinces()
 
@@ -113,14 +116,14 @@ def provinces():
 @router.get("/terms-status")
 def terms_status(current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    terms_status 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    读取当前用户协议同意状态。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    协议版本需要后端记录，避免端侧清缓存后无法证明用户是否已同意当前版本。
 
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param current_user: Bearer token 解析出的当前用户。
+    @param db: 请求级数据库会话。
+    @return: 当前协议版本、用户已同意版本和是否需要重新同意。
+    @raises HTTPException: 未登录或用户不存在时抛出。
     """
     return get_terms_status(db, current_user.username)
 
@@ -128,15 +131,15 @@ def terms_status(current_user: AuthUser = Depends(get_current_user), db: Session
 @router.post("/agree-terms")
 def agree_terms(data: UserTermsAgreementRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    agree_terms 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    记录当前用户同意协议。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    同意时间和版本写在用户表，用于后续审核、争议和版本升级判断。
 
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param data: 协议版本。
+    @param current_user: Bearer token 解析出的当前用户。
+    @param db: 请求级数据库会话。
+    @return: 更新后的协议同意状态。
+    @raises HTTPException: 未登录、用户不存在或版本非法时抛出。
     """
     return record_terms_agreement(db, current_user.username, data.version)
 
@@ -148,14 +151,13 @@ def device_risk(
     db: Session = Depends(get_db),
 ):
     """
-    device_risk 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    设备风险提示路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    当前只返回轻量风险提示，不做强风控拦截；后续如果接入设备指纹，应保持这里是服务端可信判断。
 
-    @param x_device_id: 业务对象标识；用于跨接口追溯同一条记录，调用方应避免传入展示名。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param data: 设备和客户端环境信息。
+    @param current_user: Bearer token 解析出的当前用户。
+    @return: 风险等级和提示信息。
+    @raises HTTPException: 未登录或参数异常时抛出。
     """
     return check_device_risk(db, current_user.username, x_device_id)

@@ -1,9 +1,13 @@
 """
-这个文件是数据库初始化和迁移兜底脚本；线上已用 MySQL，但历史 JSON/旧字段仍要靠它补齐。
+MySQL 初始化、增量补字段和种子数据脚本，负责让本机、服务器和新机器的表结构保持同一口径。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+正常部署只应执行默认模式或 `--check`：默认模式会创建缺失数据库、创建缺失表、补齐旧字段并幂等写入套餐和题库种子；
+`--check` 只读连接和表行数，适合上线前确认没有连错库。`--reset` 会删库重建，只能在明确要清空环境时使用，
+不得用于现网排障。这里的 DDL 是线上 MySQL 的准绳，ORM 模型新增表或字段时要和本文件保持类型、长度和 collation 一致。
+
+@param: 命令行参数决定检查、建表、只写种子或重置；数据库连接来自 `.env`/`DATABASE_URL`/`MYSQL_*`。
+@return: 通过 stdout 输出执行进度；脚本本身不返回业务对象。
+@raises RuntimeError: 数据库配置缺失、MySQL 连接失败、DDL 或种子写入失败时抛出底层异常。
 """
 import argparse
 import json
@@ -32,9 +36,9 @@ def parse_database_url(url: str) -> dict:
 
     部署环境有时只给一条连接串，不给 MYSQL_* 分项变量，所以这里保留两种配置入口。
 
-    @param url: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param url: MySQL 连接串，支持 `mysql://` 和 `mysql+pymysql://` 前缀。
+    @return: PyMySQL 可直接使用的 host、port、user、password、database 字典。
+    @raises ValueError: 连接串缺少用户、密码、主机或数据库片段时由拆分逻辑抛出。
     """
     url = url.replace("mysql+pymysql://", "").replace("mysql://", "")
     url = url.split("?")[0]
@@ -55,9 +59,9 @@ def get_mysql_config() -> dict:
 
     缺少必要配置时直接报错，是为了避免脚本误连到默认库或本机临时库。
 
-    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises RuntimeError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    @param: 无；读取后端目录下 `.env` 以及当前进程环境变量。
+    @return: 带 charset、cursorclass 和 autocommit 设置的 MySQL 连接配置。
+    @raises RuntimeError: DATABASE_URL 和 MYSQL_* 必填项都缺失时抛出。
     """
     load_dotenv(BASE_DIR / ".env")
     database_url = os.getenv("DATABASE_URL", "")
@@ -261,7 +265,7 @@ TABLE_STATEMENTS = [
     """
     CREATE TABLE IF NOT EXISTS entitlement_adjustments (
         id BIGINT PRIMARY KEY AUTO_INCREMENT,
-        target_username VARCHAR(100) NOT NULL,
+        target_username VARCHAR(100) COLLATE utf8mb4_0900_ai_ci NOT NULL,
         subscription_id BIGINT NULL,
         action_type VARCHAR(30) NOT NULL,
         minutes_delta INT NOT NULL DEFAULT 0,
@@ -269,7 +273,7 @@ TABLE_STATEMENTS = [
         after_snapshot JSON NULL,
         reason_type VARCHAR(64) NOT NULL DEFAULT '其他',
         remark TEXT NULL,
-        operator VARCHAR(100) NOT NULL DEFAULT '',
+        operator VARCHAR(100) COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '',
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT fk_ea_user FOREIGN KEY (target_username) REFERENCES users(username)
             ON DELETE CASCADE ON UPDATE CASCADE,
@@ -309,9 +313,9 @@ def check_connection(config: dict) -> bool:
 
     这里只查版本号，不改任何表，适合上线前做只读检查。
 
-    @param config: 配置载荷；用于管理员或环境变量覆盖默认行为，调用方需保证来源可信。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param config: MySQL 连接配置。
+    @return: 连接成功返回 True，连接失败返回 False 并打印原因。
+    @raises: 内部捕获连接异常，不向外抛出。
     """
     try:
         conn = pymysql.connect(host=config["host"], port=config["port"], user=config["user"],
@@ -410,10 +414,10 @@ def ensure_schema_updates(conn, database: str) -> None:
 
     这里按列和索引逐项检查，是为了重复执行脚本时保持幂等。
 
-    @param conn: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param database: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param conn: 已连接到目标业务库的 PyMySQL 连接。
+    @param database: 当前要检查的 schema 名。
+    @return: 无返回值；缺失字段、索引或 legacy key 会被补齐。
+    @raises pymysql.MySQLError: DDL 或数据回填失败时沿调用栈上抛，由外层事务回滚。
     """
     with conn.cursor() as cur:
         _add_column_if_missing(cur, database, "users", "agreed_terms_version", "agreed_terms_version VARCHAR(20) DEFAULT ''")
@@ -511,9 +515,9 @@ def seed_default_user(conn):
 
     已存在 admin 时只更新展示资料，不替换用户名以外的真实用户数据。
 
-    @param conn: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param conn: 已连接到目标业务库的 PyMySQL 连接。
+    @return: 无返回值；默认管理员存在则只刷新展示资料。
+    @raises pymysql.MySQLError: 插入或更新失败时沿调用栈上抛。
     """
     from passlib.context import CryptContext
     pwd_context = CryptContext(schemes=["pbkdf2_sha256", "bcrypt"], deprecated="auto")
@@ -533,9 +537,9 @@ def seed_subscription_packages(conn):
 
     套餐用 package_code 幂等更新，避免重复执行脚本生成多份同名套餐。
 
-    @param conn: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param conn: 已连接到目标业务库的 PyMySQL 连接。
+    @return: 无返回值；套餐按 package_code 幂等写入。
+    @raises pymysql.MySQLError: 套餐写入失败时沿调用栈上抛。
     """
     sql = """
     INSERT INTO subscription_packages (package_code, package_name, package_type, price, total_minutes, daily_limit_minutes, duration_days, description)
@@ -562,9 +566,10 @@ def seed_questions(conn):
 
     正式题库主要靠导入资产同步，这里只是保证新环境不会完全没题可测。
 
-    @param conn: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param conn: 已连接到目标业务库的 PyMySQL 连接。
+    @return: 成功写入或更新的 seed 题目数量；文件缺失时返回 0。
+    @raises json.JSONDecodeError: seed_questions.json 不是合法 JSON 时抛出。
+    @raises pymysql.MySQLError: 题目写入失败时沿调用栈上抛。
     """
     if not SEED_QUESTIONS_PATH.exists():
         print(f" [SKIP] 题目文件不存在 {SEED_QUESTIONS_PATH}")
@@ -610,9 +615,10 @@ def seed_from_db_json(conn):
 
     迁移使用 INSERT IGNORE，是为了重复执行时不覆盖已经进入 MySQL 的真实记录。
 
-    @param conn: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param conn: 已连接到目标业务库的 PyMySQL 连接。
+    @return: 无返回值；旧 JSON 不存在时直接跳过。
+    @raises json.JSONDecodeError: db.json 不是合法 JSON 时抛出。
+    @raises pymysql.MySQLError: 旧数据写入失败时沿调用栈上抛。
     """
     if not DB_JSON_PATH.exists():
         return
@@ -706,9 +712,9 @@ def main():
 
     交互输出写得直白，是为了服务器上执行脚本时能快速看出卡在哪一步。
 
-    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param: 无；从命令行参数和环境变量读取执行模式与数据库配置。
+    @return: 无返回值；成功或失败通过 stdout 和进程退出码体现。
+    @raises SystemExit: 配置缺失、连接失败或用户选择退出时结束进程。
     """
     parser = argparse.ArgumentParser(description="公务员面试系统 - MySQL 一键部署")
     parser.add_argument("--reset", action="store_true", help="删库重置（清除所有数据）")

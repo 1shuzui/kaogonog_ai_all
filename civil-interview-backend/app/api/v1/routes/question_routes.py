@@ -1,9 +1,12 @@
 """
-这个路由文件提供题库列表、随机题、导入和编辑接口；它只做请求参数、鉴权依赖和服务层转发，业务规则尽量留在 service 里。
+题库路由，提供题目列表、随机题、详情、后台增删改、Excel/Word 导入和题库管理入口。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+这里的重点是把访问权限和题库服务分开：普通用户只能读取可练习内容，管理员才能新增、编辑、删除和导入。
+分类字段由服务层维护，路由层不要用省份、岗位名或题型关键词临时拼规则，否则 PC、小程序和管理员页面会出现不同口径。
+
+@param: FastAPI 注入查询筛选、请求体、上传文件、当前用户和数据库 Session。
+@return: 返回题目列表、随机题集合、单题详情、导入结果或后台编辑结果。
+@raises HTTPException: 未登录、无权益、非管理员、题目不存在或导入解析失败时返回 HTTP 错误。
 """
 from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy.orm import Session
@@ -35,24 +38,25 @@ def list_qs(
     current_user: AuthUser = Depends(get_current_user),
 ):
     """
-    list_qs 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    查询题库列表，并在路由层先确认用户具备扩展题库访问权。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    题库筛选字段历史上经历过“省份/岗位/题型”到“考试体系/真实来源/题型维度”的迁移，
+    这里保持旧查询参数兼容，把真正的分类解释交给服务层，避免前端和小程序各写一套临时规则。
 
-    @param keyword: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param dimension: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param province: 地区筛选值；只表示地域，不替代考试体系或岗位方向。
-    @param position: 岗位/方向筛选值；允许为空表示不限，避免无题库分类被误判为通用模板。
-    @param subcategory: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param subcategory2: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param examCategory: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param year: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param current: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param pageSize: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param keyword: 题干、标签或来源的搜索词。
+    @param dimension: 旧版题型筛选参数，服务层会兼容到当前题型维度。
+    @param province: 地区筛选值，只表示地域。
+    @param position: 岗位或方向筛选值，空值表示不限。
+    @param subcategory: 旧版二级分类筛选。
+    @param subcategory2: 旧版三级分类筛选。
+    @param examCategory: 真实考试体系筛选。
+    @param year: 年份筛选。
+    @param current: 页码。
+    @param pageSize: 每页条数。
+    @param db: 当前请求复用的数据库会话。
+    @param current_user: 鉴权层解析出的用户身份。
+    @return: 分页题目列表。
+    @raises HTTPException: 未登录、权益不足或服务层查询失败时抛出。
     """
     ensure_paid_access(current_user, detail="开通后可查看推荐题目与扩展题目")
     return list_questions(
@@ -70,18 +74,19 @@ def random_qs(
     current_user: AuthUser = Depends(get_current_user),
 ):
     """
-    random_qs 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    按筛选条件抽取随机练习题。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    随机题会直接消耗用户可练习能力，所以路由层先按题量做权益校验；服务层只负责抽题，
+    不需要理解试用、套餐或审核期访问策略。
 
-    @param province: 地区筛选值；只表示地域，不替代考试体系或岗位方向。
-    @param count: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param dimension: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param position: 岗位/方向筛选值；允许为空表示不限，避免无题库分类被误判为通用模板。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param province: 地区筛选值，只表示地域。
+    @param count: 请求抽取题量。
+    @param dimension: 题型维度筛选。
+    @param position: 岗位或方向筛选值，空值表示不限。
+    @param db: 当前请求复用的数据库会话。
+    @param current_user: 鉴权层解析出的用户身份。
+    @return: 随机题集合。
+    @raises HTTPException: 权益不足、题量越界或服务层无题时抛出。
     """
     ensure_random_question_access(current_user, count)
     return get_random_questions(db, province=province, count=count, dimension=dimension, position=position)
@@ -90,15 +95,16 @@ def random_qs(
 @router.get("/{question_id}")
 def get_q(question_id: str, db: Session = Depends(get_db), current_user: AuthUser = Depends(get_current_user)):
     """
-    get_q 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    返回单题详情。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    单题详情会被收藏、错题、评分复盘和后台编辑共用，所以先用统一访问策略判断是否可读，
+    再让服务层返回完整题目结构。
 
-    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param question_id: 题目唯一标识，用于追溯真实题源。
+    @param db: 当前请求复用的数据库会话。
+    @param current_user: 鉴权层解析出的用户身份。
+    @return: 单题详情。
+    @raises HTTPException: 用户无权读取或题目不存在时抛出。
     """
     ensure_question_read_access(current_user, question_id)
     return get_question(db, question_id)
@@ -107,15 +113,16 @@ def get_q(question_id: str, db: Session = Depends(get_db), current_user: AuthUse
 @router.post("")
 def create_q(data: QuestionCreate, db: Session = Depends(get_db), current_user: AuthUser = Depends(get_current_user)):
     """
-    create_q 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    管理员新增题目。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    后台新增会影响真实题库统计、全真模拟和评分采分点稳定性，因此只在路由层开放给管理员；
+    具体字段归一化、采分点提示和分类纠偏由题库服务承担。
 
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param data: 题目创建请求。
+    @param db: 当前请求复用的数据库会话。
+    @param current_user: 鉴权层解析出的用户身份。
+    @return: 新建后的题目详情。
+    @raises HTTPException: 非管理员、字段不合法或保存失败时抛出。
     """
     ensure_admin_access(current_user)
     return create_question(db, data)
@@ -124,16 +131,17 @@ def create_q(data: QuestionCreate, db: Session = Depends(get_db), current_user: 
 @router.put("/{question_id}")
 def update_q(question_id: str, data: QuestionUpdate, db: Session = Depends(get_db), current_user: AuthUser = Depends(get_current_user)):
     """
-    update_q 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    管理员编辑题目。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    题目元数据已经被多端筛选和重点分析依赖，路由层只做管理员鉴权，不在这里临时修分类，
+    以免绕过服务层的导入纠偏和低置信度标记。
 
-    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param question_id: 需要编辑的题目 ID。
+    @param data: 题目更新请求。
+    @param db: 当前请求复用的数据库会话。
+    @param current_user: 鉴权层解析出的用户身份。
+    @return: 更新后的题目详情。
+    @raises HTTPException: 非管理员、题目不存在或字段不合法时抛出。
     """
     ensure_admin_access(current_user)
     return update_question(db, question_id, data)
@@ -142,15 +150,16 @@ def update_q(question_id: str, data: QuestionUpdate, db: Session = Depends(get_d
 @router.delete("/{question_id}")
 def delete_q(question_id: str, db: Session = Depends(get_db), current_user: AuthUser = Depends(get_current_user)):
     """
-    delete_q 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    管理员删除题目。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    删除题目会让历史答题仍指向旧题号，因此此处仅保留后台能力入口；是否后续改为软删除，
+    应在题库服务和历史复盘策略里统一处理。
 
-    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param question_id: 需要删除的题目 ID。
+    @param db: 当前请求复用的数据库会话。
+    @param current_user: 鉴权层解析出的用户身份。
+    @return: 删除结果。
+    @raises HTTPException: 非管理员、题目不存在或删除失败时抛出。
     """
     ensure_admin_access(current_user)
     return delete_question(db, question_id)
@@ -159,15 +168,16 @@ def delete_q(question_id: str, db: Session = Depends(get_db), current_user: Auth
 @router.post("/import")
 async def import_qs(file: UploadFile = File(...), db: Session = Depends(get_db), current_user: AuthUser = Depends(get_current_user)):
     """
-    import_qs 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    管理员通过表格批量导入题目。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    上传内容先完整读入再交给服务层解析，是为了让服务层能根据文件名保留来源、统计纠偏结果并统一落库。
+    路由层不尝试理解 Excel 字段，避免导入模板调整后出现两套解析逻辑。
 
-    @param file: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param file: 上传的题库表格文件。
+    @param db: 当前请求复用的数据库会话。
+    @param current_user: 鉴权层解析出的用户身份。
+    @return: 导入数量、错误项和分类纠偏摘要。
+    @raises HTTPException: 非管理员、文件解析失败或导入失败时抛出。
     """
     ensure_admin_access(current_user)
     content = await file.read()
@@ -182,19 +192,18 @@ async def import_docx(
     current_user: AuthUser = Depends(get_current_user),
 ):
     """
-    import_docx 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    管理员从 Word 真题文档导入题目。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    `province` 只作为旧导入入口的兜底地区，真实分类仍以套题标题、章节和题目元数据优先。
+    这样能避免江苏事业单位、安徽省考、湖南监狱等题源被单纯文件名或岗位关键词带偏。
 
-    @param file: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
-    @param province: 地区筛选值；只表示地域，不替代考试体系或岗位方向。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param file: 上传的 Word 题库文件。
+    @param province: 旧模板传入的默认地区兜底。
+    @param db: 当前请求复用的数据库会话。
+    @param current_user: 鉴权层解析出的用户身份。
+    @return: 导入数量、解析失败项和分类复核提示。
+    @raises HTTPException: 非管理员、文件解析失败或导入失败时抛出。
     """
     ensure_admin_access(current_user)
     content = await file.read()
     return import_from_docx(db, content, file.filename or "", province)
-
-

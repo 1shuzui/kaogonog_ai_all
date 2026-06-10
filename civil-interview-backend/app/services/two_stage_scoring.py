@@ -1,9 +1,13 @@
 """
-这个文件保留两阶段评分提示词：先抽证据再评分；这种拆法是为了减少 LLM 直接打分时漏看采分点。
+两阶段评分提示词工具，先让模型抽取答案证据，再基于证据和采分点生成分数与反馈。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+直接让 LLM 一步打分容易出现“看起来像高分但漏掉关键采分点”的问题，所以这里把证据抽取和评分拆开。
+当前主评分链路已经有更完整的服务层包装，本文件保留为提示词复用和回归对照：它只生成 prompt 与解析结构，
+不直接访问数据库、媒体文件或权益系统。
+
+@param: 工具函数接收学生答案、题目数据、证据 JSON 或评分上下文。
+@return: 返回可发送给 LLM 的提示词，或解析后的评分 JSON。
+@raises ValueError: LLM 返回内容不是可解析 JSON，且无法从文本中提取 JSON 片段时抛出。
 """
 import json
 import re
@@ -11,14 +15,15 @@ import re
 
 def build_evidence_extraction_prompt(answer, question_data):
     """
-    阶段1：证据抽取 Prompt 只抽取证据，不打分
+    构造阶段一证据抽取 Prompt，只要求模型找证据，不直接打分。
 
-    证据抽取和评分拆开，是为了先固定答案里真正出现的内容，再让模型基于证据给分。
+    面试答案常有套话，模型一步评分容易被流畅表达带偏。先抽取 quote 和缺失点，
+    可以把后续评分限制在“答案真实说过什么”上，减少幻觉采分。
 
-    @param answer: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param answer: 考生答题文字稿。
+    @param question_data: 题干、题型、采分点、扣分点、加分点和评分维度。
+    @return: 可发送给 LLM 的证据抽取提示词。
+    @raises: 不主动抛出业务异常；输入缺字段时按空值生成提示词。
     """
     dims = question_data.get('dimensions', [])
     dim_names = [d.get('name', f'维度{i+1}') for i, d in enumerate(dims)]
@@ -89,14 +94,15 @@ def build_evidence_extraction_prompt(answer, question_data):
 
 def build_evidence_based_scoring_prompt(evidence, question_data):
     """
-    阶段2：基于证据的评分 Prompt 只基于阶段1抽取的证据进行评分
+    构造阶段二评分 Prompt，要求模型只基于阶段一证据给分。
 
-    证据抽取和评分拆开，是为了先固定答案里真正出现的内容，再让模型基于证据给分。
+    这里把 evidence JSON 原样放进提示词，是为了让评分理由能引用 evidence id，
+    方便回归测试时判断模型到底依据了哪些内容，而不是只看最终分数。
 
-    @param evidence: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param evidence: 阶段一产出的证据包。
+    @param question_data: 题干、题型和各能力维度满分。
+    @return: 可发送给 LLM 的基于证据评分提示词。
+    @raises: 不主动抛出业务异常；输入缺字段时按空值生成提示词。
     """
     dims = question_data.get('dimensions', [])
     dim_info = []
@@ -157,14 +163,15 @@ def build_evidence_based_scoring_prompt(evidence, question_data):
 
 def validate_evidence(evidence, answer_text):
     """
-    校验证据： 1. 检查 quote 是否在原文中 2. 检查 evidence id 是否唯一 3. 补充缺失的 absence 证据
+    过滤阶段一证据，尽量只保留能在原文中找到 quote 的内容。
 
-    证据抽取和评分拆开，是为了先固定答案里真正出现的内容，再让模型基于证据给分。
+    LLM 有时会把题干或常识改写成“考生说过的话”。这里做原文校验，
+    是为了防止后续评分把不存在的表达当成采分点。
 
-    @param evidence: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param answer_text: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param evidence: LLM 返回的原始证据包。
+    @param answer_text: 考生答题原文。
+    @return: 清洗后的 present、absent、penalty、bonus 证据。
+    @raises: 不主动抛出业务异常；缺失字段按空列表处理。
     """
     validated = {
         "present": [],
@@ -202,15 +209,16 @@ def validate_evidence(evidence, answer_text):
 
 def validate_scoring_result(result, evidence, max_scores):
     """
-    校验评分结果： 1. 检查维度分是否在合理范围 2. 检查总分是否等于维度分之和 3. 检查 rationales 是否引用了有效证据
+    校验阶段二评分结果的分数范围和总分一致性。
 
-    证据抽取和评分拆开，是为了先固定答案里真正出现的内容，再让模型基于证据给分。
+    模型可能返回超出维度满分的分数，或总分与维度和不一致。这里优先修正可恢复问题，
+    让主评分链路可以继续落库，同时把错误交给上层日志判断是否需要降级。
 
-    @param result: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param evidence: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param max_scores: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param result: LLM 返回的评分 JSON。
+    @param evidence: 阶段一证据包；当前主要用于调用签名兼容。
+    @param max_scores: 各能力维度满分。
+    @return: `(是否完全合法, 错误列表, 修正后的评分结果)`。
+    @raises: 不主动抛出业务异常；结构不完整时按空字典处理。
     """
     errors = []
 
@@ -235,15 +243,16 @@ def validate_scoring_result(result, evidence, max_scores):
 
 def fallback_scoring(answer, question_data, evidence=None):
     """
-    兜底评分：当 LLM 失败时使用基于关键词的本地评分
+    在 LLM 不可用时使用关键词和字数做保守兜底评分。
 
-    证据抽取和评分拆开，是为了先固定答案里真正出现的内容，再让模型基于证据给分。
+    兜底评分只保证系统可用，不追求替代真实考官判断；分数按保守比例生成，
+    避免模型故障时直接中断考试流程或给出过高分。
 
-    @param answer: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param question_data: 题目相关数据；真实题源、题型分类和能力维度需要分开处理。
-    @param evidence: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param answer: 考生答题文字稿。
+    @param question_data: 题目维度和关键词配置。
+    @param evidence: 可选证据包；保留参数用于兼容旧调用。
+    @return: 本地规则生成的维度分、总分和改进建议。
+    @raises: 不主动抛出业务异常；缺失配置时按基础比例评分。
     """
     dims = question_data.get('dimensions', [])
     answer_len = len(answer)

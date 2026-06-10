@@ -1,9 +1,12 @@
 /**
- * 这个文件是小程序所有后端请求的入口；401、token 和错误提示都在这里统一处理，避免页面各自弹登录。
+ * 小程序 HTTP 请求入口，统一 API 基础地址、token 注入、requestId、401 处理和用户可读错误提示。
  *
- * @param 无；文件级模块依赖导出函数、组合式 API 或调用方传入上下文。
- * @return 导出可复用的端侧能力，具体返回值由各公共函数保持兼容。
- * @raises 不主动吞掉业务异常；请求失败、权限不足和运行时错误交由调用方或全局拦截器处理。
+ * 页面不要直接调用 `uni.request`，否则会绕开登录态恢复、审核友好的错误文案和线上/本地 API 地址切换。
+ * 这里只在接口明确返回未认证时提示登录，不在首页加载公开内容时主动索权；支付、试用、开始练习等动作由页面先调用登录拦截。
+ *
+ * @param options - 业务 API 模块传入的路径、方法、参数、header 和提示策略。
+ * @return Promise，成功时解析后端响应体，失败时抛出标准化错误对象。
+ * @raises Error: 网络失败、HTTP 非 2xx、401 登录失效或后端业务错误会被规范化后抛出。
  */
 import { TOKEN_STORAGE_KEY, USERNAME_STORAGE_KEY } from '../utils/constants'
 import { createRequestId, logger } from '../utils/logger'

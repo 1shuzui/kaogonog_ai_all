@@ -1,17 +1,23 @@
 """
-这个测试文件锁定管理员人工权益调整的边界；补发和扣减都很接近支付链路，必须确认它们不会污染微信订单。
+管理员权益调整测试，专门验证人工补发/扣减不会伪造成微信支付订单。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+客服补偿、测试账号、退款扣减和误操作修正都要通过 `entitlement_adjustments` 留痕；用户余额需要立即刷新，
+但历史答题记录和真实虚拟支付订单不能被篡改。这里使用本机 MySQL 临时库，是为了覆盖 collation、外键和审计表这些 SQLite 测不出来的现网风险。
+
+@param: 无；测试用例自己创建临时库、用户、权益和管理员身份。
+@return: 无直接返回；断言通过表示人工权益调整和审计边界仍符合当前设计。
+@raises ImportError: MySQL、ORM 模型、schema 或权益服务导入失败时中断。
 """
 import unittest
 from datetime import date, datetime, timedelta
+from uuid import uuid4
 
 from fastapi import HTTPException
 from sqlalchemy import create_engine
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import sessionmaker
 
+from app.core.config import settings
 from app.db.session import Base
 from app.models.entities import EntitlementAdjustment, PaymentOrder, User, UserSubscription
 from app.schemas.common import AuthUser, EntitlementDeductRequest, EntitlementGrantRequest
@@ -21,28 +27,45 @@ from app.services.entitlement_admin_service import (
     list_admin_users,
 )
 from app.services.subscription_service import get_subscription_status
+import database_setup
 
 
 class EntitlementAdminServiceTestCase(unittest.TestCase):
     """
-    EntitlementAdminServiceTestCase 用内存库验证售后权益调整；这里关注支付隔离和审计完整性。
+    EntitlementAdminServiceTestCase 用临时 MySQL 库验证售后权益调整；这里关注支付隔离和审计完整性。
 
     人工权益是给管理员纠错和补偿用的，不应改写历史答题用量，也不应生成假的支付订单。
 
-    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
-    @return: 返回可被调用方实例化或引用的公共类型。
-    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    @param: 无；unittest 负责实例化测试类。
+    @return: 管理员权益服务回归测试用例类。
+    @raises AssertionError: MySQL 环境不安全、权益余额错误或审计流水缺失时由测试报告。
     """
     def setUp(self):
         """
-        setUp 每个用例重建内存库，是为了让补发、扣减和反向调整互不污染。
+        setUp 每个用例重建临时 MySQL 库，是为了让补发、扣减和反向调整互不污染。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @param: 无；由测试框架直接调用，前置数据在 fixture、monkeypatch 或 setUp 中准备。
+        @return: None；断言通过表示该回归边界仍被守住。
         @raises: 不主动包装底层错误；数据库异常会沿调用栈向上传递。
         """
-        self.engine = create_engine("sqlite:///:memory:")
-        Base.metadata.create_all(bind=self.engine)
+        database_url = make_url(settings.database_url)
+        if not database_url.drivername.startswith("mysql"):
+            self.fail(f"权益管理测试必须使用 MySQL，当前配置为 {database_url.drivername}")
+        if database_url.host not in {"127.0.0.1", "localhost"}:
+            self.fail("权益管理测试默认只允许连接本机 MySQL，避免误碰远程数据库。")
+
+        self.test_database = f"kaogong_ai_test_entitlement_{uuid4().hex[:8]}"
+        self.admin_engine = create_engine(database_url.set(database=None))
+        with self.admin_engine.begin() as conn:
+            conn.exec_driver_sql(
+                f"CREATE DATABASE `{self.test_database}` "
+                "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+            )
+
+        mysql_config = database_setup.get_mysql_config()
+        mysql_config["database"] = self.test_database
+        database_setup.create_tables(mysql_config)
+        self.engine = create_engine(database_url.set(database=self.test_database))
         self.Session = sessionmaker(bind=self.engine)
         self.db = self.Session()
         self.admin = AuthUser(username="admin", isAdmin=True)
@@ -53,20 +76,23 @@ class EntitlementAdminServiceTestCase(unittest.TestCase):
 
     def tearDown(self):
         """
-        tearDown 关闭内存库连接，避免测试进程复用连接时拿到旧状态。
+        tearDown 删除临时 MySQL 库，避免测试进程复用连接时拿到旧状态。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @param: 无；由测试框架直接调用，前置数据在 fixture、monkeypatch 或 setUp 中准备。
+        @return: None；断言通过表示该回归边界仍被守住。
         @raises: 不主动包装底层错误；数据库异常会沿调用栈向上传递。
         """
         self.db.close()
         self.engine.dispose()
+        with self.admin_engine.begin() as conn:
+            conn.exec_driver_sql(f"DROP DATABASE IF EXISTS `{self.test_database}`")
+        self.admin_engine.dispose()
 
     def test_admin_grant_creates_manual_subscription_without_payment_order(self):
         """
         test_admin_grant_creates_manual_subscription_without_payment_order 防止客服补偿被误记成真实微信订单。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @param: 无；由测试框架直接调用，前置数据在 fixture、monkeypatch 或 setUp 中准备。
         @return: None；断言通过表示人工补发、审计和权益快照都符合预期。
         @raises: 不主动包装底层错误；数据库异常会沿调用栈向上传递。
         """
@@ -106,7 +132,7 @@ class EntitlementAdminServiceTestCase(unittest.TestCase):
         """
         test_admin_deduct_updates_selected_subscription_and_writes_adjustment 约束扣减只动指定权益余额。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @param: 无；由测试框架直接调用，前置数据在 fixture、monkeypatch 或 setUp 中准备。
         @return: None；断言通过表示扣减没有伪造答题用量流水。
         @raises: 不主动包装底层错误；数据库异常会沿调用栈向上传递。
         """
@@ -139,7 +165,7 @@ class EntitlementAdminServiceTestCase(unittest.TestCase):
         """
         test_admin_deduct_rejects_minutes_above_remaining 防止后台把权益扣成负数。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @param: 无；由测试框架直接调用，前置数据在 fixture、monkeypatch 或 setUp 中准备。
         @return: None；断言通过表示服务层兜住了越界输入。
         @raises: 不主动包装底层错误；数据库异常会沿调用栈向上传递。
         """
@@ -165,7 +191,7 @@ class EntitlementAdminServiceTestCase(unittest.TestCase):
         """
         test_non_admin_cannot_adjust_entitlements 确认按钮隐藏之外，后端也会挡住普通用户。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @param: 无；由测试框架直接调用，前置数据在 fixture、monkeypatch 或 setUp 中准备。
         @return: None；断言通过表示管理员接口不能被普通账号直接调用。
         @raises: 不主动包装底层错误；数据库异常会沿调用栈向上传递。
         """
@@ -192,7 +218,7 @@ class EntitlementAdminServiceTestCase(unittest.TestCase):
 
         先扣减再补发会留下两条流水，余额恢复靠反向调整完成，历史处理过程仍可追溯。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @param: 无；由测试框架直接调用，前置数据在 fixture、monkeypatch 或 setUp 中准备。
         @return: None；断言通过表示反向调整不会抹掉旧流水。
         @raises: 不主动包装底层错误；数据库异常会沿调用栈向上传递。
         """
@@ -241,7 +267,7 @@ class EntitlementAdminServiceTestCase(unittest.TestCase):
         @param used_minutes: 已用分钟。
         @param daily_limit_minutes: 每日限额，0 表示不限。
         @param daily_used_minutes: 今日已用分钟。
-        @return: 已提交到内存库的权益记录。
+        @return: 已提交到临时 MySQL 库的权益记录。
         @raises: 不主动包装底层错误；数据库异常会沿调用栈向上传递。
         """
         subscription = UserSubscription(

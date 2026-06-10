@@ -1,9 +1,13 @@
 """
-这个文件负责题库的增删改查、导入清洗和随机抽题；真实套题信息、题型维度和地区筛选都在这里尽量保持不串味。
+题库服务层，负责题目增删改查、后台导入清洗、年份/地区/岗位筛选、随机抽题和真实题库资产同步。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+题库分类已经拆成真实考试体系、地区来源、系统/岗位、面试形式和题型维度几套概念，本文件的筛选逻辑要尽量保持这些字段不串味。
+江苏事业单位、安徽省考、湖南省考等真实来源不能因为岗位词或题型关键词被挪到别的考试体系；全真模拟优先保留真实套题名、
+考试日期、题号和时间规则。这里可以为用户生成可练习的题目，但不能伪造某地区“有题库重点”，重点分析应回到真实统计或管理员发布内容。
+
+@param: 服务函数接收数据库 Session、筛选条件、题目创建/更新模型、导入文件或抽题数量。
+@return: 返回题目列表、单题详情、导入结果或随机题集合，字段需兼容 PC 和小程序。
+@raises HTTPException: 题目不存在、导入格式错误、权限不足或筛选参数无法解析时抛出 HTTP 错误。
 """
 import json
 import random
@@ -833,13 +837,14 @@ def _upsert_normalized_question(
 
 def sync_curated_question_assets(db: Session) -> dict:
     """
-    sync_curated_question_assets 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    将仓库内已整理的题库 JSON 资产同步到数据库。
 
-    题库服务承担真实套题元数据、筛选和导入缓存的兼容边界，避免前端用展示分类反推题源。
+    这个入口会被应用启动、导入、定向生成和重点分析复用，因此必须保持幂等：同一题源按 ID 或题干更新，
+    不能重复插入。标准资产仍是只读题库来源，管理员编辑只应落到手工题，不应反向覆盖仓库资产文件。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param db: 当前请求、启动流程或导入流程复用的数据库会话。
+    @return: 本次新增和更新的题目数量。
+    @raises: JSON 读取、解析或数据库提交异常会沿调用栈上抛。
     """
     if not CURATED_QUESTION_DIR.exists():
         return {"synced": 0, "updated": 0}
@@ -1224,23 +1229,24 @@ def list_questions(
     page_size: int = 10,
 ) -> dict:
     """
-    list_questions 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    按题干、地区、真实考试体系、岗位方向和年份筛选题库。
 
-    题库服务承担真实套题元数据、筛选和导入缓存的兼容边界，避免前端用展示分类反推题源。
+    历史参数仍保留 `dimension/subcategory/subcategory2`，但筛选解释集中在服务端完成。
+    这样 PC、小程序和管理员页面不会因为各自解析 `_meta` 而把“题型维度”误当成“考试分类”。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param keyword: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param dimension: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param province: 地区筛选值；只表示地域，不替代考试体系或岗位方向。
-    @param position: 岗位/方向筛选值；允许为空表示不限，避免无题库分类被误判为通用模板。
-    @param subcategory: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param subcategory2: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param examCategory: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param year: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param current: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param page_size: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param db: 当前请求复用的数据库会话。
+    @param keyword: 题干关键词。
+    @param dimension: 训练题型维度筛选。
+    @param province: 地区筛选，只表示地域。
+    @param position: 岗位或方向筛选，空值表示不限。
+    @param subcategory: 旧版二级分类筛选。
+    @param subcategory2: 旧版三级分类筛选。
+    @param examCategory: 真实考试体系筛选。
+    @param year: 年份筛选，可用逗号传多个年份。
+    @param current: 当前页码。
+    @param page_size: 每页条数。
+    @return: 分页题目列表。
+    @raises: 不主动包装数据库异常，查询失败会沿调用栈上抛。
     """
     current = max(1, int(current or 1))
     page_size = max(1, min(int(page_size or 10), 1000))
@@ -1286,17 +1292,18 @@ def list_questions(
 
 def get_random_questions(db: Session, province: str = "national", count: int = 5, dimension: str = "", position: str = "") -> List[dict]:
     """
-    get_random_questions 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    从题库中随机抽取练习题。
 
-    题库服务承担真实套题元数据、筛选和导入缓存的兼容边界，避免前端用展示分类反推题源。
+    随机抽题在服务端完成，是为了避免前端拿到过大的题库列表，也避免“方向不限”时各端随机规则不一致。
+    当指定岗位方向时先做预筛再随机，保证定向练习不会被无关题目稀释。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param province: 地区筛选值；只表示地域，不替代考试体系或岗位方向。
-    @param count: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param dimension: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param position: 岗位/方向筛选值；允许为空表示不限，避免无题库分类被误判为通用模板。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param db: 当前请求复用的数据库会话。
+    @param province: 地区筛选。
+    @param count: 请求题量，服务端会限制最大值。
+    @param dimension: 训练题型维度筛选。
+    @param position: 岗位或方向筛选，空值表示不限。
+    @return: 随机题目列表。
+    @raises: 不主动包装数据库异常，查询失败会沿调用栈上抛。
     """
     count = max(1, min(int(count or 5), 100))
     query = _question_base_query(db, province=province, dimension=dimension)
@@ -1319,14 +1326,15 @@ def get_random_questions(db: Session, province: str = "national", count: int = 5
 
 def get_question(db: Session, question_id: str) -> dict:
     """
-    get_question 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    读取单道题目详情。
 
-    题库服务承担真实套题元数据、筛选和导入缓存的兼容边界，避免前端用展示分类反推题源。
+    题目详情会被评分、历史复盘和后台编辑共用，所以返回前统一走 `_q_to_dict`，
+    保证元数据、题型维度和计时字段格式稳定。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    @param db: 当前请求复用的数据库会话。
+    @param question_id: 题目 ID。
+    @return: 单题详情。
+    @raises HTTPException: 题目不存在时抛出 404。
     """
     q = db.query(Question).filter(Question.id == question_id).first()
     if not q:
@@ -1336,14 +1344,15 @@ def get_question(db: Session, question_id: str) -> dict:
 
 def create_question(db: Session, data: QuestionCreate) -> dict:
     """
-    create_question 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    创建管理员手工题目。
 
-    题库服务承担真实套题元数据、筛选和导入缓存的兼容边界，避免前端用展示分类反推题源。
+    手工题用 `source=manual` 标记，和标准资产、导入题区分开；这样后续管理员可以编辑，
+    但不会把标准题库 JSON 的同步行为变成双向写入。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param db: 当前请求复用的数据库会话。
+    @param data: 题目创建请求。
+    @return: 新建题目详情。
+    @raises: 不主动包装数据库异常，保存失败会沿调用栈上抛。
     """
     q = Question(
         id=f"q_{uuid.uuid4().hex[:8]}",
@@ -1370,15 +1379,16 @@ def create_question(db: Session, data: QuestionCreate) -> dict:
 
 def update_question(db: Session, question_id: str, data: QuestionUpdate) -> dict:
     """
-    update_question 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    更新管理员可编辑题目。
 
-    题库服务承担真实套题元数据、筛选和导入缓存的兼容边界，避免前端用展示分类反推题源。
+    标准资产和种子题保持只读，是为了防止后台误改后又被启动同步覆盖，造成管理员以为已保存但线上回滚。
+    需要修正标准题库时，应修改源资产并重新同步。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    @param db: 当前请求复用的数据库会话。
+    @param question_id: 需要更新的题目 ID。
+    @param data: 题目更新请求。
+    @return: 更新后的题目详情。
+    @raises HTTPException: 题目不存在，或题目来源为只读资产/种子题时抛出。
     """
     q = db.query(Question).filter(Question.id == question_id).first()
     if not q:
@@ -1406,14 +1416,15 @@ def update_question(db: Session, question_id: str, data: QuestionUpdate) -> dict
 
 def delete_question(db: Session, question_id: str) -> dict:
     """
-    delete_question 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    删除管理员可编辑题目。
 
-    题库服务承担真实套题元数据、筛选和导入缓存的兼容边界，避免前端用展示分类反推题源。
+    标准资产和种子题不允许从后台删除，原因和编辑一致：它们会被源资产同步恢复。
+    当前删除是硬删除，调用方需要确认不会破坏仍可访问的历史复盘。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    @param db: 当前请求复用的数据库会话。
+    @param question_id: 需要删除的题目 ID。
+    @return: 删除成功标记。
+    @raises HTTPException: 题目不存在，或题目来源为只读资产/种子题时抛出。
     """
     q = db.query(Question).filter(Question.id == question_id).first()
     if not q:
@@ -1428,15 +1439,16 @@ def delete_question(db: Session, question_id: str) -> dict:
 
 def import_questions(db: Session, content: bytes, filename: str) -> dict:
     """
-    import_questions 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    从 JSON 或 Excel 文件导入题目。
 
-    题库服务承担真实套题元数据、筛选和导入缓存的兼容边界，避免前端用展示分类反推题源。
+    该入口服务后台批量维护，导入时会统一归一化关键词、采分点和 `_meta`。
+    真实题源分类仍优先使用文件内容和显式字段，不能靠前端展示入口反推考试体系。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param content: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param filename: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    @param db: 当前请求复用的数据库会话。
+    @param content: 上传文件内容。
+    @param filename: 原始文件名，用于判断格式和记录来源。
+    @return: 成功导入数量和失败数量。
+    @raises HTTPException: 文件格式不支持、解析不到有效题目或导入失败时抛出。
     """
     imported, failed = 0, 0
     fname = filename.lower() if filename else ""
@@ -1667,16 +1679,17 @@ def import_questions(db: Session, content: bytes, filename: str) -> dict:
 
 def import_from_docx(db: Session, file_content: bytes, filename: str, province: str) -> dict:
     """
-    import_from_docx 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    调用题库脚本解析 Word 真题并同步生成资产。
 
-    题库服务承担真实套题元数据、筛选和导入缓存的兼容边界，避免前端用展示分类反推题源。
+    Word 解析依赖独立导入脚本，是为了复用题库源文档的章节、套题标题和分类纠偏逻辑。
+    `province` 只是旧上传入口的兜底地区，不能覆盖脚本从真实套题标题识别出的考试体系。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param file_content: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
-    @param filename: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
-    @param province: 地区筛选值；只表示地域，不替代考试体系或岗位方向。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    @param db: 当前请求复用的数据库会话。
+    @param file_content: 上传的 Word 文件内容。
+    @param filename: 原始文件名。
+    @param province: 旧入口传入的默认地区兜底。
+    @return: 导入数量、套题名和临时 profile 名。
+    @raises HTTPException: 脚本缺失、格式不支持或脚本执行失败时抛出。
     """
     import subprocess
     import tempfile
@@ -1752,18 +1765,19 @@ async def generate_questions_by_position(
     target_filters: dict | None = None,
 ) -> List[dict]:
     """
-    generate_questions_by_position 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    为定向备面按真实题库或 AI 兜底生成题目。
 
-    题库服务承担真实套题元数据、筛选和导入缓存的兼容边界，避免前端用展示分类反推题源。
+    默认优先本地题库，只有明确要求 AI 或混合模式时才调用 LLM。
+    这能保证没有真实题库数据的地区不会被“通用模板”伪装成真实重点或真题来源。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param province: 地区筛选值；只表示地域，不替代考试体系或岗位方向。
-    @param position: 岗位/方向筛选值；允许为空表示不限，避免无题库分类被误判为通用模板。
-    @param count: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param source_mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param target_filters: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param db: 当前请求复用的数据库会话。
+    @param province: 地区筛选。
+    @param position: 岗位或方向筛选，空值表示不限。
+    @param count: 请求题量，服务端最多生成 10 道。
+    @param source_mode: `local`、`ai` 或 `hybrid`。
+    @param target_filters: 定向分类树传入的考试体系、地区、系统等筛选条件。
+    @return: 定向题目列表，并标注来源或 AI 回退原因。
+    @raises: LLM、数据库或资产同步异常会沿调用栈上抛。
     """
     count = min(count, 10)
     sync_curated_question_assets(db)
@@ -1811,18 +1825,19 @@ async def generate_training_questions(
     target_filters: dict | None = None,
 ) -> List[dict]:
     """
-    generate_training_questions 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    为专项训练按题型维度生成题目。
 
-    题库服务承担真实套题元数据、筛选和导入缓存的兼容边界，避免前端用展示分类反推题源。
+    这里的 `dimension` 是训练题型分类，不是评分能力维度；保持这条边界可以避免“行政思维”等能力项
+    被错误用于专项题型筛选。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param dimension: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param count: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param source_mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param province: 地区筛选值；只表示地域，不替代考试体系或岗位方向。
-    @param target_filters: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param db: 当前请求复用的数据库会话。
+    @param dimension: 训练题型分类。
+    @param count: 请求题量，服务端最多生成 10 道。
+    @param source_mode: `local`、`ai` 或其他兜底模式。
+    @param province: 地区筛选。
+    @param target_filters: 定向分类筛选条件，可为空。
+    @return: 专项训练题目列表。
+    @raises: LLM、数据库或资产同步异常会沿调用栈上抛。
     """
     count = min(count, 10)
     sync_curated_question_assets(db)

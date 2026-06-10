@@ -1,9 +1,13 @@
 """
-这个路由文件提供权益状态、套餐切换和访问校验接口；它只做请求参数、鉴权依赖和服务层转发，业务规则尽量留在 service 里。
+权益路由，提供用户套餐余额、访问校验、权益切换，以及管理员人工补发/扣减/流水查询接口。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+普通用户接口只返回“我还能不能用、剩余多少、当前消耗哪份权益”；后台接口必须经过管理员鉴权，
+并把每次人工调整写入审计流水。这里刻意把人工权益管理挂在 subscription 下，是因为它影响可用时长，
+但它不能创建支付订单，也不能伪造历史用量。
+
+@param: FastAPI 注入查询参数、补发/扣减请求、当前用户和数据库 Session。
+@return: 返回用户权益状态、访问校验结果、切换结果、管理员用户权益详情或调整流水。
+@raises HTTPException: 未登录、非管理员、权益不存在、余额不足、参数越界或原因类型无效时返回 HTTP 错误。
 """
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -26,14 +30,14 @@ router = APIRouter(prefix="/subscription", tags=["subscription"])
 @router.get("/me")
 def subscription_me(current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    subscription_me 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    读取当前用户权益状态的路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    所有端侧余额展示都应走这个接口，避免 PC、小程序和管理员调整后看到不同的剩余时长。
 
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param current_user: Bearer token 解析出的当前用户。
+    @param db: 请求级数据库会话。
+    @return: 当前权益快照和全部权益列表。
+    @raises HTTPException: 未登录或用户不存在时抛出。
     """
     return get_subscription_status(db, current_user)
 
@@ -41,15 +45,15 @@ def subscription_me(current_user: AuthUser = Depends(get_current_user), db: Sess
 @router.get("/check-access")
 def subscription_check_access(mode: str = "practice", current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    subscription_check_access 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    检查当前用户是否能进入某类训练的路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    前端可用于提前提示，但不能替代服务端扣量校验；真正消耗权益仍在 usage_report。
 
-    @param mode: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param mode: 训练场景标识，用于响应回显。
+    @param current_user: Bearer token 解析出的当前用户。
+    @param db: 请求级数据库会话。
+    @return: allowed、reason 和权益快照。
+    @raises HTTPException: 未登录或用户不存在时抛出。
     """
     return check_subscription_access(db, current_user, mode)
 
@@ -57,15 +61,15 @@ def subscription_check_access(mode: str = "practice", current_user: AuthUser = D
 @router.post("/switch")
 def subscription_switch(data: SubscriptionSwitchRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    subscription_switch 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    切换当前消耗权益的路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    用户可能有多条可用权益，切换行为必须在后端确认归属和可用性，避免端侧传入他人权益 ID。
 
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param payload: 包含 subscriptionId 的请求体。
+    @param current_user: Bearer token 解析出的当前用户。
+    @param db: 请求级数据库会话。
+    @return: 切换后的权益快照。
+    @raises HTTPException: 权益不存在或不可用时抛出。
     """
     return switch_subscription(db, current_user, data.subscriptionId)
 
@@ -79,17 +83,17 @@ def subscription_admin_users(
     db: Session = Depends(get_db),
 ):
     """
-    subscription_admin_users 为管理员权益页提供用户搜索入口，避免前端直接拉取全量用户表。
+    管理员用户搜索路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    权益管理只允许按条件分页查询，避免后台页面一次性拉全量用户表。
 
-    @param username: 搜索关键字；主口径是用户名，兼容昵称和邮箱模糊搜索。
-    @param page: 页码，从 1 开始。
-    @param pageSize: 每页条数，服务层会限制最大值。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param username: 用户名模糊筛选。
+    @param page: 页码。
+    @param pageSize: 每页数量。
+    @param current_user: 当前管理员用户。
+    @param db: 请求级数据库会话。
+    @return: 用户分页列表。
+    @raises HTTPException: 非管理员访问时抛出 403。
     """
     return list_admin_users(db, current_user, username=username, page=page, page_size=pageSize)
 
@@ -101,15 +105,15 @@ def subscription_admin_user_entitlements(
     db: Session = Depends(get_db),
 ):
     """
-    subscription_admin_user_entitlements 返回管理员核查单个用户时需要的权益、订单摘要和最近调整记录。
+    管理员查看单个用户权益详情的路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    页面需要同时核对用户资料、订单摘要、权益列表和最近调整记录，所以由服务层统一拼装，避免前端多接口竞态。
 
-    @param username: 目标用户账号。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param username: 被查看用户的用户名。
+    @param current_user: 当前管理员用户。
+    @param db: 请求级数据库会话。
+    @return: 用户权益详情。
+    @raises HTTPException: 非管理员或用户不存在时抛出。
     """
     return get_admin_user_entitlements(db, current_user, username)
 
@@ -122,16 +126,16 @@ def subscription_admin_grant_entitlement(
     db: Session = Depends(get_db),
 ):
     """
-    subscription_admin_grant_entitlement 创建人工补发权益，和微信支付订单保持分离。
+    管理员人工补发权益的路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    人工权益不创建支付订单，必须走独立审计流水，避免和微信虚拟支付到账记录混在一起。
 
-    @param username: 目标用户账号。
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param username: 被补发用户。
+    @param body: 补发分钟数、每日限额、有效期、原因和备注。
+    @param current_user: 当前管理员用户。
+    @param db: 请求级数据库会话。
+    @return: 补发后的用户权益详情和调整流水。
+    @raises HTTPException: 非管理员、参数越界或用户不存在时抛出。
     """
     return grant_user_entitlement(db, current_user, username, data)
 
@@ -144,16 +148,16 @@ def subscription_admin_deduct_entitlement(
     db: Session = Depends(get_db),
 ):
     """
-    subscription_admin_deduct_entitlement 扣减指定权益的剩余时长，不改历史用量流水。
+    管理员扣减指定权益的路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    后台扣减通过增加 used_minutes 完成，不改历史 usage_records；这样用户真实答题记录和客服调整记录保持两套审计口径。
 
-    @param username: 目标用户账号。
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param username: 被扣减用户。
+    @param body: subscriptionId、扣减分钟数、原因和备注。
+    @param current_user: 当前管理员用户。
+    @param db: 请求级数据库会话。
+    @return: 扣减后的用户权益详情和调整流水。
+    @raises HTTPException: 非管理员、权益不存在或扣减超过剩余时长时抛出。
     """
     return deduct_user_entitlement(db, current_user, username, data)
 
@@ -171,21 +175,21 @@ def subscription_admin_adjustments(
     db: Session = Depends(get_db),
 ):
     """
-    subscription_admin_adjustments 提供全局人工权益调整流水查询。
+    管理员权益调整流水查询路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    撤错通过新增反向调整完成，所以流水查询是追责和客服复盘的主要入口，不能给普通用户开放。
 
     @param username: 目标用户筛选。
     @param actionType: 调整类型筛选。
     @param operator: 操作者筛选。
-    @param startAt: 开始时间筛选。
-    @param endAt: 结束时间筛选。
-    @param page: 页码，从 1 开始。
-    @param pageSize: 每页条数，服务层会限制最大值。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param startAt: 开始时间。
+    @param endAt: 结束时间。
+    @param page: 页码。
+    @param pageSize: 每页数量。
+    @param current_user: 当前管理员用户。
+    @param db: 请求级数据库会话。
+    @return: 调整流水分页列表。
+    @raises HTTPException: 非管理员访问时抛出 403。
     """
     return list_entitlement_adjustments(
         db,

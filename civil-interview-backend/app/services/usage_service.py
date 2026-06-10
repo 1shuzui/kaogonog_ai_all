@@ -1,9 +1,13 @@
 """
-这个文件记录答题用时和扣减分钟数；把扣量留在服务端，是为了避免小程序端时间上报异常导致权益被绕过。
+用量上报服务层，负责把一次练习/考试消耗的秒数折算为计费分钟并扣减当前用户权益。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+端侧会提供作答时长，但真正扣量必须在服务端完成：这里会确认考试归属、选择当前可用权益、跨天重置每日限额、
+写入 `usage_records`，再同步用户 preferences 里的权益快照。它不会伪造考试答案，也不会处理管理员扣减；
+后台人工扣减应走权益调整服务，保证审计口径独立。
+
+@param: 服务函数接收数据库 Session、当前用户和用量上报请求。
+@return: 返回扣减后的权益状态、计费分钟和用量记录摘要。
+@raises HTTPException: 用户不存在、考试不属于当前用户、权益不足或上报时长不合法时抛出 HTTP 错误。
 """
 from datetime import date
 
@@ -46,15 +50,16 @@ def _ensure_default_trial_subscription(db: Session, username: str) -> UserSubscr
 
 def report_usage(db: Session, current_user: AuthUser, data: UsageReportRequest) -> dict:
     """
-    report_usage 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    上报一次答题用量并扣减当前权益。
 
-    服务层承载核心业务规则，注释聚焦为什么在后端兜底而不是交给 PC 或小程序端。
+    端侧上报的是秒数，服务端按向上取整折算分钟，并同时更新总用量和每日用量。这里会校验考试归属，
+    防止用户用别人的 examId 消耗或写入自己的权益记录。
 
     @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
     @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    @param data: 用量上报请求，包含 examId、questionId、usageSeconds 和 usageType。
+    @return: 扣减结果、计费分钟、剩余权益和 usageRecordId。
+    @raises HTTPException: 用户不存在、考试不存在/不属于当前用户或用量参数非法时抛出。
     """
     user = get_user_or_404(db, current_user.username)
     exam = db.query(Exam).filter(Exam.id == data.examId, Exam.user_id == current_user.username).first()

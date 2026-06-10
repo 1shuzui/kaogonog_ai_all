@@ -1,9 +1,11 @@
 /**
- * 这个工具文件处理 `examSubmission` 这类跨页面规则；集中维护可以避免 PC、小程序或不同页面各自写一份判断。
+ * PC 考试提交工具统一构造录音上传表单，避免不同考场页使用不同字段名导致后端无法转写或评分。
  *
- * @param 无；文件级模块依赖导出函数、组合式 API 或调用方传入上下文。
- * @return 导出可复用的端侧能力，具体返回值由各公共函数保持兼容。
- * @raises 不主动吞掉业务异常；请求失败、权限不足和运行时错误交由调用方或全局拦截器处理。
+ * 它只处理“是否有真实媒体内容”和 FormData 字段，不负责 ASR 纠错、评分或权益扣减；这些都必须留在后端流程里。
+ *
+ * @param 无；导出函数接收题目 id、录音 Blob 和文件名。
+ * @return 导出媒体内容判断和考试上传 FormData 构造函数。
+ * @raises 参数异常通常返回兜底值；需要阻断流程的错误交由调用方处理。
  */
 export function hasRecordingContent(blob) {
   return blob instanceof Blob && blob.size > 0

@@ -1,9 +1,11 @@
 /**
- * 这个工具文件处理 `questionPresentation` 这类跨页面规则；集中维护可以避免 PC、小程序或不同页面各自写一份判断。
+ * PC 题目展示整理工具把后端题目转换成适合列表、详情和考场展示的标签与段落。
  *
- * @param 无；文件级模块依赖导出函数、组合式 API 或调用方传入上下文。
- * @return 导出可复用的端侧能力，具体返回值由各公共函数保持兼容。
- * @raises 不主动吞掉业务异常；请求失败、权限不足和运行时错误交由调用方或全局拦截器处理。
+ * 展示层要尊重真实题源字段：考试体系、地区、岗位、套题和题型维度分开呈现；分值等评分信息只在允许展示的场景出现。
+ *
+ * @param 无；导出函数接收题目对象、题干文本或分类字段。
+ * @return 导出题目标签、题干切分、题型/省份展示和评分支持判断辅助函数。
+ * @raises 参数异常通常返回兜底值；需要阻断流程的错误交由调用方处理。
  */
 import { DIMENSIONS, PROVINCES, getQuestionTypeName } from '@/utils/constants'
 import { isQuestionScoringSupported } from '@/utils/scoringSupport'

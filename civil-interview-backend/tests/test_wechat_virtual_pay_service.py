@@ -1,9 +1,12 @@
 """
-这个测试文件守住 `test_wechat_virtual_pay_service` 对应的回归场景；它记录的是以前容易出错的业务边界，而不是普通示例代码。
+微信虚拟支付测试锁定小程序审核最敏感的支付参数和订单确认路径。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+所有虚拟训练权益都必须走官方小程序虚拟支付，不能回退普通微信支付或 PC mock 支付；手机端拉起失败时，
+最容易出错的是 openId、offerId、env、paySig 和商品价格映射。这里用可控签名和假微信返回值验证这些字段。
+
+@param: 无；用例通过 monkeypatch 构造微信配置、code2session 和订单查询响应。
+@return: 无直接返回；断言通过表示虚拟支付请求和确认逻辑仍符合当前审核口径。
+@raises ImportError: 支付服务、配置或订单模型导入失败时会中断测试。
 """
 import hashlib
 import hmac
@@ -20,13 +23,14 @@ from app.services.wechat_pay_service import wechat_pay_service
 
 def test_virtual_pay_payload_uses_code2session_and_official_params(monkeypatch):
     """
-    test_virtual_pay_payload_uses_code2session_and_official_params 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+    小程序下单 payload 必须来自 code2session，并包含官方虚拟支付要求的签名字段。
 
-    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+    手机端“当前仅支持微信支付”这类问题通常来自 openId、env、offerId、productId 或 paySig 不完整；
+    这里用固定 session_key 和 sandbox key 锁住参数生成口径。
 
-    @param monkeypatch: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param monkeypatch: pytest 提供的隔离工具，用于替换配置、网络请求或外部服务返回值。
+    @return: None；payload 内的 openId、商品价格和两类签名都符合预期时通过。
+    @raises AssertionError: 虚拟支付参数缺失、价格不一致或签名计算漂移时失败。
     """
     monkeypatch.setattr(settings, "wechat_pay_enabled", True)
     monkeypatch.setattr(settings, "wechat_pay_appid", "wx_test")
@@ -76,13 +80,13 @@ def test_virtual_pay_payload_uses_code2session_and_official_params(monkeypatch):
 
 def test_virtual_pay_payload_rejects_non_virtual_channel(monkeypatch):
     """
-    test_virtual_pay_payload_rejects_non_virtual_channel 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+    虚拟训练权益不能接受普通微信支付 channel。
 
-    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+    小程序审核要求所有虚拟商品购买接入官方虚拟支付；这里锁住服务端兜底，防止前端传错 payChannel 后悄悄回退普通支付。
 
-    @param monkeypatch: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-    @raises AssertionError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+    @param monkeypatch: pytest 提供的隔离工具，用于替换配置、网络请求或外部服务返回值。
+    @return: None；非虚拟支付 channel 被 400 拒绝时通过。
+    @raises AssertionError: 普通微信支付被接受或错误信息不含审核口径时失败。
     """
     monkeypatch.setattr(settings, "wechat_pay_enabled", True)
     order = PaymentOrder(order_no="PAY_TEST_001A", username="alice", amount=Decimal("99.00"), extra_payload={})
@@ -106,13 +110,14 @@ def test_virtual_pay_payload_rejects_non_virtual_channel(monkeypatch):
 
 def test_virtual_pay_order_amount_follows_actual_goods_price():
     """
-    test_virtual_pay_order_amount_follows_actual_goods_price 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+    本地订单金额要跟微信虚拟支付道具价格对齐。
 
-    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+    套餐页展示价和微信商品价一旦不一致，审核和到账都会出现解释不清的差异；
+    这里用 1 分钱道具确认服务层会按实际 goodsPrice 修正订单金额。
 
-    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param: 无；构造 99 元本地订单和 1 分钱虚拟支付元数据。
+    @return: None；订单金额被同步为 0.01 时通过。
+    @raises AssertionError: 本地订单没有跟随微信商品价格修正时失败。
     """
     order = PaymentOrder(order_no="PAY_TEST_002", username="alice", amount=Decimal("99.00"), extra_payload={})
 
@@ -123,13 +128,13 @@ def test_virtual_pay_order_amount_follows_actual_goods_price():
 
 def test_virtual_pay_confirm_extracts_transaction_id_from_raw_result():
     """
-    test_virtual_pay_confirm_extracts_transaction_id_from_raw_result 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+    小程序支付确认要能从原始 rawResult 中提取微信交易号。
 
-    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+    手机端拉起虚拟支付后，前端回传字段可能嵌在 WeChatPayInfo 里；提取不到交易号会让后续查单和退款缺少凭证。
 
-    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param: 无；构造只包含 rawResult 的确认对象。
+    @return: None；能读出 TransactionId 时通过。
+    @raises AssertionError: 微信交易号提取失败时失败。
     """
     data = type("Confirm", (), {
         "thirdPartyOrderNo": "",
@@ -141,13 +146,13 @@ def test_virtual_pay_confirm_extracts_transaction_id_from_raw_result():
 
 def test_virtual_pay_query_order_uses_access_token_and_pay_sig(monkeypatch):
     """
-    test_virtual_pay_query_order_uses_access_token_and_pay_sig 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+    查单请求必须先取 access_token，再用官方路径和请求体计算 pay_sig。
 
-    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+    微信虚拟支付查单不是普通商户订单查询；参数名、签名路径和 order_id 口径错一个，都会导致微信侧 502 或验单失败。
 
-    @param monkeypatch: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param monkeypatch: pytest 提供的隔离工具，用于替换配置、网络请求或外部服务返回值。
+    @return: None；GET token、POST 查单和 pay_sig 校验都符合预期时通过。
+    @raises AssertionError: 查单请求参数、签名或返回值归一化错误时失败。
     """
     monkeypatch.setattr(settings, "wechat_pay_appid", "wx_test")
     monkeypatch.setattr(settings, "wechat_miniprogram_app_secret", "secret")
@@ -166,13 +171,13 @@ def test_virtual_pay_query_order_uses_access_token_and_pay_sig(monkeypatch):
 
         def json(self):
             """
-            json 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+            返回假微信响应体，保持 requests.Response 的最小接口。
 
-            测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+            查单逻辑只依赖 `status_code` 和 `json()`；保留这个小替身可以专注验证 access_token、pay_sig 和请求体，而不引入真实网络。
 
-            @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-            @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-            @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+            @param: 无；由被测服务调用。
+            @return: 构造 FakeResponse 时传入的微信响应字典。
+            @raises: 不主动抛出异常；异常场景由具体 payload 模拟。
             """
             return self._payload
 
@@ -215,13 +220,13 @@ def test_virtual_pay_query_order_uses_access_token_and_pay_sig(monkeypatch):
 
 def test_verify_order_with_wechat_persists_transaction_id(monkeypatch):
     """
-    test_verify_order_with_wechat_persists_transaction_id 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+    微信查单成功后必须把交易号和核验结果写回本地订单。
 
-    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+    本地 order.status 不是到账依据，只有微信侧确认后才能发权益；同时退款、客服排查和订单中心都依赖 third_party_order_no。
 
-    @param monkeypatch: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param monkeypatch: pytest 提供的隔离工具，用于替换配置、网络请求或外部服务返回值。
+    @return: None；订单写入交易号、verified 和 verifyPending=false 时通过。
+    @raises AssertionError: 查单结果没有持久化到订单 callback_payload 或交易号字段时失败。
     """
     order = PaymentOrder(
         order_no="PAY_TEST_004",
@@ -253,13 +258,13 @@ def test_verify_order_with_wechat_persists_transaction_id(monkeypatch):
 
 def test_virtual_pay_query_extracts_wechat_order_fields_from_nested_order():
     """
-    test_virtual_pay_query_extracts_wechat_order_fields_from_nested_order 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+    微信查单返回嵌套 order 结构时，也要提取支付状态、金额和交易号。
 
-    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+    微信不同接口版本和环境返回字段层级可能不同；如果只读顶层字段，订单中心和退款会拿不到真实交易信息。
 
-    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param: 无；构造含 `order` 子对象的微信响应。
+    @return: None；能提取已支付状态、微信交易号、金额和支付时间时通过。
+    @raises AssertionError: 嵌套字段解析失败时失败。
     """
     result = {
         "errcode": 0,

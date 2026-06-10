@@ -1,9 +1,12 @@
 /**
- * 这个状态仓库保存 `user` 相关跨页面状态；把它放在 Pinia 里，是为了切页面后仍能复用同一份数据。
+ * PC 用户状态仓库，集中保存 token、用户资料、省份偏好、管理员标识、协议状态和设备风险提示。
  *
- * @param 无；文件级模块依赖导出函数、组合式 API 或调用方传入上下文。
- * @return 导出可复用的端侧能力，具体返回值由各公共函数保持兼容。
- * @raises 不主动吞掉业务异常；请求失败、权限不足和运行时错误交由调用方或全局拦截器处理。
+ * 页面不要各自读写 localStorage 或拼用户对象；统一 store 能保证登录、退出、省份切换、管理员路由和权益刷新保持一致。
+ * 用户权益详情由订阅/支付接口同步进用户偏好，这里只保存端侧需要的展示快照。
+ *
+ * @param 无；actions 接收登录表单、用户资料表单、偏好更新或路由跳转意图。
+ * @return 导出 Pinia store，供页面、路由守卫和请求层读取用户状态。
+ * @raises Error: 登录失败、资料更新失败或接口 401/403 会由 action 抛给调用方处理。
  */
 import { defineStore } from 'pinia'
 import { getUserInfo, updatePreferences, updateUserProfile, getProvinces } from '@/api/user'

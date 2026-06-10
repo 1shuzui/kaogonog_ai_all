@@ -1,9 +1,12 @@
 """
-这个文件收口管理员和登录权限判断；后台页面、退款管理和题库维护都依赖这里挡住普通用户。
+用户访问权限与权益快照模块。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+PC 和小程序会隐藏很多入口，但真正的管理员、付费和试用边界必须由后端兜住。这里把历史 billing 字段、新订阅表、内置管理员账号和用户 preferences 统一整理成一个 access_context，避免退款、题库维护、权益扣减、试用入口在不同路由里得到不一致的“是否可用”答案。
+
+@param: 模块本身无入参；业务输入来自 User ORM 对象、preferences 字典和订阅关系。
+@return: 导出权限判断与权益快照函数，供认证依赖和服务层生成统一 isAdmin/isPaid/permissions 结果。
+@raises ImportError: 缺少 FastAPI、时间或配置依赖时会在导入阶段失败。
+@raises HTTPException: 管理员断言失败时由 require_admin_or_403 抛出 403。
 """
 from __future__ import annotations
 

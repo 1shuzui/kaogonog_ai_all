@@ -1,9 +1,11 @@
 /**
- * 这个组合式函数封装 `useCountdown` 相关浏览器行为；页面复用它，是为了少碰底层 API 和生命周期细节。
+ * 倒计时组合函数服务读题、准备和答题阶段，统一处理暂停、重置和结束回调，避免不同考场页对时间边界理解不一致。
  *
- * @param 无；文件级模块依赖导出函数、组合式 API 或调用方传入上下文。
- * @return 导出可复用的端侧能力，具体返回值由各公共函数保持兼容。
- * @raises 不主动吞掉业务异常；请求失败、权限不足和运行时错误交由调用方或全局拦截器处理。
+ * 计时只负责 UI 与流程推进，不决定题目分值、权益消耗或考试是否有效；这些判断应由考场流程和后端结果确认。
+ *
+ * @param 无；导出的 useCountdown 接收初始秒数，运行时可重置新的总时长。
+ * @return 导出剩余时间、进度、格式化文本和 start/pause/stop/reset/onFinish 操作。
+ * @raises 浏览器权限、网络和运行时异常按函数内部策略提示或交由调用方处理。
  */
 import { ref, computed, onUnmounted } from 'vue'
 import { formatTime } from '@/utils/formatter'

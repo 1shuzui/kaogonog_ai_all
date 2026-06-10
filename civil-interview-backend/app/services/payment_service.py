@@ -1,9 +1,13 @@
 """
-这个文件处理套餐订单、虚拟支付确认和退款申请；微信审核很在意虚拟权益口径，所以这里的分支主要是在保护订单可追溯和到账一致。
+支付与到账服务层，负责套餐订单、微信小程序虚拟支付确认、退款申请和支付成功后的权益生成。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+微信审核要求虚拟训练权益必须走官方小程序虚拟支付能力，因此这里不保留普通微信支付分支，也不让人工补偿伪装成支付订单。
+订单表只记录真实购买和退款状态；支付成功后再创建或更新 `UserSubscription`，并同步用户偏好里的权益快照。
+退款扣减、客服补偿和测试账号赠送属于管理员人工权益调整，应走 `entitlement_admin_service.py` 留审计流水。
+
+@param: 服务函数接收数据库 Session、当前用户、套餐编码、支付确认参数、退款申请或后台退款操作请求。
+@return: 返回订单详情、支付参数、退款统计、退款结果或最新权益摘要。
+@raises HTTPException: 套餐不存在、订单状态不合法、微信查询失败、退款越界或用户无权限时抛出 HTTP 错误。
 """
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -77,15 +81,15 @@ def _sync_order_amount_to_virtual_goods_price(order: PaymentOrder, pay_payload: 
 
 def create_payment_order(db: Session, current_user: AuthUser, data: PaymentOrderCreateRequest) -> dict:
     """
-    create_payment_order 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    创建本地支付订单并生成微信小程序虚拟支付 payload。
 
-    支付服务必须贴合微信小程序虚拟支付审核规则，所有兼容逻辑都需要保留可追溯理由。
+    虚拟训练权益属于微信审核认定的虚拟商品，所以这里不允许普通支付兜底。订单先落本地 pending，再调用微信虚拟支付服务生成拉起参数；如果微信参数生成失败会回滚本地订单，避免出现无法支付的悬空单。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param db: 请求级数据库会话。
+    @param current_user: 当前登录用户，订单归属和 openId 都以它为准。
+    @param data: 下单请求，包含套餐、支付渠道、场景、openId 和幂等键。
+    @return: 本地订单摘要、套餐信息和小程序拉起虚拟支付所需 payload。
+    @raises HTTPException: 用户/套餐不存在、支付渠道不符合虚拟支付或微信配置不可用时抛出。
     """
     get_user_or_404(db, current_user.username)
     package = _get_package_or_404(db, data.packageCode)
@@ -120,14 +124,14 @@ def create_payment_order(db: Session, current_user: AuthUser, data: PaymentOrder
 
 def list_payment_orders(db: Session, current_user: AuthUser) -> dict:
     """
-    list_payment_orders 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    列出当前用户自己的支付订单。
 
-    支付服务必须贴合微信小程序虚拟支付审核规则，所有兼容逻辑都需要保留可追溯理由。
+    订单中心只展示本人订单，管理员核查退款走单独后台接口；这样普通用户无法通过订单号枚举别人的支付记录。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param db: 请求级数据库会话。
+    @param current_user: 当前登录用户。
+    @return: 按创建时间倒序排列的订单列表和总数。
+    @raises HTTPException: 用户不存在时由 get_user_or_404 抛出。
     """
     get_user_or_404(db, current_user.username)
     orders = db.query(PaymentOrder).filter(
@@ -185,15 +189,15 @@ def _subscription_for_order(db: Session, order: PaymentOrder) -> UserSubscriptio
 
 def get_refund_balance_stats(db: Session, current_user: AuthUser, data: RefundBalanceStatsRequest) -> dict:
     """
-    get_refund_balance_stats 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    管理员查询可退款余额统计。
 
-    支付服务必须贴合微信小程序虚拟支付审核规则，所有兼容逻辑都需要保留可追溯理由。
+    退款前需要同时看本地订单、关联权益、已用时长和微信侧可退余额。这个接口只做本地可退额度预估，真正退款仍必须走微信虚拟支付退款接口。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param db: 请求级数据库会话。
+    @param current_user: 当前管理员用户。
+    @param data: 用户名或订单号筛选条件。
+    @return: 可退款订单列表和汇总金额/小时数。
+    @raises HTTPException: 非管理员访问时抛出 403。
     """
     _assert_admin(current_user)
     query = db.query(PaymentOrder).filter(PaymentOrder.status.in_(["paid", "refunded"]))
@@ -215,15 +219,15 @@ def get_refund_balance_stats(db: Session, current_user: AuthUser, data: RefundBa
 
 def apply_refund(db: Session, current_user: AuthUser, data: RefundApplyRequest) -> dict:
     """
-    apply_refund 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    管理员发起微信虚拟支付退款。
 
-    支付服务必须贴合微信小程序虚拟支付审核规则，所有兼容逻辑都需要保留可追溯理由。
+    退款不能只把本地订单改成 refunded，必须先查微信订单、计算可退 left_fee，再调用微信退款接口。成功后才同步本地订单、权益状态和退款 payload，保证客服后台与微信交易订单可对账。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    @param db: 请求级数据库会话。
+    @param current_user: 当前管理员用户。
+    @param data: 退款申请，包含订单号、退款小时数、原因和备注。
+    @return: 退款提交结果、更新后的订单退款行和微信响应。
+    @raises HTTPException: 非管理员、订单不可退、微信查单失败或微信退款失败时抛出。
     """
     _assert_admin(current_user)
     order = db.query(PaymentOrder).filter(PaymentOrder.order_no == data.orderNo).first()
@@ -329,15 +333,15 @@ def apply_refund(db: Session, current_user: AuthUser, data: RefundApplyRequest) 
 
 def get_payment_order(db: Session, current_user: AuthUser, order_no: str) -> dict:
     """
-    get_payment_order 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    读取当前用户自己的单个订单。
 
-    支付服务必须贴合微信小程序虚拟支付审核规则，所有兼容逻辑都需要保留可追溯理由。
+    查询订单不会重新生成支付签名，避免用户刷新订单页时重复制造支付参数；需要重新支付时应回套餐中心重新下单。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param order_no: 内部订单号；退款、回调和人工核查都以它作为可追溯主键。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    @param db: 请求级数据库会话。
+    @param current_user: 当前登录用户。
+    @param order_no: 本地订单号。
+    @return: 订单摘要和只读查询提示 payload。
+    @raises HTTPException: 订单不存在或套餐配置不存在时抛出。
     """
     order = db.query(PaymentOrder).filter(
         PaymentOrder.order_no == order_no,
@@ -358,15 +362,15 @@ def get_payment_order(db: Session, current_user: AuthUser, order_no: str) -> dic
 
 def verify_virtual_payment_order(db: Session, current_user: AuthUser, order_no: str) -> dict:
     """
-    verify_virtual_payment_order 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    主动向微信核验当前用户订单是否已支付。
 
-    支付服务必须贴合微信小程序虚拟支付审核规则，所有兼容逻辑都需要保留可追溯理由。
+    小程序支付完成后的回调/确认可能受网络影响，用户端可以调用这里补核单。核验成功会更新本地订单状态，但仍以后端创建权益为准。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param order_no: 内部订单号；退款、回调和人工核查都以它作为可追溯主键。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    @param db: 请求级数据库会话。
+    @param current_user: 当前登录用户。
+    @param order_no: 本地订单号。
+    @return: 本地订单摘要和微信核验结果。
+    @raises HTTPException: 订单/套餐不存在、微信查单失败或微信返回未支付时抛出。
     """
     order = db.query(PaymentOrder).filter(
         PaymentOrder.order_no == order_no,
@@ -511,16 +515,16 @@ def _ensure_subscription_for_paid_order(db: Session, order: PaymentOrder, packag
 
 def confirm_virtual_payment_order(db: Session, current_user: AuthUser, order_no: str, data: PaymentVirtualConfirmRequest) -> dict:
     """
-    confirm_virtual_payment_order 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    确认小程序虚拟支付成功并发放权益。
 
-    支付服务必须贴合微信小程序虚拟支付审核规则，所有兼容逻辑都需要保留可追溯理由。
+    端侧必须传 payResult=success 且 scene=mini_program_virtual；服务端随后核验订单、标记 paid、创建订阅并刷新用户 preferences。已支付订单重复确认时只补齐权益，避免重复发放。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param order_no: 内部订单号；退款、回调和人工核查都以它作为可追溯主键。
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    @param db: 请求级数据库会话。
+    @param current_user: 当前登录用户。
+    @param order_no: 本地订单号。
+    @param data: 小程序支付完成后上报的场景、结果和 paidAt。
+    @return: 确认结果、订单摘要和最新权益状态。
+    @raises HTTPException: 场景不匹配、支付未成功、订单不存在或核验失败时抛出。
     """
     user = get_user_or_404(db, current_user.username)
     order = db.query(PaymentOrder).filter(

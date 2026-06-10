@@ -1,9 +1,12 @@
 /**
- * 这个状态仓库保存 `user` 相关跨页面状态；把它放在 Pinia 里，是为了切页面后仍能复用同一份数据。
+ * 小程序用户状态仓库，保存 token、账号资料、省份偏好、管理员标识、登录跳转和协议状态。
  *
- * @param 无；文件级模块依赖导出函数、组合式 API 或调用方传入上下文。
- * @return 导出可复用的端侧能力，具体返回值由各公共函数保持兼容。
- * @raises 不主动吞掉业务异常；请求失败、权限不足和运行时错误交由调用方或全局拦截器处理。
+ * 首页要允许未登录浏览，所以 store 初始化不能主动拉起微信授权；只有页面调用登录动作时才请求 code 和后端登录接口。
+ * 所有需要账号的页面通过这里判断登录态，避免多个页面各自读写 storage。
+ *
+ * @param 无；actions 接收登录 code、用户资料、偏好更新或退出请求。
+ * @return 导出 Pinia store，供页面、请求层和导航拦截读取用户状态。
+ * @raises Error: 登录、资料更新或偏好同步失败时由 action 抛给页面处理。
  */
 import { defineStore } from 'pinia'
 import { bindWechatMiniProgram, login as loginApi, loginWithWechat as loginWithWechatApi, register as registerApi, setupWechatMiniProgramAccount } from '../api/auth'

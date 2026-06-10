@@ -1,9 +1,13 @@
 """
-这个文件是评分主链路，负责把题目、转写文本、采分点和 LLM 结果拼成用户看到的分数；缓存和兜底逻辑都是为了让重复评分更快、异常答案也能稳定返回。
+评分主链路服务，把题干、采分点、关键词、学生转写、视频行为和 LLM 结果合成为最终评分反馈。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+这里需要同时服务文本答案、录音转写答案和带视频的考试答案，所以缓存、ASR 兜底、低质量答案识别和维度补齐都集中在这里。
+能力维度用于评价考生表现，题型分类只用于训练筛选；两者不能互相填充。评分稳定性依赖题库里的采分点和关键词，
+管理员新增题目时应尽量补齐这些字段，否则模型只能更多依赖通用判断和保守兜底。
+
+@param: 服务函数接收数据库 Session、题号、答案文本、媒体文件路径或已经生成的转写内容。
+@return: 返回分数、等级、能力维度、扣分分析、改进建议和必要的转写元数据。
+@raises HTTPException: 题目不存在、媒体无法读取、ASR/LLM 调用失败且无兜底结果时抛出 HTTP 错误。
 """
 import hashlib
 import json
@@ -131,15 +135,16 @@ NON_SUBSTANTIVE_MARKERS = (
 
 def attach_asr_meta_to_media_record(db: Session, audio_sha256: str, asr_meta: dict) -> bool:
     """
-    attach_asr_meta_to_media_record 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    把一次转写的 ASR 元数据补写到最近的媒体答题记录。
 
-    评分服务承载 ASR、LLM 和本地规则之间的折中，注释重点记录评分稳定性与成本边界。
+    转写接口和评分接口可能分两次调用，媒体记录通常已经随考试答案保存；用音频 SHA256 关联，
+    可以把 FunASR 模型、VAD、耗时和重试状态补进历史结果，方便后续排查转写质量而不重新跑模型。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param audio_sha256: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param asr_meta: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param db: 当前请求复用的数据库会话。
+    @param audio_sha256: 音频内容指纹。
+    @param asr_meta: 转写服务返回的模型、分段、耗时和质量元数据。
+    @return: 找到并更新媒体记录时返回 True，否则返回 False。
+    @raises: 不主动包装数据库异常，提交失败会沿调用栈上抛。
     """
     if not audio_sha256 or not isinstance(asr_meta, dict):
         return False
@@ -164,15 +169,16 @@ def attach_asr_meta_to_media_record(db: Session, audio_sha256: str, asr_meta: di
 
 async def transcribe(audio_bytes: bytes, filename: str = "answer.webm", db: Session | None = None) -> dict:
     """
-    transcribe 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    调用真实 ASR 转写答题音频，并尽量把转写元数据挂回答题记录。
 
-    评分服务承载 ASR、LLM 和本地规则之间的折中，注释重点记录评分稳定性与成本边界。
+    长音频不能直接整段塞给识别模型，底层 `transcribe_audio_file_with_meta` 会按当前 FunASR/VAD 配置处理。
+    本函数只负责把结果整理成前端稳定字段，并在有数据库会话时补写媒体记录，避免评分页和历史页看到两套转写状态。
 
-    @param audio_bytes: 上传音频的二进制内容；进入 ASR 前用于缓存和切片，避免长音频直接压垮模型。
-    @param filename: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param audio_bytes: 上传音频二进制内容。
+    @param filename: 原始文件名，用于推断格式和记录来源。
+    @param db: 可选数据库会话；为空时只返回转写结果，不补写历史记录。
+    @return: 转写文本、估算时长、ASR 元数据、是否建议重试和提示信息。
+    @raises: ASR 依赖、文件处理或数据库提交异常会沿调用栈上抛。
     """
     result = await transcribe_audio_file_with_meta(audio_bytes, filename=filename)
     transcript = str(result.get("transcript") or "")
@@ -968,16 +974,17 @@ def _apply_short_answer_cap(result: dict, transcript: str) -> dict:
 
 async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_id: Optional[str]) -> dict:
     """
-    evaluate_answer 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    根据题目采分点、考生文字稿和可选媒体观察生成评分结果。
 
-    评分服务承载 ASR、LLM 和本地规则之间的折中，注释重点记录评分稳定性与成本边界。
+    评分链路必须同时处理三类情况：LLM 正常、LLM/ASR 不可用、文字稿无效。
+    因此这里先做缓存和无效作答筛查，再走两阶段评分，失败时回退到规则评分，避免把占位转写或无意义答案打成高分。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
-    @param transcript: 语音转写后的答题文本；评分链路依赖它，但不得把低置信 ASR 当成标准答案。
-    @param exam_id: 考试记录标识；用于把多题作答、扣权益和历史结果绑定到同一次练习。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    @param db: 当前请求复用的数据库会话。
+    @param question_id: 被评分的题目 ID。
+    @param transcript: ASR 或用户提交的答题文字稿。
+    @param exam_id: 可选考试 ID；存在时会把结果写入对应答题记录。
+    @return: 前端可直接展示的总分、维度分、评语、采分轨迹和媒体观察摘要。
+    @raises HTTPException: 题目不存在时抛出 404。
     """
     question = db.query(Question).filter(Question.id == question_id).first()
     if not question:
@@ -1228,15 +1235,15 @@ def _persist_result(db: Session, exam_id: Optional[str], question_id: str, trans
 
 def get_scoring_result(db: Session, exam_id: str, question_id: str) -> dict:
     """
-    get_scoring_result 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    读取指定考试题目的已保存评分结果。
 
-    评分服务承载 ASR、LLM 和本地规则之间的折中，注释重点记录评分稳定性与成本边界。
+    历史结果可能来自旧评分版本，所以返回前仍做维度归一化，保证“行政思维”等能力维度在双端展示一致。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @param exam_id: 考试记录标识；用于把多题作答、扣权益和历史结果绑定到同一次练习。
-    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    @param db: 当前请求复用的数据库会话。
+    @param exam_id: 考试记录 ID。
+    @param question_id: 题目 ID。
+    @return: 归一化后的评分结果。
+    @raises HTTPException: 对应答题记录或评分结果不存在时抛出 404。
     """
     ans = db.query(ExamAnswer).filter(
         ExamAnswer.exam_id == exam_id,

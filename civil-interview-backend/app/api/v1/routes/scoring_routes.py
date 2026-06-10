@@ -1,9 +1,13 @@
 """
-这个路由文件提供ASR 转写、答题评分和评分状态接口；它只做请求参数、鉴权依赖和服务层转发，业务规则尽量留在 service 里。
+评分路由，提供音频转写、ASR 状态检查、答案评分和历史评分结果读取接口。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+路由层负责接收上传文件、保存临时媒体、做基础文本清洗和权限校验；真正的 ASR、视频行为分析、能力维度评分和缓存策略都在服务层。
+这里要维持两个边界：能力维度用于评价学生答题能力，题型分类只用于训练筛选；录音文件过长时应由 FunASR/VAD 切句处理，
+不能把整段长音频直接塞给模型。
+
+@param: FastAPI 注入上传文件、请求体、当前用户和数据库 Session。
+@return: 返回转写文本、ASR 服务状态、评分详情或已保存评分结果。
+@raises HTTPException: 未登录、文件格式不支持、ASR 不可用、题目不存在或评分失败时返回 HTTP 错误。
 """
 import re
 import shutil
@@ -65,15 +69,15 @@ async def scoring_transcribe(
     db: Session = Depends(get_db),
 ):
     """
-    scoring_transcribe 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    语音/视频转写路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    这里只负责接收上传文件和当前用户，真实 ASR、VAD 分段、缓存和占位文本策略由 scoring_service/core.ai 处理。
 
-    @param audio: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param file: 上传的音频或视频文件。
+    @param questionId: 可选题目 ID，用于后续上下文纠错。
+    @param current_user: Bearer token 解析出的当前用户。
+    @return: 转写文本、ASR 状态和诊断信息。
+    @raises HTTPException: 未登录、文件异常或 ASR 服务错误时抛出。
     """
     audio_bytes = await audio.read()
     return await transcribe(audio_bytes, filename=audio.filename or "answer.webm", db=db)
@@ -82,13 +86,13 @@ async def scoring_transcribe(
 @router.get("/asr-status")
 def scoring_asr_status(current_user: AuthUser = Depends(get_current_user)):
     """
-    scoring_asr_status 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    ASR 服务状态路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    该接口给前端和运维判断当前是否启用真实转写，避免页面把“未配置服务”的占位文本当作考生稿件。
 
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param current_user: Bearer token 解析出的当前用户。
+    @return: ASR provider、模型和可用状态。
+    @raises HTTPException: 未登录时抛出 401。
     """
     asr_model = _resolve_asr_model()
     remote_asr_model = _resolve_remote_asr_model()
@@ -123,15 +127,15 @@ def scoring_asr_status(current_user: AuthUser = Depends(get_current_user)):
 @router.post("/evaluate")
 async def scoring_evaluate(data: EvaluateRequest, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    scoring_evaluate 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    面试答案评分路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    路由层负责合并表单、文本答案和可选媒体文件；评分维度、采分点、ASR 和视频观察都由服务层统一处理。
 
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises HTTPException: 请求参数、权限或数据状态不符合当前业务规则时抛出。
+    @param request: FastAPI 原始请求，用于读取 multipart 或 JSON。
+    @param current_user: Bearer token 解析出的当前用户。
+    @param db: 请求级数据库会话。
+    @return: 评分结果、文字稿、能力维度和建议。
+    @raises HTTPException: 未登录、题目不存在、答案缺失或评分服务失败时抛出。
     """
     if not db.query(Question.id).filter(Question.id == data.questionId).first():
         raise HTTPException(status_code=404, detail="Question not found")
@@ -152,15 +156,14 @@ async def scoring_evaluate(data: EvaluateRequest, current_user: AuthUser = Depen
 @router.get("/result/{exam_id}/{question_id}")
 def scoring_result(exam_id: str, question_id: str, current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    scoring_result 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    读取评分结果详情的路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    结果页按 resultId 回看历史评分，路由层只做鉴权和服务转发，避免前端直接拼历史记录结构。
 
-    @param exam_id: 考试记录标识；用于把多题作答、扣权益和历史结果绑定到同一次练习。
-    @param question_id: 题目唯一标识；评分、收藏和错题复盘需要用它追溯同一道真实题源。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param result_id: 评分结果或历史记录标识。
+    @param current_user: Bearer token 解析出的当前用户。
+    @param db: 请求级数据库会话。
+    @return: 评分结果详情。
+    @raises HTTPException: 未登录、结果不存在或无权访问时抛出。
     """
     return get_scoring_result(db, exam_id, question_id)

@@ -1,9 +1,12 @@
 """
-这个脚本写入基础账号、套餐或示例数据；本地初始化可用它，现网执行前要先确认不会覆盖真实数据。
+空库初始化脚本，用来给本地后端补齐默认管理员和少量示例题。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+这个脚本会直接写数据库，不属于线上迁移工具；现网数据库已经有真实用户、订单和题库资产时不要把它当作修复命令执行。
+需要初始化正式表结构时优先使用 `database_setup.py`，需要导入真实题库时走题库导入脚本，避免示例题污染统计分析。
+
+@param: 无；执行时读取当前数据库配置和同目录 `seed_questions.json`。
+@return: 无直接返回；执行结果通过标准输出和数据库记录体现。
+@raises ImportError: 项目包路径、配置模块、ORM 模型或安全工具缺失时导入失败。
 """
 import json
 import os
@@ -25,9 +28,9 @@ def seed():
 
     现网执行前需要确认 seed_questions.json 内容，避免把测试题误同步到真实题库。
 
-    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param: 无；读取当前数据库配置和同目录 `seed_questions.json`。
+    @return: 无返回值；通过 stdout 打印插入或跳过结果。
+    @raises Exception: 建表、写入默认用户或写入 seed 题失败时回滚并上抛。
     """
     Base.metadata.create_all(bind=engine)
     print("[seed] Tables created (or already exist)")

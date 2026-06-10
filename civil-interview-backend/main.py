@@ -1,9 +1,13 @@
 """
-这个文件是主后端入口，负责挂路由、启动生命周期和初始化种子数据；生产服务跑起来后，外部只应该通过这里暴露的 FastAPI 应用访问。
+后端生产服务入口，负责把配置、数据库、路由、静态上传目录和启动生命周期组装成同一个 FastAPI 应用。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+这里会在服务启动时做三件对现网很关键的事：创建缺失的数据表、挂载所有 `/api/v1`
+业务路由、同步内置题库 JSON 资产。它不是一次性迁移脚本，启动阶段只适合做幂等补齐；
+涉及清库、重建或批量导入的动作必须放到专门脚本里，避免重启服务时误伤线上数据。
+
+@param: 无；ASGI 服务器导入 `app` 后由 FastAPI 根据请求路径分发到具体路由。
+@return: 暴露 `app` 供 uvicorn/systemd、本地开发和健康检查复用。
+@raises ImportError: 配置、数据库驱动、路由模块或依赖包缺失时，应用导入阶段会失败。
 """
 import logging
 import os
@@ -35,9 +39,9 @@ def sync_subscription_package_seeds(db) -> int:
 
     这里只维护内置套餐定义，不处理用户订单；这样重启服务不会改动真实购买记录。
 
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param db: 启动生命周期中创建的 SQLAlchemy 会话。
+    @return: 实际新增或更新的套餐行数。
+    @raises: 不主动包装数据库异常，提交失败会让启动日志记录 seed 同步失败。
     """
     from database_setup import SUBSCRIPTION_PACKAGE_SEEDS
     from app.models.entities import SubscriptionPackage
@@ -80,9 +84,9 @@ def ensure_question_indexes() -> None:
 
     索引创建失败只记录 warning，是为了避免低权限数据库环境直接阻断服务启动。
 
-    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param: 无；使用模块级数据库 engine 读取和创建索引。
+    @return: 无返回值；缺失索引会被创建，已有索引保持不动。
+    @raises: 内部捕获并记录异常，避免索引补齐失败直接阻断服务启动。
     """
     index_specs = {
         "idx_questions_province_dimension": "CREATE INDEX idx_questions_province_dimension ON questions (province, dimension)",
@@ -108,9 +112,9 @@ def ensure_targeted_focus_config_schema() -> None:
 
     这段保留 legacy target_key，是为了不丢掉早期按 province + position 保存的配置。
 
-    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param: 无；使用模块级数据库 engine 检查现有表结构。
+    @return: 无返回值；缺失列和索引会按需补齐。
+    @raises: 内部捕获并记录异常，避免旧表补字段失败直接阻断服务启动。
     """
     column_specs = {
         "target_key": "ALTER TABLE targeted_focus_configs ADD COLUMN target_key VARCHAR(255) NULL",
@@ -154,9 +158,9 @@ def ensure_user_activity_schema() -> None:
 
     旧用户没有 registered_at 时用 created_at 回填，避免统计面板把历史用户当成今天注册。
 
-    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param: 无；使用模块级数据库 engine 检查 users 表。
+    @return: 无返回值；缺失活跃时间字段和索引会按需补齐。
+    @raises: 内部捕获并记录异常，避免统计字段补齐失败直接阻断服务启动。
     """
     column_specs = {
         "last_login_at": "ALTER TABLE users ADD COLUMN last_login_at DATETIME NULL",
@@ -199,9 +203,9 @@ async def lifespan(app: FastAPI):
 
     这些工作放在生命周期里，是为了让第一批真实请求进来前数据库已经处于可用形态。
 
-    @param app: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param app: FastAPI 应用实例，由框架在生命周期阶段传入。
+    @return: 异步上下文管理器；yield 前执行启动准备，yield 后关闭 Redis 连接。
+    @raises: 建表失败会中断启动；种子同步失败只记录 warning，避免题库或套餐 seed 阻断主服务。
     """
     Base.metadata.create_all(bind=engine)
     ensure_user_activity_schema()
@@ -269,9 +273,9 @@ def health():
 
     它不访问数据库，避免数据库短抖动时把整个 Web 进程误判成不可达。
 
-    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param: 无。
+    @return: 固定的服务存活状态和版本号。
+    @raises: 不主动抛业务异常。
     """
     return {"status": "ok", "version": "2.0.0"}
 
@@ -283,9 +287,9 @@ def root():
 
     真正的业务接口仍挂在 API 路由下，根路径只做服务说明。
 
-    @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param: 无。
+    @return: 后端服务名称和文档入口提示。
+    @raises: 不主动抛业务异常。
     """
     return {"message": "Civil Interview API", "docs": "/docs"}
 

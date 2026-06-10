@@ -1,9 +1,12 @@
 /**
- * 这个状态仓库保存 `history` 相关跨页面状态；把它放在 Pinia 里，是为了切页面后仍能复用同一份数据。
+ * PC 历史记录状态仓库维护账号维度的练习记录、趋势和统计摘要。
  *
- * @param 无；文件级模块依赖导出函数、组合式 API 或调用方传入上下文。
- * @return 导出可复用的端侧能力，具体返回值由各公共函数保持兼容。
- * @raises 不主动吞掉业务异常；请求失败、权限不足和运行时错误交由调用方或全局拦截器处理。
+ * 历史数据是评分结果的回放，不能被前端根据本地收藏或当前题目重新推算；薄弱维度仍保留“法治思维”到“行政思维”的兼容映射。
+ * 这些数据只在用户登录后使用，避免把个人练习轨迹暴露给未登录浏览页面。
+ *
+ * @param 无；actions 接收分页、日期和省份等历史查询条件。
+ * @return 导出 Pinia store，供历史列表、首页概览和能力趋势组件复用。
+ * @raises 不主动抛业务异常；接口失败由 action 或调用页面转成提示。
  */
 import { defineStore } from 'pinia'
 import { getHistoryList, getHistoryDetail, getHistoryTrend, getHistoryStats } from '@/api/history'

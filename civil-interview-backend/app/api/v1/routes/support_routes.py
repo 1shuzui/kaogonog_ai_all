@@ -1,9 +1,12 @@
 """
-这个路由文件提供用户反馈和管理员处理接口；它只做请求参数、鉴权依赖和服务层转发，业务规则尽量留在 service 里。
+客服反馈路由，承接用户提交题目纠错、支付问题、体验建议、附件上传和管理员处理反馈状态。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+反馈链路是用户与管理员之间的轻量工单系统：普通用户只能提交和查看自己的反馈，管理员可以筛选、备注、更新状态和删除。
+这里不直接修题库、不直接退款、不直接改权益；它只留下可追溯线索，再由题库、支付或权益后台完成实际处理。
+
+@param: FastAPI 注入反馈请求、附件文件、筛选参数、当前用户和数据库 Session。
+@return: 返回反馈列表、创建结果、附件信息、状态更新结果或删除结果。
+@raises HTTPException: 未登录、非管理员、反馈不存在、附件不合法或用户无权访问时返回 HTTP 错误。
 """
 from fastapi import APIRouter, Depends, File, Query, UploadFile
 from sqlalchemy.orm import Session
@@ -36,22 +39,23 @@ def support_feedback_list(
     db: Session = Depends(get_db),
 ):
     """
-    support_feedback_list 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    查询反馈列表。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    普通用户默认只看自己的反馈，管理员才能通过 `scope` 和筛选条件查看全量工单。
+    这条边界放在服务层执行，路由层保留兼容参数，避免 PC 管理台和小程序反馈页分页口径不同。
 
-    @param current: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param page: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param pageSize: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param feedback_type: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param status: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param province: 地区筛选值；只表示地域，不替代考试体系或岗位方向。
-    @param keyword: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param scope: 调用方传入的原始值；字段名保持不变，方便旧路由、脚本和测试继续复用。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param current: 当前页码。
+    @param page: 兼容旧前端的页码别名，优先级高于 current。
+    @param pageSize: 每页条数。
+    @param feedback_type: 反馈类型筛选。
+    @param status: 处理状态筛选。
+    @param province: 地区筛选，只作为反馈上下文。
+    @param keyword: 标题、正文或用户名搜索词。
+    @param scope: `mine` 或管理员全量范围。
+    @param current_user: 鉴权层解析出的用户身份。
+    @param db: 当前请求复用的数据库会话。
+    @return: 分页反馈列表。
+    @raises HTTPException: 未登录、越权查看或查询失败时抛出。
     """
     return list_support_feedback(
         db,
@@ -73,15 +77,16 @@ def support_feedback_create(
     db: Session = Depends(get_db),
 ):
     """
-    support_feedback_create 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    创建用户反馈。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    反馈只记录问题线索，不在提交时直接改题库、退款或调权益；这样可以让管理员先核对证据，
+    再通过对应后台入口做可审计处理。
 
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param data: 反馈标题、类型、正文和关联上下文。
+    @param current_user: 鉴权层解析出的用户身份。
+    @param db: 当前请求复用的数据库会话。
+    @return: 新建反馈详情。
+    @raises HTTPException: 未登录、内容不合法或保存失败时抛出。
     """
     return create_support_feedback(db, current_user, data)
 
@@ -92,14 +97,14 @@ async def support_feedback_upload_attachment(
     current_user: AuthUser = Depends(get_current_user),
 ):
     """
-    support_feedback_upload_attachment 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    上传反馈附件并返回可挂到反馈正文的文件信息。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    附件保存与反馈创建分离，是为了兼容小程序先传图、再提交表单的交互；服务层仍会限制大小和文件类型。
 
-    @param file: 文件对象或路径；脚本和上传流程依赖它保留来源可追溯性。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param file: 用户上传的截图或佐证附件。
+    @param current_user: 鉴权层解析出的用户身份。
+    @return: 附件访问路径、文件名和元信息。
+    @raises HTTPException: 未登录、附件类型不支持或保存失败时抛出。
     """
     return await save_support_feedback_attachment(file)
 
@@ -112,16 +117,17 @@ def support_feedback_update(
     db: Session = Depends(get_db),
 ):
     """
-    support_feedback_update 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    更新反馈处理状态或管理员备注。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    反馈状态是客服工作台的轻量工单流转，不代表关联问题已经自动修复；实际退款、权益调整和题库修正
+    仍要在对应模块留下独立审计记录。
 
-    @param feedback_id: 业务对象标识；用于跨接口追溯同一条记录，调用方应避免传入展示名。
-    @param data: 路由层校验后的业务请求体；保留模型字段可以减少端侧版本差异造成的分支。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param feedback_id: 反馈记录 ID。
+    @param data: 状态、备注或处理结果更新请求。
+    @param current_user: 鉴权层解析出的用户身份。
+    @param db: 当前请求复用的数据库会话。
+    @return: 更新后的反馈详情。
+    @raises HTTPException: 反馈不存在、无权处理或状态不合法时抛出。
     """
     return update_support_feedback(db, current_user, feedback_id, data)
 
@@ -133,14 +139,15 @@ def support_feedback_delete(
     db: Session = Depends(get_db),
 ):
     """
-    support_feedback_delete 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    删除反馈记录。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    删除入口只面向管理员清理误提交或测试数据；真实售后处理不应依赖删除反馈来“撤销”，
+    需要在退款或权益流水里另留记录。
 
-    @param feedback_id: 业务对象标识；用于跨接口追溯同一条记录，调用方应避免传入展示名。
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param feedback_id: 反馈记录 ID。
+    @param current_user: 鉴权层解析出的用户身份。
+    @param db: 当前请求复用的数据库会话。
+    @return: 删除结果。
+    @raises HTTPException: 非管理员、反馈不存在或删除失败时抛出。
     """
     return delete_support_feedback(db, current_user, feedback_id)

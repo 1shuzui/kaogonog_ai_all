@@ -1,9 +1,12 @@
 """
-这个测试文件守住 `test_subscription_selection` 对应的回归场景；它记录的是以前容易出错的业务边界，而不是普通示例代码。
+权益选择测试确认多份套餐并存时，后端扣减的是用户正在使用的那一份。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+用户可能同时拥有月卡、小时包、人工补发和已退款权益；如果排序或每日重置逻辑错了，
+就会出现剩余 60 分钟长期不减少、已失效权益被优先展示或扣错套餐的问题。
+
+@param: 无；setUp 创建隔离数据库和多种权益组合。
+@return: 无直接返回；断言通过表示权益选择、每日重置和扣减仍符合现网口径。
+@raises ImportError: 订阅服务、ORM 模型或数据库依赖缺失时会失败。
 """
 import unittest
 from datetime import date, datetime, timedelta
@@ -21,23 +24,24 @@ from app.services.usage_service import report_usage
 
 class SubscriptionSelectionTestCase(unittest.TestCase):
     """
-    SubscriptionSelectionTestCase 作为公共类型保留，是为了让调用方共享同一套业务语义和数据边界。
+    多权益选择用例集合，专门防止“最新权益、可用权益、用户选中的权益”三者混淆。
 
-    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+    微信支付、人工补发和退款都会让一个用户名下同时挂多份权益；这些用例直接验证服务层口径，
+    避免只靠前端展示顺序判断该扣哪一份。
 
-    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
-    @return: 返回可被调用方实例化或引用的公共类型。
-    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    @param: 无；unittest 负责实例化测试类。
+    @return: unittest 测试用例类。
+    @raises AssertionError: 权益选择、重置或扣减口径退化时由断言报告。
     """
     def setUp(self):
         """
-        setUp 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        为每个用例创建独立内存库，避免套餐选择状态互相污染。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        这些用例关心排序和选中状态，复用数据库很容易把上一个用例的 active selection 带进来。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；测试框架自动调用。
+        @return: None；数据库会话写入实例字段供用例使用。
+        @raises AssertionError: 建库失败或表结构异常时由测试框架报告。
         """
         self.engine = create_engine("sqlite:///:memory:")
         Base.metadata.create_all(bind=self.engine)
@@ -46,26 +50,26 @@ class SubscriptionSelectionTestCase(unittest.TestCase):
 
     def tearDown(self):
         """
-        tearDown 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        关闭本用例数据库连接，确保下一条权益用例从干净状态开始。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        这里不做业务断言，只负责释放 SQLAlchemy 会话和内存库连接。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；测试框架自动调用。
+        @return: None；关闭会话和引擎。
+        @raises: 不主动抛出业务异常；连接释放异常会由测试框架暴露。
         """
         self.db.close()
         self.engine.dispose()
 
     def test_status_prefers_usable_paid_subscription_over_newer_inactive_subscription(self):
         """
-        test_status_prefers_usable_paid_subscription_over_newer_inactive_subscription 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        新创建但不可用的权益不能盖过仍可用的付费权益。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        退款或扣完的套餐通常比旧小时包更新；如果只按 created_at 排序，用户会看到“有余额却不能用”的假状态。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；构造一份可用小时包和一份更新的 inactive 月卡。
+        @return: None；状态优先选择可用小时包时通过。
+        @raises AssertionError: 后端错误优先返回不可用权益时失败。
         """
         user = User(username="ssy", hashed_password="x")
         paid = UserSubscription(
@@ -108,13 +112,13 @@ class SubscriptionSelectionTestCase(unittest.TestCase):
 
     def test_status_resets_stale_daily_usage_before_calculating_remaining(self):
         """
-        test_status_resets_stale_daily_usage_before_calculating_remaining 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        跨天后先清零每日已用，再计算当天剩余时长。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        包月每日限额和小时包日限额都依赖这个重置；顺序反了会让用户第二天仍被昨天用量拦住。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；构造 last_reset_date 为昨天的权益。
+        @return: None；每日用量归零且总余额不变时通过。
+        @raises AssertionError: 每日用量没有重置或余额计算顺序错误时失败。
         """
         user = User(username="ssy", hashed_password="x")
         subscription = UserSubscription(
@@ -141,13 +145,13 @@ class SubscriptionSelectionTestCase(unittest.TestCase):
 
     def test_status_keeps_multiple_entitlements_and_allows_switching_active_one(self):
         """
-        test_status_keeps_multiple_entitlements_and_allows_switching_active_one 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        多份有效权益要全部返回，同时允许用户切换当前扣减目标。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        用户可能买了月卡又保留小时包；页面需要看到完整权益列表，后端也要记住用户选择的是哪一份。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；构造小时包和月卡两份 active 权益。
+        @return: None；列表完整且切换后只有一份 active selection 时通过。
+        @raises AssertionError: 权益被丢失、选中状态重复或切换失败时失败。
         """
         user = User(username="ssy", hashed_password="x")
         hourly = UserSubscription(
@@ -198,13 +202,14 @@ class SubscriptionSelectionTestCase(unittest.TestCase):
 
     def test_usage_deducts_selected_entitlement(self):
         """
-        test_usage_deducts_selected_entitlement 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        上报训练用量时必须扣用户当前选中的权益。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        这是“时长似乎没有削减”这类问题的核心防线：如果服务层忽略 active selection，
+        用户切到小时包后仍可能扣月卡，或者反过来显示不一致。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；先切到小时包，再上报 61 秒训练用量。
+        @return: None；只扣选中的小时包、月卡不变时通过。
+        @raises AssertionError: 扣错权益或扣减分钟进位错误时失败。
         """
         user = User(username="ssy", hashed_password="x")
         hourly = UserSubscription(

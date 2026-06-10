@@ -1,9 +1,12 @@
 """
-这个路由文件提供试用资格和试用完成接口；它只做请求参数、鉴权依赖和服务层转发，业务规则尽量留在 service 里。
+试用路由，提供试用状态、试用题领取和试用完成标记。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+小程序首页可以未登录浏览，但试用接口必须登录，因为试用次数和完成状态要绑定用户账号。
+这里不直接生成正式套餐，也不绕过用量上报；试用权益仍走订阅服务的同一套可用性判断。
+
+@param: FastAPI 注入当前用户和数据库 Session。
+@return: 返回试用资格、试用题或试用完成状态。
+@raises HTTPException: 未登录、试用已用完、用户不存在或没有可用试用题时返回 HTTP 错误。
 """
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -19,14 +22,14 @@ router = APIRouter(prefix="/trial", tags=["trial"])
 @router.get("/status")
 def trial_status(current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    trial_status 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    读取当前用户试用状态。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    试用也依赖账号记录完成状态，所以未登录用户只能浏览功能，不能直接消耗试用题。
 
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param current_user: Bearer token 解析出的当前用户。
+    @param db: 请求级数据库会话。
+    @return: 是否可试用、是否已完成和试用题信息摘要。
+    @raises HTTPException: 未登录或用户不存在时抛出。
     """
     return get_trial_status(db, current_user)
 
@@ -34,14 +37,14 @@ def trial_status(current_user: AuthUser = Depends(get_current_user), db: Session
 @router.get("/question")
 def trial_question(current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    trial_question 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    领取试用题的路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    试用题必须和用户绑定，避免同一设备或清缓存重复领取；题目选择逻辑在 trial_service。
 
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param current_user: Bearer token 解析出的当前用户。
+    @param db: 请求级数据库会话。
+    @return: 试用题详情和试用状态。
+    @raises HTTPException: 未登录、已完成试用或题目不可用时抛出。
     """
     return get_trial_question(db, current_user)
 
@@ -49,13 +52,14 @@ def trial_question(current_user: AuthUser = Depends(get_current_user), db: Sessi
 @router.post("/complete")
 def trial_complete(current_user: AuthUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    trial_complete 集中封装这段业务边界，是为了让调用方复用同一套校验、降级或兼容策略。
+    标记试用完成的路由。
 
-    本模块位于 FastAPI 路由边界，负责把端侧请求收束到服务层，便于统一鉴权、错误语义和审核口径。
+    完成状态写入用户权益/偏好，后续套餐中心和首页都以此判断是否还能试用。
 
-    @param current_user: 已通过鉴权解析出的当前用户；用于把权限判断固定在服务端可信身份上。
-    @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
-    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    @param data: 试用完成请求。
+    @param current_user: Bearer token 解析出的当前用户。
+    @param db: 请求级数据库会话。
+    @return: 完成后的试用状态。
+    @raises HTTPException: 未登录或试用记录不存在时抛出。
     """
     return complete_trial(db, current_user)

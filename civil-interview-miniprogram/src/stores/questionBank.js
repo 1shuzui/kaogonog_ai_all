@@ -1,9 +1,12 @@
 /**
- * 这个状态仓库保存 `questionBank` 相关跨页面状态；把它放在 Pinia 里，是为了切页面后仍能复用同一份数据。
+ * 小程序题库状态仓库保存移动端筛选、分页列表和当前题目详情。
  *
- * @param 无；文件级模块依赖导出函数、组合式 API 或调用方传入上下文。
- * @return 导出可复用的端侧能力，具体返回值由各公共函数保持兼容。
- * @raises 不主动吞掉业务异常；请求失败、权限不足和运行时错误交由调用方或全局拦截器处理。
+ * 未登录用户可先浏览筛选结构，但真实题目检索、随机抽题和详情练习仍要经过接口权限；store 不负责绕过权益校验。
+ * 考试分类、地区、岗位和题型分类只作为查询条件传给后端，不能在端侧重新给题目定类。
+ *
+ * @param 无；actions 接收筛选条件、题目 id 或随机抽题参数。
+ * @return 导出 Pinia store，供题库列表、题目详情和移动端管理员题库页复用。
+ * @raises 不主动抛业务异常；接口失败由 action 或调用页面转成提示。
  */
 import { defineStore } from 'pinia'
 import { deleteQuestion, getQuestionById, getQuestions, getRandomQuestions } from '../api/questionBank'

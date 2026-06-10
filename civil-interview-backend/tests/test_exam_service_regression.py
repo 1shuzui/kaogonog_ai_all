@@ -1,9 +1,12 @@
 """
-这个测试文件守住 `test_exam_service_regression` 对应的回归场景；它记录的是以前容易出错的业务边界，而不是普通示例代码。
+考试服务回归测试守住“重复提交不会重复扣时长或覆盖结果”的边界。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+全真模拟和专项练习都可能因为网络抖动、用户连点或小程序重试而二次提交；后端必须把同一场考试的完成动作当作幂等操作，
+否则历史记录、权益消耗和评分结果会互相打架。
+
+@param: 无；测试库在 setUp 中创建题目、考试和答题记录。
+@return: 无直接返回；断言通过表示考试完成流程仍可安全重试。
+@raises ImportError: 考试服务、ORM 模型或数据库依赖缺失时会失败。
 """
 import unittest
 from datetime import datetime, timezone
@@ -18,23 +21,25 @@ from app.services.exam_service import complete_exam
 
 class TestExamServiceRegression(unittest.TestCase):
     """
-    TestExamServiceRegression 作为公共类型保留，是为了让调用方共享同一套业务语义和数据边界。
+    考试完成回归用例集合，专门验证提交完成动作可以安全重试。
 
-    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+    小程序端可能因为网络重试或用户连点把同一场考试提交两次；服务层必须返回同一份完成结果，
+    不能重复生成历史记录，也不能让第二次提交覆盖第一次的评分。
 
-    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
-    @return: 返回可被调用方实例化或引用的公共类型。
-    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    @param: 无；unittest 负责实例化测试类。
+    @return: unittest 测试用例类。
+    @raises AssertionError: 考试完成幂等性、历史记录数量或分数字段退化时由断言报告。
     """
     def setUp(self):
         """
-        setUp 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        准备一场已经有答题评分、但考试状态仍未完成的模拟考试。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        重复提交问题通常发生在“评分已经写入、完成接口还在重试”的中间态；
+        这里把状态固定在 `in_progress`，才能验证服务层是否会复用既有评分并只生成一条历史记录。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；由 unittest 在每个用例前调用。
+        @return: None；题目、考试和答题评分写入内存数据库。
+        @raises AssertionError: 测试数据无法提交或考试关联字段不兼容时由后续断言暴露。
         """
         self.engine = create_engine("sqlite:///:memory:")
         Base.metadata.create_all(bind=self.engine)
@@ -75,26 +80,26 @@ class TestExamServiceRegression(unittest.TestCase):
 
     def tearDown(self):
         """
-        tearDown 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        释放考试完成幂等性用例的数据库会话。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        考试完成会写入历史记录；每个用例独立销毁内存库可以避免重复记录影响下一次断言。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；由 unittest 在每个用例后调用。
+        @return: None；数据库会话和引擎被释放。
+        @raises: 不主动抛出业务异常；底层连接关闭异常会按测试失败暴露。
         """
         self.db.close()
         self.engine.dispose()
 
     def test_complete_exam_is_idempotent_for_repeated_submit(self):
         """
-        test_complete_exam_is_idempotent_for_repeated_submit 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        同一场考试重复完成时只能保留一条历史记录。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        这个用例防止二次提交把历史列表刷出重复记录，或把前一次评分结果重算成不同分数。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；使用 setUp 中已经准备好的考试和答题记录。
+        @return: None；两次完成都成功且历史记录唯一时通过。
+        @raises AssertionError: 重复提交产生多条历史记录或分数不一致时失败。
         """
         first = complete_exam(self.db, "exam_complete_1")
         second = complete_exam(self.db, "exam_complete_1")

@@ -1,9 +1,12 @@
 /**
- * 这个入口文件创建前端应用并挂载全局插件；路由、状态仓库和全局样式都从这里接入。
+ * 小程序端 Vue/uni-app 启动入口，负责创建 SSR 应用实例并挂载 Pinia 状态仓库。
  *
- * @param 无；文件级模块依赖导出函数、组合式 API 或调用方传入上下文。
- * @return 导出可复用的端侧能力，具体返回值由各公共函数保持兼容。
- * @raises 不主动吞掉业务异常；请求失败、权限不足和运行时错误交由调用方或全局拦截器处理。
+ * 小程序页面生命周期分散在各 page 内，这里只做最小装配，避免首屏启动时触发登录、请求个人数据或支付能力。
+ * 审核要求用户先浏览后登录，因此任何需要账号的动作都应在页面或 navigation 工具里主动拦截。
+ *
+ * @param 无；uni-app 编译后的运行时会调用 `createApp`。
+ * @return 返回 `{ app }` 给 uni-app 挂载。
+ * @raises Error: 根组件、Pinia 或运行时依赖加载失败时由 uni-app/Vue 抛出。
  */
 import { createSSRApp } from 'vue'
 import { createPinia } from 'pinia'

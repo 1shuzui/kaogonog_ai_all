@@ -1,9 +1,14 @@
 """
-这个文件把环境变量翻译成后端配置；MySQL、Redis、FunASR、微信虚拟支付这些外部依赖都先从这里取口径。
+后端配置中心，把根目录 `.env`、后端 `.env` 和运行环境变量整理成统一的 `settings` 对象。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+本文件集中决定外部依赖的默认口径：MySQL 连接、Redis 缓存、DeepSeek/Qwen 模型、FunASR ONNX/VAD、
+微信小程序虚拟支付、媒体上传限制和退款策略。根 `.env` 先加载，后端 `.env` 可以覆盖它，
+这是为了本地多项目共用配置时仍能让后端单独修正敏感项。新增配置时优先放在这里，避免服务层直接读取环境变量导致本地、
+服务器和测试环境行为不一致。
+
+@param: 无；模块导入时从环境变量和 `.env` 文件读取配置。
+@return: 暴露单例 `settings`，供数据库、AI、支付、缓存和路由模块读取。
+@raises ImportError: `dotenv` 等配置依赖缺失时导入失败；配置值格式错误通常在调用方使用时暴露。
 """
 import os
 from pathlib import Path
@@ -100,13 +105,16 @@ def _build_mysql_database_url() -> str:
 
 class Settings:
     """
-    Settings 作为公共类型保留，是为了让调用方共享同一套业务语义和数据边界。
+    后端运行配置对象，统一约束数据库、缓存、模型、ASR 和微信虚拟支付的环境变量口径。
 
-    核心模块提供跨服务共享能力，注释用于标明配置、安全和外部依赖的统一边界。
+    这里不用 Pydantic Settings，是为了兼容当前“根目录 `.env` + 后端 `.env` 后加载覆盖”的部署习惯。
+    MySQL 可以通过 `DATABASE_URL` 显式指定，也可以由 `MYSQL_*` 拼接；兜底 SQLite 只服务本地临时运行，
+    现网和后续开发仍应以 MySQL 为准。FunASR、Redis 和微信虚拟支付配置集中在这里，避免服务层各自读环境变量，
+    导致本地、服务器和测试口径漂移。
 
-    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
-    @return: 返回可被调用方实例化或引用的公共类型。
-    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    @param: 无；字段在类定义时从环境变量或 `.env` 文件读取。
+    @return: 可实例化的配置对象；模块底部的 `settings` 是全项目共享单例。
+    @raises: 类定义阶段不主动抛出业务异常；依赖缺失、环境变量格式异常会在导入或调用时暴露。
     """
     secret_key: str = _env("SECRET_KEY", default="civil-demo-secret")
     algorithm: str = "HS256"

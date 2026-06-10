@@ -1,9 +1,12 @@
 """
-这个测试文件守住 `test_funasr_asr` 对应的回归场景；它记录的是以前容易出错的业务边界，而不是普通示例代码。
+FunASR 测试锁定长音频切段、静音跳过和考公词汇纠错。
 
-@param: 无；导入文件时不会主动处理业务请求，真正输入来自路由函数、脚本入口或测试用例。
-@return: 无直接返回；调用方通过本文件公开的函数、类或路由继续业务流程。
-@raises ImportError: 依赖包、配置模块或路径不完整时，文件导入会立即失败。
+面试录音可能长达数分钟，不能整段塞给 Paraformer；VAD 切段、片段拼接和领域纠错任何一步退化，
+都会让答题文字稿变慢、断句变差或把“预研/敢试”等面试高频词识别错。
+
+@param: 无；用例通过 stub 模型、假 librosa 和 numpy 音频构造边界场景。
+@return: 无直接返回；断言通过表示 ASR 管线仍按短句识别而不是整段推理。
+@raises ImportError: numpy、ASR 网关或测试替身依赖缺失时会失败。
 """
 import unittest
 from unittest.mock import patch
@@ -18,23 +21,24 @@ from app.core import ai
 
 class FunasrAsrTestCase(unittest.TestCase):
     """
-    FunasrAsrTestCase 作为公共类型保留，是为了让调用方共享同一套业务语义和数据边界。
+    FunASR 管线回归用例集合，覆盖 VAD 切段、标点拼接、领域纠错和静音短路。
 
-    测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+    面试录音通常是一整段连续表达，模型入口必须先切成短句再识别；这些断言把“不能整段推理”和
+    “识别结果要适配考公表达”两件事固定下来，避免 ASR 优化时牺牲稳定性。
 
-    @param: 无；实例字段由 ORM、Pydantic 或测试夹具按声明式约定注入。
-    @return: 返回可被调用方实例化或引用的公共类型。
-    @raises: 类定义阶段不主动抛出业务异常；字段约束错误通常在实例化、校验或数据库提交时暴露。
+    @param: 无；unittest 负责实例化测试类。
+    @return: unittest 测试用例类。
+    @raises AssertionError: VAD 切段、静音跳过、文本抽取或领域纠错退化时由断言报告。
     """
     def test_vad_segments_are_padded_and_split_by_max_duration(self):
         """
-        test_vad_segments_are_padded_and_split_by_max_duration 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        VAD 片段要先补上下文，再按最大时长拆成可控短句。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        过短会切掉句首句尾语义，过长会退回整段推理；这个用例把两者之间的折中固定下来。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；临时缩短最大片段时长和 padding 配置。
+        @return: None；片段按预期补边并拆分时通过。
+        @raises AssertionError: 切段长度、边界或补边策略改变时失败。
         """
         original_max = ai.settings.asr_max_segment_seconds
         original_padding = ai.settings.asr_segment_padding_ms
@@ -58,13 +62,13 @@ class FunasrAsrTestCase(unittest.TestCase):
 
     def test_vad_segments_do_not_overlap_after_padding(self):
         """
-        test_vad_segments_do_not_overlap_after_padding 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        VAD 片段补边后不能互相重叠。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        片段重叠会让 Paraformer 重复识别同一句话，最终文字稿出现“接近接近”“机制机制”这类重复词。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；临时调整片段 padding 后直接调用切段 helper。
+        @return: None；两个相邻片段被裁成连续不重叠区间时通过。
+        @raises AssertionError: 片段边界重叠或补边策略漂移时失败。
         """
         original_padding = ai.settings.asr_segment_padding_ms
         try:
@@ -87,13 +91,13 @@ class FunasrAsrTestCase(unittest.TestCase):
 
     def test_funasr_segment_join_inserts_punctuation_by_gap(self):
         """
-        test_funasr_segment_join_inserts_punctuation_by_gap 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        拼接 VAD 片段时要根据停顿长度补逗号或句号。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        面试评分会读取文字稿结构；长停顿如果不转成句号，LLM 更容易把分论点黏成一整句。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；构造三段带时间间隔的转写片段。
+        @return: None；短停顿生成逗号、长停顿生成句号时通过。
+        @raises AssertionError: 断句符号或拼接顺序变化时失败。
         """
         transcript = ai._join_funasr_segments(
             [
@@ -107,13 +111,13 @@ class FunasrAsrTestCase(unittest.TestCase):
 
     def test_funasr_postprocess_repairs_exam_domain_errors(self):
         """
-        test_funasr_postprocess_repairs_exam_domain_errors 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        FunASR 后处理要修正常见考公表达误识别。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        “预研”“敢试”“反馈机制”等词会直接影响评分关键词命中；领域纠错能减少 ASR 错字对内容评分的干扰。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；输入一段包含典型误识别的模拟文字稿。
+        @return: None；关键考公表达被修正时通过。
+        @raises AssertionError: 领域纠错规则失效或断句修复退化时失败。
         """
         raw = (
             "试点本身是是在小范围可控条件下做的探索，第一是忽略了水土不服试点一般会有政策倾斜，"
@@ -132,26 +136,26 @@ class FunasrAsrTestCase(unittest.TestCase):
 
     def test_audio_rms_detects_near_silence(self):
         """
-        test_audio_rms_detects_near_silence 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        RMS 静音检测要能区分空录音和有效低音量录音。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        静音短路用于避免把空白音频送进 VAD/ASR；阈值过高又会误伤学生小声作答。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；构造全零波形和低幅度有效波形。
+        @return: None；全零 RMS 为 0 且有效波形超过静音阈值时通过。
+        @raises AssertionError: RMS 计算或静音阈值判断退化时失败。
         """
         self.assertEqual(ai._audio_rms(np.zeros(ai.ASR_SAMPLE_RATE, dtype=np.float32)), 0.0)
         self.assertGreater(ai._audio_rms(np.ones(ai.ASR_SAMPLE_RATE, dtype=np.float32) * 0.01), 0.001)
 
     def test_funasr_onnx_skips_near_silent_audio(self):
         """
-        test_funasr_onnx_skips_near_silent_audio 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        近静音音频要在进入 VAD 和 ASR 前直接返回空文字稿。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        空录音常见于权限或录音失败场景；短路可以避免模型误产出幻觉文字，也能节省一次无意义推理。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises AssertionError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
+        @param: 无；用 stub 模型确保静音时不会调用 VAD/ASR。
+        @return: None；返回空字符串且 stub 未被触发时通过。
+        @raises AssertionError: 近静音音频仍进入模型推理时失败。
         """
         class StubVad:
             def __call__(self, waveform):
@@ -174,13 +178,13 @@ class FunasrAsrTestCase(unittest.TestCase):
 
     def test_extract_funasr_text_supports_onnx_and_pipeline_shapes(self):
         """
-        test_extract_funasr_text_supports_onnx_and_pipeline_shapes 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        文本抽取要兼容 FunASR ONNX 和 pipeline 返回的多种形状。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        FunASR 不同引擎、标点模型和批处理模式返回结构不完全一致；这里防止某个部署形态只返回空文字稿。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；直接构造列表、字典、元组和 token tuple 几种返回形态。
+        @return: None；所有形态都能抽出文本时通过。
+        @raises AssertionError: 某种 FunASR 返回结构被解析为空或顺序错误时失败。
         """
         self.assertEqual(ai._extract_funasr_text([{"preds": "第一句"}, {"text": "第二句"}]), "第一句第二句")
         self.assertEqual(ai._extract_funasr_text({"text": "整段文本"}), "整段文本")
@@ -189,13 +193,13 @@ class FunasrAsrTestCase(unittest.TestCase):
 
     def test_funasr_onnx_transcribes_vad_segments_instead_of_full_audio(self):
         """
-        test_funasr_onnx_transcribes_vad_segments_instead_of_full_audio 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+        ONNX 转写必须逐个识别 VAD 片段，而不是把整段音频送给 ASR。
 
-        测试模块记录曾经踩过的业务边界，注释说明为什么这些场景必须防回归。
+        这是长音频稳定性的核心约束：5 分钟朗读先由 VAD 切句，再逐句给 Paraformer，避免整段推理变慢或识别崩掉。
 
-        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
-        @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
-        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        @param: 无；用 stub VAD 返回两个 1 秒片段，并记录 ASR 收到的片段长度。
+        @return: None；ASR 只收到两个短片段且拼接文本正确时通过。
+        @raises AssertionError: ASR 收到整段音频、片段数量不对或拼接结果错误时失败。
         """
         original_padding = ai.settings.asr_segment_padding_ms
         try:
