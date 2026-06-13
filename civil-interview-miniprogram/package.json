@@ -9,7 +9,7 @@
     "validate:mp-weixin": "node scripts/prepare-mp-weixin-build.mjs validate",
     "build:mp-weixin": "node scripts/prepare-mp-weixin-build.mjs clean && uni build -p mp-weixin && node scripts/prepare-mp-weixin-build.mjs validate",
     "build:mp-weixin:dev": "node scripts/prepare-mp-weixin-build.mjs clean && uni build -p mp-weixin --mode development && node scripts/prepare-mp-weixin-build.mjs validate",
-    "build:mp-weixin:prod": "node scripts/prepare-mp-weixin-build.mjs clean && uni build -p mp-weixin --mode production && node scripts/prepare-mp-weixin-build.mjs validate --mirror-prod",
+    "build:mp-weixin:prod": "node scripts/prepare-mp-weixin-build.mjs clean && uni build -p mp-weixin --mode production && node scripts/prepare-mp-weixin-build.mjs validate --prod",
     "dev:h5": "uni",
     "build:h5": "uni build"
   },

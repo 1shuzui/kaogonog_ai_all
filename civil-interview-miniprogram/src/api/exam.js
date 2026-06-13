@@ -40,3 +40,16 @@ export function completeExam(examId) {
     method: 'POST'
   })
 }
+
+export function getFullExamSuites(params = {}) {
+  return request({
+    url: '/exam/full-suites',
+    data: params
+  })
+}
+
+export function getFullExamSuiteQuestions(suiteId) {
+  return request({
+    url: `/exam/full-suites/${encodeURIComponent(suiteId)}/questions`
+  })
+}

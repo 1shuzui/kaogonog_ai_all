@@ -77,7 +77,9 @@ export function normalizeProvinceCode(value = '') {
 
 function normalizeQuestionListResponse(response = {}) {
   if (Array.isArray(response)) return response
+  if (Array.isArray(response?.questions)) return response.questions
   if (Array.isArray(response?.data?.list)) return response.data.list
+  if (Array.isArray(response?.data?.questions)) return response.data.questions
   if (Array.isArray(response?.data?.items)) return response.data.items
   if (Array.isArray(response?.data)) return response.data
 
@@ -451,11 +453,11 @@ export function buildFullExamSuitesFromQuestions(questions = [], province = '') 
 export function getFullExamSuiteSummary(suite) {
   if (!suite) return ''
   const appearanceText = suite.hasAppearanceScore ? '，含仪态评分' : '，不含仪态评分'
-  return `${suite.questions.length} 题，按真实套题节奏作答${appearanceText}`
+  const questionCount = Number(suite.questionCount || suite.questions?.length || 0) || 0
+  return `${questionCount} 题，按真实套题节奏作答${appearanceText}`
 }
 
 export async function fetchFullExamSuites(getQuestions, province, options = {}) {
-  if (typeof getQuestions !== 'function') return []
   const filterParams = options.params && typeof options.params === 'object' ? options.params : {}
   const rawProvince = filterParams.province ?? province
   const hasProvinceFilter = String(rawProvince || '').trim() !== ''
@@ -473,12 +475,45 @@ export async function fetchFullExamSuites(getQuestions, province, options = {}) 
   if (code && code !== 'all') params.province = code
   else delete params.province
 
+  if (typeof options.getFullExamSuites === 'function') {
+    try {
+      const response = await options.getFullExamSuites(params)
+      const suites = normalizeQuestionListResponse(response).map((suite) => ({
+        ...suite,
+        id: String(suite.id || suite.suiteId || suite.suiteKey || '').trim(),
+        suiteKey: suite.suiteKey || '',
+        province: normalizeProvinceCode(suite.province || code),
+        title: suite.title || suite.suiteName || buildSuiteTitle(normalizeProvinceCode(suite.province || code), suite.suiteKey || suite.id || ''),
+        questionCount: Number(suite.questionCount || suite.questions?.length || suite.questionIds?.length || 0) || 0,
+        questions: Array.isArray(suite.questions) ? suite.questions : [],
+        sortKey: suite.sortKey || buildSortKey(suite.suiteKey || suite.id || '', suite.examDate || '')
+      })).filter((suite) => suite.id && suite.questionCount >= MIN_SUITE_QUESTION_COUNT)
+      if (suites.length) return suites
+    } catch {
+      // 旧服务器没有套题快照接口时继续走端侧聚合兜底。
+    }
+  }
+
+  if (typeof getQuestions !== 'function') return []
   const response = await getQuestions(params)
   return buildFullExamSuitesFromQuestions(normalizeQuestionListResponse(response), code)
 }
 
-export async function loadFullExamSuiteQuestions(suite, getQuestionById) {
+export async function loadFullExamSuiteQuestions(suite, getQuestionById, options = {}) {
   if (!suite) return []
+  if (typeof options.getFullExamSuiteQuestions === 'function' && suite.id) {
+    try {
+      const response = await options.getFullExamSuiteQuestions(suite.id)
+      const suiteMeta = response?.suite || suite
+      const questions = normalizeQuestionListResponse(response)
+      if (questions.length) {
+        return questions.map((question, index) => normalizeFullExamQuestion(question, suiteMeta, index))
+      }
+    } catch {
+      // 保留逐题详情兜底，避免新接口短暂异常时阻断全真模拟。
+    }
+  }
+
   const questions = Array.isArray(suite.questions) ? suite.questions : []
 
   const results = await Promise.allSettled(

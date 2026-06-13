@@ -56,7 +56,7 @@
               src="/static/exam/full-exam-room-live-current.jpg"
               mode="aspectFill"
             />
-            <view class="full-exam-scene__timer">
+            <view class="full-exam-scene__timer" :class="{ 'full-exam-scene__timer--overtime': isOvertime }">
               <text class="full-exam-scene__timer-label">{{ sceneTimerLabel }}</text>
               <text class="full-exam-scene__timer-value">{{ formatTime(sceneTimeLeft) }}</text>
             </view>
@@ -77,7 +77,7 @@
               <view class="section-head">
                 <text class="section-title">作答区</text>
                 <view class="answer-head-meta">
-                  <text class="answer-head-meta__timer">{{ sceneTimerLabel }} {{ formatTime(sceneTimeLeft) }}</text>
+                  <text class="answer-head-meta__timer" :class="{ 'answer-head-meta__timer--overtime': isOvertime }">{{ sceneTimerLabel }} {{ formatTime(sceneTimeLeft) }}</text>
                   <text class="muted">{{ useVideoMode ? '录像 + 录音' : '仅录音' }}</text>
                 </view>
               </view>
@@ -165,7 +165,7 @@
       <template v-else>
         <view class="room-header">
           <text class="room-header__count">第 {{ examStore.questionNumber }} / {{ examStore.totalQuestions }} 题</text>
-          <text class="room-header__timer">{{ sceneTimerLabel }} {{ formatTime(sceneTimeLeft) }}</text>
+          <text class="room-header__timer" :class="{ 'room-header__timer--overtime': isOvertime }">{{ sceneTimerLabel }} {{ formatTime(sceneTimeLeft) }}</text>
         </view>
 
         <scroll-view scroll-y show-scrollbar class="question-panel">
@@ -301,6 +301,7 @@ const userStore = useUserStore()
 const phase = ref('preparing')
 const prepLeft = ref(userStore.preferences.defaultPrepTime)
 const answerLeft = ref(userStore.preferences.defaultAnswerTime)
+const overtimeSeconds = ref(0)
 const recording = ref(false)
 const recordedFile = ref('')
 const recorder = ref(null)
@@ -354,11 +355,14 @@ const isJiangsuFullExamTiming = computed(() => isFullExamSource.value && examSto
   item?.fullExamTimingMode === JIANGSU_FULL_EXAM_TIMING_MODE
 )))
 const isJiangsuReading = computed(() => isJiangsuFullExamTiming.value && phase.value === 'reading')
+const isOvertime = computed(() => phase.value === 'answering' && Number(answerLeft.value || 0) <= 0 && Number(overtimeSeconds.value || 0) > 0)
 const activeTimerLabel = computed(() => {
+  if (isOvertime.value) return '超时'
   if (phase.value === 'reading') return '阅读'
   return phase.value === 'preparing' ? '准备' : '作答'
 })
 const sceneTimeLeft = computed(() => {
+  if (isOvertime.value) return Math.max(0, Number(overtimeSeconds.value) || 0)
   if (isJiangsuFullExamTiming.value) {
     return phase.value === 'reading'
       ? Math.max(0, Number(prepLeft.value) || 0)
@@ -370,6 +374,7 @@ const sceneTimeLeft = computed(() => {
   return Math.max(0, Number(answerLeft.value) || 0)
 })
 const sceneTimerLabel = computed(() => {
+  if (isOvertime.value) return '超时'
   if (isJiangsuFullExamTiming.value) {
     return phase.value === 'reading' ? '阅读倒计时' : '作答倒计时'
   }
@@ -544,7 +549,11 @@ function startTimer() {
       if (prepLeft.value <= 0) phase.value = 'answering'
       return
     }
-    answerLeft.value = Math.max(0, answerLeft.value - 1)
+    if (answerLeft.value > 0) {
+      answerLeft.value = Math.max(0, answerLeft.value - 1)
+      return
+    }
+    overtimeSeconds.value += 1
   }, 1000)
 }
 
@@ -616,6 +625,7 @@ function resetQuestionState() {
   answerLeft.value = isJiangsuFullExamTiming.value
     ? JIANGSU_ANSWER_SECONDS
     : Number(question.value?.answerTime || userStore.preferences.defaultAnswerTime || 180)
+  overtimeSeconds.value = 0
   questionStartedAt.value = Date.now()
   questionBookIndex.value = Math.max(0, examStore.currentIndex)
   resetAnswerInputState()
@@ -631,11 +641,25 @@ function resetAnswerInputState() {
 
 function currentUsageSeconds() {
   const elapsed = Math.ceil((Date.now() - questionStartedAt.value) / 1000)
-  const maxSeconds = isJiangsuFullExamTiming.value
-    ? JIANGSU_READING_SECONDS + JIANGSU_ANSWER_SECONDS
-    : Number(question.value?.prepTime || userStore.preferences.defaultPrepTime || 90)
-      + Number(question.value?.answerTime || userStore.preferences.defaultAnswerTime || 180)
-  return Math.max(1, Math.min(elapsed, maxSeconds || elapsed))
+  return Math.max(1, elapsed)
+}
+
+function standardQuestionSeconds() {
+  if (isJiangsuFullExamTiming.value) {
+    return JIANGSU_READING_SECONDS + JIANGSU_ANSWER_SECONDS
+  }
+  return Number(question.value?.prepTime || userStore.preferences.defaultPrepTime || 90)
+    + Number(question.value?.answerTime || userStore.preferences.defaultAnswerTime || 180)
+}
+
+function buildTimingMeta() {
+  const actualSeconds = currentUsageSeconds()
+  const standardSeconds = Math.max(0, standardQuestionSeconds())
+  return {
+    actualSeconds,
+    standardSeconds,
+    overtimeSeconds: Math.max(0, actualSeconds - standardSeconds, Number(overtimeSeconds.value || 0))
+  }
 }
 
 function canRecordNow() {
@@ -722,6 +746,7 @@ function startJiangsuAnswer() {
   phase.value = 'answering'
   prepLeft.value = 0
   answerLeft.value = Math.max(Number(answerLeft.value) || 0, JIANGSU_ANSWER_SECONDS)
+  overtimeSeconds.value = 0
   toast('已进入 15 分钟作答阶段', 'success')
 }
 
@@ -738,13 +763,80 @@ async function syncUsageAndTrial(answer) {
     await reportUsage({
       examId: answer.examId,
       questionId: answer.questionId,
-      usageSeconds: currentUsageSeconds(),
+      usageSeconds: Math.max(1, Number(answer?.answerTiming?.actualSeconds || currentUsageSeconds())),
       usageType: usageType()
     }).then(() => subscriptionStore.refresh({ skipErrorHandler: true })).catch(() => null)
   }
 
   if (examStore.source === 'trial' && examStore.isLastQuestion) {
     await completeTrial().then(() => subscriptionStore.refresh({ skipErrorHandler: true })).catch(() => null)
+  }
+}
+
+function showConfirmModal(options = {}) {
+  return new Promise((resolve) => {
+    uni.showModal({
+      title: options.title || '确认操作',
+      content: options.content || '',
+      confirmText: options.confirmText || '确认',
+      cancelText: options.cancelText || '取消',
+      success(res) {
+        resolve(Boolean(res?.confirm))
+      },
+      fail() {
+        resolve(false)
+      }
+    })
+  })
+}
+
+function invalidAnswerMessage(error = {}) {
+  const type = String(error?.asrFailureType || '').trim()
+  if (type === 'too_short') return '录音时间过短，建议重新录制；也可以按无效作答提交，本题记 0 分并记录用时。'
+  if (type === 'silent_audio') return '录音音量过低或接近静音，建议重新录制；也可以按无效作答提交，本题记 0 分并记录用时。'
+  return '未识别到有效语音，建议重新录制；也可以按无效作答提交，本题记 0 分并记录用时。'
+}
+
+async function confirmSkipCurrentQuestion() {
+  return showConfirmModal({
+    title: '跳过本题？',
+    content: '当前没有录音或录像。确认后将按未作答记 0 分，并记录本题实际用时。',
+    confirmText: '跳过本题',
+    cancelText: '继续作答'
+  })
+}
+
+async function confirmInvalidAnswer(error) {
+  return showConfirmModal({
+    title: '录音无效',
+    content: invalidAnswerMessage(error),
+    confirmText: '按无效提交',
+    cancelText: '重新录制'
+  })
+}
+
+async function continueAfterSubmittedAnswer(answer, isFinishing) {
+  await syncUsageAndTrial(answer)
+
+  if (isFinishing) {
+    const finishedExamId = examStore.examId
+    await examStore.finish()
+    examStore.reset()
+    uni.redirectTo({
+      url: `/pages/result/index?examId=${encodeURIComponent(finishedExamId)}&questionId=${encodeURIComponent(answer.questionId)}`
+    })
+    return
+  }
+
+  toast('本题已提交，已完成评分', 'success')
+  if (examStore.goNext()) {
+    if (isJiangsuFullExamTiming.value) {
+      resetAnswerInputState()
+      overtimeSeconds.value = 0
+      questionStartedAt.value = Date.now()
+    } else {
+      resetQuestionState()
+    }
   }
 }
 
@@ -1061,6 +1153,13 @@ async function submitAnswer() {
     await stopVideoRecord()
   }
   const media = currentMedia.value
+  let skipConfirmed = false
+  let skipReason = ''
+  if (!media.filePath) {
+    skipConfirmed = await confirmSkipCurrentQuestion()
+    if (!skipConfirmed) return
+    skipReason = 'user_confirmed_skip'
+  }
 
   const isFinishing = examStore.isLastQuestion
   if (isFinishing) finishingExam.value = true
@@ -1069,30 +1168,23 @@ async function submitAnswer() {
     const answer = await examStore.submitCurrentAnswer({
       filePath: media.filePath,
       mediaType: media.mediaType || 'audio',
-      audioFilePath: recordedFile.value || ''
+      audioFilePath: recordedFile.value || '',
+      skipConfirmed,
+      skipReason,
+      timingMeta: buildTimingMeta()
     })
-    await syncUsageAndTrial(answer)
-
-    if (isFinishing) {
-      const finishedExamId = examStore.examId
-      await examStore.finish()
-      examStore.reset()
-      uni.redirectTo({
-        url: `/pages/result/index?examId=${encodeURIComponent(finishedExamId)}&questionId=${encodeURIComponent(answer.questionId)}`
+    await continueAfterSubmittedAnswer(answer, isFinishing)
+  } catch (error) {
+    if (error?.userInvalid && await confirmInvalidAnswer(error)) {
+      showLoading(isFinishing ? '正在保存结果' : '保存无效作答')
+      const invalidAnswer = await examStore.submitCurrentAnswer({
+        skipConfirmed: true,
+        skipReason: error.asrFailureType || 'no_speech',
+        timingMeta: buildTimingMeta()
       })
+      await continueAfterSubmittedAnswer(invalidAnswer, isFinishing)
       return
     }
-
-    toast('本题已提交，后台评分中', 'success')
-    if (examStore.goNext()) {
-      if (isJiangsuFullExamTiming.value) {
-        resetAnswerInputState()
-        questionStartedAt.value = Date.now()
-      } else {
-        resetQuestionState()
-      }
-    }
-  } catch (error) {
     toast(error?.message || '评分失败')
   } finally {
     finishingExam.value = false
@@ -1190,6 +1282,11 @@ function goBackHome() {
   font-size: 21rpx;
   font-weight: 900;
   font-family: DIN Alternate, Arial, sans-serif;
+}
+
+.full-exam-scene__timer--overtime {
+  border-color: rgba(220, 38, 38, 0.72);
+  box-shadow: 0 0 18rpx rgba(220, 38, 38, 0.42);
 }
 
 .question-book {
@@ -1350,6 +1447,12 @@ function goBackHome() {
   color: #8a4d17;
   font-size: 25rpx;
   font-weight: 900;
+}
+
+.answer-head-meta__timer--overtime,
+.room-header__timer--overtime {
+  background: #fff1f0;
+  color: #d4380d;
 }
 
 .analysis-status {
@@ -1515,6 +1618,11 @@ function goBackHome() {
   color: #2F7FD6;
   font-size: 25rpx;
   font-weight: 700;
+}
+
+.exam-room--practice .room-header__timer--overtime {
+  background: #fff1f0;
+  color: #d4380d;
 }
 
 .exam-room--practice .question-panel {

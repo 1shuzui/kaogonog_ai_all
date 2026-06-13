@@ -40,10 +40,21 @@
         <text class="plain-text">{{ questionStem }}</text>
       </view>
 
+      <view v-if="answerTimingView" class="card timing-card">
+        <view class="section-head">
+          <text class="section-title">答题用时</text>
+        </view>
+        <text class="timing-card__main">实际用时 {{ formatDuration(answerTimingView.actualSeconds) }}</text>
+        <text v-if="answerTimingView.overtimeSeconds > 0" class="timing-card__overtime">
+          超时 {{ formatDuration(answerTimingView.overtimeSeconds) }}
+        </text>
+      </view>
+
       <view class="card">
         <view class="section-head">
           <text class="section-title">AI 评语</text>
         </view>
+        <text class="ai-generated-note">由AI生成，仅供参考</text>
         <text class="plain-text">{{ result.aiComment }}</text>
       </view>
 
@@ -52,6 +63,7 @@
           <text class="section-title">进步参考</text>
           <text class="improvement-card__source">{{ suggestionSourceLabel }}</text>
         </view>
+        <text class="ai-generated-note">由AI生成，仅供参考</text>
         <text class="improvement-card__summary">{{ improvementSuggestion.summary }}</text>
 
         <view v-if="improvementSuggestion.teacherComment" class="teacher-note">
@@ -139,6 +151,13 @@
         </view>
         <text class="plain-text">{{ displayTranscript }}</text>
       </view>
+      <view v-else-if="noContentReason" class="card transcript-status-card">
+        <view class="section-head">
+          <text class="section-title">作答文本</text>
+        </view>
+        <text class="transcript-status-card__title">{{ noContentReason.title }}</text>
+        <text class="transcript-status-card__desc">{{ noContentReason.desc }}</text>
+      </view>
 
       <view class="utility-actions card">
         <button class="secondary-button" @tap="toggleStarred">
@@ -203,6 +222,7 @@ const result = ref(null)
 const transcript = ref('')
 const questionStem = ref('')
 const questionProvince = ref('national')
+const answerTiming = ref(null)
 const progressRecorded = ref(false)
 const activeExamId = ref('')
 const activeQuestionId = ref('')
@@ -223,6 +243,13 @@ const suggestionSourceLabel = computed(() => (
 ))
 const displayTranscript = computed(() => (
   isNoContentTranscript(transcript.value, result.value) ? '' : String(transcript.value || '').trim()
+))
+const noContentReason = computed(() => resolveNoContentReason(transcript.value, result.value))
+const answerTimingView = computed(() => normalizeAnswerTiming(
+  answerTiming.value
+  || result.value?.answerTiming
+  || result.value?.mediaRecord?.answerTiming
+  || null
 ))
 const isStarred = computed(() => favoritesStore.isFavorited(activeExamId.value, activeQuestionId.value))
 const shareDate = computed(() => new Date().toLocaleDateString('zh-CN'))
@@ -252,10 +279,68 @@ function isNoContentTranscript(value, scoring = {}) {
     || text.includes('无法生成可靠文字稿')
 }
 
+function normalizeAnswerTiming(raw) {
+  if (!raw || typeof raw !== 'object') return null
+  const actualSeconds = Math.max(0, Number(raw.actualSeconds || raw.usageSeconds || 0) || 0)
+  const standardSeconds = Math.max(0, Number(raw.standardSeconds || 0) || 0)
+  const overtimeSeconds = Math.max(0, Number(raw.overtimeSeconds || (standardSeconds ? actualSeconds - standardSeconds : 0)) || 0)
+  if (!actualSeconds && !standardSeconds) return null
+  return { actualSeconds, standardSeconds, overtimeSeconds }
+}
+
+function formatDuration(seconds = 0) {
+  const total = Math.max(0, Math.round(Number(seconds) || 0))
+  const minutes = Math.floor(total / 60)
+  const rest = total % 60
+  if (minutes <= 0) return `${rest} 秒`
+  if (rest <= 0) return `${minutes} 分钟`
+  return `${minutes} 分 ${rest} 秒`
+}
+
+function resolveNoContentReason(value, scoring = {}) {
+  if (!isNoContentTranscript(value, scoring)) return null
+  const skipReason = String(scoring?.skipReason || scoring?.asrFailureType || scoring?.mediaRecord?.asrMeta?.status || '').trim()
+  const reasonMap = {
+    user_confirmed_skip: {
+      title: '用户确认跳过',
+      desc: '本题未提交录音或录像，已按未作答记 0 分。'
+    },
+    too_short: {
+      title: '录音过短',
+      desc: '本次录音时长不足，无法形成可靠文字稿，已按无效作答处理。'
+    },
+    silent_audio: {
+      title: '音量过低或接近静音',
+      desc: '本次录音没有足够清晰的人声，建议重新练习时靠近麦克风并保持环境安静。'
+    },
+    empty_audio: {
+      title: '未识别到有效语音',
+      desc: '本次录音未识别出可用于评分的作答内容。'
+    },
+    no_speech: {
+      title: '未识别到有效语音',
+      desc: '本次录音未识别出可用于评分的作答内容。'
+    },
+    funasr_error: {
+      title: '语音服务异常',
+      desc: '本次转写服务异常，建议重新录制后提交。'
+    },
+    asr_unavailable: {
+      title: '语音服务异常',
+      desc: '本次转写服务暂不可用，建议稍后重新录制后提交。'
+    }
+  }
+  return reasonMap[skipReason] || {
+    title: '无有效作答内容',
+    desc: '本次没有可用于复盘的可靠文字稿，请完成一段清晰作答后再查看细化建议。'
+  }
+}
+
 function buildNoContentImprovementSuggestion() {
+  const reason = noContentReason.value
   return {
     source: 'fallback',
-    summary: '本次没有可分析的有效作答内容，请先完成一段录音或录像作答后再查看细化建议。',
+    summary: reason?.desc || '本次没有可分析的有效作答内容，请先完成一段录音或录像作答后再查看细化建议。',
     teacherComment: '',
     diagnosisItems: ['未形成可用于复盘的有效作答文本'],
     focusPoints: [],
@@ -284,6 +369,7 @@ async function loadResult(query) {
     transcript.value = answer.transcript || ''
     questionStem.value = answer.questionStem || ''
     questionProvince.value = answer.province || examStore.currentQuestion?.province || questionProvince.value
+    answerTiming.value = answer.answerTiming || result.value?.answerTiming || null
     activeQuestionId.value = String(answer.questionId || activeQuestionId.value)
     finalizeLoadedResult()
     return
@@ -340,6 +426,9 @@ function applyHistoryDetailContext(detail = {}, questionId = '') {
   questionProvince.value = matchedAnswer.province || detail?.province || questionProvince.value || 'national'
   if (!transcript.value) transcript.value = matchedAnswer.transcript || ''
   if (!questionStem.value) questionStem.value = matchedAnswer.questionStem || detail?.questionSummary || ''
+  if (!answerTiming.value) {
+    answerTiming.value = matchedAnswer.answerTiming || matchedAnswer.scoringResult?.answerTiming || null
+  }
 }
 
 function finalizeLoadedResult() {
@@ -483,6 +572,47 @@ function home() {
   color: #2a3648;
   font-size: 26rpx;
   line-height: 1.7;
+}
+
+.timing-card__main,
+.timing-card__overtime,
+.transcript-status-card__title,
+.transcript-status-card__desc {
+  display: block;
+}
+
+.timing-card__main {
+  color: #172033;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.timing-card__overtime {
+  margin-top: 10rpx;
+  color: #d4380d;
+  font-size: 25rpx;
+  font-weight: 800;
+}
+
+.transcript-status-card__title {
+  color: #172033;
+  font-size: 28rpx;
+  font-weight: 900;
+}
+
+.transcript-status-card__desc {
+  margin-top: 10rpx;
+  color: #64748B;
+  font-size: 25rpx;
+  line-height: 1.65;
+}
+
+.ai-generated-note {
+  display: block;
+  margin: -2rpx 0 14rpx;
+  color: #8a97a8;
+  font-size: 22rpx;
+  line-height: 1.45;
 }
 
 .improvement-card__source {

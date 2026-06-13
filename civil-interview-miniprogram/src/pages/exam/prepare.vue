@@ -189,6 +189,10 @@ import { useQuestionBankStore } from '../../stores/questionBank'
 import { useSubscriptionStore } from '../../stores/subscription'
 import { useUserStore } from '../../stores/user'
 import { getQuestionById, getQuestions } from '../../api/questionBank'
+import {
+  getFullExamSuiteQuestions as requestFullExamSuiteQuestions,
+  getFullExamSuites as requestFullExamSuites
+} from '../../api/exam'
 import { getAsrStatus } from '../../api/scoring'
 import { getTrialQuestion, getTrialStatus } from '../../api/trial'
 import { hasPremiumAccess } from '../../utils/access'
@@ -527,7 +531,10 @@ async function refreshFullExamSuites() {
     const suites = await fetchFullExamSuites(
       getQuestions,
       filters.province || userStore.selectedProvince,
-      { params: filters }
+      {
+        params: filters,
+        getFullExamSuites: requestFullExamSuites
+      }
     )
     fullExamSuites.value = suites
   } catch (error) {
@@ -790,7 +797,9 @@ async function startPractice() {
       }
       questions = await withTimeout(
         mode.value === 'fullExam'
-          ? loadFullExamSuiteQuestions(selectedFullExamSuite.value, getQuestionById)
+          ? loadFullExamSuiteQuestions(selectedFullExamSuite.value, getQuestionById, {
+            getFullExamSuiteQuestions: requestFullExamSuiteQuestions
+          })
           : recommendedQuestionId.value
             ? getQuestionById(recommendedQuestionId.value).then((question) => (question?.id ? [question] : []))
             : questionBankStore.fetchRandom({
@@ -808,7 +817,8 @@ async function startPractice() {
       toast(trial.value ? '试用题暂不可用，请稍后重试' : mode.value === 'fullExam' ? '当前省份暂无整套真题套卷' : '当前筛选条件暂无题目')
       return
     }
-    if (mode.value === 'fullExam' && selectedFullExamSuite.value && questions.length !== selectedFullExamSuite.value.questions.length) {
+    const expectedSuiteQuestionCount = Number(selectedFullExamSuite.value?.questionCount || selectedFullExamSuite.value?.questions?.length || 0)
+    if (mode.value === 'fullExam' && selectedFullExamSuite.value && expectedSuiteQuestionCount && questions.length !== expectedSuiteQuestionCount) {
       toast('当前套题题目加载不完整，请切换其他套卷后重试')
       return
     }

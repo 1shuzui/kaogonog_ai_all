@@ -36,6 +36,12 @@ npm run build:mp-weixin:dev
 npm run build:mp-weixin:prod
 ```
 
+生产构建产物目录固定为：
+
+```text
+dist/build/mp-weixin-prod
+```
+
 当前默认小程序生产 API：
 
 ```env
