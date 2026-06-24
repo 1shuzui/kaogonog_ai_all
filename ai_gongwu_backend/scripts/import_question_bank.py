@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 import zipfile
@@ -25,6 +26,9 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = BACKEND_ROOT.parent
 QUESTION_ASSET_ROOT = BACKEND_ROOT / "assets" / "questions"
 REGRESSION_SAMPLE_ROOT = BACKEND_ROOT / "assets" / "regression_samples"
+QUESTION_SOURCE_ARCHIVE_ROOT = Path(
+    os.environ.get("QUESTION_BANK_SOURCE_ROOT", "/home/quyu/doc_kaogong/question-bank/source")
+)
 
 
 @dataclass(frozen=True)
@@ -93,7 +97,13 @@ def resolve_cli_path(raw_path: str | Path) -> Path:
 
     path = Path(raw_path).expanduser()
     if path.is_absolute():
-        return path.resolve()
+        absolute_path = path.resolve()
+        if absolute_path.exists():
+            return absolute_path
+        archive_candidate = (QUESTION_SOURCE_ARCHIVE_ROOT / path.name).resolve()
+        if archive_candidate.exists():
+            return archive_candidate
+        return absolute_path
 
     cwd_candidate = (Path.cwd() / path).resolve()
     if cwd_candidate.exists():
@@ -102,6 +112,10 @@ def resolve_cli_path(raw_path: str | Path) -> Path:
     repo_candidate = (REPO_ROOT / path).resolve()
     if repo_candidate.exists():
         return repo_candidate
+
+    archive_candidate = (QUESTION_SOURCE_ARCHIVE_ROOT / path.name).resolve()
+    if archive_candidate.exists():
+        return archive_candidate
 
     return cwd_candidate
 
@@ -1046,7 +1060,7 @@ def infer_source_document(source_path: Path) -> str:
 
     stem = source_path.name.removesuffix(".extracted.txt")
     for suffix in (".docx", ".doc"):
-        candidate = REPO_ROOT / f"{stem}{suffix}"
+        candidate = resolve_cli_path(f"{stem}{suffix}")
         if candidate.exists():
             return candidate.name
     return source_path.name
@@ -1370,8 +1384,22 @@ def extract_sections(block: str) -> dict[str, str]:
         section_name = canonical_section_name(match.group(2))
         start = match.end()
         end = matches[index + 1].start() if index + 1 < len(matches) else len(block)
-        sections[section_name] = block[start:end].strip()
+        sections[section_name] = clean_section_body(block[start:end])
     return sections
+
+
+def clean_section_body(text: str) -> str:
+    """
+    去掉 section 标题后残留的分隔符，只清理正文最前面的格式噪声。
+
+    题库导入脚本把 Word 真题转成结构化资产，注释重点记录真实题源优先和人工复核边界。
+
+    @param text: 待处理文本；通常来自题干、转写或导入文档，需保留原始语义以便复核。
+    @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
+    @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+    """
+
+    return re.sub(r"^[\s：:]+", "", str(text or "")).strip()
 
 
 def extract_field(text: str, patterns: list[str]) -> str:
@@ -5662,6 +5690,7 @@ def run_profile_import(profile_name: str | ImportProfile) -> int:
     source_stats: list[dict] = []
 
     for source_path in SOURCE_FILES:
+        source_path = resolve_cli_path(source_path)
         if not source_path.exists():
             raise FileNotFoundError(f"未找到源文件: {source_path}")
 

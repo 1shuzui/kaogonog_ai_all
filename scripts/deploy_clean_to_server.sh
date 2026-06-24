@@ -100,7 +100,7 @@ rsync -az -e "$RSYNC_RSH" \
   "$SERVER:$REMOTE_LATEST/frontend/"
 
 rsync -az --delete -e "$RSYNC_RSH" \
-  "$ROOT_DIR/civil-interview-miniprogram/dist/build/mp-weixin/" \
+  "$ROOT_DIR/civil-interview-miniprogram/dist/build/mp-weixin-prod/" \
   "$SERVER:$REMOTE_LATEST/miniprogram/mp-weixin-prod/"
 
 if [[ "${DEPLOY_BACKEND:-0}" == "1" ]]; then

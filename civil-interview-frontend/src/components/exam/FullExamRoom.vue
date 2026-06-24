@@ -351,6 +351,7 @@ const readingPhaseActive = ref(false)
 const speechInProgress = ref(false)
 const totalRemainingSeconds = ref(0)
 const finishRequested = ref(false)
+const exitingExam = ref(false)
 const currentYearLabel = `${new Date().getFullYear()}年度`
 let totalTimer = null
 let speechUtterance = null
@@ -764,6 +765,16 @@ async function submitCurrentAnswer(options = {}) {
   }
 }
 
+async function submitCurrentAnswerForExit() {
+  if (examStore.status !== EXAM_STATUS.ANSWERING) return null
+  const usageSeconds = Math.max(1, Math.ceil(Number(recorderDuration.value) || 0))
+  const blob = await recorder.stopRecording()
+  if (!blob || blob.size <= 0) return null
+  const answer = await examStore.submitAnswer(blob)
+  await syncUsage(answer, usageSeconds)
+  return answer
+}
+
 async function syncUsage(answer, usageSeconds) {
   if (!answer?.examId || !answer?.questionId) return
   try {
@@ -833,27 +844,41 @@ async function finishExam() {
 }
 
 async function exitExam() {
+  if (exitingExam.value || finishRequested.value) return
+  exitingExam.value = true
   stopTotalTimer()
   stopSpeech()
 
-  if (examStore.status === EXAM_STATUS.ANSWERING) {
-    try {
-      await recorder.stopRecording()
-    } catch {}
+  const examId = examStore.examId
+  try {
+    await submitCurrentAnswerForExit()
+  } catch (error) {
+    logger.error('Full exam exit submit failed', {
+      event: 'full_exam.exit.submit_failed',
+      exam_id: examId,
+      error
+    })
+    message.error(`中断提交失败：${error?.message || '未知错误'}`)
+    exitingExam.value = false
+    return
   }
 
-  if (examStore.examId && examStore.answers.length > 0) {
+  if (examId && examStore.answers.length > 0) {
     try {
       await examStore.waitForPendingProcessing()
-      await completeExam(examStore.examId)
+      await completeExam(examId)
       message.success('已保存当前面试进度。')
     } catch (error) {
       logger.error('Full exam progress save failed', {
         event: 'full_exam.progress.save_failed',
-        exam_id: examStore.examId,
+        exam_id: examId,
         error
       })
     }
+    recorder.destroyStream()
+    examStore.exitExam()
+    router.push(`/result/${examId}`)
+    return
   }
 
   recorder.destroyStream()

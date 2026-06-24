@@ -166,6 +166,12 @@ const routes = [
     meta: { title: '余额与退款', layout: 'simple', requiresAdmin: true }
   },
   {
+    path: '/admin/invites',
+    name: 'InviteAdmin',
+    component: () => import('@/views/Admin/InviteAdminPage.vue'),
+    meta: { title: '邀请码管理', layout: 'simple', requiresAdmin: true }
+  },
+  {
     path: '/admin/targeted',
     name: 'TargetedAdmin',
     component: () => import('@/views/Targeted/TargetedAdminPage.vue'),

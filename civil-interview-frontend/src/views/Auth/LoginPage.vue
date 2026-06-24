@@ -92,6 +92,14 @@ PC 登录页，承接账号密码登录和注册入口；管理员与普通用�
                 :prefix="h(LockOutlined)"
               />
             </a-form-item>
+            <a-form-item name="inviteCode" label="邀请码（选填）">
+              <a-input
+                v-model:value="registerForm.inviteCode"
+                placeholder="请输入邀请码"
+                size="large"
+                :prefix="h(TagOutlined)"
+              />
+            </a-form-item>
             <a-form-item name="agreedTerms">
               <a-checkbox :checked="registerForm.agreedTerms" @change="handleAgreementChange">
                 我已阅读并同意
@@ -121,7 +129,7 @@ PC 登录页，承接账号密码登录和注册入口；管理员与普通用�
 import { ref, reactive, h } from 'vue'
 import { useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { UserOutlined, LockOutlined } from '@ant-design/icons-vue'
+import { LockOutlined, TagOutlined, UserOutlined } from '@ant-design/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
@@ -135,7 +143,7 @@ const AGREED_TERMS_STORAGE_KEY = 'civil_agreed_terms_version'
 const AGREED_TERMS_VERSION = '2026-05-12'
 
 const loginForm = reactive({ username: '', password: '', agreedTerms: false })
-const registerForm = reactive({ username: '', password: '', confirmPassword: '', agreedTerms: false })
+const registerForm = reactive({ username: '', password: '', confirmPassword: '', inviteCode: '', agreedTerms: false })
 
 const loginRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
@@ -170,6 +178,18 @@ const registerRules = {
           return Promise.reject('两次密码输入不一致')
         }
         return Promise.resolve()
+      },
+      trigger: 'blur'
+    }
+  ],
+  inviteCode: [
+    {
+      validator: (_, value) => {
+        const code = String(value || '').trim()
+        if (!code || /^[A-Za-z0-9_-]{3,32}$/.test(code)) {
+          return Promise.resolve()
+        }
+        return Promise.reject('邀请码需为 3-32 位字母、数字、_ 或 -')
       },
       trigger: 'blur'
     }
@@ -251,6 +271,7 @@ async function handleRegister() {
     await userStore.register({
       username: registerForm.username,
       password: registerForm.password,
+      inviteCode: registerForm.inviteCode.trim().toUpperCase(),
       agreedTermsVersion: '2026-05-12'
     })
     message.success('注册成功，请登录')

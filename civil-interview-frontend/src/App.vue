@@ -28,19 +28,44 @@ PC 端应用外壳，负责统一页头、主体区域、错误边界、省份�
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useBillingStore } from '@/stores/billing'
+import { reportDashboardHeartbeat } from '@/api/dashboard'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppTabBar from '@/components/layout/AppTabBar.vue'
 import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
 import BillingPaywallModal from '@/components/billing/BillingPaywallModal.vue'
 import ProvinceGateModal from '@/components/common/ProvinceGateModal.vue'
 
+const HEARTBEAT_INTERVAL_MS = 60 * 1000
+const HEARTBEAT_SESSION_KEY = 'civil_dashboard_session_id'
+
 const route = useRoute()
 const userStore = useUserStore()
 const billingStore = useBillingStore()
+let heartbeatTimer = null
+let heartbeatLastAt = Date.now()
+
+function createHeartbeatId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+}
+
+function getHeartbeatSessionId() {
+  try {
+    const existing = sessionStorage.getItem(HEARTBEAT_SESSION_KEY)
+    if (existing) return existing
+    const created = createHeartbeatId()
+    sessionStorage.setItem(HEARTBEAT_SESSION_KEY, created)
+    return created
+  } catch {
+    return createHeartbeatId()
+  }
+}
 
 const layout = computed(() => route.meta.layout || 'default')
 const layoutClass = computed(() => `layout-${layout.value}`)
@@ -67,6 +92,71 @@ const showHeader = computed(() => (
 ))
 const showTabBar = computed(() => !isProvinceGateBlocking.value && layout.value === 'default')
 const showPaywall = computed(() => billingStore.paywallVisible && !userStore.isAdmin)
+const shouldTrackHeartbeat = computed(() => (
+  userStore.isAuthenticated
+  && typeof document !== 'undefined'
+  && document.visibilityState === 'visible'
+))
+
+async function flushDashboardHeartbeat(forceSeconds = 0) {
+  if (!userStore.isAuthenticated) {
+    heartbeatLastAt = Date.now()
+    return
+  }
+  const now = Date.now()
+  const elapsedSeconds = forceSeconds || Math.round((now - heartbeatLastAt) / 1000)
+  heartbeatLastAt = now
+  if (elapsedSeconds <= 0) return
+
+  try {
+    await reportDashboardHeartbeat({
+      sessionId: getHeartbeatSessionId(),
+      eventId: createHeartbeatId(),
+      clientType: 'pc',
+      routePath: route.fullPath,
+      durationSeconds: elapsedSeconds,
+      activeAt: new Date(now).toISOString()
+    })
+  } catch {
+    // heartbeat is best-effort and should never interrupt the current page
+  }
+}
+
+function stopDashboardHeartbeat() {
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer)
+    heartbeatTimer = null
+  }
+}
+
+function startDashboardHeartbeat() {
+  if (!shouldTrackHeartbeat.value || heartbeatTimer) return
+  heartbeatLastAt = Date.now()
+  heartbeatTimer = window.setInterval(() => {
+    if (!shouldTrackHeartbeat.value) return
+    flushDashboardHeartbeat(60)
+  }, HEARTBEAT_INTERVAL_MS)
+}
+
+function refreshDashboardHeartbeat() {
+  stopDashboardHeartbeat()
+  if (shouldTrackHeartbeat.value) {
+    startDashboardHeartbeat()
+  }
+}
+
+function handleVisibilityChange() {
+  if (document.visibilityState === 'hidden') {
+    flushDashboardHeartbeat()
+    stopDashboardHeartbeat()
+    return
+  }
+  refreshDashboardHeartbeat()
+}
+
+function handleBeforeUnload() {
+  flushDashboardHeartbeat()
+}
 
 onMounted(async () => {
   try {
@@ -84,6 +174,25 @@ onMounted(async () => {
       // handled by the axios interceptor
     }
   }
+
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  window.addEventListener('beforeunload', handleBeforeUnload)
+  refreshDashboardHeartbeat()
+})
+
+watch(
+  () => [userStore.isAuthenticated, route.fullPath],
+  () => {
+    flushDashboardHeartbeat()
+    refreshDashboardHeartbeat()
+  }
+)
+
+onUnmounted(() => {
+  flushDashboardHeartbeat()
+  stopDashboardHeartbeat()
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+  window.removeEventListener('beforeunload', handleBeforeUnload)
 })
 </script>
 

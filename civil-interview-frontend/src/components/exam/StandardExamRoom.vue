@@ -165,6 +165,7 @@ const countdown = useCountdown(0)
 
 const elapsed = ref(0)
 const finishRequested = ref(false)
+const exitingExam = ref(false)
 const cameraWindow = ref({
   width: CAMERA_DEFAULT.width,
   height: CAMERA_DEFAULT.height,
@@ -261,6 +262,17 @@ async function onSubmit() {
   }
 }
 
+async function submitCurrentAnswerForExit() {
+  if (examStore.status !== EXAM_STATUS.ANSWERING) return null
+  countdown.stop()
+  const usageSeconds = Math.max(1, Math.ceil(Number(recorderDuration.value) || 0))
+  const blob = await recorder.stopRecording()
+  if (!blob || blob.size <= 0) return null
+  const answer = await examStore.submitAnswer(blob)
+  await syncUsage(answer, usageSeconds)
+  return answer
+}
+
 async function syncUsage(answer, usageSeconds) {
   if (!answer?.examId || !answer?.questionId) return
   try {
@@ -321,9 +333,24 @@ async function onFinish() {
 }
 
 async function exitExam() {
+  if (exitingExam.value || finishRequested.value) return
+  exitingExam.value = true
   countdown.stop()
-  recorder.destroyStream()
   const examId = examStore.examId
+
+  try {
+    await submitCurrentAnswerForExit()
+  } catch (error) {
+    logger.error('Exam exit submit failed', {
+      event: 'exam.exit.submit_failed',
+      exam_id: examId,
+      error
+    })
+    message.error(`中断提交失败: ${error?.message || '未知错误'}`)
+    exitingExam.value = false
+    return
+  }
+
   if (examId && examStore.answers.length > 0) {
     try {
       await examStore.waitForPendingProcessing()
@@ -336,7 +363,13 @@ async function exitExam() {
         error
       })
     }
+    recorder.destroyStream()
+    examStore.exitExam()
+    router.push(`/result/${examId}`)
+    return
   }
+
+  recorder.destroyStream()
   examStore.exitExam()
   router.push('/')
 }

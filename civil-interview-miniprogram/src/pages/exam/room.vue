@@ -157,6 +157,7 @@
           :finishing="finishingExam"
           :loading="examStore.loading"
           :is-last-question="examStore.isLastQuestion"
+          :exit-text="exitActionText"
           @exit="goBackHome"
           @submit="submitAnswer"
         />
@@ -266,6 +267,7 @@
           :finishing="finishingExam"
           :loading="examStore.loading"
           :is-last-question="examStore.isLastQuestion"
+          :exit-text="exitActionText"
           @exit="goBackHome"
           @submit="submitAnswer"
         />
@@ -411,6 +413,10 @@ const captureStatusText = computed(() => {
   if (!cameraPlatformSupported.value) return '设备不支持摄像头，开始后将录音提交'
   return '请授权摄像头和麦克风，开始后同步记录'
 })
+const hasCurrentCapture = computed(() => Boolean(captureActive.value || captureReady.value))
+const exitActionText = computed(() => (
+  hasCurrentCapture.value ? '中断并提交' : '退出'
+))
 const cameraSizeClass = computed(() => `floating-camera--${cameraSize.value}`)
 const floatingCameraStyle = computed(() => {
   const position = cameraPosition.value
@@ -1063,6 +1069,16 @@ function stopActiveCapture(options = {}) {
   if (recording.value) stopRecord()
 }
 
+async function stopActiveCaptureAsync() {
+  if (useVideoMode.value) {
+    await stopVideoWithAudio()
+    return
+  }
+  if (recording.value) {
+    await stopRecordAsync()
+  }
+}
+
 function startCapture() {
   if (useVideoMode.value) {
     startVideoWithAudio()
@@ -1192,6 +1208,39 @@ async function submitAnswer() {
   }
 }
 
+async function submitCurrentAnswerForExit() {
+  await stopActiveCaptureAsync()
+  const media = currentMedia.value
+  if (!media.filePath) return null
+
+  const answer = await examStore.submitCurrentAnswer({
+    filePath: media.filePath,
+    mediaType: media.mediaType || 'audio',
+    audioFilePath: recordedFile.value || '',
+    timingMeta: buildTimingMeta()
+  })
+  await syncUsageAndTrial(answer)
+  return answer
+}
+
+async function finishInterruptedExam() {
+  const finishedExamId = examStore.examId
+  await examStore.finish()
+  const lastAnswered = examStore.answers
+    .slice()
+    .filter((answer) => answer?.questionId && answer?.scoringResult)
+    .sort((a, b) => Number(a.questionIndex || 0) - Number(b.questionIndex || 0))
+    .pop()
+  examStore.reset()
+  if (finishedExamId && lastAnswered?.questionId) {
+    uni.redirectTo({
+      url: `/pages/result/index?examId=${encodeURIComponent(finishedExamId)}&questionId=${encodeURIComponent(lastAnswered.questionId)}`
+    })
+    return
+  }
+  uni.switchTab({ url: '/pages/home/index' })
+}
+
 function goPrepare() {
   const mode = isFullExamSource.value ? 'fullExam' : 'free'
   uni.redirectTo({ url: `/pages/exam/prepare?mode=${mode}` })
@@ -1200,12 +1249,30 @@ function goPrepare() {
 function goBackHome() {
   uni.showModal({
     title: '退出考场',
-    content: '当前作答进度可能不会保存，确认退出吗？',
-    success(res) {
+    content: hasCurrentCapture.value
+      ? '将中断本场练习，并提交当前已录到的作答内容进行评分。'
+      : (examStore.answers.length > 0 ? '将保存已提交的作答并进入结果页。' : '当前没有已提交作答，确认退出吗？'),
+    confirmText: hasCurrentCapture.value || examStore.answers.length > 0 ? '确认提交' : '退出',
+    async success(res) {
       if (res.confirm) {
-        stopActiveCapture({ silent: true })
-        examStore.reset()
-        uni.switchTab({ url: '/pages/home/index' })
+        if (!hasCurrentCapture.value && examStore.answers.length <= 0) {
+          stopActiveCapture({ silent: true })
+          examStore.reset()
+          uni.switchTab({ url: '/pages/home/index' })
+          return
+        }
+
+        finishingExam.value = true
+        showLoading(hasCurrentCapture.value ? '正在提交当前作答' : '正在保存结果')
+        try {
+          await submitCurrentAnswerForExit()
+          await finishInterruptedExam()
+        } catch (error) {
+          toast(error?.message || '中断提交失败')
+        } finally {
+          finishingExam.value = false
+          hideLoading()
+        }
       }
     }
   })

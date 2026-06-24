@@ -9,7 +9,7 @@
  */
 // ECharts 按需引入 - 只加载项目用到的模块
 import { use, init, graphic } from 'echarts/core'
-import { LineChart } from 'echarts/charts'
+import { BarChart, LineChart } from 'echarts/charts'
 import {
   GridComponent,
   TooltipComponent,
@@ -18,6 +18,7 @@ import {
 import { CanvasRenderer } from 'echarts/renderers'
 
 use([
+  BarChart,
   LineChart,
   GridComponent,
   TooltipComponent,

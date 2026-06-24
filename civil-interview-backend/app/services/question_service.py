@@ -9,9 +9,13 @@
 @return: 返回题目列表、单题详情、导入结果或随机题集合，字段需兼容 PC 和小程序。
 @raises HTTPException: 题目不存在、导入格式错误、权限不足或筛选参数无法解析时抛出 HTTP 错误。
 """
+import base64
+import copy
+import hashlib
 import json
 import random
 import re
+import time
 import uuid
 from pathlib import Path
 from typing import Optional, List
@@ -27,6 +31,12 @@ from app.core.ai import call_llm_api_async, PROVINCE_NAMES, POSITION_NAMES, DIME
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 CURATED_QUESTION_DIR = REPO_ROOT / "ai_gongwu_backend" / "assets" / "questions"
+CURATED_SYNC_GATE_SECONDS = 60
+QUESTION_PICK_CACHE_SECONDS = 45
+FULL_EXAM_CACHE_SECONDS = 90
+_last_curated_sync_at = 0.0
+_question_pick_cache: dict[str, tuple[float, list[dict]]] = {}
+_full_exam_suite_cache: dict[str, tuple[float, list[dict]]] = {}
 QUESTION_SOURCE_LABELS = {
     "local_asset": "本地真题",
     "imported_file": "题库导入",
@@ -98,6 +108,63 @@ CLASSIFICATION_META_KEYS = (
     "hasCompleteSuiteLevel",
     "hasAppearanceScore",
 )
+
+
+def _cache_key(prefix: str, payload: dict | None = None) -> str:
+    """
+    为短缓存生成稳定 key。
+
+    这里用 JSON 排序再哈希，是因为筛选条件来自 PC、小程序和定向树，不同端字段顺序不应导致缓存失效。
+
+    @param prefix: 缓存业务前缀，例如 training、targeted 或 full_suite。
+    @param payload: 参与缓存区分的筛选条件。
+    @return: 可直接作为内存字典 key 的短字符串。
+    @raises: 不主动包装序列化异常；异常会沿调用栈暴露给调用方。
+    """
+    raw = json.dumps(payload or {}, ensure_ascii=False, sort_keys=True, default=str)
+    digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:24]
+    return f"{prefix}:{digest}"
+
+
+def _get_cached_list(cache: dict[str, tuple[float, list[dict]]], key: str, ttl_seconds: int) -> list[dict] | None:
+    """
+    读取短缓存列表，并返回深拷贝避免调用方原地修改污染缓存。
+
+    缓存只用于削掉连续点击和重复筛选的热路径压力，因此 TTL 很短；过期即删除，不做复杂失效协议。
+
+    @param cache: 模块级短缓存字典。
+    @param key: `_cache_key` 生成的缓存 key。
+    @param ttl_seconds: 最大可复用秒数。
+    @return: 命中时返回列表副本，未命中或过期返回 None。
+    @raises: 不主动包装深拷贝异常；异常会沿调用栈暴露给调用方。
+    """
+    entry = cache.get(key)
+    if not entry:
+        return None
+    cached_at, value = entry
+    if time.monotonic() - cached_at > ttl_seconds:
+        cache.pop(key, None)
+        return None
+    return copy.deepcopy(value)
+
+
+def _set_cached_list(cache: dict[str, tuple[float, list[dict]]], key: str, value: list[dict], max_items: int = 128) -> None:
+    """
+    写入模块级短缓存，并限制条目数防止长时间运行时无界增长。
+
+    这里没有引入 Redis，是为了先用最小改动解决小程序重复抽题慢的问题；多进程部署下每个进程各自缓存也能降低热请求压力。
+
+    @param cache: 模块级短缓存字典。
+    @param key: `_cache_key` 生成的缓存 key。
+    @param value: 需要缓存的列表结果。
+    @param max_items: 缓存最大条目数。
+    @return: None。
+    @raises: 不主动包装深拷贝异常；异常会沿调用栈暴露给调用方。
+    """
+    if len(cache) >= max_items:
+        oldest_key = min(cache.items(), key=lambda item: item[1][0])[0]
+        cache.pop(oldest_key, None)
+    cache[key] = (time.monotonic(), copy.deepcopy(value))
 
 
 def _normalize_stem_key(text: str | None) -> str:
@@ -879,6 +946,26 @@ def sync_curated_question_assets(db: Session) -> dict:
     return {"synced": synced, "updated": updated}
 
 
+def _sync_curated_question_assets_if_stale(db: Session) -> dict:
+    """
+    给生成题目的热路径加资产同步节流。
+
+    标准题库同步会扫本地 JSON 并比对数据库，适合启动和导入后执行；用户连续点击专项/定向生成时不应每次都触发全量扫描。
+    这里保留“短时间内至少同步过一次”的保证，降低延迟，同时不改同步函数本身，避免影响导入链路。
+
+    @param db: 当前请求复用的数据库会话。
+    @return: 同步结果；节流命中时返回 skipped 标记。
+    @raises: 同步函数内部异常会沿调用栈抛出。
+    """
+    global _last_curated_sync_at
+    now = time.monotonic()
+    if now - _last_curated_sync_at < CURATED_SYNC_GATE_SECONDS:
+        return {"synced": 0, "updated": 0, "skipped": True}
+    result = sync_curated_question_assets(db)
+    _last_curated_sync_at = now
+    return result
+
+
 def _persist_generated_questions(
     db: Session,
     items: list[dict],
@@ -1120,6 +1207,20 @@ def _choose_targeted_bank_questions(
     count: int,
     target_filters: dict | None = None,
 ) -> list[dict]:
+    cache_key = _cache_key(
+        "targeted_bank",
+        {
+            "province": province,
+            "position": position,
+            "count": count,
+            "targetFilters": target_filters or {},
+        },
+    )
+    cached = _get_cached_list(_question_pick_cache, cache_key, QUESTION_PICK_CACHE_SECONDS)
+    if cached is not None:
+        random.shuffle(cached)
+        return cached[:count]
+
     if position:
         matched = _fetch_position_candidates(db, province=province, position=position)
     else:
@@ -1134,13 +1235,15 @@ def _choose_targeted_bank_questions(
 
     picked = (local_items + other_items)[:count]
 
-    return [
+    result = [
         {
             **_q_to_dict(question),
             "generationSource": "local_bank",
         }
         for question in picked[:count]
     ]
+    _set_cached_list(_question_pick_cache, cache_key, result)
+    return result
 
 
 def _choose_training_bank_questions(
@@ -1148,6 +1251,20 @@ def _choose_training_bank_questions(
     province: str = "national",
     target_filters: dict | None = None,
 ) -> list[dict]:
+    cache_key = _cache_key(
+        "training_bank",
+        {
+            "dimension": dimension,
+            "count": count,
+            "province": province,
+            "targetFilters": target_filters or {},
+        },
+    )
+    cached = _get_cached_list(_question_pick_cache, cache_key, QUESTION_PICK_CACHE_SECONDS)
+    if cached is not None:
+        random.shuffle(cached)
+        return cached[:count]
+
     preferred = _question_base_query(db, dimension=dimension, province=province).all()
     fallback = db.query(Question).limit(max(count * 4, 50)).all() if not preferred else []
     pool = preferred or fallback
@@ -1163,7 +1280,7 @@ def _choose_training_bank_questions(
         random.shuffle(bucket)
 
     picked = (local_pool + other_pool)[: min(count, len(pool))]
-    return [
+    result = [
         {
             **_q_to_dict(question),
             "dimension": dimension or question.dimension,
@@ -1171,6 +1288,8 @@ def _choose_training_bank_questions(
         }
         for question in picked
     ]
+    _set_cached_list(_question_pick_cache, cache_key, result)
+    return result
 
 
 async def _generate_targeted_questions_with_llm(
@@ -1322,6 +1441,279 @@ def get_random_questions(db: Session, province: str = "national", count: int = 5
 
     count = min(count, len(all_qs))
     return [_q_to_dict(q) for q in random.sample(all_qs, count)] if all_qs else []
+
+
+def _encode_full_suite_id(province: str, suite_key: str) -> str:
+    """
+    生成 URL 安全的套题 ID。
+
+    套题真实 key 可能包含中文、空格或日期片段，直接放路由容易被不同端编码成不同形式；base64url 只作为传输 ID，
+    不改变题库内部 suiteKey。
+
+    @param province: 套题所属省份代码。
+    @param suite_key: 题库元数据中的真实套题 key。
+    @return: 可放进 `/exam/full-suites/{suiteId}/questions` 的短 ID。
+    @raises: 编码异常会沿调用栈暴露。
+    """
+    raw = f"{province}|{suite_key}".encode("utf-8")
+    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+
+
+def _decode_full_suite_id(suite_id: str) -> tuple[str, str]:
+    """
+    解析全真套题路由 ID。
+
+    解析失败时返回空值，调用方再统一转成 404；这样前端传旧 ID 或手动篡改不会落到模糊查询。
+
+    @param suite_id: `_encode_full_suite_id` 生成的 ID。
+    @return: `(province, suite_key)` 二元组；解析失败返回 `("", "")`。
+    @raises: 不主动抛出解析异常。
+    """
+    try:
+        normalized = str(suite_id or "").strip()
+        padded = normalized + "=" * (-len(normalized) % 4)
+        raw = base64.urlsafe_b64decode(padded.encode("ascii")).decode("utf-8")
+    except Exception:
+        return "", ""
+    if "|" not in raw:
+        return "", ""
+    province, suite_key = raw.split("|", 1)
+    return province.strip(), suite_key.strip()
+
+
+def _first_text(*values) -> str:
+    for value in values:
+        text = str(value or "").strip()
+        if text:
+            return text
+    return ""
+
+
+def _first_number(*values) -> float:
+    for value in values:
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            continue
+        if number > 0:
+            return number
+    return 0.0
+
+
+def _boolean_meta(value) -> bool:
+    if isinstance(value, bool):
+        return value
+    text = str(value or "").strip().lower()
+    return text in {"1", "true", "yes", "有", "是"}
+
+
+def _suite_question_order(question: Question) -> int:
+    meta = _question_meta_from_keywords(question.keywords)
+    explicit = _first_number(meta.get("questionNo"), meta.get("fullExamQuestionNumber"))
+    if explicit > 0:
+        return int(explicit)
+    match = re.search(r"[-_](\d{1,3})$", str(question.id or ""))
+    return int(match.group(1)) if match else 999999
+
+
+def _is_complete_suite(questions: list[Question]) -> bool:
+    if len(questions) < 2:
+        return False
+    orders = [_suite_question_order(question) for question in questions]
+    if any(order <= 0 or order == 999999 for order in orders):
+        return False
+    ordered = sorted(orders)
+    return ordered == list(range(1, len(ordered) + 1))
+
+
+def _suite_sort_key(suite_key: str, exam_date: str) -> str:
+    date_digits = re.sub(r"\D", "", str(exam_date or ""))
+    if re.match(r"^20\d{6}$", date_digits):
+        return date_digits
+    match = re.search(r"20\d{2}(?:\d{2})?(?:\d{2})?", str(suite_key or ""))
+    return match.group(0) if match else str(suite_key or "")
+
+
+def _question_matches_full_suite_filters(question: Question, filters: dict | None = None) -> bool:
+    if not filters:
+        return True
+    meta = _question_meta_from_keywords(question.keywords)
+
+    province = str(filters.get("province") or "").strip()
+    if province and province != "all" and question.province != province:
+        return False
+
+    for field in ("examCategory", "examSubcategory", "subcategory", "subcategory2"):
+        expected = str(filters.get(field) or "").strip()
+        if not expected:
+            continue
+        actual = str(meta.get(field) or "").strip()
+        if actual and expected != actual and expected not in actual and actual not in expected:
+            return False
+
+    year = str(filters.get("year") or "").strip()
+    if year:
+        year_set = {item.strip() for item in re.split(r"[、，,；;/\s]+", year) if item.strip()}
+        if year_set and not (year_set & set(_question_years_from_meta(meta))):
+            return False
+    return True
+
+
+def _build_full_exam_suites(db: Session, filters: dict | None = None, include_questions: bool = False) -> list[dict]:
+    """
+    从题库元数据构造真实套题索引。
+
+    全真模拟需要按套题一次加载，不能让小程序拉全量题库再端侧聚合；服务端构造索引可以同时保留真实题序、年份和计时规则。
+
+    @param db: 当前请求复用的数据库会话。
+    @param filters: 考试体系、省份、子类和年份筛选。
+    @param include_questions: True 时返回完整题目快照；False 时只返回轻量索引。
+    @return: 套题列表，按年份/套题 key 倒序排列。
+    @raises: 数据库异常会沿调用栈上抛。
+    """
+    filters = filters or {}
+    cache_key = _cache_key("full_exam_suites", {**filters, "includeQuestions": include_questions})
+    cached = _get_cached_list(_full_exam_suite_cache, cache_key, FULL_EXAM_CACHE_SECONDS)
+    if cached is not None:
+        return cached
+
+    province = str(filters.get("province") or "").strip()
+    query = db.query(Question)
+    if province and province != "all":
+        query = query.filter(Question.province == province)
+    rows = [question for question in query.all() if _question_matches_full_suite_filters(question, filters)]
+
+    groups: dict[tuple[str, str], list[Question]] = {}
+    for question in rows:
+        meta = _question_meta_from_keywords(question.keywords)
+        suite_key = _first_text(meta.get("suiteKey"), meta.get("fullExamSuiteKey"), meta.get("suiteId"))
+        if not suite_key:
+            continue
+        groups.setdefault((question.province or "national", suite_key), []).append(question)
+
+    suites: list[dict] = []
+    for (suite_province, suite_key), questions in groups.items():
+        ordered = sorted(questions, key=lambda item: (_suite_question_order(item), item.id))
+        if not _is_complete_suite(ordered):
+            continue
+
+        first_meta = _question_meta_from_keywords(ordered[0].keywords)
+        answer_score_total = _first_number(first_meta.get("answerScoreTotal"))
+        calculated_answer_total = sum(_first_number(_question_meta_from_keywords(q.keywords).get("questionScore")) for q in ordered)
+        answer_score_total = answer_score_total or calculated_answer_total
+        total_score = _first_number(first_meta.get("suiteTotalScore"), first_meta.get("totalScore")) or answer_score_total
+        appearance_score = _first_number(first_meta.get("appearanceScore"))
+        has_appearance_flag = first_meta.get("hasAppearanceScore") not in ("", None, [])
+        has_appearance_score = _boolean_meta(first_meta.get("hasAppearanceScore")) if has_appearance_flag else appearance_score > 0
+        if not appearance_score and has_appearance_score and total_score > answer_score_total:
+            appearance_score = max(total_score - answer_score_total, 0)
+
+        exam_date = _first_text(first_meta.get("examDate"))
+        suite_name = _first_text(first_meta.get("suiteName"), first_meta.get("sourceTitleRaw"))
+        suite = {
+            "id": _encode_full_suite_id(suite_province, suite_key),
+            "suiteKey": suite_key,
+            "province": suite_province,
+            "title": suite_name or f"{PROVINCE_NAMES.get(suite_province, _normalize_province_label(suite_province))}真题套卷 {suite_key}",
+            "suiteName": suite_name,
+            "examDate": exam_date,
+            "examCategory": _first_text(first_meta.get("examCategory")),
+            "examSubcategory": _first_text(first_meta.get("examSubcategory")),
+            "subcategory": _first_text(first_meta.get("subcategory")),
+            "subcategory2": _first_text(first_meta.get("subcategory2")),
+            "system": _first_text(first_meta.get("system")),
+            "positionType": _first_text(first_meta.get("positionType"), first_meta.get("position")),
+            "interviewFormat": _first_text(first_meta.get("interviewFormat")),
+            "sourceDocument": _first_text(first_meta.get("sourceDocument")),
+            "timingMode": _first_text(first_meta.get("timingMode")) or ("jiangsu_5_15" if suite_province == "jiangsu" else ""),
+            "questionCount": len(ordered),
+            "questionIds": [question.id for question in ordered],
+            "answerScoreTotal": answer_score_total,
+            "totalScore": total_score,
+            "appearanceScore": appearance_score,
+            "hasAppearanceScore": has_appearance_score,
+            "sortKey": _suite_sort_key(suite_key, exam_date),
+        }
+        if include_questions:
+            suite["questions"] = [_q_to_dict(question) for question in ordered]
+        else:
+            suite["questions"] = [
+                {"id": question.id, "questionNo": _suite_question_order(question)}
+                for question in ordered
+            ]
+        suites.append(suite)
+
+    suites.sort(key=lambda item: (str(item.get("sortKey") or ""), str(item.get("title") or "")), reverse=True)
+    _set_cached_list(_full_exam_suite_cache, cache_key, suites)
+    return suites
+
+
+def list_full_exam_suites(
+    db: Session,
+    examCategory: str = "",
+    province: str = "",
+    examSubcategory: str = "",
+    subcategory: str = "",
+    subcategory2: str = "",
+    year: str = "",
+) -> dict:
+    """
+    返回全真模拟可选套题的轻量索引。
+
+    小程序只需要先展示套题名、题数和时间规则；完整题干在用户选中套题后再一次性获取，减少首屏加载和端侧聚合成本。
+
+    @param db: 当前请求复用的数据库会话。
+    @param examCategory: 真实考试体系筛选。
+    @param province: 地区筛选，可为空表示不限。
+    @param examSubcategory: 二级真实分类筛选。
+    @param subcategory: 三级分类筛选。
+    @param subcategory2: 四级分类筛选。
+    @param year: 年份筛选。
+    @return: `list/total` 结构的套题索引。
+    @raises: 数据库异常会沿调用栈上抛。
+    """
+    filters = {
+        "examCategory": examCategory,
+        "province": province,
+        "examSubcategory": examSubcategory,
+        "subcategory": subcategory,
+        "subcategory2": subcategory2,
+        "year": year,
+    }
+    suites = _build_full_exam_suites(
+        db,
+        {key: value for key, value in filters.items() if str(value or "").strip()},
+        include_questions=False,
+    )
+    return {"list": suites, "total": len(suites)}
+
+
+def get_full_exam_suite_questions(db: Session, suite_id: str) -> dict:
+    """
+    返回用户选中套题的完整题目快照。
+
+    选中后一次性返回整套题，可以避免小程序逐题请求详情，也保证进入考场时的题序和计时规则不会被端侧缓存打乱。
+
+    @param db: 当前请求复用的数据库会话。
+    @param suite_id: `list_full_exam_suites` 返回的套题 ID。
+    @return: 套题元数据和完整题目列表。
+    @raises HTTPException: 套题不存在或题目不完整时抛出 404。
+    """
+    province, suite_key = _decode_full_suite_id(suite_id)
+    if not province or not suite_key:
+        raise HTTPException(status_code=404, detail="套题未找到")
+    suites = _build_full_exam_suites(
+        db,
+        {"province": province},
+        include_questions=True,
+    )
+    suite = next((item for item in suites if item.get("suiteKey") == suite_key and item.get("province") == province), None)
+    if not suite:
+        raise HTTPException(status_code=404, detail="套题未找到")
+    questions = suite.get("questions") if isinstance(suite.get("questions"), list) else []
+    if len(questions) != int(suite.get("questionCount") or 0):
+        raise HTTPException(status_code=404, detail="套题题目不完整")
+    return {"suite": suite, "questions": questions}
 
 
 def get_question(db: Session, question_id: str) -> dict:
@@ -1780,7 +2172,7 @@ async def generate_questions_by_position(
     @raises: LLM、数据库或资产同步异常会沿调用栈上抛。
     """
     count = min(count, 10)
-    sync_curated_question_assets(db)
+    _sync_curated_question_assets_if_stale(db)
     normalized_mode = str(source_mode or "local").strip().lower()
 
     if normalized_mode == "ai":
@@ -1840,7 +2232,7 @@ async def generate_training_questions(
     @raises: LLM、数据库或资产同步异常会沿调用栈上抛。
     """
     count = min(count, 10)
-    sync_curated_question_assets(db)
+    _sync_curated_question_assets_if_stale(db)
     normalized_mode = str(source_mode or "local").strip().lower()
 
     if normalized_mode == "local":

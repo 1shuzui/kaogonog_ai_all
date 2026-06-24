@@ -9,7 +9,7 @@
  * @raises Error: 登录、资料更新或偏好同步失败时由 action 抛给页面处理。
  */
 import { defineStore } from 'pinia'
-import { bindWechatMiniProgram, login as loginApi, loginWithWechat as loginWithWechatApi, register as registerApi, setupWechatMiniProgramAccount } from '../api/auth'
+import { bindWechatMiniProgram, bindWechatMiniProgramInvite, login as loginApi, loginWithWechat as loginWithWechatApi, register as registerApi, setupWechatMiniProgramAccount } from '../api/auth'
 import { getProvinces, getUserInfo, updatePreferences, updateUserProfile } from '../api/user'
 import { useBillingStore } from './billing'
 import {
@@ -144,8 +144,8 @@ export const useUserStore = defineStore('user', {
       return response
     },
 
-    async loginWithWechat(code, agreedTermsVersion) {
-      const response = await loginWithWechatApi(code, agreedTermsVersion)
+    async loginWithWechat(code, agreedTermsVersion, inviteCode = '') {
+      const response = await loginWithWechatApi(code, agreedTermsVersion, inviteCode)
       this.token = response.access_token
       this.username = response.username || ''
       uni.setStorageSync(TOKEN_STORAGE_KEY, response.access_token)
@@ -156,6 +156,10 @@ export const useUserStore = defineStore('user', {
 
     async register(form) {
       return registerApi(form)
+    },
+
+    async bindWechatInvite(data) {
+      return bindWechatMiniProgramInvite(data)
     },
 
     logout() {

@@ -8,6 +8,31 @@ ORM 模型包入口。
 @raises ImportError: Python 包路径或 SQLAlchemy 依赖异常时会在导入阶段失败。
 """
 from app.db.session import Base
-from app.models.entities import User, Question, Exam, ExamAnswer, HistoryRecord
+from app.models.entities import (
+    Exam,
+    ExamAnswer,
+    HistoryRecord,
+    InviteActivityDaily,
+    InviteAuditLog,
+    InviteCode,
+    InvitePartner,
+    InvitePaymentEvent,
+    InviteRegistrationEvent,
+    Question,
+    User,
+)
 
-__all__ = ["Base", "User", "Question", "Exam", "ExamAnswer", "HistoryRecord"]
+__all__ = [
+    "Base",
+    "User",
+    "Question",
+    "Exam",
+    "ExamAnswer",
+    "HistoryRecord",
+    "InvitePartner",
+    "InviteCode",
+    "InviteRegistrationEvent",
+    "InviteActivityDaily",
+    "InvitePaymentEvent",
+    "InviteAuditLog",
+]

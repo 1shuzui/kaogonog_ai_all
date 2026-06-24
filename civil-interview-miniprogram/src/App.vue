@@ -10,7 +10,109 @@
 -->
 <script>
 import { API_BASE } from './api/request'
+import { reportDashboardHeartbeat } from './api/dashboard'
+import { TOKEN_STORAGE_KEY } from './utils/constants'
 import { logger } from './utils/logger'
+
+const HEARTBEAT_INTERVAL_MS = 60 * 1000
+let heartbeatTimer = null
+let heartbeatSessionId = ''
+let heartbeatLastAt = Date.now()
+let heartbeatBootstrapTimer = null
+let appVisible = true
+
+function createHeartbeatId() {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+}
+
+function getHeartbeatSessionId() {
+  if (!heartbeatSessionId) {
+    heartbeatSessionId = createHeartbeatId()
+  }
+  return heartbeatSessionId
+}
+
+function hasLoginToken() {
+  try {
+    return !!uni.getStorageSync(TOKEN_STORAGE_KEY)
+  } catch {
+    return false
+  }
+}
+
+function getRoutePath() {
+  try {
+    const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : []
+    const current = pages[pages.length - 1]
+    const route = current?.route || ''
+    const query = current?.options || {}
+    const queryString = Object.entries(query)
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+      .join('&')
+    return route ? `/${route}${queryString ? `?${queryString}` : ''}` : ''
+  } catch {
+    return ''
+  }
+}
+
+async function flushDashboardHeartbeat(forceSeconds = 0) {
+  if (!hasLoginToken()) {
+    heartbeatLastAt = Date.now()
+    return
+  }
+  const now = Date.now()
+  const elapsedSeconds = forceSeconds || Math.round((now - heartbeatLastAt) / 1000)
+  heartbeatLastAt = now
+  if (elapsedSeconds <= 0) return
+
+  try {
+    await reportDashboardHeartbeat({
+      sessionId: getHeartbeatSessionId(),
+      eventId: createHeartbeatId(),
+      clientType: 'mp-weixin',
+      routePath: getRoutePath(),
+      durationSeconds: elapsedSeconds,
+      activeAt: new Date(now).toISOString()
+    })
+  } catch {
+    // best-effort heartbeat, keep mini program flows quiet on network failure
+  }
+}
+
+function stopDashboardHeartbeat() {
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer)
+    heartbeatTimer = null
+  }
+}
+
+function startDashboardHeartbeat() {
+  if (!hasLoginToken() || heartbeatTimer) return
+  heartbeatLastAt = Date.now()
+  heartbeatTimer = setInterval(() => {
+    if (!hasLoginToken()) return
+    flushDashboardHeartbeat(60)
+  }, HEARTBEAT_INTERVAL_MS)
+}
+
+function startHeartbeatBootstrap() {
+  if (heartbeatBootstrapTimer) return
+  heartbeatBootstrapTimer = setInterval(() => {
+    if (!appVisible) return
+    if (hasLoginToken()) {
+      startDashboardHeartbeat()
+    } else {
+      stopDashboardHeartbeat()
+    }
+  }, 5000)
+}
+
+function stopHeartbeatBootstrap() {
+  if (heartbeatBootstrapTimer) {
+    clearInterval(heartbeatBootstrapTimer)
+    heartbeatBootstrapTimer = null
+  }
+}
 
 export default {
   onLaunch() {
@@ -18,6 +120,23 @@ export default {
       event: 'miniapp.launch',
       api_base: API_BASE
     })
+    appVisible = true
+    startHeartbeatBootstrap()
+  },
+  onShow() {
+    appVisible = true
+    startDashboardHeartbeat()
+  },
+  onHide() {
+    appVisible = false
+    flushDashboardHeartbeat()
+    stopDashboardHeartbeat()
+  },
+  onUnload() {
+    appVisible = false
+    flushDashboardHeartbeat()
+    stopDashboardHeartbeat()
+    stopHeartbeatBootstrap()
   }
 }
 </script>

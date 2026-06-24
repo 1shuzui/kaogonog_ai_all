@@ -62,6 +62,65 @@ def _is_low_value_transcript(text: str) -> bool:
     return not stripped
 
 
+def _safe_answer_meta(raw_meta) -> dict:
+    """
+    清洗端侧传入的答题元信息。
+
+    答题用时、跳过原因和 ASR 失败类型属于复盘展示和扣量解释，不参与模型打分；白名单合入可以避免端侧把任意字段写进评分结果。
+
+    @param raw_meta: 小程序评分请求里的 answerMeta 字典。
+    @return: 允许持久化到 score_result 的安全字段。
+    @raises: 不主动抛出异常；异常输入按空字典处理。
+    """
+    if not isinstance(raw_meta, dict):
+        return {}
+
+    def safe_seconds(value) -> int:
+        try:
+            return max(0, int(float(value or 0)))
+        except (TypeError, ValueError):
+            return 0
+
+    result: dict = {}
+    timing = raw_meta.get("answerTiming")
+    if isinstance(timing, dict):
+        result["answerTiming"] = {
+            "actualSeconds": safe_seconds(timing.get("actualSeconds")),
+            "standardSeconds": safe_seconds(timing.get("standardSeconds")),
+            "overtimeSeconds": safe_seconds(timing.get("overtimeSeconds")),
+        }
+    for key in ("skipReason", "asrFailureType", "asrStatus", "asrMessage"):
+        value = str(raw_meta.get(key) or "").strip()
+        if value:
+            result[key] = value[:120]
+    return result
+
+
+def _merge_answer_meta(result: dict, answer_meta: dict) -> dict:
+    """
+    将安全答题元信息并入评分结果。
+
+    评分服务仍只根据文字稿和题目打分；这里的合并只是为了结果页、历史页和客服排查能解释为什么没有文字稿或为什么超时。
+
+    @param result: 评分服务返回的结果。
+    @param answer_meta: `_safe_answer_meta` 清洗后的字段。
+    @return: 合并后的评分结果。
+    @raises: 不主动包装底层异常。
+    """
+    if not answer_meta:
+        return result
+    merged = {**(result or {})}
+    for key, value in answer_meta.items():
+        if key == "asrStatus":
+            media_record = merged.get("mediaRecord") if isinstance(merged.get("mediaRecord"), dict) else {}
+            asr_meta = media_record.get("asrMeta") if isinstance(media_record.get("asrMeta"), dict) else {}
+            media_record["asrMeta"] = {**asr_meta, "status": value}
+            merged["mediaRecord"] = media_record
+        else:
+            merged[key] = value
+    return merged
+
+
 @router.post("/transcribe")
 async def scoring_transcribe(
     audio: UploadFile = File(...),
@@ -141,16 +200,29 @@ async def scoring_evaluate(data: EvaluateRequest, current_user: AuthUser = Depen
         raise HTTPException(status_code=404, detail="Question not found")
 
     transcript = str(data.transcript or "").strip()
+    answer_meta = _safe_answer_meta(data.answerMeta)
     if _is_low_value_transcript(transcript):
         return _persist_result(
             db,
             data.examId,
             data.questionId,
             transcript,
-            _build_zero_score_result("系统判定本次作答仅包含语气词或无有效内容，按无效作答记 0 分。"),
+            _merge_answer_meta(
+                _build_zero_score_result("系统判定本次作答仅包含语气词或无有效内容，按无效作答记 0 分。"),
+                answer_meta,
+            ),
         )
 
-    return await evaluate_answer(db, data.questionId, data.transcript, data.examId)
+    result = await evaluate_answer(db, data.questionId, data.transcript, data.examId)
+    if not answer_meta:
+        return result
+    return _persist_result(
+        db,
+        data.examId,
+        data.questionId,
+        transcript,
+        _merge_answer_meta(result, answer_meta),
+    )
 
 
 @router.get("/result/{exam_id}/{question_id}")

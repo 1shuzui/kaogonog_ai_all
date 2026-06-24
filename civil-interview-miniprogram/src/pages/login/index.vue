@@ -42,6 +42,8 @@
       <template v-if="mode === 'register'">
         <view class="form-label">确认密码</view>
         <input v-model="form.confirmPassword" class="field" password placeholder="请再次输入密码" />
+        <view class="form-label">邀请码（选填）</view>
+        <input v-model="form.inviteCode" class="field" placeholder="请输入邀请码" />
       </template>
 
       <view class="agreement-box">
@@ -71,6 +73,11 @@
       <button class="primary-button login-submit" :loading="loading" @tap="submit">
         {{ mode === 'login' ? '登录' : '注册' }}
       </button>
+
+      <template v-if="mode === 'login'">
+        <view class="form-label">邀请码（选填）</view>
+        <input v-model="form.inviteCode" class="field" placeholder="请输入邀请码" />
+      </template>
 
       <button v-if="mode === 'login'" class="secondary-button wechat-login-button" :loading="wechatLoading" @tap="loginByWechat">
         微信快捷登录
@@ -127,6 +134,8 @@
         <input v-model="accountSetupForm.password" class="field" password placeholder="至少 6 位" />
         <view class="form-label">确认密码</view>
         <input v-model="accountSetupForm.confirmPassword" class="field" password placeholder="请再次输入密码" />
+        <view class="form-label">邀请码（选填）</view>
+        <input v-model="accountSetupForm.inviteCode" class="field" placeholder="请输入邀请码" />
         <button class="primary-button account-setup-panel__button" :loading="accountSetupLoading" @tap="submitAccountSetup">
           创建账号并进入
         </button>
@@ -167,12 +176,14 @@ const privacyAuthRequired = ref(false)
 const privacyAuthorizationReady = ref(false)
 const privacyContractName = ref('')
 const redirectUrl = ref('')
+const wechatInviteSessionToken = ref('')
 const AGREED_TERMS_STORAGE_KEY = 'civil_agreed_terms_version'
 const AGREED_TERMS_VERSION = '2026-05-12'
 const form = reactive({
   username: '',
   password: '',
   confirmPassword: '',
+  inviteCode: '',
   agreedTerms: false
 })
 const resetForm = reactive({
@@ -185,7 +196,8 @@ const resetForm = reactive({
 const accountSetupForm = reactive({
   username: '',
   password: '',
-  confirmPassword: ''
+  confirmPassword: '',
+  inviteCode: ''
 })
 
 function goHomeWithCachedSession() {
@@ -308,6 +320,20 @@ function validate() {
       toast('两次密码输入不一致')
       return false
     }
+    const inviteCode = form.inviteCode.trim()
+    if (inviteCode && !/^[A-Za-z0-9_-]{3,32}$/.test(inviteCode)) {
+      toast('邀请码需为 3-32 位字母、数字、_ 或 -')
+      return false
+    }
+  }
+  return true
+}
+
+function validateInviteCode(value) {
+  const inviteCode = String(value || '').trim()
+  if (inviteCode && !/^[A-Za-z0-9_-]{3,32}$/.test(inviteCode)) {
+    toast('邀请码需为 3-32 位字母、数字、_ 或 -')
+    return false
   }
   return true
 }
@@ -328,12 +354,14 @@ async function submit() {
     await userStore.register({
       username: form.username.trim(),
       password: form.password,
+      inviteCode: form.inviteCode.trim().toUpperCase(),
       agreedTermsVersion: '2026-05-12'
     })
     toast('注册成功，请登录', 'success')
     mode.value = 'login'
     form.password = ''
     form.confirmPassword = ''
+    form.inviteCode = ''
     form.agreedTerms = false
   } catch (error) {
     toast(error?.message || '操作失败')
@@ -345,14 +373,19 @@ async function submit() {
 async function loginByWechat() {
   if (wechatLoading.value) return
   if (!await ensurePrivacyReadyForLogin()) return
+  if (!validateInviteCode(form.inviteCode)) return
   wechatLoading.value = true
   try {
     const code = await getWechatLoginCode()
-    const result = await userStore.loginWithWechat(code, '2026-05-12')
+    const result = await userStore.loginWithWechat(code, '2026-05-12', form.inviteCode.trim().toUpperCase())
     if (result?.requiresPcAccountSetup) {
-      accountSetupVisible.value = false
+      accountSetupVisible.value = true
+      wechatInviteSessionToken.value = result?.inviteSessionToken || ''
+      accountSetupForm.username = result?.accountLogin?.pcLoginUsername || ''
+      accountSetupForm.password = ''
+      accountSetupForm.confirmPassword = ''
+      accountSetupForm.inviteCode = ''
       toast('登录成功', 'success')
-      goAfterLogin()
       return
     }
     toast('登录成功', 'success')
@@ -382,6 +415,11 @@ function validateAccountSetup() {
     toast('两次密码输入不一致')
     return false
   }
+  const inviteCode = accountSetupForm.inviteCode.trim()
+  if (inviteCode && !/^[A-Za-z0-9_-]{3,32}$/.test(inviteCode)) {
+    toast('邀请码需为 3-32 位字母、数字、_ 或 -')
+    return false
+  }
   return true
 }
 
@@ -392,9 +430,12 @@ async function submitAccountSetup() {
   try {
     await userStore.setupWechatPcAccount({
       username: accountSetupForm.username.trim(),
-      password: accountSetupForm.password
+      password: accountSetupForm.password,
+      inviteCode: accountSetupForm.inviteCode.trim().toUpperCase(),
+      inviteSessionToken: wechatInviteSessionToken.value
     })
     accountSetupVisible.value = false
+    wechatInviteSessionToken.value = ''
     toast('PC 登录账号已创建', 'success')
     goAfterLogin()
   } catch (error) {
@@ -410,9 +451,23 @@ function skipAccountSetup() {
     content: '跳过后可以继续用微信进入小程序，但 PC 端暂时不能用账号密码登录同一账号。之后可在“我的-账号安全”补设。',
     confirmText: '先跳过',
     cancelText: '继续设置',
-    success(res) {
+    async success(res) {
       if (res.confirm) {
+        const inviteSessionToken = wechatInviteSessionToken.value
+        const pendingInvite = accountSetupForm.inviteCode.trim().toUpperCase()
+        if (pendingInvite && inviteSessionToken) {
+          try {
+            await userStore.bindWechatInvite({
+              inviteCode: pendingInvite,
+              inviteSessionToken
+            })
+          } catch (error) {
+            toast(error?.message || '邀请码绑定失败')
+            return
+          }
+        }
         accountSetupVisible.value = false
+        wechatInviteSessionToken.value = ''
         goAfterLogin()
       }
     }

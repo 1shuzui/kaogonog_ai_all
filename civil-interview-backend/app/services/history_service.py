@@ -212,9 +212,25 @@ def _build_exam_summary(exam: Exam, answers: list[ExamAnswer], question_lookup: 
     }
 
 
-def _answer_to_dict(ans: ExamAnswer, question: Question | None) -> dict:
+def _answer_to_dict(ans: ExamAnswer, question: Question | None, usage_record=None) -> dict:
     score_result = ans.score_result or {}
     media_record = score_result.get("mediaRecord", {}) if isinstance(score_result, dict) else {}
+    answer_timing = score_result.get("answerTiming") if isinstance(score_result.get("answerTiming"), dict) else {}
+    if not answer_timing and isinstance(media_record.get("answerTiming"), dict):
+        answer_timing = media_record.get("answerTiming") or {}
+    actual_seconds = int(answer_timing.get("actualSeconds") or getattr(usage_record, "usage_seconds", 0) or 0)
+    standard_seconds = int(
+        answer_timing.get("standardSeconds")
+        or ((question.prep_time + question.answer_time) if question else 0)
+        or 0
+    )
+    overtime_seconds = int(answer_timing.get("overtimeSeconds") or max(actual_seconds - standard_seconds, 0))
+    has_persisted_timing = bool(answer_timing)
+    normalized_timing = {
+        "actualSeconds": actual_seconds,
+        "standardSeconds": standard_seconds,
+        "overtimeSeconds": max(overtime_seconds, 0),
+    } if actual_seconds or has_persisted_timing else {}
     return {
         "questionId": ans.question_id,
         "questionStem": question.stem if question else "",
@@ -228,6 +244,8 @@ def _answer_to_dict(ans: ExamAnswer, question: Question | None) -> dict:
         "mediaType": media_record.get("mediaType", ""),
         "mediaFilename": media_record.get("originalFilename", ""),
         "mediaSource": media_record.get("source", ""),
+        "usageSeconds": actual_seconds,
+        "answerTiming": normalized_timing,
         "answeredAt": ans.answered_at.isoformat() if ans.answered_at else "",
     }
 
@@ -348,11 +366,27 @@ def get_history_detail(db: Session, exam_id: str) -> dict:
         raise HTTPException(status_code=404, detail="历史记录未找到")
 
     detail = _build_exam_summary(exam, answers, question_lookup, question_ids, record=r)
+    usage_lookup = {}
+    for record in getattr(exam, "usage_records", []) or []:
+        question_id = str(getattr(record, "question_id", "") or "")
+        if not question_id:
+            continue
+        existing = usage_lookup.get(question_id)
+        record_at = getattr(record, "reported_at", None)
+        existing_at = getattr(existing, "reported_at", None) if existing else None
+        record_ts = record_at.timestamp() if record_at else 0
+        existing_ts = existing_at.timestamp() if existing_at else 0
+        if not existing or record_ts >= existing_ts:
+            usage_lookup[question_id] = record
+
     detail.update({
         "startTime": exam.start_time.isoformat() if exam.start_time else "",
         "endTime": exam.end_time.isoformat() if exam.end_time else detail["date"],
         "questionIds": question_ids,
-        "answers": [_answer_to_dict(answer, question_lookup.get(answer.question_id)) for answer in answers],
+        "answers": [
+            _answer_to_dict(answer, question_lookup.get(answer.question_id), usage_lookup.get(answer.question_id))
+            for answer in answers
+        ],
     })
     detail.pop("sortAt", None)
     return detail

@@ -11,13 +11,75 @@
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlalchemy.orm import Session
 
-from app.core.access import ensure_exam_start_access
+from app.core.access import ensure_exam_start_access, ensure_paid_access
 from app.core.security import get_current_user
 from app.db.session import get_db
 from app.schemas.common import AuthUser, ExamStartRequest
 from app.services.exam_service import start_exam, upload_recording, complete_exam
+from app.services.question_service import list_full_exam_suites, get_full_exam_suite_questions
 
 router = APIRouter(prefix="/exam", tags=["exam"])
+
+
+@router.get("/full-suites")
+def exam_full_suites(
+    examCategory: str = "",
+    province: str = "",
+    examSubcategory: str = "",
+    subcategory: str = "",
+    subcategory2: str = "",
+    year: str = "",
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    返回全真模拟套题轻量索引。
+
+    旧小程序会拉完整题库再端侧聚合，真实题库增长后会让进入准备页变慢；这里先给套题名、题数和时间规则，
+    用户选中后再单独拉完整题目。
+
+    @param examCategory: 真实考试体系筛选。
+    @param province: 地区筛选。
+    @param examSubcategory: 二级真实分类筛选。
+    @param subcategory: 三级分类筛选。
+    @param subcategory2: 四级分类筛选。
+    @param year: 年份筛选。
+    @param current_user: Bearer token 解析出的当前用户。
+    @param db: 请求级数据库会话。
+    @return: 套题轻量列表。
+    @raises HTTPException: 未登录或无付费权益时抛出。
+    """
+    ensure_paid_access(current_user, detail="全真模拟需付费开通后使用")
+    return list_full_exam_suites(
+        db,
+        examCategory=examCategory,
+        province=province,
+        examSubcategory=examSubcategory,
+        subcategory=subcategory,
+        subcategory2=subcategory2,
+        year=year,
+    )
+
+
+@router.get("/full-suites/{suite_id}/questions")
+def exam_full_suite_questions(
+    suite_id: str,
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    返回用户选中套题的完整题目快照。
+
+    进入考场前一次性锁定题序，可以避免小程序逐题请求详情造成等待，也避免端侧缓存和服务器题库不一致。
+
+    @param suite_id: 全真套题索引接口返回的套题 ID。
+    @param current_user: Bearer token 解析出的当前用户。
+    @param db: 请求级数据库会话。
+    @return: 套题元数据和完整题目列表。
+    @raises HTTPException: 未登录、无付费权益或套题不存在时抛出。
+    """
+    ensure_paid_access(current_user, detail="全真模拟需付费开通后使用")
+    return get_full_exam_suite_questions(db, suite_id)
 
 
 @router.post("/start")

@@ -13,11 +13,28 @@
     <template v-if="result">
       <view class="result-hero card">
         <view class="result-hero__copy">
-          <text class="result-hero__kicker">模型评测结果</text>
+          <text class="result-hero__kicker">模型评测结果 · {{ currentQuestionLabel }}</text>
           <text class="result-hero__score">{{ result.totalScore }}/{{ result.maxScore }} 分</text>
           <text class="result-hero__grade" :style="{ color: grade.color }">{{ grade.label }}</text>
         </view>
         <ScoreRing :score="result.totalScore" :max-score="result.maxScore" size="medium" :color="grade.color" />
+      </view>
+
+      <view v-if="answerList.length > 1" class="card answer-tabs">
+        <text class="answer-tabs__summary">已答 {{ completedAnswerCount }} 题，未答 {{ unansweredCount }} 题</text>
+        <scroll-view scroll-x class="answer-tabs__scroll">
+          <view class="answer-tabs__row">
+            <button
+              v-for="(item, index) in answerList"
+              :key="`${item.questionId || index}-${index}`"
+              class="answer-tab"
+              :class="{ 'answer-tab--active': index === activeAnswerIndex, 'answer-tab--empty': item.isPlaceholder }"
+              @tap="selectAnswer(index)"
+            >
+              第 {{ index + 1 }} 题 {{ formatAnswerScore(item) }}
+            </button>
+          </view>
+        </scroll-view>
       </view>
 
       <view class="card local-fit-card">
@@ -208,6 +225,7 @@ import EmptyState from '../../components/EmptyState.vue'
 import ScoreRing from '../../components/ScoreRing.vue'
 import { getHistoryDetail } from '../../api/history'
 import { getScoringResult } from '../../api/scoring'
+import { getQuestionById } from '../../api/questionBank'
 import { useExamStore } from '../../stores/exam'
 import { useFavoritesStore } from '../../stores/favorites'
 import { useTrainingStore } from '../../stores/training'
@@ -223,15 +241,26 @@ const transcript = ref('')
 const questionStem = ref('')
 const questionProvince = ref('national')
 const answerTiming = ref(null)
+const answerList = ref([])
+const activeAnswerIndex = ref(0)
 const progressRecorded = ref(false)
+const weakRecordedQuestionIds = ref(new Set())
 const activeExamId = ref('')
 const activeQuestionId = ref('')
 const shareVisible = ref(false)
 
 const grade = computed(() => getGrade(result.value?.totalScore || 0, result.value?.maxScore || 100))
 const localFitProvinceName = computed(() => getProvinceName(questionProvince.value || 'national'))
+const currentAnswer = computed(() => answerList.value[activeAnswerIndex.value] || null)
+const currentQuestionLabel = computed(() => (
+  answerList.value.length > 1
+    ? `第 ${activeAnswerIndex.value + 1} 题${currentAnswer.value?.isPlaceholder ? ' · 未作答' : ''}`
+    : currentAnswer.value?.isPlaceholder ? '本题 · 未作答' : '本题'
+))
+const completedAnswerCount = computed(() => answerList.value.filter((answer) => !answer?.isPlaceholder && answer?.scoringResult).length)
+const unansweredCount = computed(() => answerList.value.filter((answer) => answer?.isPlaceholder || !answer?.scoringResult).length)
 const improvementSuggestion = computed(() => {
-  if (isNoContentTranscript(transcript.value, result.value)) return buildNoContentImprovementSuggestion()
+  if (currentAnswer.value?.isPlaceholder || isNoContentTranscript(transcript.value, result.value)) return buildNoContentImprovementSuggestion()
   return normalizeImprovementSuggestion(
     result.value?.answerImprovementSuggestion,
     result.value?.totalScore || 0,
@@ -271,8 +300,7 @@ onShareAppMessage(() => ({
 function isNoContentTranscript(value, scoring = {}) {
   const text = String(value || '').trim()
   const mode = String(scoring?.scoringMode || '').trim()
-  return !text
-    || text === '未作答'
+  return text === '未作答'
     || ['screened_zero', 'empty_zero'].includes(mode)
     || text.includes('未能识别出有效语音')
     || text.includes('未配置真实语音转写服务')
@@ -352,6 +380,120 @@ function buildNoContentImprovementSuggestion() {
   }
 }
 
+function getQuestionAssignedScore(question = {}) {
+  const points = Array.isArray(question?.scoringPoints) ? question.scoringPoints : []
+  return points.reduce((sum, item) => sum + (Number(item?.score || 0) || 0), 0)
+}
+
+function normalizeDisplayResult(value = {}, question = {}) {
+  const normalized = normalizeResult(value || {})
+  const questionMaxScore = Number(normalized.questionMaxScore || getQuestionAssignedScore(question) || normalized.maxScore || 100) || 100
+  return {
+    ...normalized,
+    questionScore: Number(normalized.questionScore ?? normalized.totalScore ?? 0) || 0,
+    questionMaxScore: questionMaxScore || 100
+  }
+}
+
+function buildEmptyResult(question = {}) {
+  const maxScore = getQuestionAssignedScore(question) || 100
+  return normalizeDisplayResult({
+    totalScore: 0,
+    maxScore,
+    questionScore: 0,
+    questionMaxScore: maxScore,
+    grade: 'D',
+    dimensions: [],
+    aiComment: '本题未作答，按空答案记 0 分。',
+    scoringMode: 'empty_zero'
+  }, question)
+}
+
+function buildDisplayAnswers(answers = [], questionIds = [], examId = '') {
+  const answerMap = new Map()
+  const normalizedAnswers = Array.isArray(answers) ? answers.filter(Boolean) : []
+  normalizedAnswers.forEach((answer, index) => {
+    const questionId = String(answer?.questionId || '').trim()
+    if (!questionId) return
+    answerMap.set(questionId, {
+      ...answer,
+      questionId,
+      questionIndex: Number.isFinite(Number(answer?.questionIndex)) ? Number(answer.questionIndex) : index
+    })
+  })
+
+  const order = Array.isArray(questionIds) ? questionIds.map((id) => String(id || '').trim()).filter(Boolean) : []
+  if (order.length) {
+    const ordered = order.map((questionId, index) => {
+      const matched = answerMap.get(questionId)
+      if (matched) return { ...matched, questionIndex: index }
+      return {
+        examId,
+        questionId,
+        questionIndex: index,
+        questionStem: '',
+        province: 'national',
+        transcript: '',
+        scoringResult: null,
+        answerTiming: null,
+        isPlaceholder: true
+      }
+    })
+    const appended = normalizedAnswers.filter((answer) => !order.includes(String(answer?.questionId || '').trim()))
+    return [...ordered, ...appended]
+  }
+
+  return normalizedAnswers.sort((a, b) => {
+    const aIndex = Number.isFinite(Number(a?.questionIndex)) ? Number(a.questionIndex) : 0
+    const bIndex = Number.isFinite(Number(b?.questionIndex)) ? Number(b.questionIndex) : 0
+    return aIndex - bIndex
+  })
+}
+
+async function hydrateMissingQuestionInfo(items = []) {
+  await Promise.all(items.map(async (answer) => {
+    if (!answer?.questionId || answer.questionStem) return
+    try {
+      const question = await getQuestionById(answer.questionId)
+      if (!question?.id) return
+      answer.questionStem = question.stem || ''
+      answer.province = question.province || answer.province || 'national'
+      answer.scoringResult = answer.scoringResult
+        ? normalizeDisplayResult(answer.scoringResult, question)
+        : buildEmptyResult(question)
+    } catch {
+      answer.scoringResult = answer.scoringResult
+        ? normalizeDisplayResult(answer.scoringResult)
+        : buildEmptyResult()
+    }
+  }))
+}
+
+function applyAnswer(answer = {}) {
+  const scoring = answer.scoringResult || buildEmptyResult()
+  result.value = normalizeDisplayResult(scoring)
+  transcript.value = answer.transcript || (answer.isPlaceholder ? '未作答' : '')
+  questionStem.value = answer.questionStem || ''
+  questionProvince.value = answer.province || questionProvince.value || 'national'
+  answerTiming.value = answer.answerTiming || result.value?.answerTiming || null
+  activeQuestionId.value = String(answer.questionId || activeQuestionId.value || '')
+}
+
+function selectAnswer(index) {
+  const nextIndex = Math.max(0, Math.min(Number(index) || 0, Math.max(answerList.value.length - 1, 0)))
+  activeAnswerIndex.value = nextIndex
+  applyAnswer(answerList.value[nextIndex])
+  finalizeLoadedResult()
+}
+
+function formatAnswerScore(answer = {}) {
+  if (answer.isPlaceholder || !answer.scoringResult) return '未作答'
+  const scoring = normalizeDisplayResult(answer.scoringResult)
+  const score = Number(scoring.questionScore ?? scoring.totalScore ?? 0) || 0
+  const maxScore = Number(scoring.questionMaxScore ?? scoring.maxScore ?? 100) || 100
+  return `${score}/${maxScore}分`
+}
+
 onLoad(async (query) => {
   if (!requireLogin()) return
   await loadResult(query || {})
@@ -359,48 +501,78 @@ onLoad(async (query) => {
 
 async function loadResult(query) {
   const examId = query.examId || examStore.examId
-  const questionId = query.questionId || examStore.currentQuestion?.id
+  const requestedQuestionId = String(query.questionId || '').trim()
+  const questionId = requestedQuestionId || examStore.currentQuestion?.id
   const answer = examStore.answers.find((item) => item.questionId === questionId) || examStore.answers[examStore.answers.length - 1]
   activeExamId.value = String(examId || answer?.examId || '')
   activeQuestionId.value = String(questionId || answer?.questionId || '')
 
-  if (answer?.scoringResult) {
-    result.value = normalizeResult(answer.scoringResult)
-    transcript.value = answer.transcript || ''
-    questionStem.value = answer.questionStem || ''
-    questionProvince.value = answer.province || examStore.currentQuestion?.province || questionProvince.value
-    answerTiming.value = answer.answerTiming || result.value?.answerTiming || null
-    activeQuestionId.value = String(answer.questionId || activeQuestionId.value)
+  if (examStore.answers.length > 0) {
+    const displayAnswers = buildDisplayAnswers(examStore.answers, examStore.questions.map((item) => item.id), activeExamId.value)
+    await hydrateMissingQuestionInfo(displayAnswers)
+    answerList.value = displayAnswers
+    const selectedIndex = Math.max(0, displayAnswers.findIndex((item) => item.questionId === activeQuestionId.value))
+    activeAnswerIndex.value = selectedIndex
+    applyAnswer(displayAnswers[selectedIndex])
     finalizeLoadedResult()
     return
   }
 
   showLoading('加载结果')
   try {
-    if (examId && questionId) {
-      result.value = normalizeResult(await getScoringResult(examId, questionId))
-      await hydrateResultContext(examId, questionId)
+    if (examId) {
+      const detail = await getHistoryDetail(examId)
+      const answers = Array.isArray(detail?.answers) ? detail.answers : []
+      const questionIds = Array.isArray(detail?.questionIds) ? detail.questionIds : []
+      const displayAnswers = buildDisplayAnswers(answers, questionIds, examId)
+      await hydrateMissingQuestionInfo(displayAnswers)
+      answerList.value = displayAnswers
+      activeExamId.value = String(detail?.examId || examId || '')
+      questionProvince.value = detail?.province || questionProvince.value || 'national'
+
+      if (displayAnswers.length) {
+        const selectedId = requestedQuestionId
+          || (answers.length ? String(answers[answers.length - 1]?.questionId || '') : '')
+          || displayAnswers[0].questionId
+        const selectedIndex = Math.max(0, displayAnswers.findIndex((item) => item.questionId === selectedId))
+        activeAnswerIndex.value = selectedIndex
+        applyAnswer(displayAnswers[selectedIndex])
+        finalizeLoadedResult()
+        return
+      }
+
+      result.value = normalizeResult(detail)
+      questionStem.value = detail?.questionSummary || ''
       finalizeLoadedResult()
       return
     }
 
-    if (examId) {
-      const detail = await getHistoryDetail(examId)
-      applyHistoryDetailContext(detail, questionId)
-      const firstAnswer = Array.isArray(detail?.answers) ? detail.answers[0] : null
-      if (firstAnswer?.scoringResult) {
-        result.value = normalizeResult(firstAnswer.scoringResult)
-        transcript.value = firstAnswer.transcript || ''
-        questionStem.value = firstAnswer.questionStem || detail.questionSummary || ''
-        activeQuestionId.value = String(firstAnswer.questionId || activeQuestionId.value)
-        finalizeLoadedResult()
-        return
-      }
-      result.value = normalizeResult(detail)
-      questionStem.value = detail?.questionSummary || ''
+    if (questionId && answer?.scoringResult) {
+      answerList.value = [answer]
+      activeAnswerIndex.value = 0
+      applyAnswer(answer)
       finalizeLoadedResult()
     }
   } catch (error) {
+    if (examId && requestedQuestionId) {
+      try {
+        result.value = normalizeResult(await getScoringResult(examId, requestedQuestionId))
+        await hydrateResultContext(examId, requestedQuestionId)
+        answerList.value = [{
+          examId,
+          questionId: requestedQuestionId,
+          questionStem: questionStem.value,
+          province: questionProvince.value,
+          transcript: transcript.value,
+          scoringResult: result.value,
+          answerTiming: answerTiming.value
+        }]
+        finalizeLoadedResult()
+        return
+      } catch {
+        // Fall through to the user-facing load failure below.
+      }
+    }
     toast(error?.message || '结果加载失败')
   } finally {
     hideLoading()
@@ -445,10 +617,13 @@ function recordTrainingProgress() {
 }
 
 function recordWeakFavorite() {
+  if (currentAnswer.value?.isPlaceholder) return
   if (!result.value || !activeExamId.value || !activeQuestionId.value) return
+  if (weakRecordedQuestionIds.value.has(activeQuestionId.value)) return
   const score = Number(result.value.totalScore || 0)
   const maxScore = Number(result.value.maxScore || 100)
   if (!Number.isFinite(score) || !Number.isFinite(maxScore) || maxScore <= 0 || score / maxScore >= 0.6) return
+  weakRecordedQuestionIds.value.add(activeQuestionId.value)
   favoritesStore.addItem({
     examId: activeExamId.value,
     questionId: activeQuestionId.value,
@@ -463,6 +638,10 @@ function recordWeakFavorite() {
 }
 
 function toggleStarred() {
+  if (currentAnswer.value?.isPlaceholder) {
+    toast('未作答题目暂时无法收藏')
+    return
+  }
   if (!result.value || !activeExamId.value || !activeQuestionId.value) {
     toast('题目信息不完整，暂时无法收藏')
     return
@@ -541,6 +720,58 @@ function home() {
   margin-top: 4rpx;
   font-size: 28rpx;
   font-weight: 800;
+}
+
+.answer-tabs {
+  padding: 22rpx 24rpx;
+}
+
+.answer-tabs__summary {
+  display: block;
+  margin-bottom: 14rpx;
+  color: #64748B;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.answer-tabs__scroll {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.answer-tabs__row {
+  display: flex;
+  gap: 12rpx;
+}
+
+.answer-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 172rpx;
+  height: 64rpx;
+  margin: 0;
+  padding: 0 18rpx;
+  border: 2rpx solid #D7E4F2;
+  border-radius: 8rpx;
+  background: #FFFFFF;
+  color: #2A3648;
+  font-size: 24rpx;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.answer-tab--active {
+  border-color: #2F7FD6;
+  background: #EAF5FF;
+  color: #1B5FAA;
+}
+
+.answer-tab--empty {
+  border-color: #E2E8F0;
+  background: #F8FAFC;
+  color: #8A97A8;
 }
 
 .plain-text {

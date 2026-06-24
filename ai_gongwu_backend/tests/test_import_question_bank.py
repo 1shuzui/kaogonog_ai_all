@@ -15,6 +15,7 @@ from scripts.import_question_bank import (
     build_classification_metadata,
     build_runtime_profile,
     build_interpersonal_template_texts,
+    clean_section_body,
     detect_template_family,
     extract_sections,
     normalize_question_id,
@@ -121,6 +122,30 @@ class ImportQuestionBankNormalizationTestCase(unittest.TestCase):
         self.assertIn("得分标准", sections)
         self.assertIn("本题总分计算规则", sections)
 
+    def test_extract_sections_removes_heading_colon_from_question_body(self):
+        """
+        test_extract_sections_removes_heading_colon_from_question_body 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
+
+        测试模块保留导入、评分和媒体链路的回归样例，注释说明为什么这些样例不能随意删减。
+
+        @param: 无；该入口依赖模块级配置、框架注入或固定测试上下文。
+        @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
+        @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
+        """
+        sections = extract_sections(
+            """
+题号：AHGWY-20201113PM-03
+1.题干：市里要将废弃工厂改造成居民文化体验中心，谈谈你的创意方案。
+2.题型定位：组织管理题
+            """.strip()
+        )
+
+        self.assertEqual(clean_section_body("：\n社区书刊窗口"), "社区书刊窗口")
+        self.assertEqual(
+            sections["题干"],
+            "市里要将废弃工厂改造成居民文化体验中心，谈谈你的创意方案。",
+        )
+
     def test_jiangsu_variants_parse_core_scoring_and_plain_score_items(self):
         """
         test_jiangsu_variants_parse_core_scoring_and_plain_score_items 保留为回归用例，是为了锁定曾经出现过的业务边界或集成风险。
@@ -156,6 +181,7 @@ class ImportQuestionBankNormalizationTestCase(unittest.TestCase):
 
             self.assertEqual(parsed["province"], "江苏")
             self.assertEqual(parsed["fullScore"], 24.0)
+            self.assertEqual(parsed["question"], "请结合基层工作，谈谈如何做好民情日记的传承与发展。")
             self.assertEqual(parsed["examCategory"], "事业单位考试")
             self.assertEqual(parsed["questionTypeCategory"], "综合分析")
             self.assertEqual(parsed.get("positionType", ""), "")

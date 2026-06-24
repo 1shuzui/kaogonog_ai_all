@@ -33,14 +33,25 @@ export function register(data) {
   })
 }
 
-export function loginWithWechat(code, agreedTermsVersion) {
+export function loginWithWechat(code, agreedTermsVersion, inviteCode = '') {
   return request({
     url: '/auth/wechat/miniprogram',
     method: 'POST',
     data: {
       code,
-      agreedTermsVersion
+      agreedTermsVersion,
+      inviteCode
     },
+    timeout: 15000,
+    skipErrorHandler: true
+  })
+}
+
+export function bindWechatMiniProgramInvite(data) {
+  return request({
+    url: '/auth/wechat/miniprogram/invite',
+    method: 'POST',
+    data,
     timeout: 15000,
     skipErrorHandler: true
   })

@@ -19,6 +19,9 @@ from sqlalchemy.orm import relationship
 from app.db.session import Base
 
 
+MYSQL_BIGINT = BigInteger().with_variant(Integer, "sqlite")
+
+
 def gen_id(prefix=""):
     """
     生成短业务 ID，用在仍需要字符串主键或人工可读前缀的旧表。
@@ -61,6 +64,10 @@ class User(Base):
     last_active_at = Column(DateTime, nullable=True)
     last_login_device = Column(String(200), default="")
     login_device_history = Column(JSON, default=list)
+    invite_code = Column(String(32), default="", index=True)
+    invite_partner_id = Column(MYSQL_BIGINT, nullable=True, index=True)
+    invite_bound_at = Column(DateTime, nullable=True)
+    invite_source = Column(String(40), default="")
     registered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
@@ -68,6 +75,245 @@ class User(Base):
     subscriptions = relationship("UserSubscription", back_populates="user", cascade="all, delete-orphan")
     usage_records = relationship("UsageRecord", back_populates="user", cascade="all, delete-orphan")
     entitlement_adjustments = relationship("EntitlementAdjustment", back_populates="user", cascade="all, delete-orphan")
+
+
+class InvitePartner(Base):
+    """
+    邀请码合作公司 / 渠道表。
+
+    合作公司承载联系人和启停状态，一个合作公司可以配置多个全站唯一的邀请码。
+    """
+    __tablename__ = "invite_partners"
+    id = Column(MYSQL_BIGINT, primary_key=True, autoincrement=True)
+    name = Column(String(100), unique=True, nullable=False, index=True)
+    enabled = Column(Boolean, nullable=False, default=True, index=True)
+    remark = Column(Text, default="")
+    contact_name = Column(String(100), default="")
+    contact_phone = Column(String(50), default="")
+    contact_wechat = Column(String(100), default="")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
+class InviteCode(Base):
+    """
+    全站唯一邀请码表。
+
+    邀请码只支持启停，不做有效期和次数限制；归属合作公司用于注册、活跃和付费报表聚合。
+    """
+    __tablename__ = "invite_codes"
+    id = Column(MYSQL_BIGINT, primary_key=True, autoincrement=True)
+    code = Column(String(32), unique=True, nullable=False, index=True)
+    partner_id = Column(MYSQL_BIGINT, ForeignKey("invite_partners.id"), nullable=False, index=True)
+    enabled = Column(Boolean, nullable=False, default=True, index=True)
+    remark = Column(Text, default="")
+    created_by = Column(String(64), default="")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    partner = relationship("InvitePartner")
+
+
+class InviteRegistrationEvent(Base):
+    """
+    新用户注册时的邀请码快照表。
+
+    这张表只记录创建账号时的来源快照，管理员后续修正当前归因时不回写这里，以保证历史报表不回算。
+    """
+    __tablename__ = "invite_registration_events"
+    id = Column(MYSQL_BIGINT, primary_key=True, autoincrement=True)
+    username = Column(String(64), nullable=False, unique=True, index=True)
+    registered_date = Column(Date, nullable=False, index=True)
+    invite_code_id = Column(MYSQL_BIGINT, nullable=True, index=True)
+    invite_partner_id = Column(MYSQL_BIGINT, nullable=True, index=True)
+    invite_code_snapshot = Column(String(32), default="", index=True)
+    invite_partner_snapshot = Column(String(100), default="", index=True)
+    source = Column(String(40), default="")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class InviteActivityDaily(Base):
+    """
+    邀请来源日活快照表。
+
+    登录或鉴权触达时按自然日写入一次，保存当时用户的邀请码归因快照，避免后续纠错影响历史 DAU。
+    """
+    __tablename__ = "invite_activity_daily"
+    __table_args__ = (
+        Index("uq_iad_username_active_date", "username", "active_date", unique=True),
+        Index("idx_iad_date_partner_code", "active_date", "invite_partner_id", "invite_code_id"),
+    )
+    id = Column(MYSQL_BIGINT, primary_key=True, autoincrement=True)
+    username = Column(String(64), nullable=False, index=True)
+    active_date = Column(Date, nullable=False, index=True)
+    invite_code_id = Column(MYSQL_BIGINT, nullable=True, index=True)
+    invite_partner_id = Column(MYSQL_BIGINT, nullable=True, index=True)
+    invite_code_snapshot = Column(String(32), default="", index=True)
+    invite_partner_snapshot = Column(String(100), default="", index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class InvitePaymentEvent(Base):
+    """
+    支付订单的邀请码归因快照表。
+
+    支付成功时写入一条订单快照，退款只更新 refunded_amount 和 net_amount，不改变原始邀请码归因。
+    """
+    __tablename__ = "invite_payment_events"
+    id = Column(MYSQL_BIGINT, primary_key=True, autoincrement=True)
+    order_no = Column(String(100), nullable=False, unique=True, index=True)
+    username = Column(String(64), nullable=False, index=True)
+    paid_date = Column(Date, nullable=False, index=True)
+    invite_code_id = Column(MYSQL_BIGINT, nullable=True, index=True)
+    invite_partner_id = Column(MYSQL_BIGINT, nullable=True, index=True)
+    invite_code_snapshot = Column(String(32), default="", index=True)
+    invite_partner_snapshot = Column(String(100), default="", index=True)
+    paid_amount = Column(Numeric(10, 2), nullable=False, default=0)
+    refunded_amount = Column(Numeric(10, 2), nullable=False, default=0)
+    net_amount = Column(Numeric(10, 2), nullable=False, default=0)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
+class InviteAuditLog(Base):
+    """
+    邀请码后台操作审计表。
+
+    管理员创建、编辑、启停邀请码和修正用户归因时写入前后快照与原因，便于渠道结算复盘。
+    """
+    __tablename__ = "invite_audit_logs"
+    id = Column(MYSQL_BIGINT, primary_key=True, autoincrement=True)
+    action_type = Column(String(50), nullable=False, index=True)
+    target_type = Column(String(50), nullable=False, index=True)
+    target_id = Column(String(100), default="", index=True)
+    operator = Column(String(64), default="", index=True)
+    before_snapshot = Column(JSON, default=dict)
+    after_snapshot = Column(JSON, default=dict)
+    reason = Column(Text, default="")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+
+class SystemMetricSnapshot(Base):
+    """
+    管理员数据看板的服务器资源采样快照。
+
+    这张表只保存低敏资源指标和连接状态，不保存日志正文或用户请求内容。采样按 5 分钟时间桶去重，
+    用于后台查看近 30 天系统趋势。
+    """
+    __tablename__ = "system_metric_snapshots"
+    __table_args__ = (
+        Index("uq_sms_bucket_start", "bucket_start", unique=True),
+        Index("idx_sms_created_at", "created_at"),
+    )
+
+    id = Column(MYSQL_BIGINT, primary_key=True, autoincrement=True)
+    bucket_start = Column(DateTime, nullable=False)
+    cpu_percent = Column(Float, nullable=False, default=0)
+    memory_percent = Column(Float, nullable=False, default=0)
+    memory_used_mb = Column(Integer, nullable=False, default=0)
+    memory_total_mb = Column(Integer, nullable=False, default=0)
+    disk_percent = Column(Float, nullable=False, default=0)
+    disk_used_gb = Column(Float, nullable=False, default=0)
+    disk_total_gb = Column(Float, nullable=False, default=0)
+    load_1m = Column(Float, nullable=False, default=0)
+    load_5m = Column(Float, nullable=False, default=0)
+    load_15m = Column(Float, nullable=False, default=0)
+    backend_pid = Column(Integer, nullable=False, default=0)
+    backend_status = Column(String(30), nullable=False, default="running")
+    db_ok = Column(Boolean, nullable=False, default=False)
+    redis_ok = Column(Boolean, nullable=False, default=False)
+    extra_payload = Column(JSON, default=dict)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+
+class ServerErrorEvent(Base):
+    """
+    应用级错误计数事件。
+
+    看板只展示错误数量和最后发生时间，因此这里只记录状态码、路径和错误类型等排障索引信息，不写入日志正文。
+    """
+    __tablename__ = "server_error_events"
+    __table_args__ = (
+        Index("idx_see_created_status", "created_at", "status_code"),
+        Index("idx_see_path_created", "path", "created_at"),
+    )
+
+    id = Column(MYSQL_BIGINT, primary_key=True, autoincrement=True)
+    status_code = Column(Integer, nullable=False, default=500, index=True)
+    method = Column(String(10), nullable=False, default="")
+    path = Column(String(255), nullable=False, default="")
+    request_id = Column(String(80), default="")
+    error_type = Column(String(120), default="")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+
+class UserActivitySession(Base):
+    """
+    PC / 小程序心跳事件流水。
+
+    事件级流水用于幂等去重和单用户明细核查；真正的每日汇总写入 `user_activity_daily`。
+    """
+    __tablename__ = "user_activity_sessions"
+    __table_args__ = (
+        Index("uq_uas_event_id", "event_id", unique=True),
+        Index("idx_uas_username_active", "username", "active_at"),
+        Index("idx_uas_session", "session_id"),
+    )
+
+    id = Column(MYSQL_BIGINT, primary_key=True, autoincrement=True)
+    event_id = Column(String(80), nullable=False)
+    username = Column(String(100, collation="utf8mb4_0900_ai_ci"), ForeignKey("users.username"), nullable=False, index=True)
+    session_id = Column(String(80), nullable=False, default="")
+    client_type = Column(String(30), nullable=False, default="pc", index=True)
+    route_path = Column(String(255), default="")
+    duration_seconds = Column(Integer, nullable=False, default=0)
+    active_at = Column(DateTime, nullable=False, index=True)
+    active_date = Column(Date, nullable=False, index=True)
+    extra_payload = Column(JSON, default=dict)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+    user = relationship("User")
+
+
+class UserActivityDaily(Base):
+    """
+    用户每日真实活跃时长汇总。
+
+    只统计心跳上线后的活跃秒数，历史数据不回填，避免把最后活跃时间误当成真实停留时长。
+    """
+    __tablename__ = "user_activity_daily"
+    __table_args__ = (
+        Index("uq_uad_username_active_date", "username", "active_date", unique=True),
+        Index("idx_uad_active_date", "active_date"),
+    )
+
+    id = Column(MYSQL_BIGINT, primary_key=True, autoincrement=True)
+    username = Column(String(100, collation="utf8mb4_0900_ai_ci"), ForeignKey("users.username"), nullable=False, index=True)
+    active_date = Column(Date, nullable=False, index=True)
+    active_seconds = Column(Integer, nullable=False, default=0)
+    heartbeat_count = Column(Integer, nullable=False, default=0)
+    last_active_at = Column(DateTime, nullable=True)
+    client_types = Column(JSON, default=list)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    user = relationship("User")
 
 
 class Question(Base):

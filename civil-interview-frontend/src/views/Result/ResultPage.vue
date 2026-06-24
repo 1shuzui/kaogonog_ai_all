@@ -62,6 +62,7 @@ PC 评分结果页，负责展示总分、能力维度、扣分分析、文字�
         </div>
 
         <div v-if="answerList.length > 1" class="answer-tabs card" data-html2canvas-ignore>
+          <div class="answer-tabs__summary">{{ answerTabsLabel }}</div>
           <a-radio-group v-model:value="currentAnswerIdx" button-style="solid" size="small">
             <a-radio-button v-for="(ans, idx) in answerList" :key="idx" :value="idx">
               第 {{ idx + 1 }} 题
@@ -315,7 +316,6 @@ import { useExamStore } from '@/stores/exam'
 import { useFavoritesStore } from '@/stores/favorites'
 import { useTrainingStore } from '@/stores/training'
 import { getGrade } from '@/utils/constants'
-import { getScoringResult } from '@/api/scoring'
 import { getHistoryDetail } from '@/api/history'
 import { getQuestionById } from '@/api/questionBank'
 import { usePdfExport } from '@/composables/usePdfExport'
@@ -357,7 +357,7 @@ const currentQuestion = computed(() => {
     || null
 })
 const currentQuestionLabel = computed(() => (
-  answerList.value.length > 1 ? `第 ${currentAnswerIdx.value + 1} 题` : '本题'
+  `${answerList.value.length > 1 ? `第 ${currentAnswerIdx.value + 1} 题` : '本题'}${currentAnswer.value?.isPlaceholder ? ' · 未作答' : ''}`
 ))
 const currentQuestionStem = computed(() => currentQuestion.value?.stem || currentAnswer.value?.questionStem || '')
 const currentScoringPoints = computed(() => {
@@ -371,10 +371,12 @@ const currentScoringPoints = computed(() => {
     }))
     .filter((item) => item.content)
 })
+const completedAnswerCount = computed(() => answerList.value.filter((answer) => !answer?.isPlaceholder && answer?.scoringResult).length)
+const placeholderAnswerCount = computed(() => answerList.value.filter((answer) => answer?.isPlaceholder || !answer?.scoringResult).length)
 const currentQuestionAssignedScore = computed(() => currentScoringPoints.value.reduce((sum, item) => sum + item.score, 0))
 const improvementReference = computed(() => {
   const rawTranscript = currentAnswer.value?.transcript || transcript.value || ''
-  if (isNoContentTranscript(rawTranscript, result.value)) return buildNoContentImprovementReference()
+  if (currentAnswer.value?.isPlaceholder || isNoContentTranscript(rawTranscript, result.value)) return buildNoContentImprovementReference()
 
   const modelReference = normalizeModelImprovementSuggestion(result.value?.answerImprovementSuggestion)
   if (modelReference) return modelReference
@@ -385,6 +387,142 @@ const improvementReference = computed(() => {
     transcript: rawTranscript
   })
 })
+
+function getDefaultDimensions() {
+  return [
+    { name: '综合分析', key: 'analysis', score: 0, maxScore: 20, lostReasons: [] },
+    { name: '实务落地', key: 'practical', score: 0, maxScore: 20, lostReasons: [] },
+    { name: '应急应变', key: 'emergency', score: 0, maxScore: 15, lostReasons: [] },
+    { name: '行政思维', key: 'legal', score: 0, maxScore: 15, lostReasons: [] },
+    { name: '逻辑结构', key: 'logic', score: 0, maxScore: 15, lostReasons: [] },
+    { name: '语言表达', key: 'expression', score: 0, maxScore: 15, lostReasons: [] }
+  ]
+}
+
+function getQuestionAssignedScore(question) {
+  const points = Array.isArray(question?.scoringPoints) ? question.scoringPoints : []
+  return points.reduce((sum, item) => sum + toFiniteNumber(item?.score, 0), 0)
+}
+
+function normalizeScoringResult(value = {}, question = null) {
+  const totalScore = Number(value?.totalScore ?? value?.score ?? 0) || 0
+  const questionMaxScore = getQuestionAssignedScore(question)
+  const maxScore = Number(value?.maxScore ?? questionMaxScore ?? 100) || 100
+  const questionScore = value?.questionScore !== undefined && value?.questionScore !== null
+    ? toFiniteNumber(value.questionScore, totalScore)
+    : totalScore
+  const questionMax = Number(value?.questionMaxScore ?? questionMaxScore ?? maxScore) || maxScore
+  return {
+    ...value,
+    totalScore,
+    maxScore,
+    questionScore,
+    questionMaxScore: questionMax,
+    dimensions: Array.isArray(value?.dimensions) && value.dimensions.length ? value.dimensions : getDefaultDimensions(),
+    aiComment: String(
+      value?.aiComment
+      || value?.comment
+      || (String(value?.scoringMode || '').trim() === 'empty_zero' ? '本题未作答，按空答案记 0 分。' : '暂无评语')
+    ).trim(),
+    scoringMode: String(value?.scoringMode || '').trim()
+  }
+}
+
+function buildEmptyScoringResult(question = null) {
+  const questionMaxScore = getQuestionAssignedScore(question) || 100
+  return normalizeScoringResult({
+    totalScore: 0,
+    maxScore: questionMaxScore,
+    questionScore: 0,
+    questionMaxScore,
+    grade: 'D',
+    dimensions: getDefaultDimensions(),
+    aiComment: '本题未作答，按空答案记 0 分。',
+    scoringMode: 'empty_zero'
+  }, question)
+}
+
+function buildHistorySummaryResult(detail = {}) {
+  return normalizeScoringResult({
+    totalScore: detail?.totalScore || 0,
+    maxScore: detail?.maxScore || 100,
+    grade: detail?.grade || '',
+    dimensions: detail?.dimensions || [],
+    aiComment: detail?.questionSummary || '历史练习记录'
+  })
+}
+
+function buildDisplayAnswerList(answers = [], questionIds = [], examId = '') {
+  const normalizedAnswers = Array.isArray(answers) ? answers.filter(Boolean) : []
+  const questionOrder = Array.isArray(questionIds) ? questionIds.map((id) => String(id || '').trim()).filter(Boolean) : []
+  const answerMap = new Map()
+
+  normalizedAnswers.forEach((answer, index) => {
+    const questionId = String(answer?.questionId || '').trim()
+    if (!questionId) return
+    answerMap.set(questionId, {
+      ...answer,
+      questionId,
+      questionIndex: Number.isFinite(Number(answer?.questionIndex)) ? Number(answer.questionIndex) : index
+    })
+  })
+
+  if (questionOrder.length) {
+    const displayAnswers = questionOrder.map((questionId, index) => {
+      const matched = answerMap.get(questionId)
+      if (matched) {
+        return {
+          ...matched,
+          questionIndex: Number.isFinite(Number(matched.questionIndex)) ? Number(matched.questionIndex) : index
+        }
+      }
+      return {
+        examId,
+        questionId,
+        questionIndex: index,
+        questionStem: '',
+        transcript: '',
+        scoringResult: null,
+        answerTiming: null,
+        submittedAt: '',
+        isPlaceholder: true
+      }
+    })
+
+    const appendedAnswers = normalizedAnswers.filter((answer) => !questionOrder.includes(String(answer?.questionId || '').trim()))
+    return [...displayAnswers, ...appendedAnswers]
+      .filter((answer) => String(answer?.questionId || '').trim())
+      .sort((a, b) => {
+        const aIndex = Number.isFinite(Number(a?.questionIndex)) ? Number(a.questionIndex) : 0
+        const bIndex = Number.isFinite(Number(b?.questionIndex)) ? Number(b.questionIndex) : 0
+        if (aIndex !== bIndex) return aIndex - bIndex
+        return String(a.questionId || '').localeCompare(String(b.questionId || ''))
+      })
+  }
+
+  return normalizedAnswers
+    .filter((answer) => String(answer?.questionId || '').trim())
+    .map((answer, index) => ({
+      ...answer,
+      questionId: String(answer.questionId || '').trim(),
+      questionIndex: Number.isFinite(Number(answer?.questionIndex)) ? Number(answer.questionIndex) : index
+    }))
+    .sort((a, b) => {
+      const aIndex = Number.isFinite(Number(a?.questionIndex)) ? Number(a.questionIndex) : 0
+      const bIndex = Number.isFinite(Number(b?.questionIndex)) ? Number(b.questionIndex) : 0
+      if (aIndex !== bIndex) return aIndex - bIndex
+      return String(a.questionId || '').localeCompare(String(b.questionId || ''))
+    })
+}
+
+function buildPreferredQuestionId(answers = [], questionIds = [], fallback = '') {
+  const normalizedQuestionIds = Array.isArray(questionIds) ? questionIds.map((id) => String(id || '').trim()).filter(Boolean) : []
+  const normalizedAnswers = Array.isArray(answers) ? answers.filter((item) => String(item?.questionId || '').trim()) : []
+  if (fallback) return String(fallback).trim()
+  if (normalizedAnswers.length) return String(normalizedAnswers[normalizedAnswers.length - 1]?.questionId || '').trim()
+  if (normalizedQuestionIds.length) return normalizedQuestionIds[0]
+  return ''
+}
 
 function toFiniteNumber(value, fallback = 0) {
   const number = Number(value)
@@ -403,8 +541,7 @@ function normalizeTextList(value) {
 function isNoContentTranscript(value, scoring = {}) {
   const text = String(value || '').trim()
   const mode = String(scoring?.scoringMode || '').trim()
-  return !text
-    || text === '未作答'
+  return text === '未作答'
     || ['screened_zero', 'empty_zero'].includes(mode)
     || text.includes('未能识别出有效语音')
     || text.includes('未配置真实语音转写服务')
@@ -487,6 +624,7 @@ function getAnswerScorePair(answer, question = null) {
 }
 
 function formatAnswerScore(answer) {
+  if (answer?.isPlaceholder || !answer?.scoringResult) return '未作答'
   const question = examStore.questionList?.find((item) => item.id === answer?.questionId)
     || questionDetailsMap.value[answer?.questionId]
     || null
@@ -502,6 +640,9 @@ const displayQuestionScore = computed(() => formatScoreNumber(currentScorePair.v
 const displayQuestionMaxScore = computed(() => formatScoreNumber(currentScorePair.value.maxScore))
 const displayTotalScore = computed(() => formatScoreNumber(result.value?.totalScore || 0))
 const displayMaxScore = computed(() => formatScoreNumber(result.value?.maxScore || 100))
+const answerTabsLabel = computed(() => (
+  answerList.value.length > 1 ? `已答 ${completedAnswerCount.value} 题，未答 ${placeholderAnswerCount.value} 题` : ''
+))
 
 const gradeInfo = computed(() => {
   if (!result.value) return { label: '', color: '' }
@@ -558,6 +699,7 @@ const currentVideoUrl = computed(() => {
 })
 
 function ansScoreColor(answer) {
+  if (answer?.isPlaceholder || !answer?.scoringResult) return '#8C8C8C'
   const { score, maxScore } = getAnswerScorePair(answer)
   const ratio = score / maxScore
   if (ratio >= 0.85) return '#389E0D'
@@ -602,12 +744,20 @@ function closeFloatingVideo() {
 
 function syncDisplayedAnswer(answer) {
   if (!answer) return
-  result.value = answer.scoringResult || null
+  const question = examStore.questionList?.find((item) => item.id === answer?.questionId)
+    || questionDetailsMap.value[answer?.questionId]
+    || null
+  result.value = answer.scoringResult || buildEmptyScoringResult(question)
   transcript.value = answer.transcript || ''
 }
 
 function syncAnswerList(answers) {
-  const normalizedAnswers = (answers || []).filter((answer) => answer?.scoringResult)
+  const normalizedAnswers = (answers || [])
+    .filter((answer) => answer?.questionId || answer?.scoringResult)
+    .map((answer, index) => ({
+      ...answer,
+      questionIndex: Number.isFinite(Number(answer?.questionIndex)) ? Number(answer.questionIndex) : index
+    }))
   revokeBlobUrls()
   answerList.value = normalizedAnswers
   currentAnswerIdx.value = 0
@@ -654,6 +804,55 @@ async function hydrateQuestionDetails(answers = []) {
   questionDetailsMap.value = nextMap
 }
 
+function syncLoadedAnswers(detail = {}, answers = []) {
+  const questionIds = Array.isArray(detail?.questionIds) ? detail.questionIds : []
+  const examId = String(detail?.examId || activeExamId.value || '')
+  const displayAnswers = buildDisplayAnswerList(answers, questionIds, examId).map((answer) => {
+    const question = examStore.questionList?.find((item) => item.id === answer.questionId)
+      || questionDetailsMap.value[answer.questionId]
+      || null
+    const scoringResult = answer.scoringResult ? normalizeScoringResult(answer.scoringResult, question) : buildEmptyScoringResult(question)
+    return {
+      ...answer,
+      questionStem: answer.questionStem || question?.stem || '',
+      province: answer.province || question?.province || detail?.province || 'national',
+      scoringResult,
+      transcript: answer.transcript || (answer.scoringResult ? '' : '未作答'),
+      answerTiming: answer.answerTiming || scoringResult.answerTiming || null
+    }
+  })
+
+  answerList.value = displayAnswers
+  currentAnswerIdx.value = 0
+  return displayAnswers
+}
+
+function enrichAnswerListWithQuestions() {
+  answerList.value = answerList.value.map((answer) => {
+    const question = examStore.questionList?.find((item) => item.id === answer?.questionId)
+      || questionDetailsMap.value[answer?.questionId]
+      || null
+    if (!question) return answer
+    const scoringResult = answer.scoringResult
+      ? normalizeScoringResult(answer.scoringResult, question)
+      : buildEmptyScoringResult(question)
+    return {
+      ...answer,
+      questionStem: answer.questionStem || question.stem || '',
+      province: answer.province || question.province || 'national',
+      scoringResult
+    }
+  })
+}
+
+function syncFallbackFromDetail(detail = {}) {
+  result.value = buildHistorySummaryResult(detail)
+  transcript.value = ''
+  answerList.value = []
+  currentAnswerIdx.value = 0
+  return result.value
+}
+
 watch(currentAnswerIdx, (idx) => {
   closeFloatingVideo()
   syncDisplayedAnswer(answerList.value[idx])
@@ -661,13 +860,13 @@ watch(currentAnswerIdx, (idx) => {
 
 const isStarred = computed(() => {
   const answer = currentAnswer.value
-  if (!answer || !activeExamId.value) return false
+  if (!answer || answer.isPlaceholder || !activeExamId.value) return false
   return favoritesStore.isFavorited(activeExamId.value, answer.questionId)
 })
 
 function toggleFavorite() {
   const answer = currentAnswer.value
-  if (!answer || !answer.questionId || !result.value || !activeExamId.value) return
+  if (!answer || answer.isPlaceholder || !answer.questionId || !result.value || !activeExamId.value) return
 
   const question = examStore.questionList?.find((item) => item.id === answer.questionId)
   if (isStarred.value) {
@@ -694,7 +893,7 @@ function autoAddWeakAll() {
   if (!activeExamId.value) return
 
   for (const answer of answerList.value) {
-    if (!answer?.scoringResult || !answer?.questionId) continue
+    if (answer?.isPlaceholder || !answer?.scoringResult || !answer?.questionId) continue
     const ratio = answer.scoringResult.totalScore / answer.scoringResult.maxScore
     if (ratio >= 0.6) continue
 
@@ -719,7 +918,7 @@ function recordTrainingProgress() {
   let hasRecorded = false
 
   for (const answer of answerList.value) {
-    if (!answer?.scoringResult || !answer?.questionId) continue
+    if (answer?.isPlaceholder || !answer?.scoringResult || !answer?.questionId) continue
 
     const question = examStore.questionList?.find((item) => item.id === answer.questionId)
     const trainingCategoryKey = question?.trainingCategoryKey
@@ -748,6 +947,8 @@ onMounted(async () => {
   if (examStore.answers.length > 0) {
     syncAnswerList(examStore.answers)
     await hydrateQuestionDetails(examStore.answers)
+    enrichAnswerListWithQuestions()
+    syncDisplayedAnswer(answerList.value[currentAnswerIdx.value])
     loading.value = false
     autoAddWeakAll()
     recordTrainingProgress()
@@ -762,6 +963,8 @@ onMounted(async () => {
       scoringResult: examStore.scoringResult
     }])
     await hydrateQuestionDetails(answerList.value)
+    enrichAnswerListWithQuestions()
+    syncDisplayedAnswer(answerList.value[currentAnswerIdx.value])
     loading.value = false
     autoAddWeakAll()
     recordTrainingProgress()
@@ -773,28 +976,20 @@ onMounted(async () => {
   try {
     const detail = await getHistoryDetail(examId)
     const answers = Array.isArray(detail?.answers) ? detail.answers : []
-
-    if (!syncAnswerList(answers)) {
-      result.value = {
-        totalScore: detail?.totalScore || 0,
-        maxScore: detail?.maxScore || 100,
-        grade: detail?.grade || '',
-        dimensions: detail?.dimensions || [],
-        aiComment: detail?.questionSummary || '历史练习记录'
-      }
-      transcript.value = ''
+    const questionIds = Array.isArray(detail?.questionIds) ? detail.questionIds : []
+    const orderedAnswers = buildDisplayAnswerList(answers, questionIds, examId)
+    await hydrateQuestionDetails(orderedAnswers)
+    const displayAnswers = syncLoadedAnswers(detail, orderedAnswers)
+    if (displayAnswers.length) {
+      const preferredQuestionId = buildPreferredQuestionId(answers, questionIds)
+      const preferredIndex = Math.max(0, displayAnswers.findIndex((answer) => answer.questionId === preferredQuestionId))
+      currentAnswerIdx.value = preferredIndex
+      syncDisplayedAnswer(displayAnswers[preferredIndex])
     } else {
-      await hydrateQuestionDetails(answers)
+      syncFallbackFromDetail(detail)
     }
   } catch {
-    try {
-      const data = await getScoringResult(examId, '')
-      result.value = data
-      transcript.value = ''
-      answerList.value = [{ scoringResult: data, transcript: '' }]
-    } catch {
-      // ignore
-    }
+    // History detail is the source of truth for whole-exam results.
   } finally {
     loading.value = false
     autoAddWeakAll()
@@ -1175,6 +1370,12 @@ onUnmounted(() => {
   margin-bottom: 12px;
   overflow-x: auto;
   white-space: nowrap;
+}
+
+.answer-tabs__summary {
+  margin-bottom: 10px;
+  color: @text-secondary;
+  font-size: @font-size-sm;
 }
 
 .playback-controls {

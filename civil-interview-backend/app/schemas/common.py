@@ -74,6 +74,7 @@ class RegisterRequest(BaseModel):
     password: str = Field(min_length=6)
     email: Optional[str] = None
     full_name: Optional[str] = Field(default=None, validation_alias=AliasChoices("full_name", "fullName"))
+    inviteCode: Optional[str] = Field(default=None, validation_alias=AliasChoices("inviteCode", "invite_code"))
     agreedTermsVersion: Optional[str] = Field(default=None, validation_alias=AliasChoices("agreedTermsVersion", "agreed_terms_version"))
 
 
@@ -89,6 +90,7 @@ class WechatMiniProgramLoginRequest(BaseModel):
     @raises: code 缺失或类型错误时由 Pydantic 校验暴露。
     """
     code: str
+    inviteCode: Optional[str] = Field(default=None, validation_alias=AliasChoices("inviteCode", "invite_code"))
     agreedTermsVersion: Optional[str] = Field(default=None, validation_alias=AliasChoices("agreedTermsVersion", "agreed_terms_version"))
 
 
@@ -117,6 +119,97 @@ class WechatMiniProgramAccountRequest(BaseModel):
     """
     username: str
     password: str = Field(min_length=6)
+    inviteCode: Optional[str] = Field(default=None, validation_alias=AliasChoices("inviteCode", "invite_code"))
+    inviteSessionToken: Optional[str] = Field(default=None, validation_alias=AliasChoices("inviteSessionToken", "invite_session_token"))
+
+
+class WechatMiniProgramInviteBindRequest(BaseModel):
+    """
+    微信首登后首次会话的邀请码补填请求。
+
+    该请求只在微信临时账号第一次会话内使用，需要同时携带邀请码和后端签发的会话凭证，
+    用来避免老账号或重复会话回填邀请码。
+
+    @param: 无；FastAPI 根据请求体实例化。
+    @return: 首次会话邀请码补填请求模型。
+    @raises: 邀请码或会话凭证缺失时由 Pydantic 校验暴露。
+    """
+    inviteCode: str = Field(min_length=1, validation_alias=AliasChoices("inviteCode", "invite_code"))
+    inviteSessionToken: str = Field(min_length=1, validation_alias=AliasChoices("inviteSessionToken", "invite_session_token"))
+
+
+class InvitePartnerCreateRequest(BaseModel):
+    """
+    邀请码合作公司创建请求。
+
+    合作公司只负责归属和联系人信息，不直接绑定具体邀请码；一个合作公司可有多个邀请码。
+    """
+    name: str = Field(min_length=1, max_length=100)
+    enabled: bool = True
+    remark: Optional[str] = Field(default="", max_length=1000)
+    contactName: Optional[str] = Field(default="", validation_alias=AliasChoices("contactName", "contact_name"), max_length=100)
+    contactPhone: Optional[str] = Field(default="", validation_alias=AliasChoices("contactPhone", "contact_phone"), max_length=50)
+    contactWechat: Optional[str] = Field(default="", validation_alias=AliasChoices("contactWechat", "contact_wechat"), max_length=100)
+
+
+class InvitePartnerUpdateRequest(BaseModel):
+    """
+    邀请码合作公司更新请求。
+
+    所有字段均为可选，便于管理员只修正某一项资料。
+    """
+    name: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    enabled: Optional[bool] = None
+    remark: Optional[str] = Field(default=None, max_length=1000)
+    contactName: Optional[str] = Field(default=None, validation_alias=AliasChoices("contactName", "contact_name"), max_length=100)
+    contactPhone: Optional[str] = Field(default=None, validation_alias=AliasChoices("contactPhone", "contact_phone"), max_length=50)
+    contactWechat: Optional[str] = Field(default=None, validation_alias=AliasChoices("contactWechat", "contact_wechat"), max_length=100)
+
+
+class InviteCodeCreateRequest(BaseModel):
+    """
+    邀请码创建请求。
+
+    邀请码必须全站唯一，创建时需要指定归属合作公司。
+    """
+    code: str = Field(min_length=3, max_length=32)
+    partnerId: int = Field(gt=0, validation_alias=AliasChoices("partnerId", "partner_id"))
+    enabled: bool = True
+    remark: Optional[str] = Field(default="", max_length=1000)
+
+
+class InviteCodeUpdateRequest(BaseModel):
+    """
+    邀请码更新请求。
+
+    管理员可以启停邀请码并修正备注或归属合作公司。
+    """
+    code: Optional[str] = Field(default=None, min_length=3, max_length=32)
+    partnerId: Optional[int] = Field(default=None, gt=0, validation_alias=AliasChoices("partnerId", "partner_id"))
+    enabled: Optional[bool] = None
+    remark: Optional[str] = Field(default=None, max_length=1000)
+
+
+class InviteAttributionCorrectionRequest(BaseModel):
+    """
+    单用户邀请码归因修正请求。
+
+    修正必须填写原因，后端会写审计日志，但不会回算历史报表快照。
+    """
+    inviteCode: str = Field(min_length=3, max_length=32, validation_alias=AliasChoices("inviteCode", "invite_code"))
+    reason: str = Field(min_length=1, max_length=1000)
+
+
+class InviteReportQueryRequest(BaseModel):
+    """
+    邀请码报表查询请求。
+
+    支持日期区间汇总和可选合作公司 / 邀请码过滤。
+    """
+    startDate: str = Field(min_length=1, validation_alias=AliasChoices("startDate", "start_date"))
+    endDate: str = Field(min_length=1, validation_alias=AliasChoices("endDate", "end_date"))
+    partnerId: Optional[int] = Field(default=None, gt=0, validation_alias=AliasChoices("partnerId", "partner_id"))
+    codeId: Optional[int] = Field(default=None, gt=0, validation_alias=AliasChoices("codeId", "code_id"))
 
 
 class PasswordResetRequest(BaseModel):
@@ -370,6 +463,20 @@ class UsageReportRequest(BaseModel):
     usageType: str = Field(default="practice", validation_alias=AliasChoices("usageType", "usage_type"))
 
 
+class DashboardHeartbeatRequest(BaseModel):
+    """
+    用户活跃心跳请求，用于管理员看板统计真实活跃时长。
+
+    心跳只记录登录用户在 PC 或小程序前台可见时的活跃秒数，不参与权益扣减，也不替代 usage_records。
+    """
+    sessionId: str = Field(validation_alias=AliasChoices("sessionId", "session_id"))
+    eventId: str = Field(validation_alias=AliasChoices("eventId", "event_id"))
+    clientType: str = Field(default="pc", validation_alias=AliasChoices("clientType", "client_type"))
+    routePath: str = Field(default="", validation_alias=AliasChoices("routePath", "route_path"))
+    durationSeconds: int = Field(default=0, ge=0, validation_alias=AliasChoices("durationSeconds", "duration_seconds"))
+    activeAt: Optional[str] = Field(default=None, validation_alias=AliasChoices("activeAt", "active_at"))
+
+
 # ===== Payment =====
 class PaymentOrderCreateRequest(BaseModel):
     """
@@ -488,6 +595,7 @@ class EvaluateRequest(BaseModel):
     questionId: str
     transcript: str = Field(max_length=5000)
     examId: Optional[str] = None
+    answerMeta: Optional[dict] = Field(default=None, validation_alias=AliasChoices("answerMeta", "answer_meta"))
 
 
 # ===== Targeted =====

@@ -28,7 +28,18 @@ from app.schemas.common import (
     RegisterRequest,
     WechatMiniProgramAccountRequest,
     WechatMiniProgramBindRequest,
+    WechatMiniProgramInviteBindRequest,
     WechatMiniProgramLoginRequest,
+)
+from app.services.invite_service import (
+    INVITE_SESSION_TTL_SECONDS,
+    bind_registration_invite,
+    bind_wechat_account_setup_invite,
+    bind_wechat_first_session_invite,
+    create_first_session_token,
+    record_user_daily_activity,
+    resolve_active_invite_code,
+    user_has_invite_attribution,
 )
 
 WECHAT_ACCOUNT_PREFIX = "wxmp_"
@@ -57,6 +68,7 @@ def _mark_login_success(db: Session, user: User) -> None:
     now = datetime.now(timezone.utc)
     user.last_login_at = now
     user.last_active_at = now
+    record_user_daily_activity(db, user, now)
     db.commit()
     db.refresh(user)
 
@@ -181,6 +193,7 @@ def register_user(db: Session, data: RegisterRequest) -> dict:
     existing = db.query(User).filter(User.username == data.username).first()
     if existing:
         raise HTTPException(status_code=400, detail="Username already registered")
+    resolve_active_invite_code(db, data.inviteCode)
     user = User(
         username=data.username,
         hashed_password=get_password_hash(data.password),
@@ -192,6 +205,8 @@ def register_user(db: Session, data: RegisterRequest) -> dict:
         user.agreed_terms_at = datetime.now(timezone.utc)
     try:
         db.add(user)
+        db.flush()
+        bind_registration_invite(db, user, data.inviteCode, "register")
         db.commit()
     except IntegrityError:
         db.rollback()
@@ -217,8 +232,10 @@ def login_wechat_miniprogram(db: Session, data: WechatMiniProgramLoginRequest) -
     """
     session_info = _code_to_session(data.code)
     openid = session_info["openid"]
+    resolve_active_invite_code(db, data.inviteCode)
     user = _find_user_by_wechat_openid(db, openid)
     created = False
+    invite_session_token = ""
     if not user:
         username = _stable_wechat_username(openid)
         user = db.query(User).filter(User.username == username).first()
@@ -232,6 +249,9 @@ def login_wechat_miniprogram(db: Session, data: WechatMiniProgramLoginRequest) -
             db.add(user)
             db.flush()
             created = True
+            bind_registration_invite(db, user, data.inviteCode, "wechat_first_login")
+            if not user_has_invite_attribution(user):
+                invite_session_token = create_first_session_token(user)
     _mark_wechat_binding(user, session_info)
     if data.agreedTermsVersion:
         user.agreed_terms_version = data.agreedTermsVersion
@@ -247,6 +267,8 @@ def login_wechat_miniprogram(db: Session, data: WechatMiniProgramLoginRequest) -
             "wechatWebBound": False,
         },
         "accountLogin": account_login,
+        "inviteSessionToken": invite_session_token,
+        "inviteSessionExpiresIn": INVITE_SESSION_TTL_SECONDS if invite_session_token else 0,
     })
 
 
@@ -291,7 +313,11 @@ def setup_wechat_miniprogram_account(db: Session, current_user, data: WechatMini
     user = db.query(User).filter(User.username == current_user.username).first()
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
+    if data.inviteCode:
+        resolve_active_invite_code(db, data.inviteCode)
     if not user.username.startswith(WECHAT_ACCOUNT_PREFIX):
+        if data.inviteCode:
+            bind_wechat_account_setup_invite(db, user, data.inviteCode, data.inviteSessionToken)
         _mark_login_success(db, user)
         return _auth_response(user, {"message": "当前账号已可用于 PC 登录", "requiresPcAccountSetup": False})
 
@@ -305,8 +331,25 @@ def setup_wechat_miniprogram_account(db: Session, current_user, data: WechatMini
     user.hashed_password = get_password_hash(data.password)
     if not user.full_name or user.full_name == "微信用户":
         user.full_name = target_username
+    if data.inviteCode:
+        bind_wechat_account_setup_invite(db, user, data.inviteCode, data.inviteSessionToken)
     _mark_login_success(db, user)
     return _auth_response(user, {"message": "PC 登录账号已设置", "requiresPcAccountSetup": False})
+
+
+def bind_wechat_miniprogram_invite(db: Session, current_user, data: WechatMiniProgramInviteBindRequest) -> dict:
+    """
+    微信首登首次会话内独立绑定邀请码。
+
+    用户跳过 PC 账号补全但已经输入邀请码时，前端可调用本接口在 15 分钟内完成来源归因。
+
+    @param db: 调用方传入的数据库会话。
+    @param current_user: 当前已登录的微信临时账号。
+    @param data: 邀请码和首次会话凭证。
+    @return: 绑定结果。
+    @raises HTTPException: 用户不存在、邀请码无效或会话凭证失效时抛出。
+    """
+    return bind_wechat_first_session_invite(db, current_user, data)
 
 
 def request_password_reset(db: Session, data: PasswordResetRequest) -> dict:

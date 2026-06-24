@@ -25,6 +25,7 @@ from app.schemas.common import (
     RefundBalanceStatsRequest,
 )
 from app.services.wechat_pay_service import wechat_pay_service
+from app.services.invite_service import record_payment_event_for_order, update_payment_event_refund
 from app.services.user_service import get_user_or_404
 
 def _get_package_or_404(db: Session, package_code: str) -> SubscriptionPackage:
@@ -321,6 +322,7 @@ def apply_refund(db: Session, current_user: AuthUser, data: RefundApplyRequest) 
         if user and package:
             _sync_user_preferences_subscription(user, package, subscription)
 
+    update_payment_event_refund(db, order, refunded_amount)
     db.commit()
     db.refresh(order)
     return {
@@ -543,6 +545,7 @@ def confirm_virtual_payment_order(db: Session, current_user: AuthUser, order_no:
     if order.status == "paid":
         subscription = _ensure_subscription_for_paid_order(db, order, package, order.paid_at or paid_at)
         _sync_user_preferences_subscription(user, package, subscription)
+        record_payment_event_for_order(db, order)
         db.commit()
         return {
             "success": True,
@@ -564,6 +567,7 @@ def confirm_virtual_payment_order(db: Session, current_user: AuthUser, order_no:
     _verify_order_with_wechat(order, package, raise_on_error=False)
     subscription = _ensure_subscription_for_paid_order(db, order, package, paid_at)
     _sync_user_preferences_subscription(user, package, subscription)
+    record_payment_event_for_order(db, order)
     db.commit()
     db.refresh(order)
     return {

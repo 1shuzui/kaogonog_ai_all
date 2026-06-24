@@ -23,10 +23,12 @@ from app.schemas.common import (
     RegisterRequest,
     WechatMiniProgramAccountRequest,
     WechatMiniProgramBindRequest,
+    WechatMiniProgramInviteBindRequest,
     WechatMiniProgramLoginRequest,
 )
 from app.services.auth_service import (
     bind_wechat_miniprogram,
+    bind_wechat_miniprogram_invite,
     confirm_password_reset,
     login_user,
     login_wechat_miniprogram,
@@ -122,6 +124,20 @@ def wechat_miniprogram_account(
     @raises HTTPException: 用户名不可用或当前账号不存在时抛出。
     """
     return setup_wechat_miniprogram_account(db, current_user, data)
+
+
+@router.post("/auth/wechat/miniprogram/invite")
+def wechat_miniprogram_invite_bind(
+    data: WechatMiniProgramInviteBindRequest,
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    微信首登首次会话内的邀请码独立绑定路由。
+
+    用户如果跳过 PC 账号补全，但在首次会话里仍输入了邀请码，可以通过这个接口把来源先保存下来。
+    """
+    return bind_wechat_miniprogram_invite(db, current_user, data)
 
 
 @router.get("/auth/wechat/web/url")

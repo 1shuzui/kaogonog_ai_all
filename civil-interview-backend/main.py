@@ -9,12 +9,13 @@
 @return: 暴露 `app` 供 uvicorn/systemd、本地开发和健康检查复用。
 @raises ImportError: 配置、数据库驱动、路由模块或依赖包缺失时，应用导入阶段会失败。
 """
+import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import inspect, text
@@ -22,6 +23,7 @@ from sqlalchemy import inspect, text
 from app.core.config import settings
 from app.db.session import engine, Base
 from app.api.v1 import api_router
+from app.services.dashboard_service import collect_system_metric_snapshot, record_server_error_event
 
 # ── logging ──────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -194,6 +196,256 @@ def ensure_user_activity_schema() -> None:
         logger.warning("User activity schema sync skipped: %s", exc)
 
 
+def ensure_invite_schema() -> None:
+    """
+    补齐邀请码相关表和 users 表上的归因字段。
+
+    新增的历史快照表只负责写入，不回写用户侧旧数据；老用户没有邀请码归因时保持空值。
+    """
+    column_specs = {
+        "invite_code": "ALTER TABLE users ADD COLUMN invite_code VARCHAR(32) NULL DEFAULT ''",
+        "invite_partner_id": "ALTER TABLE users ADD COLUMN invite_partner_id BIGINT NULL",
+        "invite_bound_at": "ALTER TABLE users ADD COLUMN invite_bound_at DATETIME NULL",
+        "invite_source": "ALTER TABLE users ADD COLUMN invite_source VARCHAR(40) NULL DEFAULT ''",
+    }
+    index_specs = {
+        "idx_users_invite_code": "CREATE INDEX idx_users_invite_code ON users (invite_code)",
+        "idx_users_invite_partner_id": "CREATE INDEX idx_users_invite_partner_id ON users (invite_partner_id)",
+    }
+    table_sqls = [
+        """
+        CREATE TABLE IF NOT EXISTS invite_partners (
+            id BIGINT PRIMARY KEY AUTO_INCREMENT,
+            name VARCHAR(100) NOT NULL UNIQUE,
+            enabled BOOLEAN NOT NULL DEFAULT TRUE,
+            remark TEXT NULL,
+            contact_name VARCHAR(100) NULL DEFAULT '',
+            contact_phone VARCHAR(50) NULL DEFAULT '',
+            contact_wechat VARCHAR(100) NULL DEFAULT '',
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_invite_partners_enabled (enabled)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS invite_codes (
+            id BIGINT PRIMARY KEY AUTO_INCREMENT,
+            code VARCHAR(32) NOT NULL UNIQUE,
+            partner_id BIGINT NOT NULL,
+            enabled BOOLEAN NOT NULL DEFAULT TRUE,
+            remark TEXT NULL,
+            created_by VARCHAR(64) NULL DEFAULT '',
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            CONSTRAINT fk_invite_codes_partner FOREIGN KEY (partner_id) REFERENCES invite_partners(id)
+                ON DELETE RESTRICT ON UPDATE CASCADE,
+            INDEX idx_invite_codes_partner_id (partner_id),
+            INDEX idx_invite_codes_enabled (enabled)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS invite_registration_events (
+            id BIGINT PRIMARY KEY AUTO_INCREMENT,
+            username VARCHAR(64) NOT NULL UNIQUE,
+            registered_date DATE NOT NULL,
+            invite_code_id BIGINT NULL,
+            invite_partner_id BIGINT NULL,
+            invite_code_snapshot VARCHAR(32) NULL DEFAULT '',
+            invite_partner_snapshot VARCHAR(100) NULL DEFAULT '',
+            source VARCHAR(40) NULL DEFAULT '',
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_ire_registered_date (registered_date),
+            INDEX idx_ire_invite_partner_id (invite_partner_id),
+            INDEX idx_ire_invite_code_id (invite_code_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS invite_activity_daily (
+            id BIGINT PRIMARY KEY AUTO_INCREMENT,
+            username VARCHAR(100) NOT NULL,
+            active_date DATE NOT NULL,
+            invite_code_id BIGINT NULL,
+            invite_partner_id BIGINT NULL,
+            invite_code_snapshot VARCHAR(32) NULL DEFAULT '',
+            invite_partner_snapshot VARCHAR(100) NULL DEFAULT '',
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_iad_username_active_date (username, active_date),
+            INDEX idx_iad_date_partner_code (active_date, invite_partner_id, invite_code_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS invite_payment_events (
+            id BIGINT PRIMARY KEY AUTO_INCREMENT,
+            order_no VARCHAR(100) NOT NULL UNIQUE,
+            username VARCHAR(100) NOT NULL,
+            paid_date DATE NOT NULL,
+            invite_code_id BIGINT NULL,
+            invite_partner_id BIGINT NULL,
+            invite_code_snapshot VARCHAR(32) NULL DEFAULT '',
+            invite_partner_snapshot VARCHAR(100) NULL DEFAULT '',
+            paid_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+            refunded_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+            net_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_ipe_username (username),
+            INDEX idx_ipe_paid_date (paid_date),
+            INDEX idx_ipe_invite_partner_id (invite_partner_id),
+            INDEX idx_ipe_invite_code_id (invite_code_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS invite_audit_logs (
+            id BIGINT PRIMARY KEY AUTO_INCREMENT,
+            action_type VARCHAR(50) NOT NULL,
+            target_type VARCHAR(50) NOT NULL,
+            target_id VARCHAR(100) NOT NULL DEFAULT '',
+            operator VARCHAR(64) NOT NULL DEFAULT '',
+            before_snapshot JSON NULL,
+            after_snapshot JSON NULL,
+            reason TEXT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_ial_action_type (action_type),
+            INDEX idx_ial_target_type (target_type),
+            INDEX idx_ial_operator (operator)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        """,
+    ]
+    try:
+        inspector = inspect(engine)
+        if inspector.has_table("users"):
+            existing_columns = {item.get("name") for item in inspector.get_columns("users")}
+            with engine.begin() as conn:
+                for column, sql in column_specs.items():
+                    if column not in existing_columns:
+                        conn.execute(text(sql))
+                        logger.info("Added invite user column: %s", column)
+                refreshed = inspect(engine)
+                existing_indexes = {item.get("name") for item in refreshed.get_indexes("users")}
+                for index_name, sql in index_specs.items():
+                    if index_name not in existing_indexes:
+                        conn.execute(text(sql))
+                        logger.info("Created invite user index: %s", index_name)
+        with engine.begin() as conn:
+            for sql in table_sqls:
+                conn.execute(text(sql))
+    except Exception as exc:
+        logger.warning("Invite schema sync skipped: %s", exc)
+
+
+def ensure_dashboard_schema() -> None:
+    """
+    补齐管理员数据看板所需的系统快照、错误计数和用户活跃心跳表。
+
+    这些表只从本功能上线后开始积累，不回填历史活跃时长；启动补齐保持幂等，方便旧数据库平滑升级。
+    """
+    table_sqls = [
+        """
+        CREATE TABLE IF NOT EXISTS system_metric_snapshots (
+            id BIGINT PRIMARY KEY AUTO_INCREMENT,
+            bucket_start DATETIME NOT NULL,
+            cpu_percent DOUBLE NOT NULL DEFAULT 0,
+            memory_percent DOUBLE NOT NULL DEFAULT 0,
+            memory_used_mb INT NOT NULL DEFAULT 0,
+            memory_total_mb INT NOT NULL DEFAULT 0,
+            disk_percent DOUBLE NOT NULL DEFAULT 0,
+            disk_used_gb DOUBLE NOT NULL DEFAULT 0,
+            disk_total_gb DOUBLE NOT NULL DEFAULT 0,
+            load_1m DOUBLE NOT NULL DEFAULT 0,
+            load_5m DOUBLE NOT NULL DEFAULT 0,
+            load_15m DOUBLE NOT NULL DEFAULT 0,
+            backend_pid INT NOT NULL DEFAULT 0,
+            backend_status VARCHAR(30) NOT NULL DEFAULT 'running',
+            db_ok BOOLEAN NOT NULL DEFAULT FALSE,
+            redis_ok BOOLEAN NOT NULL DEFAULT FALSE,
+            extra_payload JSON NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_sms_bucket_start (bucket_start),
+            INDEX idx_sms_created_at (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS server_error_events (
+            id BIGINT PRIMARY KEY AUTO_INCREMENT,
+            status_code INT NOT NULL DEFAULT 500,
+            method VARCHAR(10) NOT NULL DEFAULT '',
+            path VARCHAR(255) NOT NULL DEFAULT '',
+            request_id VARCHAR(80) NULL DEFAULT '',
+            error_type VARCHAR(120) NULL DEFAULT '',
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_see_status_code (status_code),
+            INDEX idx_see_created_at (created_at),
+            INDEX idx_see_created_status (created_at, status_code),
+            INDEX idx_see_path_created (path, created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS user_activity_sessions (
+            id BIGINT PRIMARY KEY AUTO_INCREMENT,
+            event_id VARCHAR(80) NOT NULL,
+            username VARCHAR(64) NOT NULL,
+            session_id VARCHAR(80) NOT NULL DEFAULT '',
+            client_type VARCHAR(30) NOT NULL DEFAULT 'pc',
+            route_path VARCHAR(255) NULL DEFAULT '',
+            duration_seconds INT NOT NULL DEFAULT 0,
+            active_at DATETIME NOT NULL,
+            active_date DATE NOT NULL,
+            extra_payload JSON NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_uas_event_id (event_id),
+            INDEX idx_uas_username (username),
+            INDEX idx_uas_client_type (client_type),
+            INDEX idx_uas_active_at (active_at),
+            INDEX idx_uas_active_date (active_date),
+            INDEX idx_uas_username_active (username, active_at),
+            INDEX idx_uas_session (session_id),
+            CONSTRAINT fk_uas_username FOREIGN KEY (username) REFERENCES users(username)
+                ON DELETE CASCADE ON UPDATE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS user_activity_daily (
+            id BIGINT PRIMARY KEY AUTO_INCREMENT,
+            username VARCHAR(64) NOT NULL,
+            active_date DATE NOT NULL,
+            active_seconds INT NOT NULL DEFAULT 0,
+            heartbeat_count INT NOT NULL DEFAULT 0,
+            last_active_at DATETIME NULL,
+            client_types JSON NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_uad_username_active_date (username, active_date),
+            INDEX idx_uad_username (username),
+            INDEX idx_uad_active_date (active_date),
+            CONSTRAINT fk_uad_username FOREIGN KEY (username) REFERENCES users(username)
+                ON DELETE CASCADE ON UPDATE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        """,
+    ]
+    try:
+        with engine.begin() as conn:
+            for sql in table_sqls:
+                conn.execute(text(sql))
+    except Exception as exc:
+        logger.warning("Dashboard schema sync skipped: %s", exc)
+
+
+async def run_dashboard_metric_sampler() -> None:
+    """
+    后台系统资源采样循环。
+
+    失败只记录 warning 并继续下一轮，避免临时 Redis/DB 抖动导致整个 FastAPI 生命周期退出。
+    """
+    while True:
+        try:
+            await collect_system_metric_snapshot()
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            logger.warning("Dashboard metric sampling skipped: %s", exc)
+        await asyncio.sleep(5 * 60)
+
+
 # ── lifespan ──────────────────────────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -209,9 +461,12 @@ async def lifespan(app: FastAPI):
     """
     Base.metadata.create_all(bind=engine)
     ensure_user_activity_schema()
+    ensure_invite_schema()
+    ensure_dashboard_schema()
     ensure_question_indexes()
     ensure_targeted_focus_config_schema()
     logger.info(f"Database tables ready ({settings.database_url.split(':')[0]})")
+    dashboard_sampler_task = asyncio.create_task(run_dashboard_metric_sampler())
     try:
         from seed import seed
         from app.db.session import SessionLocal
@@ -236,7 +491,14 @@ async def lifespan(app: FastAPI):
         db.close()
     except Exception as e:
         logger.warning(f"Seed skipped: {e}")
-    yield
+    try:
+        yield
+    finally:
+        dashboard_sampler_task.cancel()
+        try:
+            await dashboard_sampler_task
+        except asyncio.CancelledError:
+            pass
     # shutdown
     from app.core.redis_cache import close_redis
     await close_redis()
@@ -259,6 +521,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
+
+
+@app.middleware("http")
+async def dashboard_error_event_middleware(request: Request, call_next):
+    try:
+        response = await call_next(request)
+        if response.status_code >= 500:
+            record_server_error_event(
+                status_code=response.status_code,
+                method=request.method,
+                path=request.url.path,
+                request_id=request.headers.get("X-Request-ID", ""),
+                error_type="http_5xx",
+            )
+        return response
+    except Exception as exc:
+        record_server_error_event(
+            status_code=500,
+            method=request.method,
+            path=request.url.path,
+            request_id=request.headers.get("X-Request-ID", ""),
+            error_type=exc.__class__.__name__,
+        )
+        raise
 
 
 # ── routers ───────────────────────────────────────────────────────────────────

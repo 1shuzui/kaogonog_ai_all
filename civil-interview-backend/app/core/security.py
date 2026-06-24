@@ -99,6 +99,9 @@ def _mark_user_active_if_due(db: Session, user: User) -> None:
             return
     user.last_active_at = now
     try:
+        from app.services.invite_service import record_user_daily_activity
+
+        record_user_daily_activity(db, user, now)
         db.commit()
         db.refresh(user)
     except Exception:

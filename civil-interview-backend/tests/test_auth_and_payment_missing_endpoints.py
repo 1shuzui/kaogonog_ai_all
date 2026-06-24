@@ -12,7 +12,8 @@ import unittest
 from datetime import datetime, timezone
 from decimal import Decimal
 
-from sqlalchemy import create_engine
+from fastapi import HTTPException
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
 from app.api.v1 import api_router
@@ -78,6 +79,13 @@ class AuthAndPaymentEndpointTestCase(unittest.TestCase):
         @raises AssertionError: 数据库初始化失败会由测试框架报告。
         """
         self.engine = create_engine("sqlite:///:memory:")
+        @event.listens_for(self.engine, "connect")
+        def _register_mysql_collation(dbapi_conn, _):
+            dbapi_conn.create_collation(
+                "utf8mb4_0900_ai_ci",
+                lambda left, right: (left > right) - (left < right),
+            )
+
         Base.metadata.create_all(bind=self.engine)
         self.Session = sessionmaker(bind=self.engine)
         self.db = self.Session()
@@ -173,6 +181,38 @@ class AuthAndPaymentEndpointTestCase(unittest.TestCase):
         renamed = self.db.query(User).filter(User.username == "pc_user").first()
         self.assertIsNotNone(renamed)
         self.assertTrue(verify_password("new_password", renamed.hashed_password))
+
+    def test_wechat_login_rejects_invalid_invite_even_for_existing_user(self):
+        old_appid = settings.wechat_pay_appid
+        old_secret = settings.wechat_miniprogram_app_secret
+        settings.wechat_pay_appid = "wx_test"
+        settings.wechat_miniprogram_app_secret = "secret"
+        try:
+            import app.services.auth_service as auth_service
+
+            original = auth_service._code_to_session
+            auth_service._code_to_session = lambda code: {
+                "openid": "openid_existing",
+                "unionid": "union_existing",
+                "session_key": "session_key_existing",
+            }
+            try:
+                first_login = login_wechat_miniprogram(
+                    self.db,
+                    WechatMiniProgramLoginRequest(code="wx_code"),
+                )
+                with self.assertRaises(HTTPException):
+                    login_wechat_miniprogram(
+                        self.db,
+                        WechatMiniProgramLoginRequest(code="wx_code", inviteCode="missing"),
+                    )
+            finally:
+                auth_service._code_to_session = original
+        finally:
+            settings.wechat_pay_appid = old_appid
+            settings.wechat_miniprogram_app_secret = old_secret
+
+        self.assertTrue(first_login["access_token"])
 
     def test_password_reset_generates_verifies_and_confirms_code(self):
         """
