@@ -12,6 +12,7 @@ import { defineStore } from 'pinia'
 import { bindWechatMiniProgram, bindWechatMiniProgramInvite, login as loginApi, loginWithWechat as loginWithWechatApi, register as registerApi, setupWechatMiniProgramAccount } from '../api/auth'
 import { getProvinces, getUserInfo, updatePreferences, updateUserProfile } from '../api/user'
 import { useBillingStore } from './billing'
+import { useFavoritesStore } from './favorites'
 import {
   DEFAULT_PREFERENCES,
   PREFERENCES_STORAGE_KEY,
@@ -140,6 +141,7 @@ export const useUserStore = defineStore('user', {
       this.username = username
       uni.setStorageSync(TOKEN_STORAGE_KEY, response.access_token)
       uni.setStorageSync(USERNAME_STORAGE_KEY, username)
+      useFavoritesStore().reloadForCurrentUser()
       await this.loadUserInfo().catch(() => null)
       return response
     },
@@ -150,6 +152,7 @@ export const useUserStore = defineStore('user', {
       this.username = response.username || ''
       uni.setStorageSync(TOKEN_STORAGE_KEY, response.access_token)
       if (response.username) uni.setStorageSync(USERNAME_STORAGE_KEY, response.username)
+      useFavoritesStore().reloadForCurrentUser()
       await this.loadUserInfo().catch(() => null)
       return response
     },
@@ -193,6 +196,7 @@ export const useUserStore = defineStore('user', {
       }
       uni.removeStorageSync(TOKEN_STORAGE_KEY)
       uni.removeStorageSync(USERNAME_STORAGE_KEY)
+      useFavoritesStore().reloadForCurrentUser()
     },
 
     async loadUserInfo() {
@@ -219,6 +223,7 @@ export const useUserStore = defineStore('user', {
       }
       this.username = username
       if (username) safeSetStorage(USERNAME_STORAGE_KEY, username)
+      useFavoritesStore().reloadForCurrentUser()
 
       this.userInfo = {
         id: username,
@@ -282,6 +287,7 @@ export const useUserStore = defineStore('user', {
       if (response?.username) {
         this.username = response.username
         safeSetStorage(USERNAME_STORAGE_KEY, response.username)
+        useFavoritesStore().reloadForCurrentUser()
       }
       await this.loadUserInfo().catch(() => null)
       return response

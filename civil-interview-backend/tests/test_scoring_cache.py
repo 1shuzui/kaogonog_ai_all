@@ -10,7 +10,7 @@
 """
 import unittest
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
 from app.core import redis_cache
@@ -53,6 +53,14 @@ class ScoringCacheTestCase(unittest.IsolatedAsyncioTestCase):
             await self.redis_client.delete(key)
 
         self.engine = create_engine("sqlite:///:memory:")
+
+        @event.listens_for(self.engine, "connect")
+        def _register_mysql_collation(dbapi_conn, _):
+            dbapi_conn.create_collation(
+                "utf8mb4_0900_ai_ci",
+                lambda left, right: (left > right) - (left < right),
+            )
+
         Base.metadata.create_all(bind=self.engine)
         self.Session = sessionmaker(bind=self.engine)
         self.db = self.Session()
@@ -135,6 +143,47 @@ class ScoringCacheTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(cached_result["totalScore"], 88)
         self.assertNotIn("mediaRecord", cached_result)
         self.assertNotIn("visualObservation", cached_result)
+
+    async def test_transcribe_builds_asr_context_from_question_id(self):
+        """
+        转写接口拿到 questionId 后要把题目上下文传给底层 ASR。
+
+        这里不跑真实 FunASR，只验证服务层会读取题干、采分点和关键词，生成上下文短语后传入 `transcribe_audio_file_with_meta`。
+
+        @param: 无；monkeypatch 替换底层 ASR 入口。
+        @return: None；上下文包含题目关键词且转写结果正常返回时通过。
+        @raises AssertionError: questionId 没有进入 ASR 上下文链路时失败。
+        """
+        captured = {}
+
+        async def fake_transcribe_audio_file_with_meta(audio_bytes, filename="answer.webm", context_phrases=None):
+            captured["audio_bytes"] = audio_bytes
+            captured["filename"] = filename
+            captured["context_phrases"] = context_phrases or []
+            return {
+                "transcript": "测试文字稿",
+                "asrMeta": {"audioSha256": ""},
+                "needsRetry": False,
+                "message": "",
+            }
+
+        original = scoring_service.transcribe_audio_file_with_meta
+        scoring_service.transcribe_audio_file_with_meta = fake_transcribe_audio_file_with_meta
+        try:
+            result = await scoring_service.transcribe(
+                b"audio-bytes",
+                filename="answer.webm",
+                db=self.db,
+                question_id="score_cache_q1",
+            )
+        finally:
+            scoring_service.transcribe_audio_file_with_meta = original
+
+        self.assertEqual(result["transcript"], "测试文字稿")
+        self.assertEqual(captured["audio_bytes"], b"audio-bytes")
+        self.assertIn("沟通", captured["context_phrases"])
+        self.assertIn("协调", captured["context_phrases"])
+        self.assertIn("主动沟通协调", captured["context_phrases"])
 
 
 if __name__ == "__main__":

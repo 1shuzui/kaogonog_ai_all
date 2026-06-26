@@ -21,7 +21,7 @@ from typing import Optional
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app.core.ai import call_llm_api_async, transcribe_audio_file, transcribe_audio_file_with_meta
+from app.core.ai import build_asr_context_phrases, call_llm_api_async, transcribe_audio_file, transcribe_audio_file_with_meta
 from app.core.config import settings
 from app.core.redis_cache import cache_get_json, cache_set_json
 from app.core.video_analysis import analyze_video_behavior
@@ -167,7 +167,12 @@ def attach_asr_meta_to_media_record(db: Session, audio_sha256: str, asr_meta: di
     return False
 
 
-async def transcribe(audio_bytes: bytes, filename: str = "answer.webm", db: Session | None = None) -> dict:
+async def transcribe(
+    audio_bytes: bytes,
+    filename: str = "answer.webm",
+    db: Session | None = None,
+    question_id: str | None = None,
+) -> dict:
     """
     调用真实 ASR 转写答题音频，并尽量把转写元数据挂回答题记录。
 
@@ -177,10 +182,26 @@ async def transcribe(audio_bytes: bytes, filename: str = "answer.webm", db: Sess
     @param audio_bytes: 上传音频二进制内容。
     @param filename: 原始文件名，用于推断格式和记录来源。
     @param db: 可选数据库会话；为空时只返回转写结果，不补写历史记录。
+    @param question_id: 可选题目 ID，用于从题干、采分点和关键词生成 ASR 上下文短语。
     @return: 转写文本、估算时长、ASR 元数据、是否建议重试和提示信息。
     @raises: ASR 依赖、文件处理或数据库提交异常会沿调用栈上抛。
     """
-    result = await transcribe_audio_file_with_meta(audio_bytes, filename=filename)
+    context_phrases: list[str] = []
+    normalized_question_id = str(question_id or "").strip()
+    if db is not None and normalized_question_id:
+        question = db.query(Question).filter(Question.id == normalized_question_id).first()
+        if question:
+            context_phrases = build_asr_context_phrases(
+                question.stem,
+                question.scoring_points,
+                question.keywords,
+            )
+
+    result = await transcribe_audio_file_with_meta(
+        audio_bytes,
+        filename=filename,
+        context_phrases=context_phrases,
+    )
     transcript = str(result.get("transcript") or "")
     asr_meta = result.get("asrMeta") if isinstance(result.get("asrMeta"), dict) else {}
     linked = False

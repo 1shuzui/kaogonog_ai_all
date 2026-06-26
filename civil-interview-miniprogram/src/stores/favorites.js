@@ -12,6 +12,12 @@ import { defineStore } from 'pinia'
 import { logger } from '../utils/logger'
 
 const STORAGE_KEY = 'civil_favorites'
+const USERNAME_STORAGE_KEY = 'username'
+
+function currentStorageKey() {
+  const username = String(uni.getStorageSync(USERNAME_STORAGE_KEY) || '').trim()
+  return username ? `${STORAGE_KEY}:${username}` : STORAGE_KEY
+}
 
 function normalizeFavoriteItem(item) {
   if (!item || typeof item !== 'object') return null
@@ -37,7 +43,7 @@ function normalizeFavoriteItem(item) {
 
 function loadItems() {
   try {
-    const raw = uni.getStorageSync(STORAGE_KEY)
+    const raw = uni.getStorageSync(currentStorageKey())
     const parsed = raw ? JSON.parse(raw) : []
     return Array.isArray(parsed) ? parsed.map(normalizeFavoriteItem).filter(Boolean) : []
   } catch {
@@ -47,7 +53,7 @@ function loadItems() {
 
 function saveItems(items) {
   try {
-    uni.setStorageSync(STORAGE_KEY, JSON.stringify(items))
+    uni.setStorageSync(currentStorageKey(), JSON.stringify(items))
   } catch (error) {
     logger.warn('Mini favorites storage write failed', {
       event: 'mini.favorites.storage.write_failed',
@@ -79,6 +85,10 @@ export const useFavoritesStore = defineStore('favorites', {
   },
 
   actions: {
+    reloadForCurrentUser() {
+      this.items = loadItems()
+    },
+
     addItem({ examId, questionId, questionStem, dimension, score, maxScore, grade, date, type = 'weak' }) {
       if (!examId || !questionId) return
       const exists = this.items.find((item) => item.examId === examId && item.questionId === questionId)

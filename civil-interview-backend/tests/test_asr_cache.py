@@ -86,6 +86,7 @@ class AsrCacheTestCase(unittest.IsolatedAsyncioTestCase):
                     "zh",
                     ai.ASR_SIMPLIFIED_CHINESE_PROMPT,
                     ai.ASR_CACHE_SCHEMA,
+                    "",
                 ]
             ).encode("utf-8")
         ).hexdigest()[:12]
@@ -96,6 +97,48 @@ class AsrCacheTestCase(unittest.IsolatedAsyncioTestCase):
         result = await ai.transcribe_audio_file(audio_bytes, filename="answer.webm")
 
         self.assertEqual(result, "缓存文本")
+
+    async def test_transcribe_audio_file_context_scope_separates_cache_entries(self):
+        """
+        题目上下文要参与 ASR 缓存分桶。
+
+        同一份音频在不同题目下可能需要不同的保守纠错，缓存不能只按音频 hash 命中旧文字稿。
+
+        @param: 无；用带上下文的缓存 key 预写文本。
+        @return: None；只有传入相同上下文短语时命中。
+        @raises AssertionError: 上下文未进入缓存 scope 时失败。
+        """
+        audio_bytes = b"y" * 4096
+        context_phrases = ["错峰就餐", "高校食堂"]
+        context_scope = ai._asr_context_scope(context_phrases)
+        asr_model = ai._resolve_asr_model()
+        remote_asr_model = ai._resolve_remote_asr_model()
+        asr_cache_scope = hashlib.sha256(
+            "|".join(
+                [
+                    ai.settings.asr_provider,
+                    asr_model,
+                    remote_asr_model,
+                    ai.settings.funasr_vad_model_name,
+                    ai.settings.funasr_punc_model_name if ai.settings.funasr_enable_punc else "",
+                    "zh",
+                    ai.ASR_SIMPLIFIED_CHINESE_PROMPT,
+                    ai.ASR_CACHE_SCHEMA,
+                    context_scope,
+                ]
+            ).encode("utf-8")
+        ).hexdigest()[:12]
+        cache_key = f"asr:transcript:{asr_cache_scope}:{hashlib.sha256(audio_bytes).hexdigest()}"
+        self.keys.append(cache_key)
+
+        await redis_cache.cache_set_json(cache_key, "上下文缓存文本", 30)
+        result = await ai.transcribe_audio_file(
+            audio_bytes,
+            filename="answer.webm",
+            context_phrases=context_phrases,
+        )
+
+        self.assertEqual(result, "上下文缓存文本")
 
 
 if __name__ == "__main__":

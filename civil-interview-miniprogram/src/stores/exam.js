@@ -308,7 +308,8 @@ export const useExamStore = defineStore('exam', {
         if (!transcript) {
           answer.processingStatus = 'transcribing'
           const transcribeResult = await transcribeAudioWithRetry(transcriptionMedia.filePath, {
-            mediaType: transcriptionMedia.mediaType || mediaType
+            mediaType: transcriptionMedia.mediaType || mediaType,
+            questionId: answer.questionId
           })
           if (isServiceAsrFailure(transcribeResult)) {
             throw buildAsrError(

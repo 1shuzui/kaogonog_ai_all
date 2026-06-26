@@ -13,7 +13,7 @@ import re
 import shutil
 from importlib.util import find_spec as importlib_util_find
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.ai import _resolve_asr_model, _resolve_remote_asr_model
@@ -124,6 +124,7 @@ def _merge_answer_meta(result: dict, answer_meta: dict) -> dict:
 @router.post("/transcribe")
 async def scoring_transcribe(
     audio: UploadFile = File(...),
+    questionId: str = Form(""),
     current_user: AuthUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -139,7 +140,7 @@ async def scoring_transcribe(
     @raises HTTPException: 未登录、文件异常或 ASR 服务错误时抛出。
     """
     audio_bytes = await audio.read()
-    return await transcribe(audio_bytes, filename=audio.filename or "answer.webm", db=db)
+    return await transcribe(audio_bytes, filename=audio.filename or "answer.webm", db=db, question_id=questionId)
 
 
 @router.get("/asr-status")

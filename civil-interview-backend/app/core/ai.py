@@ -42,7 +42,7 @@ ASR_SIMPLIFIED_CHINESE_PROMPT = (
 LLM_MAX_RETRIES = 3
 LLM_RETRY_BACKOFF_BASE = 1.5
 ASR_SAMPLE_RATE = 16000
-ASR_CACHE_SCHEMA = "funasr-onnx-v4"
+ASR_CACHE_SCHEMA = "funasr-onnx-v5"
 FUNASR_PROVIDER_ALIASES = {"funasr", "funasr_onnx", "paraformer", "paraformer_onnx"}
 FUNASR_ONNX_CACHE: dict[tuple, dict[str, object]] = {}
 LAST_ASR_TRACE: dict = {}
@@ -77,7 +77,43 @@ FUNASR_CONTEXTUAL_CORRECTIONS = (
     ("消防通到", "消防通道"),
     ("商家信用品集", "商家信用评级"),
     ("消费者", "消费者"),
+    ("刺凶险轻", "次生险情"),
+    ("刺生险情", "次生险情"),
+    ("代交补贴", "代缴补贴"),
+    ("一件避险", "一键避险"),
+    ("恶意评差评", "恶意差评"),
+    ("为时效考核", "唯时效考核"),
+    ("领域标新", "领异标新"),
+    ("冗于报表", "冗余报表"),
+    ("勇于爆表", "冗余报表"),
+    ("邻里矛盾调节", "邻里矛盾调解"),
 )
+FUNASR_CONTEXT_PHRASE_CORRECTIONS = {
+    "错峰就餐": ("措峰就餐", "错分就餐"),
+    "次生险情": ("刺凶险轻", "刺生险情"),
+    "代缴补贴": ("代交补贴",),
+    "一键避险": ("一件避险",),
+    "恶意差评": ("恶意评差评",),
+    "唯时效考核": ("为时效考核",),
+    "领异标新": ("领域标新",),
+    "冗余报表": ("冗于报表", "勇于爆表"),
+    "邻里矛盾调解": ("邻里矛盾调节",),
+}
+ASR_CONTEXT_STOP_WORDS = {
+    "问题",
+    "工作",
+    "群众",
+    "情况",
+    "进行",
+    "开展",
+    "推进",
+    "落实",
+    "结合",
+    "实际",
+    "提出",
+    "说明",
+    "回答",
+}
 
 # OpenAI-compatible client for the configured LLM provider
 _client: Optional[OpenAI] = None
@@ -424,6 +460,78 @@ def _normalize_funasr_segment_text(text: str) -> str:
     return re.sub(r"\s+", "", str(text or "").strip())
 
 
+def _collect_asr_text_values(value) -> list[str]:
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, dict):
+        parts: list[str] = []
+        for item in value.values():
+            parts.extend(_collect_asr_text_values(item))
+        return parts
+    if isinstance(value, (list, tuple, set)):
+        parts: list[str] = []
+        for item in value:
+            parts.extend(_collect_asr_text_values(item))
+        return parts
+    if value is None:
+        return []
+    return [str(value)]
+
+
+def _extract_asr_terms_from_text(text: str) -> list[str]:
+    terms: list[str] = []
+    source = str(text or "")
+    for expected in FUNASR_CONTEXT_PHRASE_CORRECTIONS:
+        if expected in source:
+            terms.append(expected)
+    for part in re.findall(r"[\u4e00-\u9fffA-Za-z0-9_-]{2,16}", source):
+        normalized = part.strip()
+        if not normalized:
+            continue
+        if normalized in ASR_CONTEXT_STOP_WORDS:
+            continue
+        if 2 <= len(normalized) <= 16:
+            terms.append(normalized)
+    return terms
+
+
+def build_asr_context_phrases(stem="", scoring_points=None, keywords=None, limit: int = 80) -> list[str]:
+    """
+    从题干、采分点和关键词中提取 ASR 上下文短语。
+
+    这些短语只用于保守后处理和缓存分桶，不作为 prompt 扩写答案；因此只保留题目中已经出现的短语和结构化关键词。
+
+    @param stem: 题干文本。
+    @param scoring_points: 采分点 JSON，支持字符串、列表和字典嵌套。
+    @param keywords: 关键词 JSON，支持 scoring/deducting/bonus/_meta 等结构。
+    @param limit: 最多返回短语数，避免缓存 scope 过大。
+    @return: 去重后的上下文短语列表。
+    @raises: 不主动抛出异常；异常输入按空文本处理。
+    """
+    phrases: list[str] = []
+    for value in [stem, scoring_points, keywords]:
+        for text in _collect_asr_text_values(value):
+            phrases.extend(_extract_asr_terms_from_text(text))
+
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for phrase in phrases:
+        if phrase in seen:
+            continue
+        seen.add(phrase)
+        deduped.append(phrase)
+        if len(deduped) >= limit:
+            break
+    return deduped
+
+
+def _asr_context_scope(context_phrases: Optional[list[str]] = None) -> str:
+    phrases = [str(item).strip() for item in (context_phrases or []) if str(item or "").strip()]
+    if not phrases:
+        return ""
+    return hashlib.sha256("|".join(phrases).encode("utf-8")).hexdigest()[:12]
+
+
 def _join_funasr_segments(parts: list[tuple[str, int, int]]) -> str:
     transcript = ""
     previous_end = None
@@ -443,13 +551,19 @@ def _join_funasr_segments(parts: list[tuple[str, int, int]]) -> str:
     return transcript.strip()
 
 
-def _postprocess_funasr_transcript(text: str) -> str:
+def _postprocess_funasr_transcript(text: str, context_phrases: Optional[list[str]] = None) -> str:
     transcript = str(text or "").strip()
     if not transcript:
         return ""
     transcript = re.sub(r"\s+", "", transcript)
     for old, new in FUNASR_CONTEXTUAL_CORRECTIONS:
         transcript = transcript.replace(old, new)
+    phrase_set = {str(item).strip() for item in (context_phrases or []) if str(item or "").strip()}
+    for expected, variants in FUNASR_CONTEXT_PHRASE_CORRECTIONS.items():
+        if expected not in phrase_set:
+            continue
+        for variant in variants:
+            transcript = transcript.replace(variant, expected)
     transcript = re.sub(r"(接近)(?:[，,、]?\1)+(?=的)", r"\1", transcript)
     transcript = re.sub(r"(人员)(?:[，,、]?\1)+(?=能力)", r"\1", transcript)
     transcript = re.sub(r"(点的)+点上", "点上", transcript)
@@ -563,7 +677,7 @@ def _set_asr_trace(**updates) -> dict:
     return dict(LAST_ASR_TRACE)
 
 
-def _transcribe_with_funasr_onnx(wav_path: str) -> str:
+def _transcribe_with_funasr_onnx(wav_path: str, context_phrases: Optional[list[str]] = None) -> str:
     import librosa
 
     models = _get_funasr_onnx_models()
@@ -605,7 +719,7 @@ def _transcribe_with_funasr_onnx(wav_path: str) -> str:
 
     transcript = _join_funasr_segments(parts)
     transcript = _punctuate_funasr_text(transcript, models.get("punc"))
-    transcript = _postprocess_funasr_transcript(transcript)
+    transcript = _postprocess_funasr_transcript(transcript, context_phrases=context_phrases)
     _set_asr_trace(
         status="ok" if transcript else "no_speech",
         segmentCount=len(segments),
@@ -618,11 +732,11 @@ def _transcribe_with_funasr_onnx(wav_path: str) -> str:
     return transcript
 
 
-def _transcribe_with_funasr(media_bytes: bytes, filename: str) -> str:
+def _transcribe_with_funasr(media_bytes: bytes, filename: str, context_phrases: Optional[list[str]] = None) -> str:
     wav_path = None
     try:
         wav_path = _decode_media_to_wav(media_bytes, filename)
-        return _transcribe_with_funasr_onnx(wav_path)
+        return _transcribe_with_funasr_onnx(wav_path, context_phrases=context_phrases)
     finally:
         if wav_path:
             Path(wav_path).unlink(missing_ok=True)
@@ -673,7 +787,11 @@ def _transcribe_with_dashscope_chat_asr(
     return _extract_text_from_message_content(response.choices[0].message.content)
 
 
-async def transcribe_audio_file_with_meta(audio_bytes: bytes, filename: str = "answer.webm") -> dict:
+async def transcribe_audio_file_with_meta(
+    audio_bytes: bytes,
+    filename: str = "answer.webm",
+    context_phrases: Optional[list[str]] = None,
+) -> dict:
     """
     转写音频并返回诊断元数据。
 
@@ -685,6 +803,7 @@ async def transcribe_audio_file_with_meta(audio_bytes: bytes, filename: str = "a
     @raises: 不主动向上抛常规 ASR 失败；模型、远程服务或缓存异常会转成可解释状态。
     """
     media_hash = hashlib.sha256(audio_bytes).hexdigest()
+    context_scope = _asr_context_scope(context_phrases)
     base_meta = {
         "provider": settings.asr_provider,
         "mode": "funasr_onnx_vad" if _is_funasr_provider() else "remote_asr",
@@ -694,6 +813,7 @@ async def transcribe_audio_file_with_meta(audio_bytes: bytes, filename: str = "a
         "cacheHit": False,
         "audioBytes": len(audio_bytes),
         "audioSha256": media_hash,
+        "contextScope": context_scope,
         "filename": filename or "answer.webm",
         "status": "started",
         "message": "",
@@ -715,6 +835,7 @@ async def transcribe_audio_file_with_meta(audio_bytes: bytes, filename: str = "a
                 "zh",
                 ASR_SIMPLIFIED_CHINESE_PROMPT,
                 ASR_CACHE_SCHEMA,
+                context_scope,
             ]
         ).encode("utf-8")
     ).hexdigest()[:12]
@@ -728,7 +849,7 @@ async def transcribe_audio_file_with_meta(audio_bytes: bytes, filename: str = "a
 
     if _is_funasr_provider():
         try:
-            text = _transcribe_with_funasr(audio_bytes, filename)
+            text = _transcribe_with_funasr(audio_bytes, filename, context_phrases=context_phrases)
             trace = dict(LAST_ASR_TRACE)
             if text.strip():
                 transcript = text.strip()
@@ -800,7 +921,11 @@ async def transcribe_audio_file_with_meta(audio_bytes: bytes, filename: str = "a
     return {"transcript": ASR_UNAVAILABLE_PLACEHOLDER, "asrMeta": meta, "needsRetry": True, "message": message}
 
 
-async def transcribe_audio_file(audio_bytes: bytes, filename: str = "answer.webm") -> str:
+async def transcribe_audio_file(
+    audio_bytes: bytes,
+    filename: str = "answer.webm",
+    context_phrases: Optional[list[str]] = None,
+) -> str:
     """
     只返回文本的转写兼容入口。
 
@@ -811,7 +936,7 @@ async def transcribe_audio_file(audio_bytes: bytes, filename: str = "answer.webm
     @return: 转写文本；失败时返回明确占位文本或空字符串。
     @raises: 不主动向上抛常规 ASR 失败。
     """
-    result = await transcribe_audio_file_with_meta(audio_bytes, filename=filename)
+    result = await transcribe_audio_file_with_meta(audio_bytes, filename=filename, context_phrases=context_phrases)
     return str(result.get("transcript") or "")
 
 

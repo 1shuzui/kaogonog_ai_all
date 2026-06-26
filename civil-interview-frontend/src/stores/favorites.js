@@ -12,10 +12,17 @@ import { defineStore } from 'pinia'
 import { logger } from '@/utils/logger'
 
 const STORAGE_KEY = 'civil_favorites'
+const USERNAME_STORAGE_KEY = 'username'
+
+function currentStorageKey() {
+  const username = String(localStorage.getItem(USERNAME_STORAGE_KEY) || '').trim()
+  return username ? `${STORAGE_KEY}:${username}` : STORAGE_KEY
+}
 
 function loadFromStorage() {
   try {
-    const data = localStorage.getItem(STORAGE_KEY)
+    const key = currentStorageKey()
+    const data = localStorage.getItem(key)
     const parsed = data ? JSON.parse(data) : []
     const normalized = Array.isArray(parsed) ? parsed.map(normalizeFavoriteItem).filter(Boolean) : []
     if (JSON.stringify(parsed) !== JSON.stringify(normalized)) {
@@ -52,7 +59,7 @@ function normalizeFavoriteItem(item) {
 
 function saveToStorage(items) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
+    localStorage.setItem(currentStorageKey(), JSON.stringify(items))
   } catch (e) {
     logger.warn('Favorites storage write failed', {
       event: 'favorites.storage.write_failed',
@@ -83,6 +90,10 @@ export const useFavoritesStore = defineStore('favorites', {
   },
 
   actions: {
+    reloadForCurrentUser() {
+      this.items = loadFromStorage()
+    },
+
     addItem({ examId, questionId, questionStem, dimension, score, maxScore, grade, date, type = 'weak' }) {
       const exists = this.items.find(i => i.examId === examId && i.questionId === questionId)
       if (exists) {

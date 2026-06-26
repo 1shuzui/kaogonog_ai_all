@@ -15,9 +15,12 @@ export async function getAsrStatus(config = {}) {
   return http.get('/scoring/asr-status', config)
 }
 
-export async function transcribeAudio(audioBlob) {
+export async function transcribeAudio(audioBlob, options = {}) {
   const formData = new FormData()
   formData.append('audio', audioBlob, `answer_${Date.now()}${getAudioExtension(audioBlob?.type)}`)
+  if (options.questionId) {
+    formData.append('questionId', options.questionId)
+  }
   return http.post('/scoring/transcribe', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
     timeout: 60000

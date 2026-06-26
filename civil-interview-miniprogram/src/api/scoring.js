@@ -20,14 +20,16 @@ export function getAsrStatus(config = {}) {
 
 export function transcribeAudio(filePath, options = {}) {
   const mediaType = options.mediaType || 'audio'
+  const formData = { mediaType }
+  if (options.questionId) {
+    formData.questionId = options.questionId
+  }
   return uploadFile({
     url: '/scoring/transcribe',
     filePath,
     name: 'audio',
     timeout: mediaType === 'video' ? 120000 : 60000,
-    formData: {
-      mediaType
-    }
+    formData
   })
 }
 

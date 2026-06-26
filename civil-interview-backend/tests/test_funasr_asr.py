@@ -134,6 +134,73 @@ class FunasrAsrTestCase(unittest.TestCase):
         self.assertIn("快速反馈机制", transcript)
         self.assertIn("敢闯敢试", transcript)
 
+    def test_funasr_postprocess_repairs_recent_domain_errors(self):
+        """
+        FunASR 后处理要覆盖近期暴露的高频错词。
+
+        这些词大多来自应急处置、算法监管、基层治理和名句引用题，错一个字就会影响关键词命中和结果页复盘。
+
+        @param: 无；输入包含近期服务器样例里的典型误识别。
+        @return: None；所有固定短语被保守修正时通过。
+        @raises AssertionError: 新增纠错表失效时失败。
+        """
+        raw = (
+            "严防刺凶险轻，分级普惠社保代交补贴，增设骑手一件避险功能，"
+            "破除为时效考核，杜绝顾客恶意评差评。"
+            "做到领域标新，砍掉冗于报表和勇于爆表，推进邻里矛盾调节。"
+        )
+
+        transcript = ai._postprocess_funasr_transcript(raw)
+
+        self.assertIn("严防次生险情", transcript)
+        self.assertIn("社保代缴补贴", transcript)
+        self.assertIn("一键避险", transcript)
+        self.assertIn("唯时效考核", transcript)
+        self.assertIn("恶意差评", transcript)
+        self.assertIn("领异标新", transcript)
+        self.assertIn("冗余报表", transcript)
+        self.assertIn("邻里矛盾调解", transcript)
+
+    def test_funasr_postprocess_uses_question_context_phrases_conservatively(self):
+        """
+        题目上下文短语只触发明确的短语纠错。
+
+        没有题目上下文时不做宽泛猜测；当题干或关键词明确包含目标短语时，再修正对应常见错词。
+
+        @param: 无；用“错峰就餐”模拟题干热词纠错。
+        @return: None；有上下文时修正，无上下文时保持原文。
+        @raises AssertionError: 上下文纠错过宽或失效时失败。
+        """
+        raw = "高校食堂措峰就餐能够分流人群"
+
+        self.assertIn("措峰就餐", ai._postprocess_funasr_transcript(raw))
+        self.assertIn(
+            "错峰就餐",
+            ai._postprocess_funasr_transcript(raw, context_phrases=["错峰就餐", "高校食堂"]),
+        )
+
+    def test_build_asr_context_phrases_extracts_question_terms(self):
+        """
+        题干、采分点和关键词要能生成 ASR 上下文短语。
+
+        转写接口拿到 questionId 后会用这些短语参与缓存分桶和保守纠错，避免不同题目共用同一段音频缓存。
+
+        @param: 无；构造题干、采分点和关键词的常见 JSON 形状。
+        @return: None；关键短语被提取且去重时通过。
+        @raises AssertionError: 上下文提取遗漏题目字段时失败。
+        """
+        phrases = ai.build_asr_context_phrases(
+            "高校食堂为实现错峰就餐，缓解校内就餐高峰压力。",
+            [{"content": "增设骑手一键避险功能", "keywords": ["唯时效考核"]}],
+            {"scoring": ["次生险情"], "_meta": {"coreKeywords": ["领异标新"]}},
+        )
+
+        self.assertIn("错峰就餐", phrases)
+        self.assertIn("一键避险", phrases)
+        self.assertIn("唯时效考核", phrases)
+        self.assertIn("次生险情", phrases)
+        self.assertIn("领异标新", phrases)
+
     def test_audio_rms_detects_near_silence(self):
         """
         RMS 静音检测要能区分空录音和有效低音量录音。

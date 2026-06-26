@@ -12,6 +12,7 @@ import { defineStore } from 'pinia'
 import { getUserInfo, updatePreferences, updateUserProfile, getProvinces } from '@/api/user'
 import { login as loginApi, register as registerApi } from '@/api/auth'
 import { useBillingStore } from '@/stores/billing'
+import { useFavoritesStore } from '@/stores/favorites'
 
 const PREFERENCES_STORAGE_KEY = 'civil_user_preferences'
 const PROVINCE_STORAGE_KEY = 'civil_selected_province'
@@ -226,6 +227,7 @@ export const useUserStore = defineStore('user', {
       this.selectedProvince = loadProvinceForUser(username)
       this.provinceConfirmed = loadProvinceConfirmedForUser(username)
       this.preferences = loadPreferencesForUser(username)
+      useFavoritesStore().reloadForCurrentUser()
 
       try {
         await this.loadUserInfo()
@@ -280,6 +282,7 @@ export const useUserStore = defineStore('user', {
       this.selectedProvince = loadProvinceForUser()
       this.provinceConfirmed = loadProvinceConfirmedForUser()
       this.preferences = loadPreferencesForUser()
+      useFavoritesStore().reloadForCurrentUser()
       billingStore.resetToTrial()
     },
 
@@ -296,6 +299,7 @@ export const useUserStore = defineStore('user', {
       if (activeUsername && activeUsername !== this.username) {
         this.username = activeUsername
         localStorage.setItem(USERNAME_STORAGE_KEY, activeUsername)
+        useFavoritesStore().reloadForCurrentUser()
       }
 
       this.userInfo = {
