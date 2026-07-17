@@ -18,7 +18,7 @@
       <button class="primary-button hero-card__button" @tap="openForm">提交反馈</button>
     </view>
 
-    <view class="stats-row">
+    <view v-if="userStore.isAdmin" class="stats-row">
       <view class="card stat-item">
         <text class="stat-item__label">总反馈</text>
         <text class="stat-item__value">{{ stats.total || 0 }}</text>
@@ -33,7 +33,7 @@
       </view>
     </view>
 
-    <view class="card filter-card">
+    <view v-if="userStore.isAdmin" class="card filter-card">
       <picker :range="feedbackTypeNames" :value="typeIndex" @change="onTypeChange">
         <view class="filter-row">
           <text>问题类型</text>
@@ -228,8 +228,10 @@ const formTypeIndex = computed(() => Math.max(0, FEEDBACK_TYPES.slice(1).findInd
 onShow(async () => {
   if (!requireLogin()) return
   await userStore.loadUserInfo().catch(() => null)
-  await userStore.loadProvinces().catch(() => null)
-  if (userStore.isAdmin) filters.scope = 'all'
+  if (userStore.isAdmin) {
+    await userStore.loadProvinces().catch(() => null)
+    filters.scope = 'all'
+  }
   await fetchRecords()
 })
 
@@ -300,15 +302,20 @@ function toggleScope() {
 async function fetchRecords() {
   loading.value = true
   try {
-    const response = await getSupportFeedback({
+    const params = {
       current: 1,
       pageSize: 200,
-      type: filters.type || undefined,
-      status: filters.status || undefined,
-      province: filters.province || undefined,
-      keyword: filters.keyword || undefined,
       scope: userStore.isAdmin ? filters.scope : 'mine'
-    })
+    }
+    if (userStore.isAdmin) {
+      Object.assign(params, {
+        type: filters.type || undefined,
+        status: filters.status || undefined,
+        province: filters.province || undefined,
+        keyword: filters.keyword || undefined
+      })
+    }
+    const response = await getSupportFeedback(params)
     records.value = (response.list || []).map((item) => ({
       ...item,
       attachments: Array.isArray(item.attachments)

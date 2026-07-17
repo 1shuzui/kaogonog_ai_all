@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 
 from app.models.entities import Exam, UsageRecord, User, UserSubscription
 from app.schemas.common import AuthUser, UsageReportRequest
-from app.services.subscription_service import _ensure_daily_reset, _latest_subscription, _sync_user_preferences_subscription
+from app.services.subscription_service import _ensure_daily_reset, _latest_subscription, _subscription_can_use, _sync_user_preferences_subscription
 from app.services.user_service import get_user_or_404
 
 DEFAULT_TRIAL_TOTAL_MINUTES = 180
@@ -78,7 +78,7 @@ def report_usage(db: Session, current_user: AuthUser, data: UsageReportRequest) 
     remaining_minutes_before = max(total_minutes - used_minutes, 0)
     remaining_daily_quota = max(daily_limit_minutes - daily_used_minutes, 0) if daily_limit_minutes > 0 else remaining_minutes_before
     remaining_daily_before = min(remaining_minutes_before, remaining_daily_quota)
-    if total_minutes <= 0 or remaining_minutes_before <= 0 or (daily_limit_minutes > 0 and remaining_daily_before <= 0):
+    if not _subscription_can_use(subscription) or total_minutes <= 0 or remaining_minutes_before <= 0 or (daily_limit_minutes > 0 and remaining_daily_before <= 0):
         snapshot = _sync_user_preferences_subscription(user, subscription)
         db.commit()
         return {

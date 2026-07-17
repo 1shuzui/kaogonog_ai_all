@@ -100,6 +100,13 @@ def _subscription_can_use(subscription: UserSubscription) -> bool:
     return remaining_minutes > 0 and remaining_daily_minutes > 0
 
 
+def _subscription_is_expired(subscription: UserSubscription) -> bool:
+    if not subscription.end_at:
+        return False
+    now = datetime.now(subscription.end_at.tzinfo or None)
+    return subscription.end_at <= now
+
+
 def _serialize_subscription(subscription: UserSubscription, active_subscription_id: int = 0) -> dict:
     _ensure_daily_reset(subscription)
     total_minutes = int(subscription.total_minutes or 0)
@@ -109,7 +116,8 @@ def _serialize_subscription(subscription: UserSubscription, active_subscription_
     remaining_minutes = max(total_minutes - used_minutes, 0)
     remaining_daily_quota = max(daily_limit_minutes - daily_used_minutes, 0) if daily_limit_minutes > 0 else remaining_minutes
     remaining_daily_minutes = min(remaining_minutes, remaining_daily_quota)
-    can_use = subscription.status == "active" and remaining_minutes > 0 and (daily_limit_minutes <= 0 or remaining_daily_minutes > 0)
+    expired = _subscription_is_expired(subscription)
+    can_use = subscription.status == "active" and not expired and remaining_minutes > 0 and (daily_limit_minutes <= 0 or remaining_daily_minutes > 0)
     subscription_id = int(subscription.id or 0)
 
     return {
@@ -121,7 +129,7 @@ def _serialize_subscription(subscription: UserSubscription, active_subscription_
         "hasActivePlan": can_use,
         "planType": subscription.plan_type,
         "planName": subscription.plan_name,
-        "status": subscription.status,
+        "status": "expired" if expired else subscription.status,
         "totalMinutes": total_minutes,
         "usedMinutes": used_minutes,
         "dailyLimitMinutes": daily_limit_minutes,
@@ -227,7 +235,7 @@ def _select_subscription(user: User, subscriptions: list[UserSubscription]) -> U
     if usable_any:
         return usable_any[0]
 
-    return subscriptions[0]
+    return None
 
 
 def switch_subscription(db: Session, current_user: AuthUser, subscription_id: int) -> dict:

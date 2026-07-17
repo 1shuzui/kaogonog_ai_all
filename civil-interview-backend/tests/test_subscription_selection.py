@@ -11,7 +11,7 @@
 import unittest
 from datetime import date, datetime, timedelta
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
 from app.db.session import Base
@@ -44,6 +44,14 @@ class SubscriptionSelectionTestCase(unittest.TestCase):
         @raises AssertionError: 建库失败或表结构异常时由测试框架报告。
         """
         self.engine = create_engine("sqlite:///:memory:")
+
+        @event.listens_for(self.engine, "connect")
+        def _register_mysql_collation(dbapi_conn, _):
+            dbapi_conn.create_collation(
+                "utf8mb4_0900_ai_ci",
+                lambda left, right: (left > right) - (left < right),
+            )
+
         Base.metadata.create_all(bind=self.engine)
         self.Session = sessionmaker(bind=self.engine)
         self.db = self.Session()
@@ -199,6 +207,92 @@ class SubscriptionSelectionTestCase(unittest.TestCase):
         active_items = [item for item in switched["entitlements"] if item["isActiveSelection"]]
         self.assertEqual(len(active_items), 1)
         self.assertEqual(active_items[0]["packageCode"], "trial_3h")
+
+    def test_expired_active_subscription_is_not_reported_as_usable(self):
+        """
+        到期但 status 仍是 active 的权益，不能再被快照当作可用。
+
+        这类历史脏数据会让前台显示 active、剩余很多分钟，但实际接口因过期校验拒绝使用。
+
+        @param: 无；构造 end_at 已过期但 status 仍为 active 的订阅。
+        @return: None；快照和 preferences 都应将其视为不可用。
+        @raises AssertionError: 过期权益仍被展示为可用时失败。
+        """
+        user = User(username="ssy", hashed_password="x")
+        expired = UserSubscription(
+            username="ssy",
+            package_code="monthly_1h_day",
+            plan_type="monthly",
+            plan_name="包月套餐 1小时/天",
+            status="active",
+            is_trial=False,
+            total_minutes=1800,
+            used_minutes=49,
+            daily_limit_minutes=60,
+            daily_used_minutes=0,
+            last_reset_date=date.today(),
+            start_at=datetime(2026, 5, 23, 7, 37, 10),
+            end_at=datetime(2026, 6, 22, 7, 37, 10),
+            created_at=datetime(2026, 5, 23, 7, 37, 11),
+        )
+        self.db.add_all([user, expired])
+        self.db.commit()
+
+        status = get_subscription_status(self.db, AuthUser(username="ssy"))
+
+        self.assertEqual(status["planType"], "trial")
+        self.assertTrue(status["isTrialUser"])
+        self.assertTrue(status["canUse"])
+        self.assertEqual(status["remainingMinutes"], 180)
+        self.assertEqual(status["remainingDailyMinutes"], 180)
+        self.assertEqual(status["activePlanCount"], 0)
+        self.assertEqual(status["entitlements"], [])
+        self.assertNotIn("activeSubscriptionId", user.preferences)
+
+    def test_usage_rejects_expired_active_subscription_without_deducting(self):
+        """
+        用量上报不能扣减已过期但 status 仍为 active 的权益。
+
+        即使历史 preferences 还指向过期权益，服务端也要在扣量前重新检查有效期。
+
+        @param: 无；构造过期月卡和一次考试记录。
+        @return: None；上报失败且权益用量不变时通过。
+        @raises AssertionError: 过期权益被扣减或返回成功时失败。
+        """
+        user = User(username="ssy", hashed_password="x")
+        expired = UserSubscription(
+            username="ssy",
+            package_code="monthly_1h_day",
+            plan_type="monthly",
+            plan_name="包月套餐 1小时/天",
+            status="active",
+            is_trial=False,
+            total_minutes=1800,
+            used_minutes=49,
+            daily_limit_minutes=60,
+            daily_used_minutes=0,
+            last_reset_date=date.today(),
+            start_at=datetime(2026, 5, 23, 7, 37, 10),
+            end_at=datetime(2026, 6, 22, 7, 37, 10),
+            created_at=datetime(2026, 5, 23, 7, 37, 11),
+        )
+        exam = Exam(id="exam_expired", user_id="ssy", question_ids=["q002"])
+        self.db.add_all([user, expired, exam])
+        self.db.commit()
+
+        result = report_usage(
+            self.db,
+            AuthUser(username="ssy"),
+            UsageReportRequest(examId="exam_expired", questionId="q002", usageSeconds=61),
+        )
+
+        self.assertFalse(result["success"])
+        self.assertFalse(result["allowed"])
+        self.assertEqual(result["subscriptionId"], expired.id)
+        self.assertEqual(expired.used_minutes, 49)
+        status = get_subscription_status(self.db, AuthUser(username="ssy"))
+        self.assertEqual(status["planType"], "trial")
+        self.assertEqual(status["entitlements"], [])
 
     def test_usage_deducts_selected_entitlement(self):
         """
