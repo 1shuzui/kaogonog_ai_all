@@ -134,6 +134,8 @@ class Settings:
     )
     llm_model: str = _env("LLM_MODEL", "DEEPSEEK_MODEL", "QWEN_MODEL", default=_default_llm_model(llm_provider))
     llm_asr_model: str = _env("LLM_ASR_MODEL", "QWEN_ASR_MODEL", default="")
+    # 统一使用外部模型完成点评；本地参考答案评分只作为明确开启的离线调试选项。
+    local_reference_scoring: bool = _env_bool("LOCAL_REFERENCE_SCORING", default=False)
     qwen_api_key: str = _env("QWEN_API_KEY", "DASHSCOPE_API_KEY", default=llm_api_key)
     qwen_base_url: str = _env("QWEN_BASE_URL", default=llm_base_url)
     qwen_model: str = _env("QWEN_MODEL", default=llm_model)

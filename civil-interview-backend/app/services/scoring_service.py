@@ -133,6 +133,55 @@ NON_SUBSTANTIVE_MARKERS = (
 )
 
 
+def persist_transcript_to_answer(
+    db: Session,
+    exam_id: str | None,
+    question_id: str | None,
+    transcript: str,
+) -> bool:
+    """
+    在 ASR 完成后立即把文字稿写入逐题答题记录。
+
+    转写和评分是两个独立请求；如果只在评分完成时写入 transcript，点评接口变慢或失败就会导致
+    用户明明看到了文字稿，历史记录却没有答案。这里先完成最小的答案持久化，后续评分只负责补齐分数。
+
+    @param db: 当前请求复用的数据库会话。
+    @param exam_id: 当前考试 ID；为空时不创建无法归属的答题记录。
+    @param question_id: 当前题目 ID。
+    @param transcript: ASR 返回的文字稿。
+    @return: 成功写入答题记录时返回 True；缺少必要 ID、空文字稿或考试不存在时返回 False。
+    @raises: 数据库提交异常会沿调用栈上抛，避免静默丢失持久化错误。
+    """
+    normalized_exam_id = str(exam_id or "").strip()
+    normalized_question_id = str(question_id or "").strip()
+    normalized_transcript = str(transcript or "").strip()
+    if not normalized_exam_id or not normalized_question_id or not normalized_transcript:
+        return False
+
+    answer = (
+        db.query(ExamAnswer)
+        .filter(
+            ExamAnswer.exam_id == normalized_exam_id,
+            ExamAnswer.question_id == normalized_question_id,
+        )
+        .first()
+    )
+    if not answer:
+        exam_exists = db.query(Exam.id).filter(Exam.id == normalized_exam_id).first()
+        if not exam_exists:
+            return False
+        answer = ExamAnswer(
+            exam_id=normalized_exam_id,
+            question_id=normalized_question_id,
+        )
+        db.add(answer)
+
+    answer.transcript = normalized_transcript
+    answer.answered_at = datetime.now(timezone.utc)
+    db.commit()
+    return True
+
+
 def attach_asr_meta_to_media_record(db: Session, audio_sha256: str, asr_meta: dict) -> bool:
     """
     把一次转写的 ASR 元数据补写到最近的媒体答题记录。
@@ -172,18 +221,21 @@ async def transcribe(
     filename: str = "answer.webm",
     db: Session | None = None,
     question_id: str | None = None,
+    exam_id: str | None = None,
 ) -> dict:
     """
     调用真实 ASR 转写答题音频，并尽量把转写元数据挂回答题记录。
 
     长音频不能直接整段塞给识别模型，底层 `transcribe_audio_file_with_meta` 会按当前 FunASR/VAD 配置处理。
-    本函数只负责把结果整理成前端稳定字段，并在有数据库会话时补写媒体记录，避免评分页和历史页看到两套转写状态。
+    本函数只负责把结果整理成前端稳定字段，并在有数据库会话时先保存文字稿、再补写媒体记录，
+    避免评分页和历史页看到两套转写状态。
 
     @param audio_bytes: 上传音频二进制内容。
     @param filename: 原始文件名，用于推断格式和记录来源。
     @param db: 可选数据库会话；为空时只返回转写结果，不补写历史记录。
     @param question_id: 可选题目 ID，用于从题干、采分点和关键词生成 ASR 上下文短语。
-    @return: 转写文本、估算时长、ASR 元数据、是否建议重试和提示信息。
+    @param exam_id: 可选考试 ID；有值时在评分前立即把文字稿写入该考试的答题记录。
+    @return: 转写文本、估算时长、ASR 元数据、是否建议重试、文字稿是否已落库和提示信息。
     @raises: ASR 依赖、文件处理或数据库提交异常会沿调用栈上抛。
     """
     context_phrases: list[str] = []
@@ -204,6 +256,12 @@ async def transcribe(
     )
     transcript = str(result.get("transcript") or "")
     asr_meta = result.get("asrMeta") if isinstance(result.get("asrMeta"), dict) else {}
+    transcript_saved = persist_transcript_to_answer(
+        db,
+        exam_id,
+        normalized_question_id,
+        transcript,
+    ) if db is not None else False
     linked = False
     if db is not None and asr_meta.get("audioSha256"):
         linked = attach_asr_meta_to_media_record(db, asr_meta["audioSha256"], asr_meta)
@@ -211,6 +269,7 @@ async def transcribe(
         "transcript": transcript,
         "duration": round(len(transcript) / 10, 1),
         "asrMeta": {**asr_meta, "linkedToMediaRecord": linked},
+        "transcriptSaved": transcript_saved,
         "needsRetry": bool(result.get("needsRetry")),
         "message": result.get("message") or "",
     }
@@ -997,8 +1056,9 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
     """
     根据题目采分点、考生文字稿和可选媒体观察生成评分结果。
 
-    评分链路必须同时处理三类情况：LLM 正常、LLM/ASR 不可用、文字稿无效。
-    因此这里先做缓存和无效作答筛查，再走两阶段评分，失败时回退到规则评分，避免把占位转写或无意义答案打成高分。
+    评分链路必须同时处理三类情况：题库参考答案、LLM/ASR 不可用、文字稿无效。
+    因此这里先做缓存和无效作答筛查；默认统一走两阶段外部模型评分，题库参考答案只作为模型上下文，
+    失败时回退到规则评分，避免把占位转写或无意义答案打成高分。
 
     @param db: 当前请求复用的数据库会话。
     @param question_id: 被评分的题目 ID。
@@ -1023,6 +1083,7 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
                 "llmProvider": settings.llm_provider,
                 "llmModel": settings.llm_model,
                 "llmReady": bool(settings.llm_api_key),
+                "localReferenceScoring": bool(settings.local_reference_scoring),
                 "media": media_fingerprint,
             },
             ensure_ascii=False,
@@ -1100,6 +1161,28 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
             scoring_trace=_build_scoring_trace(
                 model_name=settings.llm_model,
                 scoring_mode=result.get("scoringMode", "screened_zero"),
+                visual_observation=visual_observation,
+            ),
+        )
+        await cache_set_json(score_cache_key, result, settings.redis_cache_ttl_llm)
+        return _persist_result(db, exam_id, question_id, transcript, result)
+
+    if settings.local_reference_scoring and _question_meta(question)["reference_answer"]:
+        result = _build_rule_based_result(
+            question,
+            transcript,
+            "已基于题库参考答案、采分点和关键词完成本地点评，",
+        )
+        result["scoringMode"] = "local_reference"
+        result = _apply_short_answer_cap(result, transcript)
+        result = _decorate_result(
+            question,
+            transcript,
+            result,
+            visual_observation=visual_observation,
+            scoring_trace=_build_scoring_trace(
+                model_name="local-question-bank",
+                scoring_mode="local_reference",
                 visual_observation=visual_observation,
             ),
         )

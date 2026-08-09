@@ -20,7 +20,7 @@ from app.core.ai import _resolve_asr_model, _resolve_remote_asr_model
 from app.core.config import settings
 from app.core.security import get_current_user
 from app.db.session import get_db
-from app.models.entities import Question
+from app.models.entities import Exam, Question
 from app.schemas.common import AuthUser, EvaluateRequest
 from app.services.scoring_service import _build_zero_score_result, _persist_result, transcribe, evaluate_answer, get_scoring_result
 
@@ -125,6 +125,7 @@ def _merge_answer_meta(result: dict, answer_meta: dict) -> dict:
 async def scoring_transcribe(
     audio: UploadFile = File(...),
     questionId: str = Form(""),
+    examId: str = Form(""),
     current_user: AuthUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -134,13 +135,32 @@ async def scoring_transcribe(
     这里只负责接收上传文件和当前用户，真实 ASR、VAD 分段、缓存和占位文本策略由 scoring_service/core.ai 处理。
 
     @param file: 上传的音频或视频文件。
-    @param questionId: 可选题目 ID，用于后续上下文纠错。
+    @param questionId: 可选题目 ID，用于后续上下文纠错和答案归档。
+    @param examId: 可选考试 ID；传入时必须属于当前用户，并在评分前立即保存文字稿。
     @param current_user: Bearer token 解析出的当前用户。
     @return: 转写文本、ASR 状态和诊断信息。
     @raises HTTPException: 未登录、文件异常或 ASR 服务错误时抛出。
     """
     audio_bytes = await audio.read()
-    return await transcribe(audio_bytes, filename=audio.filename or "answer.webm", db=db, question_id=questionId)
+    normalized_exam_id = str(examId or "").strip()
+    if normalized_exam_id:
+        owned_exam = (
+            db.query(Exam.id)
+            .filter(
+                Exam.id == normalized_exam_id,
+                Exam.user_id == current_user.username,
+            )
+            .first()
+        )
+        if not owned_exam:
+            raise HTTPException(status_code=404, detail="Exam not found")
+    return await transcribe(
+        audio_bytes,
+        filename=audio.filename or "answer.webm",
+        db=db,
+        question_id=questionId,
+        exam_id=normalized_exam_id,
+    )
 
 
 @router.get("/asr-status")

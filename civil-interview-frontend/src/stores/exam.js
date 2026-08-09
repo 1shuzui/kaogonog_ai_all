@@ -246,7 +246,10 @@ export const useExamStore = defineStore('exam', {
       await uploadRecording(answerExamId, answer.questionId, answer.recordingBlob)
 
       answer.processingStatus = 'transcribing'
-      const { transcript } = await transcribeAudio(answer.recordingBlob, { questionId: answer.questionId })
+      const { transcript } = await transcribeAudio(answer.recordingBlob, {
+        questionId: answer.questionId,
+        examId: answerExamId
+      })
       answer.transcript = transcript
 
       if (this.examId === answerExamId && this.currentIndex === answer.questionIndex) {

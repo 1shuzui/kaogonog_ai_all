@@ -197,7 +197,11 @@ class InviteServiceTestCase(unittest.TestCase):
     def test_daily_activity_and_payment_report_use_snapshots(self):
         from datetime import datetime, timezone
 
-        user = User(username="buyer", hashed_password="x")
+        user = User(
+            username="buyer",
+            hashed_password="x",
+            registered_at=datetime(2026, 6, 18, 1, 30, tzinfo=timezone.utc),
+        )
         self.db.add(user)
         self.db.flush()
         bind_registration_invite(self.db, user, "ABC-001", "register")

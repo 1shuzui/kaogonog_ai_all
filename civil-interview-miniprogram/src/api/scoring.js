@@ -24,6 +24,9 @@ export function transcribeAudio(filePath, options = {}) {
   if (options.questionId) {
     formData.questionId = options.questionId
   }
+  if (options.examId) {
+    formData.examId = options.examId
+  }
   return uploadFile({
     url: '/scoring/transcribe',
     filePath,

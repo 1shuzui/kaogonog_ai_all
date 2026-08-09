@@ -35,6 +35,9 @@ bash scripts/deploy_clean_to_server.sh
 DEPLOY_BACKEND=1 bash scripts/deploy_clean_to_server.sh
 ```
 
+后端同步会保留服务器现有密钥、数据库、上传文件和模型缓存，但会把 `LOCAL_REFERENCE_SCORING` 明确更新为 `false`，
+确保题库参考答案只作为外部模型上下文，不因服务器旧 `.env` 配置而回到本地规则点评。
+
 ## 部署后验证
 
 - 访问生产首页：https://xzqianmianyuzhoukeji.com

@@ -231,6 +231,7 @@ import { useFavoritesStore } from '../../stores/favorites'
 import { useTrainingStore } from '../../stores/training'
 import { getGrade, getProvinceName } from '../../utils/constants'
 import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
+import { canUseLocalAnswers } from '../../utils/resultAnswerSource'
 import { normalizeImprovementSuggestion, normalizeResult } from '../../utils/scoring'
 
 const examStore = useExamStore()
@@ -500,14 +501,22 @@ onLoad(async (query) => {
 })
 
 async function loadResult(query) {
-  const examId = query.examId || examStore.examId
+  const examId = String(query.examId || examStore.examId || '').trim()
+  const localExamId = String(
+    examStore.examId
+      || examStore.answers.find((item) => item?.examId)?.examId
+      || ''
+  ).trim()
+  const canUseLocalExamAnswers = canUseLocalAnswers(examId, localExamId, examStore.answers)
   const requestedQuestionId = String(query.questionId || '').trim()
-  const questionId = requestedQuestionId || examStore.currentQuestion?.id
-  const answer = examStore.answers.find((item) => item.questionId === questionId) || examStore.answers[examStore.answers.length - 1]
+  const questionId = requestedQuestionId || (canUseLocalExamAnswers ? examStore.currentQuestion?.id : '')
+  const answer = canUseLocalExamAnswers
+    ? (examStore.answers.find((item) => item.questionId === questionId) || examStore.answers[examStore.answers.length - 1])
+    : null
   activeExamId.value = String(examId || answer?.examId || '')
   activeQuestionId.value = String(questionId || answer?.questionId || '')
 
-  if (examStore.answers.length > 0) {
+  if (canUseLocalExamAnswers) {
     const displayAnswers = buildDisplayAnswers(examStore.answers, examStore.questions.map((item) => item.id), activeExamId.value)
     await hydrateMissingQuestionInfo(displayAnswers)
     answerList.value = displayAnswers

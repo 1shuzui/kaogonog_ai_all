@@ -52,6 +52,19 @@ def _has_final_score(answer: ExamAnswer) -> bool:
     return isinstance(answer.score_result, dict) and "totalScore" in answer.score_result
 
 
+def _has_answer_content(answer: ExamAnswer) -> bool:
+    """判断答案是否已经有可回看的原始内容，即使最终评分尚未生成。"""
+    if str(answer.transcript or "").strip():
+        return True
+    if isinstance(answer.media_record, dict) and answer.media_record:
+        return True
+    if isinstance(answer.score_result, dict):
+        media_record = answer.score_result.get("mediaRecord")
+        if isinstance(media_record, dict) and media_record:
+            return True
+    return False
+
+
 def _record_to_dict(r: HistoryRecord) -> dict:
     completed_at = r.completed_at.isoformat() if r.completed_at else ""
     question_count = r.question_count or 0
@@ -343,7 +356,7 @@ def get_history_detail(db: Session, exam_id: str) -> dict:
     @param db: 当前请求复用的数据库会话。
     @param exam_id: 考试记录 ID。
     @return: 单次考试详情、题目序列、答案、媒体和评分结果。
-    @raises HTTPException: 考试和历史记录都不存在，或考试尚无评分答案时抛出 404。
+    @raises HTTPException: 考试和历史记录都不存在，或考试尚无可回看答案时抛出 404。
     """
     r = db.query(HistoryRecord).filter(HistoryRecord.exam_id == exam_id).first()
     exam = db.query(Exam).filter(Exam.id == exam_id).first()
@@ -362,7 +375,8 @@ def get_history_detail(db: Session, exam_id: str) -> dict:
 
     question_ids, answers, question_lookup = _load_exam_context(db, exam)
     scored_answers = [answer for answer in answers if _has_final_score(answer)]
-    if not r and not scored_answers:
+    has_answer_content = any(_has_answer_content(answer) for answer in answers)
+    if not r and not scored_answers and not has_answer_content:
         raise HTTPException(status_code=404, detail="历史记录未找到")
 
     detail = _build_exam_summary(exam, answers, question_lookup, question_ids, record=r)

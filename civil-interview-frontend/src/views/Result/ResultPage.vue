@@ -318,6 +318,7 @@ import { useTrainingStore } from '@/stores/training'
 import { getGrade } from '@/utils/constants'
 import { getHistoryDetail } from '@/api/history'
 import { getQuestionById } from '@/api/questionBank'
+import { canUseLocalAnswers } from '@/utils/resultAnswerSource'
 import { usePdfExport } from '@/composables/usePdfExport'
 import { analyzeSpeech } from '@/composables/useSpeechAnalysis'
 import { buildImprovementReference } from '@/utils/questionPresentation'
@@ -347,7 +348,7 @@ const blobUrls = ref([])
 const questionDetailsMap = ref({})
 const floatingVideoVisible = ref(false)
 
-const activeExamId = computed(() => String(examStore.examId || route.params.examId || ''))
+const activeExamId = computed(() => String(route.params.examId || examStore.examId || ''))
 const currentAnswer = computed(() => answerList.value[currentAnswerIdx.value] || null)
 const currentQuestion = computed(() => {
   const answer = currentAnswer.value
@@ -944,7 +945,16 @@ function openShareCard() {
 }
 
 onMounted(async () => {
-  if (examStore.answers.length > 0) {
+  const requestedExamId = String(route.params.examId || '').trim()
+  const localExamId = String(
+    examStore.examId
+      || examStore.answers.find((answer) => answer?.examId)?.examId
+      || ''
+  ).trim()
+  const canUseLocalExamAnswers = canUseLocalAnswers(requestedExamId, localExamId, examStore.answers)
+  const canUseLocalScoringResult = !requestedExamId || localExamId === requestedExamId
+
+  if (canUseLocalExamAnswers) {
     syncAnswerList(examStore.answers)
     await hydrateQuestionDetails(examStore.answers)
     enrichAnswerListWithQuestions()
@@ -955,7 +965,7 @@ onMounted(async () => {
     return
   }
 
-  if (examStore.scoringResult) {
+  if (canUseLocalScoringResult && examStore.scoringResult) {
     syncAnswerList([{
       questionId: examStore.currentQuestion?.id,
       recordingBlob: examStore.recordingBlob,
@@ -971,7 +981,7 @@ onMounted(async () => {
     return
   }
 
-  const examId = String(route.params.examId || '')
+  const examId = requestedExamId || localExamId
 
   try {
     const detail = await getHistoryDetail(examId)

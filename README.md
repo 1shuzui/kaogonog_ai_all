@@ -33,6 +33,10 @@
 
 真实 `.env` 和支付证书已迁出仓库。首次启动前按 [密钥与本地配置恢复](docs/ops/secrets-and-local-config.md) 恢复本机配置。
 
+当前评分默认使用外部模型的两阶段点评流程，后端配置应保持 `LOCAL_REFERENCE_SCORING=false`。题库中的
+`referenceAnswer`、采分点和关键词会作为模型上下文使用；只有离线调试、明确接受规则评分差异时，才临时设置为
+`LOCAL_REFERENCE_SCORING=true`。转写接口在收到 `examId` 时会先保存文字稿，再继续点评，因此点评较慢或暂时失败时，结果页仍可从历史详情回看已保存答案。
+
 ```bash
 # 后端
 cd civil-interview-backend

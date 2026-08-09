@@ -21,6 +21,9 @@ export async function transcribeAudio(audioBlob, options = {}) {
   if (options.questionId) {
     formData.append('questionId', options.questionId)
   }
+  if (options.examId) {
+    formData.append('examId', options.examId)
+  }
   return http.post('/scoring/transcribe', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
     timeout: 60000

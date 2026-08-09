@@ -154,6 +154,7 @@ updates = {
     'FUNASR_ENABLE_PUNC': 'true',
     'FUNASR_VAD_MAX_END_SIL_MS': '800',
     'MODELSCOPE_CACHE': 'storage/modelscope_cache',
+    'LOCAL_REFERENCE_SCORING': 'false',
 }
 lines = env_path.read_text().splitlines() if env_path.exists() else []
 values = {}
