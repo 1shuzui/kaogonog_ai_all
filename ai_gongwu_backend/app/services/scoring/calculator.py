@@ -32,6 +32,50 @@ logger = logging.getLogger(__name__)
 SPEECH_RATE_SLOW_THRESHOLD = 180.0
 SPEECH_RATE_FAST_THRESHOLD = 320.0
 
+
+def _question_has_appearance_score(question: QuestionDefinition) -> bool:
+    """判断题目是否包含正式仪态评分项。"""
+
+    return bool(getattr(question, "hasAppearanceScore", False))
+
+
+def _question_content_full_score(question: QuestionDefinition) -> float:
+    """返回内容评分上限，避免把仪态分混入采分点维度。"""
+
+    if _question_has_appearance_score(question):
+        configured = _to_float(getattr(question, "questionScore", None), 0.0)
+        if configured > 0:
+            return round(configured, 1)
+    return round(_to_float(getattr(question, "fullScore", None), 0.0), 1)
+
+
+def _question_appearance_config(question: QuestionDefinition) -> tuple[float, float, str, str, float]:
+    """返回仪态分、上限、来源、作用域和有效满分。"""
+
+    content_full_score = _question_content_full_score(question)
+    if not _question_has_appearance_score(question):
+        return 0.0, 0.0, "", "", content_full_score
+
+    appearance_score = _to_float(getattr(question, "appearanceScore", None), 0.0)
+    appearance_max = _to_float(getattr(question, "appearanceScoreMax", None), 0.0)
+    if appearance_max <= 0:
+        appearance_max = appearance_score or 5.0
+    if appearance_score <= 0:
+        appearance_score = appearance_max
+    appearance_score = min(max(appearance_score, 0.0), appearance_max)
+    source = str(getattr(question, "appearanceScoreSource", "") or "profile_default")
+    scope = str(getattr(question, "appearanceScoreScope", "") or "question")
+    effective_full_score = _to_float(getattr(question, "effectiveFullScore", None), 0.0)
+    if effective_full_score <= content_full_score:
+        effective_full_score = content_full_score + appearance_max
+    return (
+        round(appearance_score, 1),
+        round(appearance_max, 1),
+        source,
+        scope,
+        round(effective_full_score, 1),
+    )
+
 ORAL_EXPRESSION_PHRASES = (
     "我觉得",
     "你想啊",
@@ -816,7 +860,7 @@ def _compute_rule_based_dimension_scores(
     total_score = round(sum(scores.values()), 1)
     rule_notes: list[str] = []
     target_floor = total_score
-    target_cap = question.fullScore
+    target_cap = _question_content_full_score(question)
 
     if effective_length >= 400 and positive_count >= 1 and problem_count >= 4:
         target_floor = max(target_floor, 14.0)
@@ -994,7 +1038,7 @@ def _compute_generic_dimension_scores(
 
         raw_scores[dimension.name] = _round_score(dimension.score * ratio, dimension.score)
 
-    target_total = round(question.fullScore * overall_ratio, 1)
+    target_total = round(_question_content_full_score(question) * overall_ratio, 1)
     scaled_scores = _scale_scores_to_target(raw_scores, question, target_total)
     return scaled_scores, generic_notes
 
@@ -1030,10 +1074,11 @@ def _apply_generic_llm_calibration(
     reference_similarity = _normalized_similarity(transcript, question.referenceAnswer)
     core_hit_count = len(matched_keywords.get("core", []))
     strong_hit_count = len(matched_keywords.get("strong", []))
+    content_full_score = _question_content_full_score(question)
 
     cap_candidates: list[float] = []
     if reference_similarity < 0.9 and llm_total > generic_total + 2.0:
-        cap_candidates.append(round(generic_total + min(1.5, max(question.fullScore * 0.03, 0.5)), 1))
+        cap_candidates.append(round(generic_total + min(1.5, max(content_full_score * 0.03, 0.5)), 1))
 
     if (
         reference_similarity < 0.82
@@ -1046,17 +1091,17 @@ def _apply_generic_llm_calibration(
         reference_similarity < 0.78
         and structure_count >= 2
         and effective_length < max(420, int(reference_length * 0.55) if reference_length else 420)
-        and llm_total > question.fullScore * 0.58
+        and llm_total > content_full_score * 0.58
     ):
-        cap_candidates.append(round(max(generic_total, question.fullScore * 0.56), 1))
+        cap_candidates.append(round(max(generic_total, content_full_score * 0.56), 1))
 
     if (
         core_hit_count == 0
         and strong_hit_count <= 1
         and oral_count >= 1
-        and llm_total > question.fullScore * 0.55
+        and llm_total > content_full_score * 0.55
     ):
-        cap_candidates.append(round(question.fullScore * 0.52, 1))
+        cap_candidates.append(round(content_full_score * 0.52, 1))
 
     if not cap_candidates:
         return dimension_scores, []
@@ -1472,16 +1517,17 @@ def _apply_reference_answer_floor(
     core_hit_count = len(matched_keywords.get("core", []))
     strong_hit_count = len(matched_keywords.get("strong", []))
     current_total = round(sum(dimension_scores.values()), 1)
+    content_full_score = _question_content_full_score(question)
 
     target_floor = 0.0
     if reference_similarity >= 0.975:
-        target_floor = max(question.fullScore - 3.0, round(question.fullScore * 0.85, 1))
+        target_floor = max(content_full_score - 3.0, round(content_full_score * 0.85, 1))
     elif (
         reference_similarity >= 0.94
         and core_hit_count >= max(1, min(len(question.coreKeywords), 2))
         and strong_hit_count >= max(1, min(len(question.strongKeywords), 1))
     ):
-        target_floor = max(question.fullScore - 5.0, round(question.fullScore * 0.8, 1))
+        target_floor = max(content_full_score - 5.0, round(content_full_score * 0.8, 1))
 
     if target_floor > current_total:
         validation_notes.append(
@@ -1597,11 +1643,24 @@ def apply_post_processing(
         )
 
     effective_length = _effective_text_length(transcript)
-    full_score = question.fullScore
+    has_appearance_score = _question_has_appearance_score(question)
+    content_full_score = _question_content_full_score(question)
+    appearance_score, appearance_score_max, appearance_source, appearance_scope, effective_full_score = _question_appearance_config(question)
+    supplied_appearance_source = str(scoring_payload.appearance_score_source or "")
+    if has_appearance_score and scoring_payload.appearance_score is not None and supplied_appearance_source not in {
+        "",
+        "profile_default",
+        "source_explicit",
+    }:
+        appearance_score = min(
+            max(_to_float(scoring_payload.appearance_score, 0.0), 0.0),
+            appearance_score_max,
+        )
+        appearance_source = "actual"
     total_score = computed_total
 
     if effective_length < settings.MIN_VALID_WORDS:
-        cap = round(full_score * settings.MIN_WORDS_PENALTY_RATIO, 1)
+        cap = round(content_full_score * settings.MIN_WORDS_PENALTY_RATIO, 1)
         dimension_scores = _scale_scores_to_cap(dimension_scores, cap)
         total_score = round(sum(dimension_scores.values()), 1)
         deduction_details.append(
@@ -1614,8 +1673,9 @@ def apply_post_processing(
     else:
         total_score = computed_total
 
-    total_score = round(sum(dimension_scores.values()), 1)
-    total_score = round(min(total_score, full_score), 1)
+    content_score = round(min(sum(dimension_scores.values()), content_full_score), 1)
+    effective_total_score = round(content_score + appearance_score, 1) if has_appearance_score else content_score
+    total_score = round(min(effective_total_score, effective_full_score), 1)
 
     if not evidence_quotes:
         validation_notes.append("最终结果未保留到可核验的直接引语证据。")
@@ -1634,6 +1694,18 @@ def apply_post_processing(
         evidence_quotes=evidence_quotes,
         rationale=rationale,
         total_score=total_score,
+        content_score=content_score,
+        appearance_score=appearance_score if has_appearance_score else None,
+        appearance_score_max=appearance_score_max if has_appearance_score else None,
+        appearance_score_source=appearance_source if has_appearance_score else "",
+        appearance_score_scope=appearance_scope if has_appearance_score else "",
+        max_score=effective_full_score,
+        score_calculation_note=(
+            getattr(question, "scoreCalculationNote", "")
+            or ("实际仪态分已替换默认值，未重复加分。" if appearance_source == "actual" else "仪态分已按默认值计入。")
+            if has_appearance_score
+            else ""
+        ),
         matched_keywords=matched_keywords,
         validation_notes=validation_notes,
     )

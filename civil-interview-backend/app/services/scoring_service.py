@@ -322,7 +322,18 @@ def _build_frontend_result(frontend_dims: list[dict], rationale: str) -> dict:
     }
 
 
-def _question_max_score(question: Question) -> float:
+def _question_content_max_score(question: Question) -> float:
+    """返回题目内容部分上限；医疗题目优先使用源文档的 questionScore。"""
+
+    meta = _question_meta(question)
+    if meta["has_appearance_score"]:
+        try:
+            configured = float(meta.get("question_content_max_score") or 0)
+        except (TypeError, ValueError):
+            configured = 0.0
+        if configured > 0:
+            return round(configured, 2)
+
     scoring_points = question.scoring_points if isinstance(question.scoring_points, list) else []
     total = 0.0
     for item in scoring_points:
@@ -332,6 +343,26 @@ def _question_max_score(question: Question) -> float:
             except (TypeError, ValueError):
                 continue
     return round(total, 2) if total > 0 else 30.0
+
+
+def _question_max_score(question: Question) -> float:
+    """返回有效满分，包含默认/实际仪态分但不改变旧题库口径。"""
+
+    content_max = _question_content_max_score(question)
+    meta = _question_meta(question)
+    if not meta["has_appearance_score"]:
+        return content_max
+    try:
+        effective = float(meta.get("effective_full_score") or 0)
+    except (TypeError, ValueError):
+        effective = 0.0
+    if effective > content_max:
+        return round(effective, 2)
+    try:
+        appearance_max = float(meta.get("appearance_score_max") or meta.get("appearance_score") or 0)
+    except (TypeError, ValueError):
+        appearance_max = 0.0
+    return round(content_max + max(appearance_max, 0.0), 2)
 
 
 def _build_zero_score_result(reason: str) -> dict:
@@ -600,6 +631,15 @@ def _question_meta(question: Question) -> dict:
         "weak_keywords": weak_keywords,
         "bonus_keywords": list(meta.get("bonusKeywords", [])),
         "penalty_keywords": penalty_keywords,
+        "has_appearance_score": meta.get("hasAppearanceScore") is True
+        or str(meta.get("hasAppearanceScore") or "").strip().lower() in {"1", "true", "yes", "有", "是"},
+        "question_content_max_score": meta.get("questionScore"),
+        "appearance_score": meta.get("appearanceScore"),
+        "appearance_score_max": meta.get("appearanceScoreMax"),
+        "appearance_score_source": str(meta.get("appearanceScoreSource") or ""),
+        "appearance_score_scope": str(meta.get("appearanceScoreScope") or ""),
+        "effective_full_score": meta.get("effectiveFullScore"),
+        "score_calculation_note": str(meta.get("scoreCalculationNote") or ""),
     }
 
 
@@ -723,10 +763,68 @@ def _decorate_result(question: Question, transcript: str, result: dict, visual_o
     payload = dict(result or {})
     total_score = float(payload.get("totalScore", 0) or 0)
     normalized_max = float(payload.get("maxScore", 100) or 100)
+    meta = _question_meta(question)
     question_max_score = _question_max_score(question)
-    question_score = round((total_score / normalized_max) * question_max_score, 2) if normalized_max > 0 else 0.0
-    payload["questionScore"] = question_score
-    payload["questionMaxScore"] = question_max_score
+    content_max_score = _question_content_max_score(question)
+
+    if not meta["has_appearance_score"]:
+        question_score = round((total_score / normalized_max) * question_max_score, 2) if normalized_max > 0 else 0.0
+        payload["questionScore"] = question_score
+        payload["questionMaxScore"] = question_max_score
+    else:
+        # `_decorate_result` 会在规则评分、模型评分和缓存回填路径上重复调用；已有 contentScore
+        # 必须复用，避免每次装饰都把默认仪态分再加一遍。
+        if payload.get("contentScore") is not None:
+            content_score = float(payload.get("contentScore") or 0)
+        else:
+            content_score = round((total_score / normalized_max) * content_max_score, 2) if normalized_max > 0 else 0.0
+
+        output_source = str(payload.get("appearanceScoreSource") or "")
+        supplied_appearance = payload.get("appearanceScore")
+        is_actual_appearance = supplied_appearance is not None and output_source not in {"profile_default", "source_explicit"}
+        if is_actual_appearance:
+            try:
+                appearance_score = float(supplied_appearance)
+            except (TypeError, ValueError):
+                appearance_score = 0.0
+            appearance_source = "actual"
+        else:
+            try:
+                appearance_score = float(meta.get("appearance_score") or meta.get("appearance_score_max") or 0)
+            except (TypeError, ValueError):
+                appearance_score = 0.0
+            appearance_source = meta.get("appearance_score_source") or output_source or "profile_default"
+
+        try:
+            appearance_max = float(meta.get("appearance_score_max") or appearance_score or 0)
+        except (TypeError, ValueError):
+            appearance_max = 0.0
+        appearance_score = max(0.0, min(appearance_score, appearance_max or appearance_score))
+        content_score = max(0.0, min(content_score, content_max_score))
+        effective_total = round(content_score + appearance_score, 2)
+
+        dimensions = payload.get("dimensions")
+        if isinstance(dimensions, list):
+            dimension_total = sum(float(item.get("score") or 0) for item in dimensions if isinstance(item, dict))
+            if dimension_total > 0:
+                for item in dimensions:
+                    if isinstance(item, dict):
+                        item["score"] = round(float(item.get("score") or 0) * content_score / dimension_total, 2)
+
+        payload["contentScore"] = round(content_score, 2)
+        payload["appearanceScore"] = round(appearance_score, 2)
+        payload["appearanceScoreMax"] = round(appearance_max, 2)
+        payload["appearanceScoreSource"] = appearance_source
+        payload["appearanceScoreScope"] = meta.get("appearance_score_scope") or payload.get("appearanceScoreScope") or "question"
+        payload["totalScore"] = effective_total
+        payload["maxScore"] = question_max_score
+        payload["questionScore"] = round(content_score, 2)
+        payload["questionMaxScore"] = question_max_score
+        payload["scoreCalculationNote"] = meta.get("score_calculation_note") or (
+            "实际仪态分已替换默认值，未重复加分。" if appearance_source == "actual" else "仪态分已按默认值计入。"
+        )
+        grade_ratio = effective_total / question_max_score if question_max_score > 0 else 0.0
+        payload["grade"] = "A" if grade_ratio > 0.85 else "B" if grade_ratio >= 0.75 else "C" if grade_ratio >= 0.60 else "D"
     payload["matchedKeywords"] = _build_keyword_payload(question, transcript)
     payload["highlightedTranscript"] = transcript or ""
     if visual_observation:
@@ -1026,6 +1124,25 @@ def _apply_short_answer_cap(result: dict, transcript: str) -> dict:
         cap = sa["short_cap"]
     else:
         cap = 22.0
+
+    if result.get("contentScore") is not None and result.get("appearanceScore") is not None:
+        content_score = float(result.get("contentScore") or 0)
+        appearance_score = float(result.get("appearanceScore") or 0)
+        content_cap = max(cap - appearance_score, 0.0)
+        if content_score <= content_cap:
+            return result
+        ratio = content_cap / content_score if content_score > 0 else 0.0
+        for dim in result.get("dimensions", []):
+            dim["score"] = round(float(dim.get("score", 0) or 0) * ratio, 2)
+        result["contentScore"] = round(content_cap, 2)
+        result["questionScore"] = round(content_cap, 2)
+        result["totalScore"] = round(content_cap + appearance_score, 2)
+        result["aiComment"] = f"{result.get('aiComment', '') or '评分完成'}【系统收敛】有效作答字数较少，内容分已按短答规则保守收敛，仪态分保持单独计入。"
+        total = result["totalScore"]
+        max_score = float(result.get("maxScore", 100) or 100)
+        gt = RULE_SCORING_CONFIG["grade_thresholds"]
+        result["grade"] = "A" if total / max_score > gt["A"] else "B" if total / max_score >= gt["B"] else "C" if total / max_score >= gt["C"] else "D"
+        return result
 
     total = float(result.get("totalScore", 0) or 0)
     if total <= cap or total <= 0:

@@ -9,7 +9,7 @@
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 
 class QuestionDimension(BaseModel):
@@ -82,6 +82,14 @@ class QuestionDefinition(BaseModel):
     type: str = ""
     province: str = ""
     fullScore: float = Field(..., ge=0)
+    questionScore: Optional[float] = Field(default=None, ge=0)
+    appearanceScore: Optional[float] = Field(default=None, ge=0)
+    appearanceScoreMax: Optional[float] = Field(default=None, ge=0)
+    appearanceScoreSource: str = ""
+    appearanceScoreScope: str = ""
+    effectiveFullScore: Optional[float] = Field(default=None, ge=0)
+    hasAppearanceScore: bool = False
+    scoreCalculationNote: str = ""
     question: str
     dimensions: List[QuestionDimension]
 
@@ -241,6 +249,15 @@ class StageTwoScoringPayload(BaseModel):
     bonus_items: List[ReasonedScoreItem] = Field(default_factory=list)
     rationale: str = ""
     total_score: float = 0.0
+    appearance_score: Optional[float] = Field(
+        default=None,
+        ge=0,
+        validation_alias=AliasChoices("appearance_score", "appearanceScore"),
+    )
+    appearance_score_source: str = Field(
+        default="",
+        validation_alias=AliasChoices("appearance_score_source", "appearanceScoreSource"),
+    )
 
 
 class LLMEvaluationPayload(BaseModel):
@@ -269,6 +286,13 @@ class LLMEvaluationPayload(BaseModel):
     # 总体评价与总分
     rationale: str = ""
     total_score: float = 0.0
+    content_score: Optional[float] = Field(default=None, ge=0)
+    appearance_score: Optional[float] = Field(default=None, ge=0)
+    appearance_score_max: Optional[float] = Field(default=None, ge=0)
+    appearance_score_source: str = ""
+    appearance_score_scope: str = ""
+    max_score: Optional[float] = Field(default=None, ge=0)
+    score_calculation_note: str = ""
 
 
 class EvaluationResult(LLMEvaluationPayload):

@@ -1,0 +1,121 @@
+{
+  "generated_at": "20260821_234257",
+  "question_ids": [
+    "JS-MED-SET039-01",
+    "YL-专业-013"
+  ],
+  "persist": false,
+  "summary": {
+    "total": 6,
+    "pass": 5,
+    "fail": 1,
+    "error": 0,
+    "skip": 0
+  },
+  "rows": [
+    {
+      "question_id": "JS-MED-SET039-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_medical/JS-MED-SET039-01/reference_high.txt",
+      "expected_range": "34.0-37.0",
+      "expected_band": "高分标杆",
+      "actual_score": 34.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 4,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 不仅耐心地为一位患有高血压的独居老人调整了用药方案",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 而是调整策略——把注意事项编成了朗朗上口的顺口溜",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 短期目标是尽快适应岗位要求",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 通过对辖区内500名60岁以上老年人进行入户问卷调查和数据分析",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "JS-MED-SET039-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_medical/JS-MED-SET039-01/reference_mid.txt",
+      "expected_range": "18.0-23.0",
+      "expected_band": "基本合格",
+      "actual_score": 21.5,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "通用校准将总分上限压至 16.5，避免中低质量答案被模型虚高。",
+        "模型总分 27.0 与维度汇总 16.5 不一致，已采用维度汇总。",
+        "基于高分答案程序化压缩生成；策略=hybrid，句数=29，截断=160，关键词削弱=medium。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "JS-MED-SET039-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_medical/JS-MED-SET039-01/reference_low.txt",
+      "expected_range": "10.8-15.8",
+      "expected_band": "低分/偏弱",
+      "actual_score": 13.3,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "第二阶段证据评分失败，已回退到确定性证据评分。",
+        "基于高分答案程序化降档生成；策略=dialogue_focus，句数=6，截断=90，关键词削弱=medium，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "YL-专业-013",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_medical_general/YL-专业-013/reference_high.txt",
+      "expected_range": "26.0-29.0",
+      "expected_band": "高分标杆",
+      "actual_score": 26.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 6,
+      "notes": [
+        "第一阶段证据抽取失败，已回退到规则型证据整理。",
+        "维度 [规范执行能力] 得分超出范围，已自动收敛到 0-7.5。",
+        "维度 [法律法规依据] 得分超出范围，已自动收敛到 0-4.5。",
+        "维度 [语言表达] 得分超出范围，已自动收敛到 0-2.2。",
+        "参考答案相似度校准已将总分下限抬至 21.0。",
+        "模型总分 10.5 与维度汇总 21.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "YL-专业-013",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_medical_general/YL-专业-013/reference_mid.txt",
+      "expected_range": "15.0-20.0",
+      "expected_band": "基本合格",
+      "actual_score": 17.5,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "第二阶段证据评分失败，已回退到确定性证据评分。",
+        "基于高分答案程序化压缩生成；策略=leading，句数=69，截断=160，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "YL-专业-013",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_medical_general/YL-专业-013/reference_low.txt",
+      "expected_range": "8.9-13.9",
+      "expected_band": "低分/偏弱",
+      "actual_score": 8.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 0,
+      "notes": [
+        "基于高分答案程序化降档生成；策略=leading，句数=4，截断=90，关键词削弱=medium，口语化=是。"
+      ],
+      "error": ""
+    }
+  ]
+}

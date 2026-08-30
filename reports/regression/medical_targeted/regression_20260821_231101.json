@@ -1,0 +1,228 @@
+{
+  "generated_at": "20260821_231101",
+  "question_ids": [
+    "AHGF-20210711-01",
+    "JS-MED-SET039-01",
+    "SD-MED-SET001-01",
+    "YL-专业-013"
+  ],
+  "persist": false,
+  "summary": {
+    "total": 12,
+    "pass": 9,
+    "fail": 3,
+    "error": 0,
+    "skip": 0
+  },
+  "rows": [
+    {
+      "question_id": "AHGF-20210711-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_anhui/AHGF-20210711-01/reference_high.txt",
+      "expected_range": "31.0-34.0",
+      "expected_band": "高分标杆",
+      "actual_score": 34.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 0,
+      "notes": [
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "AHGF-20210711-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_anhui/AHGF-20210711-01/reference_mid.txt",
+      "expected_range": "12.1-16.8",
+      "expected_band": "低分/偏弱",
+      "actual_score": 8.0,
+      "actual_band": "低分/偏弱",
+      "status": "FAIL",
+      "validation_issue_count": 1,
+      "notes": [
+        "维度 [表态空泛扣] 得分超出范围，已自动收敛到 0-2.0。",
+        "基于高分答案程序化压缩生成；策略=template_analysis_mid_1，句数=6，截断=none，关键词削弱=medium。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "AHGF-20210711-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_anhui/AHGF-20210711-01/reference_low.txt",
+      "expected_range": "9.1-13.8",
+      "expected_band": "低分/偏弱",
+      "actual_score": 11.6,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "第二阶段证据评分失败，已回退到确定性证据评分。",
+        "基于高分答案程序化降档生成；策略=template_analysis_low_1，句数=5，截断=none，关键词削弱=medium，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "JS-MED-SET039-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_medical/JS-MED-SET039-01/reference_high.txt",
+      "expected_range": "34.0-37.0",
+      "expected_band": "未命中分档",
+      "actual_score": 32.0,
+      "actual_band": "高分标杆",
+      "status": "FAIL",
+      "validation_issue_count": 3,
+      "notes": [
+        "第一阶段证据抽取失败，已回退到规则型证据整理。",
+        "参考答案相似度校准已将总分下限抬至 34.0。",
+        "模型总分 17.5 与维度汇总 32.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "JS-MED-SET039-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_medical/JS-MED-SET039-01/reference_mid.txt",
+      "expected_range": "16.2-21.2",
+      "expected_band": "基本合格",
+      "actual_score": 19.8,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 以队长的身份带领团队深入农村开展了两周的慢性病防治知识宣讲活动",
+        "通用校准将总分上限压至 19.8，避免中低质量答案被模型虚高。",
+        "模型总分 28.0 与维度汇总 19.8 不一致，已采用维度汇总。",
+        "基于高分答案程序化压缩生成；策略=hybrid，句数=29，截断=160，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "JS-MED-SET039-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_jiangsu_medical/JS-MED-SET039-01/reference_low.txt",
+      "expected_range": "7.1-12.1",
+      "expected_band": "低分/偏弱",
+      "actual_score": 10.1,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "通用校准将总分上限压至 10.1，避免中低质量答案被模型虚高。",
+        "模型总分 13.0 与维度汇总 10.1 不一致，已采用维度汇总。",
+        "基于高分答案程序化降档生成；策略=dialogue_focus，句数=6，截断=90，关键词削弱=medium，口语化=是。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "SD-MED-SET001-01",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_shandong_medical/SD-MED-SET001-01/reference_high.txt",
+      "expected_range": "99.0-102.0",
+      "expected_band": "未命中分档",
+      "actual_score": 99.0,
+      "actual_band": "高分标杆",
+      "status": "PASS",
+      "validation_issue_count": 3,
+      "notes": [
+        "第二阶段证据评分失败，已回退到确定性证据评分。",
+        "参考答案相似度校准已将总分下限抬至 99.0。",
+        "模型总分 95.9 与维度汇总 99.0 不一致，已采用维度汇总。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "SD-MED-SET001-01",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_shandong_medical/SD-MED-SET001-01/reference_mid.txt",
+      "expected_range": "49.1-54.1",
+      "expected_band": "低分/偏弱",
+      "actual_score": 53.1,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "通用校准将总分上限压至 53.1，避免中低质量答案被模型虚高。",
+        "模型总分 80.0 与维度汇总 53.1 不一致，已采用维度汇总。",
+        "基于高分答案程序化压缩生成；策略=leading，句数=40，截断=160，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "SD-MED-SET001-01",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_shandong_medical/SD-MED-SET001-01/reference_low.txt",
+      "expected_range": "35.2-40.2",
+      "expected_band": "低分/偏弱",
+      "actual_score": 38.2,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 2,
+      "notes": [
+        "通用校准将总分上限压至 38.2，避免中低质量答案被模型虚高。",
+        "模型总分 81.0 与维度汇总 38.2 不一致，已采用维度汇总。",
+        "基于高分答案程序化降档生成；策略=hybrid，句数=26，截断=90，关键词削弱=medium，口语化=否。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "YL-专业-013",
+      "sample_label": "文档高分基准答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_medical_general/YL-专业-013/reference_high.txt",
+      "expected_range": "26.0-29.0",
+      "expected_band": "未命中分档",
+      "actual_score": 24.0,
+      "actual_band": "高分标杆",
+      "status": "FAIL",
+      "validation_issue_count": 3,
+      "notes": [
+        "第二阶段证据评分失败，已回退到确定性证据评分。",
+        "第一阶段证据抽取失败，已回退到规则型证据整理。",
+        "参考答案相似度校准已将总分下限抬至 26.0。",
+        "来自原始题库文档的核心采分基准答案。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "YL-专业-013",
+      "sample_label": "程序化中档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_medical_general/YL-专业-013/reference_mid.txt",
+      "expected_range": "12.6-17.6",
+      "expected_band": "基本合格",
+      "actual_score": 15.1,
+      "actual_band": "基本合格",
+      "status": "PASS",
+      "validation_issue_count": 11,
+      "notes": [
+        "第二阶段证据评分失败，已回退到确定性证据评分。",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 然后针对性地进行沟通和引导",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 要用通俗易懂的语言解释疾病的特点和治疗的必要性",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 可以推荐使用基药目录内的药品",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 将长期的治疗目标分解为短期可实现的小目标",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 因为家庭成员的理解和支持对于慢性病患者的治疗依从性有重要影响",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 让患者在互相交流中获得情感支持和自我管理的经验",
+        "第一阶段证据未逐字命中，已自动对齐为原文片段: 通过定期的门诊复查、电话随访、上门访视等方式",
+        "基于高分答案程序化压缩生成；策略=leading，句数=69，截断=160，关键词削弱=none。"
+      ],
+      "error": ""
+    },
+    {
+      "question_id": "YL-专业-013",
+      "sample_label": "程序化低档参考答案",
+      "sample_path": "/home/quyu/kaogong_ai/ai_gongwu_backend/assets/regression_samples/generated_medical_general/YL-专业-013/reference_low.txt",
+      "expected_range": "5.4-10.4",
+      "expected_band": "低分/偏弱",
+      "actual_score": 7.9,
+      "actual_band": "低分/偏弱",
+      "status": "PASS",
+      "validation_issue_count": 1,
+      "notes": [
+        "第二阶段证据评分失败，已回退到确定性证据评分。",
+        "基于高分答案程序化降档生成；策略=hybrid，句数=3，截断=90，关键词削弱=medium，口语化=是。"
+      ],
+      "error": ""
+    }
+  ]
+}

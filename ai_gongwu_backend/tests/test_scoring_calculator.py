@@ -356,20 +356,20 @@ class ScoringCalculatorTestCase(unittest.TestCase):
         @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
         """
         repo_root = Path(__file__).resolve().parents[2]
-        expected_files = [
-            "低分1.txt",
-            "18分左右.txt",
-            "21分左右.txt",
-            "中低分1.txt",
-            "26分.txt",
-            "28分.txt",
-            "中高分1.txt",
-            "标准1.txt",
-        ]
+        sample_paths = {
+            "低分1.txt": repo_root / "sample_sets" / "非高分参考" / "低分1.txt",
+            "18分左右.txt": repo_root / "sample_sets" / "非高分参考" / "18分左右.txt",
+            "21分左右.txt": repo_root / "sample_sets" / "非高分参考" / "21分左右.txt",
+            "中低分1.txt": repo_root / "sample_sets" / "非高分参考" / "中低分1.txt",
+            "26分.txt": repo_root / "sample_sets" / "通用高分" / "26分.txt",
+            "28分.txt": repo_root / "sample_sets" / "通用高分" / "28分.txt",
+            "中高分1.txt": repo_root / "sample_sets" / "河南省直高分" / "中高分1.txt",
+            "标准1.txt": repo_root / "sample_sets" / "河南省直高分" / "标准1.txt",
+        }
 
         scores = {}
-        for filename in expected_files:
-            transcript = (repo_root / filename).read_text(encoding="utf-8")
+        for filename, sample_path in sample_paths.items():
+            transcript = sample_path.read_text(encoding="utf-8")
             matched_keywords = {
                 category: []
                 for category in ("core", "strong", "weak", "bonus")
@@ -668,6 +668,49 @@ class ScoringCalculatorTestCase(unittest.TestCase):
         self.assertTrue(any(item.dimension == "④引导建议与同事互助" for item in result.bonus_items))
         self.assertTrue(any("deduction_items 中的维度 [通用] 已归一到 [⑤语言逻辑]" in note for note in result.validation_notes))
         self.assertTrue(any("bonus_items 中的维度 [建议] 已归一到 [④引导建议与同事互助]" in note for note in result.validation_notes))
+
+    def test_medical_default_appearance_is_returned_separately_and_added_once(self):
+        question = QuestionDefinition(
+            id="MED-SCORE-001",
+            type="综合分析·医疗卫生",
+            province="山东",
+            fullScore=100,
+            questionScore=95,
+            appearanceScore=5,
+            appearanceScoreMax=5,
+            appearanceScoreSource="profile_default",
+            appearanceScoreScope="question",
+            effectiveFullScore=100,
+            hasAppearanceScore=True,
+            scoreCalculationNote="仪态分已按默认值计入。",
+            question="医疗岗位题目，请结合岗位实际说明你的处理思路。",
+            dimensions=[{"name": "内容分析", "score": 95}],
+            scoringCriteria=["内容分析（95分）"],
+            deductionRules=[],
+        )
+        evidence_packet, _ = prepare_evidence_packet(
+            raw_llm_result={},
+            transcript="我会结合岗位实际说明处理思路，先评估情况，再分类处置并做好跟进。",
+            question=question,
+        )
+
+        result = apply_post_processing(
+            raw_llm_result={
+                "dimension_scores": {"内容分析": 80},
+                "rationale": "结合岗位实际作答。",
+                "total_score": 80,
+            },
+            transcript="我会结合岗位实际说明处理思路，先评估情况，再分类处置并做好跟进。",
+            question=question,
+            evidence_packet=evidence_packet,
+        )
+
+        self.assertEqual(result.appearance_score, 5.0)
+        self.assertEqual(result.appearance_score_max, 5.0)
+        self.assertEqual(result.appearance_score_source, "profile_default")
+        self.assertEqual(result.max_score, 100.0)
+        self.assertEqual(result.total_score, result.content_score + result.appearance_score)
+        self.assertLessEqual(result.content_score, 95.0)
 
 
 if __name__ == "__main__":
