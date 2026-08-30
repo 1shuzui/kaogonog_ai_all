@@ -13,7 +13,6 @@
     <view class="card hero-card">
       <view>
         <text class="page-title">{{ userStore.isAdmin ? '客服反馈后台' : '客服反馈中心' }}</text>
-        <text class="page-desc">反馈记录已与后端同步，管理员可查看全站反馈。</text>
       </view>
       <button class="primary-button hero-card__button" @tap="openForm">提交反馈</button>
     </view>
