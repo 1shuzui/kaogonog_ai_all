@@ -1,0 +1,3030 @@
+{
+  "profile": "medical_general",
+  "province": "全国",
+  "source_files": [
+    "医疗卫生面试题库通用100题.docx"
+  ],
+  "source_stats": [
+    {
+      "source": "医疗卫生面试题库通用100题.docx",
+      "sourceDocument": "医疗卫生面试题库通用100题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 100,
+      "uniqueQuestionIdCount": 100,
+      "duplicateHeaderCount": 0,
+      "titleCount": 88,
+      "generatedQuestionCount": 100,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    }
+  ],
+  "generated_question_count": 100,
+  "generated_question_ids": [
+    "YL-专业-013",
+    "YL-专业-024",
+    "YL-专业-033",
+    "YL-专业-072",
+    "YL-专业-073",
+    "YL-专业-100",
+    "YL-人际-003",
+    "YL-人际-004",
+    "YL-人际-005",
+    "YL-人际-007",
+    "YL-人际-018",
+    "YL-人际-021",
+    "YL-人际-022",
+    "YL-人际-028",
+    "YL-人际-035",
+    "YL-人际-036",
+    "YL-人际-047",
+    "YL-人际-058",
+    "YL-人际-063",
+    "YL-人际-074",
+    "YL-人际-080",
+    "YL-人际-083",
+    "YL-人际-088",
+    "YL-人际-089",
+    "YL-人际-094",
+    "YL-人际-099",
+    "YL-岗位-093",
+    "YL-应急-012",
+    "YL-应急-020",
+    "YL-应急-040",
+    "YL-应急-053",
+    "YL-应急-064",
+    "YL-组织-011",
+    "YL-组织-023",
+    "YL-组织-039",
+    "YL-组织-042",
+    "YL-组织-044",
+    "YL-组织-048",
+    "YL-组织-066",
+    "YL-组织-076",
+    "YL-组织-078",
+    "YL-组织-085",
+    "YL-综合-001",
+    "YL-综合-002",
+    "YL-综合-006",
+    "YL-综合-008",
+    "YL-综合-009",
+    "YL-综合-010",
+    "YL-综合-014",
+    "YL-综合-015",
+    "YL-综合-016",
+    "YL-综合-017",
+    "YL-综合-019",
+    "YL-综合-025",
+    "YL-综合-026",
+    "YL-综合-027",
+    "YL-综合-029",
+    "YL-综合-030",
+    "YL-综合-031",
+    "YL-综合-032",
+    "YL-综合-034",
+    "YL-综合-037",
+    "YL-综合-038",
+    "YL-综合-041",
+    "YL-综合-043",
+    "YL-综合-045",
+    "YL-综合-046",
+    "YL-综合-049",
+    "YL-综合-050",
+    "YL-综合-051",
+    "YL-综合-052",
+    "YL-综合-054",
+    "YL-综合-055",
+    "YL-综合-056",
+    "YL-综合-057",
+    "YL-综合-059",
+    "YL-综合-060",
+    "YL-综合-061",
+    "YL-综合-062",
+    "YL-综合-065",
+    "YL-综合-067",
+    "YL-综合-068",
+    "YL-综合-069",
+    "YL-综合-070",
+    "YL-综合-071",
+    "YL-综合-075",
+    "YL-综合-077",
+    "YL-综合-079",
+    "YL-综合-081",
+    "YL-综合-082",
+    "YL-综合-084",
+    "YL-综合-086",
+    "YL-综合-087",
+    "YL-综合-090",
+    "YL-综合-091",
+    "YL-综合-092",
+    "YL-综合-095",
+    "YL-综合-096",
+    "YL-综合-097",
+    "YL-综合-098"
+  ],
+  "duplicates": [],
+  "skipped_blocks": [],
+  "parse_failures": [],
+  "sample_generation": {
+    "YL-专业-013": {
+      "high": {
+        "score": 27.6,
+        "strategy": "document",
+        "count": 132,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5284
+      },
+      "mid": {
+        "score": 17.5,
+        "strategy": "leading",
+        "count": 69,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2812
+      },
+      "low": {
+        "score": 11.4,
+        "strategy": "leading",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 221
+      }
+    },
+    "YL-专业-024": {
+      "high": {
+        "score": 33.2,
+        "strategy": "document",
+        "count": 142,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5261
+      },
+      "mid": {
+        "score": 18.1,
+        "strategy": "hybrid",
+        "count": 74,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2596
+      },
+      "low": {
+        "score": 13.1,
+        "strategy": "spread",
+        "count": 6,
+        "trim_chars": 120,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 222
+      }
+    },
+    "YL-专业-033": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 146,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5350
+      },
+      "mid": {
+        "score": 20.3,
+        "strategy": "leading",
+        "count": 91,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3060
+      },
+      "low": {
+        "score": 14.1,
+        "strategy": "analysis_focus",
+        "count": 5,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 221
+      }
+    },
+    "YL-专业-072": {
+      "high": {
+        "score": 29.4,
+        "strategy": "document",
+        "count": 131,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5184
+      },
+      "mid": {
+        "score": 16.5,
+        "strategy": "leading",
+        "count": 68,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2708
+      },
+      "low": {
+        "score": 12.0,
+        "strategy": "leading",
+        "count": 5,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 242
+      }
+    },
+    "YL-专业-073": {
+      "high": {
+        "score": 27.6,
+        "strategy": "document",
+        "count": 135,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5305
+      },
+      "mid": {
+        "score": 17.4,
+        "strategy": "leading",
+        "count": 70,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2743
+      },
+      "low": {
+        "score": 11.6,
+        "strategy": "spread",
+        "count": 7,
+        "trim_chars": 120,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 255
+      }
+    },
+    "YL-专业-100": {
+      "high": {
+        "score": 38.7,
+        "strategy": "document",
+        "count": 127,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5064
+      },
+      "mid": {
+        "score": 24.3,
+        "strategy": "spread",
+        "count": 66,
+        "trim_chars": 160,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 2579
+      },
+      "low": {
+        "score": 14.8,
+        "strategy": "spread",
+        "count": 7,
+        "trim_chars": 120,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 233
+      }
+    },
+    "YL-人际-003": {
+      "high": {
+        "score": 33.2,
+        "strategy": "document",
+        "count": 126,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3976
+      },
+      "mid": {
+        "score": 11.5,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 175
+      },
+      "low": {
+        "score": 10.8,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "YL-人际-004": {
+      "high": {
+        "score": 27.6,
+        "strategy": "document",
+        "count": 113,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3963
+      },
+      "mid": {
+        "score": 10.2,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 175
+      },
+      "low": {
+        "score": 9.6,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "YL-人际-005": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 113,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3822
+      },
+      "mid": {
+        "score": 12.3,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 175
+      },
+      "low": {
+        "score": 11.5,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "YL-人际-007": {
+      "high": {
+        "score": 32.0,
+        "strategy": "document",
+        "count": 162,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5911
+      },
+      "mid": {
+        "score": 10.9,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 175
+      },
+      "low": {
+        "score": 10.3,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "YL-人际-018": {
+      "high": {
+        "score": 31.3,
+        "strategy": "document",
+        "count": 145,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5804
+      },
+      "mid": {
+        "score": 10.9,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 175
+      },
+      "low": {
+        "score": 10.3,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "YL-人际-021": {
+      "high": {
+        "score": 25.6,
+        "strategy": "document",
+        "count": 146,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5573
+      },
+      "mid": {
+        "score": 9.7,
+        "strategy": "template_interpersonal_mid_1",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 167
+      },
+      "low": {
+        "score": 9.2,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "YL-人际-022": {
+      "high": {
+        "score": 25.6,
+        "strategy": "document",
+        "count": 136,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5596
+      },
+      "mid": {
+        "score": 9.6,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 171
+      },
+      "low": {
+        "score": 9.2,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "YL-人际-028": {
+      "high": {
+        "score": 33.2,
+        "strategy": "document",
+        "count": 149,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5544
+      },
+      "mid": {
+        "score": 11.3,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 176
+      },
+      "low": {
+        "score": 10.7,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "YL-人际-035": {
+      "high": {
+        "score": 31.5,
+        "strategy": "document",
+        "count": 151,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5718
+      },
+      "mid": {
+        "score": 10.9,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 175
+      },
+      "low": {
+        "score": 10.3,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "YL-人际-036": {
+      "high": {
+        "score": 31.3,
+        "strategy": "document",
+        "count": 142,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5549
+      },
+      "mid": {
+        "score": 10.9,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 175
+      },
+      "low": {
+        "score": 10.3,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "YL-人际-047": {
+      "high": {
+        "score": 32.0,
+        "strategy": "document",
+        "count": 119,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5860
+      },
+      "mid": {
+        "score": 10.9,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 175
+      },
+      "low": {
+        "score": 10.3,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "YL-人际-058": {
+      "high": {
+        "score": 26.3,
+        "strategy": "document",
+        "count": 113,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5274
+      },
+      "mid": {
+        "score": 9.6,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 175
+      },
+      "low": {
+        "score": 9.2,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "YL-人际-063": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 59,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2465
+      },
+      "mid": {
+        "score": 13.7,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 189
+      },
+      "low": {
+        "score": 11.2,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "YL-人际-074": {
+      "high": {
+        "score": 38.8,
+        "strategy": "document",
+        "count": 133,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5475
+      },
+      "mid": {
+        "score": 12.6,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 175
+      },
+      "low": {
+        "score": 11.9,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "YL-人际-080": {
+      "high": {
+        "score": 28.2,
+        "strategy": "document",
+        "count": 128,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5600
+      },
+      "mid": {
+        "score": 10.1,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 175
+      },
+      "low": {
+        "score": 9.6,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "YL-人际-083": {
+      "high": {
+        "score": 35.5,
+        "strategy": "document",
+        "count": 129,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5509
+      },
+      "mid": {
+        "score": 11.8,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 175
+      },
+      "low": {
+        "score": 11.1,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "YL-人际-088": {
+      "high": {
+        "score": 27.6,
+        "strategy": "document",
+        "count": 141,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5539
+      },
+      "mid": {
+        "score": 10.1,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 175
+      },
+      "low": {
+        "score": 9.6,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "YL-人际-089": {
+      "high": {
+        "score": 27.6,
+        "strategy": "document",
+        "count": 129,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5376
+      },
+      "mid": {
+        "score": 10.1,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 171
+      },
+      "low": {
+        "score": 9.6,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "YL-人际-094": {
+      "high": {
+        "score": 25.6,
+        "strategy": "document",
+        "count": 142,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5545
+      },
+      "mid": {
+        "score": 9.6,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 175
+      },
+      "low": {
+        "score": 9.2,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "YL-人际-099": {
+      "high": {
+        "score": 29.4,
+        "strategy": "document",
+        "count": 142,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5333
+      },
+      "mid": {
+        "score": 10.5,
+        "strategy": "template_interpersonal_mid_1",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 167
+      },
+      "low": {
+        "score": 10.0,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "YL-岗位-093": {
+      "high": {
+        "score": 38.9,
+        "strategy": "document",
+        "count": 147,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5418
+      },
+      "mid": {
+        "score": 20.5,
+        "strategy": "hybrid",
+        "count": 7,
+        "trim_chars": 160,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 497
+      },
+      "low": {
+        "score": 14.5,
+        "strategy": "spread",
+        "count": 3,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 251
+      }
+    },
+    "YL-应急-012": {
+      "high": {
+        "score": 33.0,
+        "strategy": "document",
+        "count": 146,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5920
+      },
+      "mid": {
+        "score": 18.1,
+        "strategy": "spread",
+        "count": 8,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 497
+      },
+      "low": {
+        "score": 13.7,
+        "strategy": "hybrid",
+        "count": 3,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 222
+      }
+    },
+    "YL-应急-020": {
+      "high": {
+        "score": 39.0,
+        "strategy": "document",
+        "count": 149,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5961
+      },
+      "mid": {
+        "score": 20.0,
+        "strategy": "markers",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 531
+      },
+      "low": {
+        "score": 15.4,
+        "strategy": "dialogue_focus",
+        "count": 3,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 220
+      }
+    },
+    "YL-应急-040": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 149,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5703
+      },
+      "mid": {
+        "score": 19.2,
+        "strategy": "spread",
+        "count": 9,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 539
+      },
+      "low": {
+        "score": 14.8,
+        "strategy": "dialogue_focus",
+        "count": 3,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 220
+      }
+    },
+    "YL-应急-053": {
+      "high": {
+        "score": 33.0,
+        "strategy": "document",
+        "count": 117,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5867
+      },
+      "mid": {
+        "score": 19.5,
+        "strategy": "markers",
+        "count": 8,
+        "trim_chars": 160,
+        "sanitization": "light",
+        "oral": false,
+        "effective_length": 649
+      },
+      "low": {
+        "score": 13.7,
+        "strategy": "spread",
+        "count": 3,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 256
+      }
+    },
+    "YL-应急-064": {
+      "high": {
+        "score": 35.0,
+        "strategy": "document",
+        "count": 123,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5457
+      },
+      "mid": {
+        "score": 18.3,
+        "strategy": "markers",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 723
+      },
+      "low": {
+        "score": 14.3,
+        "strategy": "markers",
+        "count": 3,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": false,
+        "effective_length": 245
+      }
+    },
+    "YL-组织-011": {
+      "high": {
+        "score": 37.3,
+        "strategy": "document",
+        "count": 148,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5491
+      },
+      "mid": {
+        "score": 18.5,
+        "strategy": "markers",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 559
+      },
+      "low": {
+        "score": 14.5,
+        "strategy": "spread",
+        "count": 7,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 240
+      }
+    },
+    "YL-组织-023": {
+      "high": {
+        "score": 32.0,
+        "strategy": "document",
+        "count": 130,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5287
+      },
+      "mid": {
+        "score": 19.6,
+        "strategy": "leading",
+        "count": 68,
+        "trim_chars": 160,
+        "sanitization": "light",
+        "oral": false,
+        "effective_length": 2863
+      },
+      "low": {
+        "score": 12.8,
+        "strategy": "hybrid",
+        "count": 6,
+        "trim_chars": 120,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 222
+      }
+    },
+    "YL-组织-039": {
+      "high": {
+        "score": 31.7,
+        "strategy": "document",
+        "count": 147,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5290
+      },
+      "mid": {
+        "score": 18.6,
+        "strategy": "leading",
+        "count": 76,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2504
+      },
+      "low": {
+        "score": 12.8,
+        "strategy": "spread",
+        "count": 7,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 242
+      }
+    },
+    "YL-组织-042": {
+      "high": {
+        "score": 29.7,
+        "strategy": "document",
+        "count": 121,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5312
+      },
+      "mid": {
+        "score": 12.5,
+        "strategy": "template_organization_mid_1",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 12.1,
+        "strategy": "template_organization_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 191
+      }
+    },
+    "YL-组织-044": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 133,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5937
+      },
+      "mid": {
+        "score": 14.8,
+        "strategy": "template_organization_mid_1",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 14.2,
+        "strategy": "template_organization_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 191
+      }
+    },
+    "YL-组织-048": {
+      "high": {
+        "score": 27.8,
+        "strategy": "document",
+        "count": 114,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5648
+      },
+      "mid": {
+        "score": 17.2,
+        "strategy": "spread",
+        "count": 7,
+        "trim_chars": 160,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 536
+      },
+      "low": {
+        "score": 11.7,
+        "strategy": "markers",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 223
+      }
+    },
+    "YL-组织-066": {
+      "high": {
+        "score": 25.9,
+        "strategy": "document",
+        "count": 117,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5005
+      },
+      "mid": {
+        "score": 17.0,
+        "strategy": "markers",
+        "count": 61,
+        "trim_chars": 160,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 2918
+      },
+      "low": {
+        "score": 11.2,
+        "strategy": "leading",
+        "count": 3,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 220
+      }
+    },
+    "YL-组织-076": {
+      "high": {
+        "score": 33.5,
+        "strategy": "document",
+        "count": 129,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5108
+      },
+      "mid": {
+        "score": 22.8,
+        "strategy": "leading",
+        "count": 67,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2615
+      },
+      "low": {
+        "score": 13.4,
+        "strategy": "leading",
+        "count": 3,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 229
+      }
+    },
+    "YL-组织-078": {
+      "high": {
+        "score": 31.7,
+        "strategy": "document",
+        "count": 126,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5190
+      },
+      "mid": {
+        "score": 19.4,
+        "strategy": "leading",
+        "count": 66,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2784
+      },
+      "low": {
+        "score": 12.9,
+        "strategy": "spread",
+        "count": 6,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 280
+      }
+    },
+    "YL-组织-085": {
+      "high": {
+        "score": 37.3,
+        "strategy": "document",
+        "count": 115,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5084
+      },
+      "mid": {
+        "score": 21.4,
+        "strategy": "spread",
+        "count": 7,
+        "trim_chars": 160,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 526
+      },
+      "low": {
+        "score": 14.5,
+        "strategy": "markers",
+        "count": 6,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 227
+      }
+    },
+    "YL-综合-001": {
+      "high": {
+        "score": 29.4,
+        "strategy": "document",
+        "count": 115,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3913
+      },
+      "mid": {
+        "score": 13.2,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 11.9,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "YL-综合-002": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 109,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3990
+      },
+      "mid": {
+        "score": 15.0,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 13.5,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-006": {
+      "high": {
+        "score": 29.4,
+        "strategy": "document",
+        "count": 114,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3950
+      },
+      "mid": {
+        "score": 13.2,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 11.9,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-008": {
+      "high": {
+        "score": 27.0,
+        "strategy": "document",
+        "count": 148,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5860
+      },
+      "mid": {
+        "score": 11.8,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 10.8,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-009": {
+      "high": {
+        "score": 33.0,
+        "strategy": "document",
+        "count": 145,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5882
+      },
+      "mid": {
+        "score": 13.6,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 12.3,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-010": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 135,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5885
+      },
+      "mid": {
+        "score": 14.8,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 13.4,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-014": {
+      "high": {
+        "score": 35.0,
+        "strategy": "document",
+        "count": 130,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5637
+      },
+      "mid": {
+        "score": 14.2,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 12.9,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-015": {
+      "high": {
+        "score": 27.0,
+        "strategy": "document",
+        "count": 138,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5677
+      },
+      "mid": {
+        "score": 11.8,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 10.8,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-016": {
+      "high": {
+        "score": 33.0,
+        "strategy": "document",
+        "count": 139,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5633
+      },
+      "mid": {
+        "score": 13.6,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 12.3,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "YL-综合-017": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 141,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5667
+      },
+      "mid": {
+        "score": 14.8,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 13.4,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-019": {
+      "high": {
+        "score": 29.0,
+        "strategy": "document",
+        "count": 135,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5709
+      },
+      "mid": {
+        "score": 12.4,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 268
+      },
+      "low": {
+        "score": 11.3,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 182
+      }
+    },
+    "YL-综合-025": {
+      "high": {
+        "score": 41.0,
+        "strategy": "document",
+        "count": 149,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5536
+      },
+      "mid": {
+        "score": 16.1,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 14.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "YL-综合-026": {
+      "high": {
+        "score": 41.0,
+        "strategy": "document",
+        "count": 149,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5708
+      },
+      "mid": {
+        "score": 16.1,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 14.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "YL-综合-027": {
+      "high": {
+        "score": 27.0,
+        "strategy": "document",
+        "count": 130,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5679
+      },
+      "mid": {
+        "score": 11.8,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 10.8,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-029": {
+      "high": {
+        "score": 39.0,
+        "strategy": "document",
+        "count": 134,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5487
+      },
+      "mid": {
+        "score": 15.4,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 13.9,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "YL-综合-030": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 134,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5625
+      },
+      "mid": {
+        "score": 14.9,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 13.4,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-031": {
+      "high": {
+        "score": 33.0,
+        "strategy": "document",
+        "count": 138,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5617
+      },
+      "mid": {
+        "score": 13.6,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 12.3,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "YL-综合-032": {
+      "high": {
+        "score": 35.0,
+        "strategy": "document",
+        "count": 134,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5444
+      },
+      "mid": {
+        "score": 14.2,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 12.9,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-034": {
+      "high": {
+        "score": 35.0,
+        "strategy": "document",
+        "count": 149,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5620
+      },
+      "mid": {
+        "score": 14.3,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 12.9,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-037": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 126,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5463
+      },
+      "mid": {
+        "score": 14.8,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 13.4,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-038": {
+      "high": {
+        "score": 33.0,
+        "strategy": "document",
+        "count": 131,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5440
+      },
+      "mid": {
+        "score": 13.6,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 12.4,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-041": {
+      "high": {
+        "score": 41.0,
+        "strategy": "document",
+        "count": 146,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5565
+      },
+      "mid": {
+        "score": 16.1,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 14.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "YL-综合-043": {
+      "high": {
+        "score": 31.0,
+        "strategy": "document",
+        "count": 114,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5546
+      },
+      "mid": {
+        "score": 13.0,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 11.8,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "YL-综合-045": {
+      "high": {
+        "score": 31.0,
+        "strategy": "document",
+        "count": 121,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5580
+      },
+      "mid": {
+        "score": 13.0,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 11.8,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-046": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 102,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5282
+      },
+      "mid": {
+        "score": 14.9,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 13.4,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-049": {
+      "high": {
+        "score": 29.0,
+        "strategy": "document",
+        "count": 118,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5747
+      },
+      "mid": {
+        "score": 12.4,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 11.3,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-050": {
+      "high": {
+        "score": 33.0,
+        "strategy": "document",
+        "count": 105,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5471
+      },
+      "mid": {
+        "score": 13.6,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 12.3,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "YL-综合-051": {
+      "high": {
+        "score": 35.0,
+        "strategy": "document",
+        "count": 113,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5803
+      },
+      "mid": {
+        "score": 14.2,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 12.9,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-052": {
+      "high": {
+        "score": 31.0,
+        "strategy": "document",
+        "count": 115,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5686
+      },
+      "mid": {
+        "score": 13.0,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 11.8,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-054": {
+      "high": {
+        "score": 31.0,
+        "strategy": "document",
+        "count": 108,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5592
+      },
+      "mid": {
+        "score": 13.0,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 11.8,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-055": {
+      "high": {
+        "score": 35.0,
+        "strategy": "document",
+        "count": 116,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 6075
+      },
+      "mid": {
+        "score": 14.2,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 12.8,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "YL-综合-056": {
+      "high": {
+        "score": 41.0,
+        "strategy": "document",
+        "count": 120,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 6277
+      },
+      "mid": {
+        "score": 16.0,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 14.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "YL-综合-057": {
+      "high": {
+        "score": 29.0,
+        "strategy": "document",
+        "count": 104,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5783
+      },
+      "mid": {
+        "score": 12.4,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 11.3,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-059": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 114,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5478
+      },
+      "mid": {
+        "score": 14.9,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 13.4,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-060": {
+      "high": {
+        "score": 41.0,
+        "strategy": "document",
+        "count": 100,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5241
+      },
+      "mid": {
+        "score": 16.1,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 14.5,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-061": {
+      "high": {
+        "score": 31.0,
+        "strategy": "document",
+        "count": 102,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5130
+      },
+      "mid": {
+        "score": 13.0,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 11.8,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "YL-综合-062": {
+      "high": {
+        "score": 31.0,
+        "strategy": "document",
+        "count": 113,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5303
+      },
+      "mid": {
+        "score": 13.0,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 11.8,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "YL-综合-065": {
+      "high": {
+        "score": 27.0,
+        "strategy": "document",
+        "count": 111,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5987
+      },
+      "mid": {
+        "score": 11.7,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 10.7,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "YL-综合-067": {
+      "high": {
+        "score": 41.0,
+        "strategy": "document",
+        "count": 94,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5065
+      },
+      "mid": {
+        "score": 16.1,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 14.5,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-068": {
+      "high": {
+        "score": 29.0,
+        "strategy": "document",
+        "count": 103,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5497
+      },
+      "mid": {
+        "score": 12.4,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 11.3,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-069": {
+      "high": {
+        "score": 41.0,
+        "strategy": "document",
+        "count": 100,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5248
+      },
+      "mid": {
+        "score": 16.1,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 14.5,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-070": {
+      "high": {
+        "score": 41.0,
+        "strategy": "document",
+        "count": 108,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5271
+      },
+      "mid": {
+        "score": 16.1,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 14.5,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-071": {
+      "high": {
+        "score": 27.0,
+        "strategy": "document",
+        "count": 117,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5472
+      },
+      "mid": {
+        "score": 11.8,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 10.8,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-075": {
+      "high": {
+        "score": 31.0,
+        "strategy": "document",
+        "count": 124,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5403
+      },
+      "mid": {
+        "score": 13.0,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 11.8,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "YL-综合-077": {
+      "high": {
+        "score": 33.0,
+        "strategy": "document",
+        "count": 129,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5403
+      },
+      "mid": {
+        "score": 13.6,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 12.4,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-079": {
+      "high": {
+        "score": 35.0,
+        "strategy": "document",
+        "count": 120,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5581
+      },
+      "mid": {
+        "score": 14.3,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 12.9,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-081": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 120,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5534
+      },
+      "mid": {
+        "score": 14.8,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 13.4,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-082": {
+      "high": {
+        "score": 29.0,
+        "strategy": "document",
+        "count": 117,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5567
+      },
+      "mid": {
+        "score": 12.4,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 11.3,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-084": {
+      "high": {
+        "score": 29.0,
+        "strategy": "document",
+        "count": 117,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5356
+      },
+      "mid": {
+        "score": 12.4,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 11.3,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-086": {
+      "high": {
+        "score": 29.0,
+        "strategy": "document",
+        "count": 143,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5381
+      },
+      "mid": {
+        "score": 12.4,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 11.3,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-087": {
+      "high": {
+        "score": 39.0,
+        "strategy": "document",
+        "count": 126,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5492
+      },
+      "mid": {
+        "score": 15.5,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 13.9,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "YL-综合-090": {
+      "high": {
+        "score": 41.0,
+        "strategy": "document",
+        "count": 127,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5181
+      },
+      "mid": {
+        "score": 16.1,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 14.5,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-091": {
+      "high": {
+        "score": 35.0,
+        "strategy": "document",
+        "count": 141,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5313
+      },
+      "mid": {
+        "score": 14.2,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 12.9,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "YL-综合-092": {
+      "high": {
+        "score": 30.7,
+        "strategy": "document",
+        "count": 138,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5391
+      },
+      "mid": {
+        "score": 13.0,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 11.8,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "YL-综合-095": {
+      "high": {
+        "score": 39.0,
+        "strategy": "document",
+        "count": 137,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5438
+      },
+      "mid": {
+        "score": 15.5,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 13.9,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "YL-综合-096": {
+      "high": {
+        "score": 30.1,
+        "strategy": "document",
+        "count": 131,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5295
+      },
+      "mid": {
+        "score": 13.0,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 11.8,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "YL-综合-097": {
+      "high": {
+        "score": 31.0,
+        "strategy": "document",
+        "count": 146,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5440
+      },
+      "mid": {
+        "score": 13.0,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 11.8,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "YL-综合-098": {
+      "high": {
+        "score": 31.0,
+        "strategy": "document",
+        "count": 134,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 5266
+      },
+      "mid": {
+        "score": 13.0,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 11.8,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    }
+  }
+}

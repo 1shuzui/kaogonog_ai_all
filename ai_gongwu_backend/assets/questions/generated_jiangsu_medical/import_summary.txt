@@ -1,0 +1,6606 @@
+{
+  "profile": "jiangsu_medical",
+  "province": "江苏",
+  "source_files": [
+    "江苏新套01_常州钟楼区卫健委面试题.docx",
+    "江苏新套02_徐州中心医院护理岗面试题.docx",
+    "江苏新套04_扬州妇幼保健医院面试题.docx",
+    "江苏新套05_常州统考医疗岗面试题.docx",
+    "江苏新套06_邗江卫生事业单位面试题.docx",
+    "江苏新套07_无锡锡山全科医师岗面试题.docx",
+    "江苏新套08_盐城大丰医疗岗面试题.docx",
+    "江苏新套09_淮安凤台护理岗面试题.docx",
+    "江苏新套10_泰兴医疗事业单位面试题.docx",
+    "江苏新套11_淮安事业单位医疗岗面试题.docx",
+    "江苏新套12_徐州肿瘤医院药学岗面试题.docx",
+    "江苏新套13_苏州护理岗面试题.docx",
+    "江苏新套14_南京江宁区卫健委医疗岗面试题.docx",
+    "江苏新套15_南京江宁区编外面试题.docx",
+    "江苏新套16_扬州邗江区卫健系统面试题.docx",
+    "江苏新套17_昆山医疗卫生招聘第一批面试题.docx",
+    "江苏新套18_泰兴卫生事业单位面试题.docx",
+    "江苏新套19_泗阳县第一人民医院面试题.docx",
+    "江苏新套20_灌云县卫健委面试题.docx",
+    "江苏新套21_血防所康复岗面试题.docx",
+    "江苏新套22_苏州事业单位护理岗面试题.docx",
+    "江苏新套23_太仓娄江新城医院面试题.docx",
+    "江苏新套24_常州天宁区卫健系统面试题.docx",
+    "江苏新套25_江阴事业单位医疗岗面试题.docx",
+    "江苏新套26_海州区疾控中心面试题.docx",
+    "江苏新套27_吴江区第四人民医院面试题.docx",
+    "江苏新套28_苏州事业单位医疗岗面试题.docx",
+    "江苏新套29_高邮市中医院面试题.docx",
+    "江苏新套30_南通事业单位医疗岗面试题.docx",
+    "江苏新套31_泰兴事业单位医疗岗面试题.docx",
+    "江苏新套32_常州市疾控中心面试题.docx",
+    "江苏新套33_扬州事业单位医疗岗面试题.docx",
+    "江苏新套34_淮安市医疗卫生系统面试题.docx",
+    "江苏新套35_泰州市卫生系统面试题.docx",
+    "江苏新套36_泰州市第五人民医院招聘面试题.docx",
+    "江苏新套37_淮安市疾控中心面试题.docx",
+    "江苏新套38_句容市卫生健康系统医疗检验岗面试题.docx",
+    "江苏新套39_南京市疾控中心疾病控制岗面试题.docx",
+    "江苏新套40_建湖县医疗卫生事业单位面试题.docx",
+    "江苏新套41_沐阳县医疗事业单位面试题.docx",
+    "江苏新套42_张家港市医疗事业单位面试题.docx",
+    "江苏新套43_镇江丹徒区医疗事业单位面试题.docx",
+    "江苏新套44_淮安市洪泽区医疗卫生系统面试题.docx",
+    "江苏新套45_盐城市医疗卫生事业单位面试题.docx",
+    "江苏新套46_扬州广陵区医疗卫生面试题.docx",
+    "江苏新套47_扬州江都医疗卫生面试题.docx",
+    "江苏新套48_苏州疾控中心面试题.docx",
+    "江苏新套49_事业单位护理岗面试题.docx",
+    "江苏新套50_扬州事业单位医疗岗面试题.docx",
+    "江苏新套51_江阴医疗卫生系统面试题.docx",
+    "江苏新套52_南京市卫生系统面试题.docx",
+    "江苏新套53_丹阳市卫健委面试题.docx",
+    "江苏新套54_昆山市卫健系统面试题.docx",
+    "江苏新套55_南京雨花台区卫健系统面试题.docx",
+    "江苏新套56_南京玄武兰园社区卫生中心面试题.docx",
+    "江苏新套57_张家港卫健委卫生管理岗面试题.docx",
+    "江苏新套58_某市卫健委招聘面试题.docx",
+    "江苏新套59_盐城某医院结构化面试题.docx",
+    "江苏新套60_连云港卫生系统招聘面试题.docx",
+    "江苏新套61_江苏省中医院招聘面试题.docx",
+    "江苏新套62_盐城卫生职业技术学院管理岗面试题.docx",
+    "江苏新套63_南京儿童医院面试题.docx",
+    "江苏新套64_江苏省人民医院财务岗面试题.docx",
+    "江苏新套65_南京口腔医院面试题.docx",
+    "江苏新套66_徐州第二人民医院面试题.docx",
+    "江苏新套67_苏州第一人民医院面试题.docx",
+    "江苏新套68_徐州市中医院药学岗面试题.docx",
+    "江苏新套69_泰州高港区疾控中心面试题.docx",
+    "江苏新套70_张家港医疗事业单位面试题.docx",
+    "江苏新套71_常州武进区人民医院面试题.docx"
+  ],
+  "source_stats": [
+    {
+      "source": "江苏新套01_常州钟楼区卫健委面试题.docx",
+      "sourceDocument": "江苏新套01_常州钟楼区卫健委面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套02_徐州中心医院护理岗面试题.docx",
+      "sourceDocument": "江苏新套02_徐州中心医院护理岗面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 2,
+      "uniqueQuestionIdCount": 2,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 2,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套04_扬州妇幼保健医院面试题.docx",
+      "sourceDocument": "江苏新套04_扬州妇幼保健医院面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套05_常州统考医疗岗面试题.docx",
+      "sourceDocument": "江苏新套05_常州统考医疗岗面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套06_邗江卫生事业单位面试题.docx",
+      "sourceDocument": "江苏新套06_邗江卫生事业单位面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套07_无锡锡山全科医师岗面试题.docx",
+      "sourceDocument": "江苏新套07_无锡锡山全科医师岗面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套08_盐城大丰医疗岗面试题.docx",
+      "sourceDocument": "江苏新套08_盐城大丰医疗岗面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套09_淮安凤台护理岗面试题.docx",
+      "sourceDocument": "江苏新套09_淮安凤台护理岗面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套10_泰兴医疗事业单位面试题.docx",
+      "sourceDocument": "江苏新套10_泰兴医疗事业单位面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套11_淮安事业单位医疗岗面试题.docx",
+      "sourceDocument": "江苏新套11_淮安事业单位医疗岗面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 2,
+      "uniqueQuestionIdCount": 2,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 2,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套12_徐州肿瘤医院药学岗面试题.docx",
+      "sourceDocument": "江苏新套12_徐州肿瘤医院药学岗面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 2,
+      "uniqueQuestionIdCount": 2,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 2,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套13_苏州护理岗面试题.docx",
+      "sourceDocument": "江苏新套13_苏州护理岗面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 2,
+      "uniqueQuestionIdCount": 2,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 2,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套14_南京江宁区卫健委医疗岗面试题.docx",
+      "sourceDocument": "江苏新套14_南京江宁区卫健委医疗岗面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 1,
+      "uniqueQuestionIdCount": 1,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 1,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套15_南京江宁区编外面试题.docx",
+      "sourceDocument": "江苏新套15_南京江宁区编外面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 2,
+      "uniqueQuestionIdCount": 2,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 2,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套16_扬州邗江区卫健系统面试题.docx",
+      "sourceDocument": "江苏新套16_扬州邗江区卫健系统面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 1,
+      "uniqueQuestionIdCount": 1,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套17_昆山医疗卫生招聘第一批面试题.docx",
+      "sourceDocument": "江苏新套17_昆山医疗卫生招聘第一批面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 2,
+      "uniqueQuestionIdCount": 2,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 2,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套18_泰兴卫生事业单位面试题.docx",
+      "sourceDocument": "江苏新套18_泰兴卫生事业单位面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 2,
+      "uniqueQuestionIdCount": 2,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 2,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套19_泗阳县第一人民医院面试题.docx",
+      "sourceDocument": "江苏新套19_泗阳县第一人民医院面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套20_灌云县卫健委面试题.docx",
+      "sourceDocument": "江苏新套20_灌云县卫健委面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套21_血防所康复岗面试题.docx",
+      "sourceDocument": "江苏新套21_血防所康复岗面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套22_苏州事业单位护理岗面试题.docx",
+      "sourceDocument": "江苏新套22_苏州事业单位护理岗面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 2,
+      "uniqueQuestionIdCount": 2,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 2,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套23_太仓娄江新城医院面试题.docx",
+      "sourceDocument": "江苏新套23_太仓娄江新城医院面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套24_常州天宁区卫健系统面试题.docx",
+      "sourceDocument": "江苏新套24_常州天宁区卫健系统面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套25_江阴事业单位医疗岗面试题.docx",
+      "sourceDocument": "江苏新套25_江阴事业单位医疗岗面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套26_海州区疾控中心面试题.docx",
+      "sourceDocument": "江苏新套26_海州区疾控中心面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套27_吴江区第四人民医院面试题.docx",
+      "sourceDocument": "江苏新套27_吴江区第四人民医院面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 2,
+      "uniqueQuestionIdCount": 2,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 2,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套28_苏州事业单位医疗岗面试题.docx",
+      "sourceDocument": "江苏新套28_苏州事业单位医疗岗面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套29_高邮市中医院面试题.docx",
+      "sourceDocument": "江苏新套29_高邮市中医院面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 2,
+      "uniqueQuestionIdCount": 2,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 2,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套30_南通事业单位医疗岗面试题.docx",
+      "sourceDocument": "江苏新套30_南通事业单位医疗岗面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 2,
+      "uniqueQuestionIdCount": 2,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 2,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套31_泰兴事业单位医疗岗面试题.docx",
+      "sourceDocument": "江苏新套31_泰兴事业单位医疗岗面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套32_常州市疾控中心面试题.docx",
+      "sourceDocument": "江苏新套32_常州市疾控中心面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套33_扬州事业单位医疗岗面试题.docx",
+      "sourceDocument": "江苏新套33_扬州事业单位医疗岗面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套34_淮安市医疗卫生系统面试题.docx",
+      "sourceDocument": "江苏新套34_淮安市医疗卫生系统面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套35_泰州市卫生系统面试题.docx",
+      "sourceDocument": "江苏新套35_泰州市卫生系统面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套36_泰州市第五人民医院招聘面试题.docx",
+      "sourceDocument": "江苏新套36_泰州市第五人民医院招聘面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套37_淮安市疾控中心面试题.docx",
+      "sourceDocument": "江苏新套37_淮安市疾控中心面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套38_句容市卫生健康系统医疗检验岗面试题.docx",
+      "sourceDocument": "江苏新套38_句容市卫生健康系统医疗检验岗面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 2,
+      "uniqueQuestionIdCount": 2,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 2,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套39_南京市疾控中心疾病控制岗面试题.docx",
+      "sourceDocument": "江苏新套39_南京市疾控中心疾病控制岗面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 0,
+      "uniqueQuestionIdCount": 0,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套40_建湖县医疗卫生事业单位面试题.docx",
+      "sourceDocument": "江苏新套40_建湖县医疗卫生事业单位面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 0,
+      "uniqueQuestionIdCount": 0,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套41_沐阳县医疗事业单位面试题.docx",
+      "sourceDocument": "江苏新套41_沐阳县医疗事业单位面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 0,
+      "uniqueQuestionIdCount": 0,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套42_张家港市医疗事业单位面试题.docx",
+      "sourceDocument": "江苏新套42_张家港市医疗事业单位面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 0,
+      "uniqueQuestionIdCount": 0,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 2,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套43_镇江丹徒区医疗事业单位面试题.docx",
+      "sourceDocument": "江苏新套43_镇江丹徒区医疗事业单位面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 1,
+      "uniqueQuestionIdCount": 1,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套44_淮安市洪泽区医疗卫生系统面试题.docx",
+      "sourceDocument": "江苏新套44_淮安市洪泽区医疗卫生系统面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 1,
+      "uniqueQuestionIdCount": 1,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 5,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套45_盐城市医疗卫生事业单位面试题.docx",
+      "sourceDocument": "江苏新套45_盐城市医疗卫生事业单位面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 0,
+      "uniqueQuestionIdCount": 0,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 2,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套46_扬州广陵区医疗卫生面试题.docx",
+      "sourceDocument": "江苏新套46_扬州广陵区医疗卫生面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套47_扬州江都医疗卫生面试题.docx",
+      "sourceDocument": "江苏新套47_扬州江都医疗卫生面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套48_苏州疾控中心面试题.docx",
+      "sourceDocument": "江苏新套48_苏州疾控中心面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套49_事业单位护理岗面试题.docx",
+      "sourceDocument": "江苏新套49_事业单位护理岗面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套50_扬州事业单位医疗岗面试题.docx",
+      "sourceDocument": "江苏新套50_扬州事业单位医疗岗面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 2,
+      "uniqueQuestionIdCount": 2,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 2,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套51_江阴医疗卫生系统面试题.docx",
+      "sourceDocument": "江苏新套51_江阴医疗卫生系统面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套52_南京市卫生系统面试题.docx",
+      "sourceDocument": "江苏新套52_南京市卫生系统面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 2,
+      "uniqueQuestionIdCount": 2,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 2,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套53_丹阳市卫健委面试题.docx",
+      "sourceDocument": "江苏新套53_丹阳市卫健委面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套54_昆山市卫健系统面试题.docx",
+      "sourceDocument": "江苏新套54_昆山市卫健系统面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套55_南京雨花台区卫健系统面试题.docx",
+      "sourceDocument": "江苏新套55_南京雨花台区卫健系统面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套56_南京玄武兰园社区卫生中心面试题.docx",
+      "sourceDocument": "江苏新套56_南京玄武兰园社区卫生中心面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套57_张家港卫健委卫生管理岗面试题.docx",
+      "sourceDocument": "江苏新套57_张家港卫健委卫生管理岗面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 2,
+      "uniqueQuestionIdCount": 2,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 2,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套58_某市卫健委招聘面试题.docx",
+      "sourceDocument": "江苏新套58_某市卫健委招聘面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套59_盐城某医院结构化面试题.docx",
+      "sourceDocument": "江苏新套59_盐城某医院结构化面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 2,
+      "uniqueQuestionIdCount": 2,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 2,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套60_连云港卫生系统招聘面试题.docx",
+      "sourceDocument": "江苏新套60_连云港卫生系统招聘面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套61_江苏省中医院招聘面试题.docx",
+      "sourceDocument": "江苏新套61_江苏省中医院招聘面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 4,
+      "uniqueQuestionIdCount": 4,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 4,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套62_盐城卫生职业技术学院管理岗面试题.docx",
+      "sourceDocument": "江苏新套62_盐城卫生职业技术学院管理岗面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 2,
+      "uniqueQuestionIdCount": 2,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 2,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套63_南京儿童医院面试题.docx",
+      "sourceDocument": "江苏新套63_南京儿童医院面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 2,
+      "uniqueQuestionIdCount": 2,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 2,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套64_江苏省人民医院财务岗面试题.docx",
+      "sourceDocument": "江苏新套64_江苏省人民医院财务岗面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套65_南京口腔医院面试题.docx",
+      "sourceDocument": "江苏新套65_南京口腔医院面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套66_徐州第二人民医院面试题.docx",
+      "sourceDocument": "江苏新套66_徐州第二人民医院面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 1,
+      "uniqueQuestionIdCount": 1,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 1,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套67_苏州第一人民医院面试题.docx",
+      "sourceDocument": "江苏新套67_苏州第一人民医院面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 4,
+      "uniqueQuestionIdCount": 4,
+      "duplicateHeaderCount": 0,
+      "titleCount": 1,
+      "generatedQuestionCount": 4,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套68_徐州市中医院药学岗面试题.docx",
+      "sourceDocument": "江苏新套68_徐州市中医院药学岗面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 1,
+      "uniqueQuestionIdCount": 1,
+      "duplicateHeaderCount": 0,
+      "titleCount": 0,
+      "generatedQuestionCount": 1,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套69_泰州高港区疾控中心面试题.docx",
+      "sourceDocument": "江苏新套69_泰州高港区疾控中心面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 0,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套70_张家港医疗事业单位面试题.docx",
+      "sourceDocument": "江苏新套70_张家港医疗事业单位面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 2,
+      "uniqueQuestionIdCount": 2,
+      "duplicateHeaderCount": 0,
+      "titleCount": 0,
+      "generatedQuestionCount": 2,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    },
+    {
+      "source": "江苏新套71_常州武进区人民医院面试题.docx",
+      "sourceDocument": "江苏新套71_常州武进区人民医院面试题.docx",
+      "sourceDocumentType": "docx_xml",
+      "legacyDocSource": false,
+      "questionHeaderCount": 3,
+      "uniqueQuestionIdCount": 3,
+      "duplicateHeaderCount": 0,
+      "titleCount": 0,
+      "generatedQuestionCount": 3,
+      "skippedBlockCount": 0,
+      "parseFailureCount": 0
+    }
+  ],
+  "generated_question_count": 187,
+  "generated_question_ids": [
+    "JS-MED-SET001-01",
+    "JS-MED-SET001-02",
+    "JS-MED-SET001-03",
+    "JS-MED-SET002-01",
+    "JS-MED-SET002-02",
+    "JS-MED-SET004-01",
+    "JS-MED-SET004-02",
+    "JS-MED-SET004-03",
+    "JS-MED-SET005-01",
+    "JS-MED-SET005-02",
+    "JS-MED-SET005-03",
+    "JS-MED-SET006-01",
+    "JS-MED-SET006-02",
+    "JS-MED-SET006-03",
+    "JS-MED-SET007-01",
+    "JS-MED-SET007-02",
+    "JS-MED-SET007-03",
+    "JS-MED-SET008-01",
+    "JS-MED-SET008-02",
+    "JS-MED-SET008-03",
+    "JS-MED-SET009-01",
+    "JS-MED-SET009-02",
+    "JS-MED-SET009-03",
+    "JS-MED-SET010-01",
+    "JS-MED-SET010-02",
+    "JS-MED-SET010-03",
+    "JS-MED-SET011-01",
+    "JS-MED-SET011-02",
+    "JS-MED-SET012-01",
+    "JS-MED-SET012-02",
+    "JS-MED-SET013-01",
+    "JS-MED-SET013-02",
+    "JS-MED-SET014-01",
+    "JS-MED-SET015-01",
+    "JS-MED-SET015-02",
+    "JS-MED-SET016-01",
+    "JS-MED-SET016-02",
+    "JS-MED-SET016-03",
+    "JS-MED-SET017-01",
+    "JS-MED-SET017-02",
+    "JS-MED-SET018-01",
+    "JS-MED-SET018-02",
+    "JS-MED-SET019-01",
+    "JS-MED-SET019-02",
+    "JS-MED-SET019-03",
+    "JS-MED-SET020-01",
+    "JS-MED-SET020-02",
+    "JS-MED-SET020-03",
+    "JS-MED-SET021-01",
+    "JS-MED-SET021-02",
+    "JS-MED-SET021-03",
+    "JS-MED-SET022-01",
+    "JS-MED-SET022-02",
+    "JS-MED-SET023-01",
+    "JS-MED-SET023-02",
+    "JS-MED-SET023-03",
+    "JS-MED-SET024-01",
+    "JS-MED-SET024-02",
+    "JS-MED-SET024-03",
+    "JS-MED-SET025-01",
+    "JS-MED-SET025-02",
+    "JS-MED-SET025-03",
+    "JS-MED-SET026-01",
+    "JS-MED-SET026-02",
+    "JS-MED-SET026-03",
+    "JS-MED-SET027-01",
+    "JS-MED-SET027-02",
+    "JS-MED-SET028-01",
+    "JS-MED-SET028-02",
+    "JS-MED-SET028-03",
+    "JS-MED-SET029-01",
+    "JS-MED-SET029-02",
+    "JS-MED-SET030-01",
+    "JS-MED-SET030-02",
+    "JS-MED-SET031-01",
+    "JS-MED-SET031-02",
+    "JS-MED-SET031-03",
+    "JS-MED-SET032-01",
+    "JS-MED-SET032-02",
+    "JS-MED-SET032-03",
+    "JS-MED-SET033-01",
+    "JS-MED-SET033-02",
+    "JS-MED-SET033-03",
+    "JS-MED-SET034-01",
+    "JS-MED-SET034-02",
+    "JS-MED-SET034-03",
+    "JS-MED-SET035-01",
+    "JS-MED-SET035-02",
+    "JS-MED-SET035-03",
+    "JS-MED-SET036-01",
+    "JS-MED-SET036-02",
+    "JS-MED-SET036-03",
+    "JS-MED-SET037-01",
+    "JS-MED-SET037-02",
+    "JS-MED-SET037-03",
+    "JS-MED-SET038-01",
+    "JS-MED-SET038-02",
+    "JS-MED-SET039-01",
+    "JS-MED-SET039-02",
+    "JS-MED-SET039-03",
+    "JS-MED-SET040-01",
+    "JS-MED-SET040-02",
+    "JS-MED-SET040-03",
+    "JS-MED-SET041-01",
+    "JS-MED-SET041-02",
+    "JS-MED-SET041-03",
+    "JS-MED-SET042-01",
+    "JS-MED-SET042-02",
+    "JS-MED-SET043-01",
+    "JS-MED-SET043-02",
+    "JS-MED-SET043-03",
+    "JS-MED-SET044-01",
+    "JS-MED-SET044-02",
+    "JS-MED-SET044-03",
+    "JS-MED-SET044-04",
+    "JS-MED-SET044-05",
+    "JS-MED-SET045-01",
+    "JS-MED-SET045-02",
+    "JS-MED-SET046-01",
+    "JS-MED-SET046-02",
+    "JS-MED-SET046-03",
+    "JS-MED-SET047-01",
+    "JS-MED-SET047-02",
+    "JS-MED-SET047-03",
+    "JS-MED-SET048-01",
+    "JS-MED-SET048-02",
+    "JS-MED-SET048-03",
+    "JS-MED-SET049-01",
+    "JS-MED-SET049-02",
+    "JS-MED-SET049-03",
+    "JS-MED-SET050-01",
+    "JS-MED-SET050-02",
+    "JS-MED-SET051-01",
+    "JS-MED-SET051-02",
+    "JS-MED-SET051-03",
+    "JS-MED-SET052-01",
+    "JS-MED-SET052-02",
+    "JS-MED-SET053-01",
+    "JS-MED-SET053-02",
+    "JS-MED-SET053-03",
+    "JS-MED-SET054-01",
+    "JS-MED-SET054-02",
+    "JS-MED-SET054-03",
+    "JS-MED-SET055-01",
+    "JS-MED-SET055-02",
+    "JS-MED-SET055-03",
+    "JS-MED-SET056-01",
+    "JS-MED-SET056-02",
+    "JS-MED-SET056-03",
+    "JS-MED-SET057-01",
+    "JS-MED-SET057-02",
+    "JS-MED-SET058-01",
+    "JS-MED-SET058-02",
+    "JS-MED-SET058-03",
+    "JS-MED-SET059-01",
+    "JS-MED-SET059-02",
+    "JS-MED-SET060-01",
+    "JS-MED-SET060-02",
+    "JS-MED-SET060-03",
+    "JS-MED-SET061-01",
+    "JS-MED-SET061-02",
+    "JS-MED-SET061-03",
+    "JS-MED-SET061-04",
+    "JS-MED-SET062-01",
+    "JS-MED-SET062-02",
+    "JS-MED-SET063-01",
+    "JS-MED-SET063-02",
+    "JS-MED-SET064-01",
+    "JS-MED-SET064-02",
+    "JS-MED-SET064-03",
+    "JS-MED-SET065-01",
+    "JS-MED-SET065-02",
+    "JS-MED-SET065-03",
+    "JS-MED-SET066-01",
+    "JS-MED-SET067-01",
+    "JS-MED-SET067-02",
+    "JS-MED-SET067-03",
+    "JS-MED-SET067-04",
+    "JS-MED-SET068-01",
+    "JS-MED-SET069-01",
+    "JS-MED-SET069-02",
+    "JS-MED-SET069-03",
+    "JS-MED-SET070-01",
+    "JS-MED-SET070-02",
+    "JS-MED-SET071-01",
+    "JS-MED-SET071-02",
+    "JS-MED-SET071-03"
+  ],
+  "duplicates": [],
+  "skipped_blocks": [],
+  "parse_failures": [],
+  "sample_generation": {
+    "JS-MED-SET001-01": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 59,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3046
+      },
+      "mid": {
+        "score": 16.5,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 14.3,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "JS-MED-SET001-02": {
+      "high": {
+        "score": 36.3,
+        "strategy": "document",
+        "count": 64,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3011
+      },
+      "mid": {
+        "score": 19.5,
+        "strategy": "spread",
+        "count": 6,
+        "trim_chars": 160,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 473
+      },
+      "low": {
+        "score": 15.4,
+        "strategy": "markers",
+        "count": 3,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": false,
+        "effective_length": 258
+      }
+    },
+    "JS-MED-SET001-03": {
+      "high": {
+        "score": 38.7,
+        "strategy": "document",
+        "count": 60,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3086
+      },
+      "mid": {
+        "score": 15.2,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 179
+      },
+      "low": {
+        "score": 12.0,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "JS-MED-SET002-01": {
+      "high": {
+        "score": 50.9,
+        "strategy": "document",
+        "count": 71,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3130
+      },
+      "mid": {
+        "score": 29.0,
+        "strategy": "markers",
+        "count": 7,
+        "trim_chars": 160,
+        "sanitization": "light",
+        "oral": false,
+        "effective_length": 446
+      },
+      "low": {
+        "score": 19.0,
+        "strategy": "dialogue_focus",
+        "count": 5,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 235
+      }
+    },
+    "JS-MED-SET002-02": {
+      "high": {
+        "score": 50.1,
+        "strategy": "document",
+        "count": 74,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3169
+      },
+      "mid": {
+        "score": 27.5,
+        "strategy": "leading",
+        "count": 9,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 527
+      },
+      "low": {
+        "score": 18.9,
+        "strategy": "markers",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 229
+      }
+    },
+    "JS-MED-SET004-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 72,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3201
+      },
+      "mid": {
+        "score": 16.5,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 14.2,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "JS-MED-SET004-02": {
+      "high": {
+        "score": 38.8,
+        "strategy": "document",
+        "count": 72,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3103
+      },
+      "mid": {
+        "score": 21.3,
+        "strategy": "markers",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 566
+      },
+      "low": {
+        "score": 15.4,
+        "strategy": "markers",
+        "count": 3,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 224
+      }
+    },
+    "JS-MED-SET004-03": {
+      "high": {
+        "score": 35.7,
+        "strategy": "document",
+        "count": 64,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3060
+      },
+      "mid": {
+        "score": 19.2,
+        "strategy": "spread",
+        "count": 8,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 545
+      },
+      "low": {
+        "score": 15.0,
+        "strategy": "spread",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 292
+      }
+    },
+    "JS-MED-SET005-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 57,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3067
+      },
+      "mid": {
+        "score": 16.5,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 14.3,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "JS-MED-SET005-02": {
+      "high": {
+        "score": 38.8,
+        "strategy": "document",
+        "count": 59,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3177
+      },
+      "mid": {
+        "score": 16.2,
+        "strategy": "template_organization_mid_1",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 251
+      },
+      "low": {
+        "score": 15.4,
+        "strategy": "template_organization_low_3",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 174
+      }
+    },
+    "JS-MED-SET005-03": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 84,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3037
+      },
+      "mid": {
+        "score": 13.8,
+        "strategy": "template_scene_mid_1",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 249
+      },
+      "low": {
+        "score": 13.2,
+        "strategy": "template_scene_low_3",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 210
+      }
+    },
+    "JS-MED-SET006-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 67,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3120
+      },
+      "mid": {
+        "score": 16.5,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 274
+      },
+      "low": {
+        "score": 14.3,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 174
+      }
+    },
+    "JS-MED-SET006-02": {
+      "high": {
+        "score": 38.8,
+        "strategy": "document",
+        "count": 66,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3055
+      },
+      "mid": {
+        "score": 12.9,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 179
+      },
+      "low": {
+        "score": 12.0,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "JS-MED-SET006-03": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 59,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3003
+      },
+      "mid": {
+        "score": 19.2,
+        "strategy": "hybrid",
+        "count": 7,
+        "trim_chars": 160,
+        "sanitization": "light",
+        "oral": false,
+        "effective_length": 497
+      },
+      "low": {
+        "score": 14.8,
+        "strategy": "hybrid",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 241
+      }
+    },
+    "JS-MED-SET007-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 61,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3008
+      },
+      "mid": {
+        "score": 15.6,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 13.9,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "JS-MED-SET007-02": {
+      "high": {
+        "score": 38.8,
+        "strategy": "document",
+        "count": 63,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3192
+      },
+      "mid": {
+        "score": 21.3,
+        "strategy": "markers",
+        "count": 9,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 513
+      },
+      "low": {
+        "score": 15.4,
+        "strategy": "markers",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 240
+      }
+    },
+    "JS-MED-SET007-03": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 67,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3196
+      },
+      "mid": {
+        "score": 19.0,
+        "strategy": "hybrid",
+        "count": 8,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 445
+      },
+      "low": {
+        "score": 14.4,
+        "strategy": "markers",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 261
+      }
+    },
+    "JS-MED-SET008-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 67,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3129
+      },
+      "mid": {
+        "score": 17.8,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 273
+      },
+      "low": {
+        "score": 14.9,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "JS-MED-SET008-02": {
+      "high": {
+        "score": 38.8,
+        "strategy": "document",
+        "count": 72,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3063
+      },
+      "mid": {
+        "score": 16.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 259
+      },
+      "low": {
+        "score": 15.5,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 171
+      }
+    },
+    "JS-MED-SET008-03": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 76,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3137
+      },
+      "mid": {
+        "score": 13.9,
+        "strategy": "template_interpersonal_mid_1",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 168
+      },
+      "low": {
+        "score": 11.2,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "JS-MED-SET009-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 65,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3153
+      },
+      "mid": {
+        "score": 16.4,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 274
+      },
+      "low": {
+        "score": 14.3,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 188
+      }
+    },
+    "JS-MED-SET009-02": {
+      "high": {
+        "score": 38.8,
+        "strategy": "document",
+        "count": 69,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3020
+      },
+      "mid": {
+        "score": 22.0,
+        "strategy": "markers",
+        "count": 8,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 516
+      },
+      "low": {
+        "score": 15.5,
+        "strategy": "dialogue_focus",
+        "count": 6,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 226
+      }
+    },
+    "JS-MED-SET009-03": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 69,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3135
+      },
+      "mid": {
+        "score": 18.9,
+        "strategy": "markers",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 465
+      },
+      "low": {
+        "score": 14.7,
+        "strategy": "markers",
+        "count": 7,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 230
+      }
+    },
+    "JS-MED-SET010-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 76,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3112
+      },
+      "mid": {
+        "score": 16.6,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 14.4,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "JS-MED-SET010-02": {
+      "high": {
+        "score": 38.8,
+        "strategy": "document",
+        "count": 68,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2999
+      },
+      "mid": {
+        "score": 20.8,
+        "strategy": "leading",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 571
+      },
+      "low": {
+        "score": 15.8,
+        "strategy": "hybrid",
+        "count": 3,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 220
+      }
+    },
+    "JS-MED-SET010-03": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 67,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3116
+      },
+      "mid": {
+        "score": 16.3,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 14.2,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "JS-MED-SET011-01": {
+      "high": {
+        "score": 50.1,
+        "strategy": "document",
+        "count": 62,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3071
+      },
+      "mid": {
+        "score": 28.4,
+        "strategy": "spread",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 641
+      },
+      "low": {
+        "score": 19.6,
+        "strategy": "hybrid",
+        "count": 7,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": false,
+        "effective_length": 238
+      }
+    },
+    "JS-MED-SET011-02": {
+      "high": {
+        "score": 50.1,
+        "strategy": "document",
+        "count": 66,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3025
+      },
+      "mid": {
+        "score": 21.1,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 270
+      },
+      "low": {
+        "score": 18.4,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 184
+      }
+    },
+    "JS-MED-SET012-01": {
+      "high": {
+        "score": 50.1,
+        "strategy": "document",
+        "count": 71,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3152
+      },
+      "mid": {
+        "score": 26.5,
+        "strategy": "markers",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 485
+      },
+      "low": {
+        "score": 19.1,
+        "strategy": "spread",
+        "count": 23,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 709
+      }
+    },
+    "JS-MED-SET012-02": {
+      "high": {
+        "score": 50.1,
+        "strategy": "document",
+        "count": 72,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3227
+      },
+      "mid": {
+        "score": 22.2,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 18.9,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "JS-MED-SET013-01": {
+      "high": {
+        "score": 50.1,
+        "strategy": "document",
+        "count": 78,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3228
+      },
+      "mid": {
+        "score": 22.2,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 18.9,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "JS-MED-SET013-02": {
+      "high": {
+        "score": 50.1,
+        "strategy": "document",
+        "count": 72,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3017
+      },
+      "mid": {
+        "score": 25.8,
+        "strategy": "spread",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 607
+      },
+      "low": {
+        "score": 19.3,
+        "strategy": "leading",
+        "count": 29,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 703
+      }
+    },
+    "JS-MED-SET014-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 57,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3348
+      },
+      "mid": {
+        "score": 32.1,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 268
+      },
+      "low": {
+        "score": 29.0,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 164
+      }
+    },
+    "JS-MED-SET015-01": {
+      "high": {
+        "score": 51.1,
+        "strategy": "document",
+        "count": 62,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3564
+      },
+      "mid": {
+        "score": 27.6,
+        "strategy": "spread",
+        "count": 8,
+        "trim_chars": 160,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 567
+      },
+      "low": {
+        "score": 17.8,
+        "strategy": "spread",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": false,
+        "effective_length": 246
+      }
+    },
+    "JS-MED-SET015-02": {
+      "high": {
+        "score": 50.1,
+        "strategy": "document",
+        "count": 55,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3239
+      },
+      "mid": {
+        "score": 19.8,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 278
+      },
+      "low": {
+        "score": 17.7,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 177
+      }
+    },
+    "JS-MED-SET016-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 47,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3606
+      },
+      "mid": {
+        "score": 13.8,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 13.0,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 188
+      }
+    },
+    "JS-MED-SET016-02": {
+      "high": {
+        "score": 38.8,
+        "strategy": "document",
+        "count": 57,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3608
+      },
+      "mid": {
+        "score": 21.4,
+        "strategy": "leading",
+        "count": 10,
+        "trim_chars": 220,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 908
+      },
+      "low": {
+        "score": 14.4,
+        "strategy": "markers",
+        "count": 6,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 252
+      }
+    },
+    "JS-MED-SET016-03": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 54,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 4327
+      },
+      "mid": {
+        "score": 18.3,
+        "strategy": "spread",
+        "count": 9,
+        "trim_chars": 220,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 920
+      },
+      "low": {
+        "score": 13.2,
+        "strategy": "markers",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 270
+      }
+    },
+    "JS-MED-SET017-01": {
+      "high": {
+        "score": 51.4,
+        "strategy": "document",
+        "count": 59,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3316
+      },
+      "mid": {
+        "score": 22.2,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 18.9,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "JS-MED-SET017-02": {
+      "high": {
+        "score": 50.1,
+        "strategy": "document",
+        "count": 63,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3184
+      },
+      "mid": {
+        "score": 17.4,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 167
+      },
+      "low": {
+        "score": 14.3,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "JS-MED-SET018-01": {
+      "high": {
+        "score": 50.1,
+        "strategy": "document",
+        "count": 65,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3624
+      },
+      "mid": {
+        "score": 20.9,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 18.2,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "JS-MED-SET018-02": {
+      "high": {
+        "score": 50.1,
+        "strategy": "document",
+        "count": 46,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3128
+      },
+      "mid": {
+        "score": 27.6,
+        "strategy": "markers",
+        "count": 7,
+        "trim_chars": 220,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 716
+      },
+      "low": {
+        "score": 18.8,
+        "strategy": "markers",
+        "count": 3,
+        "trim_chars": 120,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 229
+      }
+    },
+    "JS-MED-SET019-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 56,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3336
+      },
+      "mid": {
+        "score": 18.6,
+        "strategy": "spread",
+        "count": 9,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 760
+      },
+      "low": {
+        "score": 14.2,
+        "strategy": "markers",
+        "count": 3,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 224
+      }
+    },
+    "JS-MED-SET019-02": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 44,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3154
+      },
+      "mid": {
+        "score": 20.3,
+        "strategy": "spread",
+        "count": 7,
+        "trim_chars": 220,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 735
+      },
+      "low": {
+        "score": 14.9,
+        "strategy": "dialogue_focus",
+        "count": 6,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 239
+      }
+    },
+    "JS-MED-SET019-03": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 50,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3313
+      },
+      "mid": {
+        "score": 14.1,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 189
+      },
+      "low": {
+        "score": 11.6,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "JS-MED-SET020-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 34,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2068
+      },
+      "mid": {
+        "score": 15.6,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 268
+      },
+      "low": {
+        "score": 13.9,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 164
+      }
+    },
+    "JS-MED-SET020-02": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 20,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1035
+      },
+      "mid": {
+        "score": 13.2,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 3,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 129
+      },
+      "low": {
+        "score": 12.0,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "JS-MED-SET020-03": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 26,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1582
+      },
+      "mid": {
+        "score": 13.0,
+        "strategy": "template_interpersonal_mid_1",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 185
+      },
+      "low": {
+        "score": 11.8,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "JS-MED-SET021-01": {
+      "high": {
+        "score": 35.8,
+        "strategy": "document",
+        "count": 44,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3134
+      },
+      "mid": {
+        "score": 19.6,
+        "strategy": "spread",
+        "count": 8,
+        "trim_chars": 160,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 708
+      },
+      "low": {
+        "score": 13.9,
+        "strategy": "spread",
+        "count": 6,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 252
+      }
+    },
+    "JS-MED-SET021-02": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 38,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3018
+      },
+      "mid": {
+        "score": 18.8,
+        "strategy": "spread",
+        "count": 6,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 447
+      },
+      "low": {
+        "score": 13.8,
+        "strategy": "markers",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 230
+      }
+    },
+    "JS-MED-SET021-03": {
+      "high": {
+        "score": 38.8,
+        "strategy": "document",
+        "count": 44,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3025
+      },
+      "mid": {
+        "score": 16.6,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 271
+      },
+      "low": {
+        "score": 14.7,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 162
+      }
+    },
+    "JS-MED-SET022-01": {
+      "high": {
+        "score": 50.1,
+        "strategy": "document",
+        "count": 45,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3053
+      },
+      "mid": {
+        "score": 27.7,
+        "strategy": "markers",
+        "count": 8,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 724
+      },
+      "low": {
+        "score": 18.2,
+        "strategy": "hybrid",
+        "count": 4,
+        "trim_chars": 120,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 222
+      }
+    },
+    "JS-MED-SET022-02": {
+      "high": {
+        "score": 50.1,
+        "strategy": "document",
+        "count": 40,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3018
+      },
+      "mid": {
+        "score": 27.8,
+        "strategy": "markers",
+        "count": 9,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 730
+      },
+      "low": {
+        "score": 18.3,
+        "strategy": "analysis_focus",
+        "count": 6,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 225
+      }
+    },
+    "JS-MED-SET023-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 44,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3064
+      },
+      "mid": {
+        "score": 19.1,
+        "strategy": "spread",
+        "count": 10,
+        "trim_chars": 220,
+        "sanitization": "light",
+        "oral": false,
+        "effective_length": 733
+      },
+      "low": {
+        "score": 13.7,
+        "strategy": "markers",
+        "count": 3,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 232
+      }
+    },
+    "JS-MED-SET023-02": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 42,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3212
+      },
+      "mid": {
+        "score": 15.9,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 271
+      },
+      "low": {
+        "score": 14.1,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 165
+      }
+    },
+    "JS-MED-SET023-03": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 34,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3175
+      },
+      "mid": {
+        "score": 15.5,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 276
+      },
+      "low": {
+        "score": 14.0,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "JS-MED-SET024-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 43,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3159
+      },
+      "mid": {
+        "score": 14.8,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 13.5,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "JS-MED-SET024-02": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 44,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3073
+      },
+      "mid": {
+        "score": 13.4,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 163
+      },
+      "low": {
+        "score": 11.6,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "JS-MED-SET024-03": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 41,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3090
+      },
+      "mid": {
+        "score": 14.5,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 13.8,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "JS-MED-SET025-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 49,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3014
+      },
+      "mid": {
+        "score": 14.6,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 276
+      },
+      "low": {
+        "score": 13.4,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 192
+      }
+    },
+    "JS-MED-SET025-02": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 35,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3064
+      },
+      "mid": {
+        "score": 14.3,
+        "strategy": "template_organization_mid_1",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 251
+      },
+      "low": {
+        "score": 13.7,
+        "strategy": "template_organization_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 187
+      }
+    },
+    "JS-MED-SET025-03": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 34,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3307
+      },
+      "mid": {
+        "score": 12.4,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 172
+      },
+      "low": {
+        "score": 11.6,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "JS-MED-SET026-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 43,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3043
+      },
+      "mid": {
+        "score": 14.4,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 13.2,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "JS-MED-SET026-02": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 42,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3015
+      },
+      "mid": {
+        "score": 20.3,
+        "strategy": "leading",
+        "count": 8,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 597
+      },
+      "low": {
+        "score": 13.8,
+        "strategy": "dialogue_focus",
+        "count": 3,
+        "trim_chars": 120,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 222
+      }
+    },
+    "JS-MED-SET026-03": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 39,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3079
+      },
+      "mid": {
+        "score": 12.6,
+        "strategy": "template_interpersonal_mid_1",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 184
+      },
+      "low": {
+        "score": 11.6,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "JS-MED-SET027-01": {
+      "high": {
+        "score": 52.1,
+        "strategy": "document",
+        "count": 45,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3002
+      },
+      "mid": {
+        "score": 27.6,
+        "strategy": "leading",
+        "count": 7,
+        "trim_chars": 160,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 511
+      },
+      "low": {
+        "score": 18.7,
+        "strategy": "markers",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 242
+      }
+    },
+    "JS-MED-SET027-02": {
+      "high": {
+        "score": 50.1,
+        "strategy": "document",
+        "count": 35,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2997
+      },
+      "mid": {
+        "score": 18.6,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 17.1,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "JS-MED-SET028-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 45,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3032
+      },
+      "mid": {
+        "score": 19.3,
+        "strategy": "markers",
+        "count": 9,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 802
+      },
+      "low": {
+        "score": 13.6,
+        "strategy": "hybrid",
+        "count": 3,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 228
+      }
+    },
+    "JS-MED-SET028-02": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 41,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3132
+      },
+      "mid": {
+        "score": 20.2,
+        "strategy": "spread",
+        "count": 8,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 614
+      },
+      "low": {
+        "score": 13.9,
+        "strategy": "leading",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 224
+      }
+    },
+    "JS-MED-SET028-03": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 42,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3217
+      },
+      "mid": {
+        "score": 20.3,
+        "strategy": "hybrid",
+        "count": 7,
+        "trim_chars": 220,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 665
+      },
+      "low": {
+        "score": 13.8,
+        "strategy": "hybrid",
+        "count": 3,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": false,
+        "effective_length": 234
+      }
+    },
+    "JS-MED-SET029-01": {
+      "high": {
+        "score": 50.1,
+        "strategy": "document",
+        "count": 50,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3123
+      },
+      "mid": {
+        "score": 15.5,
+        "strategy": "template_interpersonal_mid_1",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 183
+      },
+      "low": {
+        "score": 14.3,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "JS-MED-SET029-02": {
+      "high": {
+        "score": 50.1,
+        "strategy": "document",
+        "count": 47,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3128
+      },
+      "mid": {
+        "score": 27.5,
+        "strategy": "markers",
+        "count": 10,
+        "trim_chars": 220,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 771
+      },
+      "low": {
+        "score": 17.6,
+        "strategy": "dialogue_focus",
+        "count": 3,
+        "trim_chars": 120,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 232
+      }
+    },
+    "JS-MED-SET030-01": {
+      "high": {
+        "score": 50.1,
+        "strategy": "document",
+        "count": 43,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3012
+      },
+      "mid": {
+        "score": 26.4,
+        "strategy": "leading",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 521
+      },
+      "low": {
+        "score": 17.7,
+        "strategy": "markers",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 224
+      }
+    },
+    "JS-MED-SET030-02": {
+      "high": {
+        "score": 50.1,
+        "strategy": "document",
+        "count": 41,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3134
+      },
+      "mid": {
+        "score": 27.7,
+        "strategy": "hybrid",
+        "count": 7,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 606
+      },
+      "low": {
+        "score": 17.4,
+        "strategy": "spread",
+        "count": 6,
+        "trim_chars": 120,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 222
+      }
+    },
+    "JS-MED-SET031-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 44,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3552
+      },
+      "mid": {
+        "score": 12.8,
+        "strategy": "template_scene_mid_1",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 249
+      },
+      "low": {
+        "score": 12.2,
+        "strategy": "template_scene_low_3",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 210
+      }
+    },
+    "JS-MED-SET031-02": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 48,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3758
+      },
+      "mid": {
+        "score": 20.3,
+        "strategy": "spread",
+        "count": 10,
+        "trim_chars": 220,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 930
+      },
+      "low": {
+        "score": 14.0,
+        "strategy": "hybrid",
+        "count": 3,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 262
+      }
+    },
+    "JS-MED-SET031-03": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 36,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3568
+      },
+      "mid": {
+        "score": 20.3,
+        "strategy": "spread",
+        "count": 7,
+        "trim_chars": 160,
+        "sanitization": "light",
+        "oral": false,
+        "effective_length": 772
+      },
+      "low": {
+        "score": 13.9,
+        "strategy": "spread",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 223
+      }
+    },
+    "JS-MED-SET032-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 51,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3266
+      },
+      "mid": {
+        "score": 19.2,
+        "strategy": "hybrid",
+        "count": 9,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 852
+      },
+      "low": {
+        "score": 13.6,
+        "strategy": "spread",
+        "count": 3,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 283
+      }
+    },
+    "JS-MED-SET032-02": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 57,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3449
+      },
+      "mid": {
+        "score": 19.4,
+        "strategy": "spread",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 675
+      },
+      "low": {
+        "score": 13.6,
+        "strategy": "leading",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 232
+      }
+    },
+    "JS-MED-SET032-03": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 68,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 4013
+      },
+      "mid": {
+        "score": 19.8,
+        "strategy": "hybrid",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 596
+      },
+      "low": {
+        "score": 13.4,
+        "strategy": "leading",
+        "count": 5,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 223
+      }
+    },
+    "JS-MED-SET033-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 51,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3055
+      },
+      "mid": {
+        "score": 13.6,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 276
+      },
+      "low": {
+        "score": 12.8,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 180
+      }
+    },
+    "JS-MED-SET033-02": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 46,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3037
+      },
+      "mid": {
+        "score": 19.8,
+        "strategy": "hybrid",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 808
+      },
+      "low": {
+        "score": 13.7,
+        "strategy": "hybrid",
+        "count": 3,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": false,
+        "effective_length": 247
+      }
+    },
+    "JS-MED-SET033-03": {
+      "high": {
+        "score": 37.0,
+        "strategy": "document",
+        "count": 53,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3006
+      },
+      "mid": {
+        "score": 12.5,
+        "strategy": "template_interpersonal_mid_1",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 183
+      },
+      "low": {
+        "score": 11.6,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "JS-MED-SET034-01": {
+      "high": {
+        "score": 35.2,
+        "strategy": "document",
+        "count": 45,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3030
+      },
+      "mid": {
+        "score": 19.2,
+        "strategy": "leading",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 850
+      },
+      "low": {
+        "score": 13.1,
+        "strategy": "leading",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 225
+      }
+    },
+    "JS-MED-SET034-02": {
+      "high": {
+        "score": 38.8,
+        "strategy": "document",
+        "count": 60,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3179
+      },
+      "mid": {
+        "score": 12.9,
+        "strategy": "template_interpersonal_mid_3",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": false,
+        "effective_length": 184
+      },
+      "low": {
+        "score": 11.9,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "JS-MED-SET034-03": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 55,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3073
+      },
+      "mid": {
+        "score": 13.3,
+        "strategy": "template_organization_mid_1",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 251
+      },
+      "low": {
+        "score": 12.7,
+        "strategy": "template_organization_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 187
+      }
+    },
+    "JS-MED-SET035-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 53,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3281
+      },
+      "mid": {
+        "score": 13.4,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 12.7,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "JS-MED-SET035-02": {
+      "high": {
+        "score": 38.8,
+        "strategy": "document",
+        "count": 50,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3092
+      },
+      "mid": {
+        "score": 13.5,
+        "strategy": "template_scene_mid_1",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 249
+      },
+      "low": {
+        "score": 12.9,
+        "strategy": "template_scene_low_3",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 210
+      }
+    },
+    "JS-MED-SET035-03": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 46,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3239
+      },
+      "mid": {
+        "score": 18.6,
+        "strategy": "hybrid",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 828
+      },
+      "low": {
+        "score": 13.0,
+        "strategy": "spread",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 231
+      }
+    },
+    "JS-MED-SET036-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 49,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3010
+      },
+      "mid": {
+        "score": 13.4,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 12.7,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "JS-MED-SET036-02": {
+      "high": {
+        "score": 38.8,
+        "strategy": "document",
+        "count": 46,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3094
+      },
+      "mid": {
+        "score": 14.5,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 13.7,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "JS-MED-SET036-03": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 55,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3130
+      },
+      "mid": {
+        "score": 12.4,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 195
+      },
+      "low": {
+        "score": 11.2,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "JS-MED-SET037-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 48,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3137
+      },
+      "mid": {
+        "score": 19.7,
+        "strategy": "spread",
+        "count": 9,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 802
+      },
+      "low": {
+        "score": 13.2,
+        "strategy": "dialogue_focus",
+        "count": 3,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 252
+      }
+    },
+    "JS-MED-SET037-02": {
+      "high": {
+        "score": 38.8,
+        "strategy": "document",
+        "count": 49,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3077
+      },
+      "mid": {
+        "score": 21.1,
+        "strategy": "spread",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 754
+      },
+      "low": {
+        "score": 14.2,
+        "strategy": "spread",
+        "count": 5,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 227
+      }
+    },
+    "JS-MED-SET037-03": {
+      "high": {
+        "score": 35.2,
+        "strategy": "document",
+        "count": 46,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3086
+      },
+      "mid": {
+        "score": 19.3,
+        "strategy": "hybrid",
+        "count": 9,
+        "trim_chars": 160,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 725
+      },
+      "low": {
+        "score": 13.9,
+        "strategy": "leading",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": false,
+        "effective_length": 229
+      }
+    },
+    "JS-MED-SET038-01": {
+      "high": {
+        "score": 52.0,
+        "strategy": "document",
+        "count": 53,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3444
+      },
+      "mid": {
+        "score": 25.4,
+        "strategy": "spread",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 709
+      },
+      "low": {
+        "score": 17.4,
+        "strategy": "leading",
+        "count": 3,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 255
+      }
+    },
+    "JS-MED-SET038-02": {
+      "high": {
+        "score": 52.0,
+        "strategy": "document",
+        "count": 67,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3100
+      },
+      "mid": {
+        "score": 16.0,
+        "strategy": "template_interpersonal_mid_1",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 183
+      },
+      "low": {
+        "score": 14.7,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "JS-MED-SET039-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 56,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3109
+      },
+      "mid": {
+        "score": 20.5,
+        "strategy": "hybrid",
+        "count": 29,
+        "trim_chars": 160,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 1456
+      },
+      "low": {
+        "score": 13.3,
+        "strategy": "dialogue_focus",
+        "count": 6,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 225
+      }
+    },
+    "JS-MED-SET039-02": {
+      "high": {
+        "score": 38.8,
+        "strategy": "document",
+        "count": 41,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3316
+      },
+      "mid": {
+        "score": 21.3,
+        "strategy": "hybrid",
+        "count": 9,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 791
+      },
+      "low": {
+        "score": 14.2,
+        "strategy": "spread",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 224
+      }
+    },
+    "JS-MED-SET039-03": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 41,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3155
+      },
+      "mid": {
+        "score": 13.8,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 273
+      },
+      "low": {
+        "score": 13.0,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 188
+      }
+    },
+    "JS-MED-SET040-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 52,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3146
+      },
+      "mid": {
+        "score": 20.8,
+        "strategy": "spread",
+        "count": 27,
+        "trim_chars": 160,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 1550
+      },
+      "low": {
+        "score": 13.4,
+        "strategy": "spread",
+        "count": 7,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 229
+      }
+    },
+    "JS-MED-SET040-02": {
+      "high": {
+        "score": 38.8,
+        "strategy": "document",
+        "count": 53,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3232
+      },
+      "mid": {
+        "score": 21.3,
+        "strategy": "markers",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 802
+      },
+      "low": {
+        "score": 14.4,
+        "strategy": "hybrid",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 228
+      }
+    },
+    "JS-MED-SET040-03": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 49,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3005
+      },
+      "mid": {
+        "score": 14.0,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 273
+      },
+      "low": {
+        "score": 13.1,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 193
+      }
+    },
+    "JS-MED-SET041-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 46,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3111
+      },
+      "mid": {
+        "score": 14.0,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 13.0,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "JS-MED-SET041-02": {
+      "high": {
+        "score": 38.8,
+        "strategy": "document",
+        "count": 53,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3001
+      },
+      "mid": {
+        "score": 21.2,
+        "strategy": "leading",
+        "count": 9,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 681
+      },
+      "low": {
+        "score": 14.5,
+        "strategy": "spread",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 250
+      }
+    },
+    "JS-MED-SET041-03": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 52,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3169
+      },
+      "mid": {
+        "score": 13.9,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 13.0,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "JS-MED-SET042-01": {
+      "high": {
+        "score": 52.0,
+        "strategy": "document",
+        "count": 55,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3160
+      },
+      "mid": {
+        "score": 17.0,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 195
+      },
+      "low": {
+        "score": 14.7,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "JS-MED-SET042-02": {
+      "high": {
+        "score": 52.0,
+        "strategy": "document",
+        "count": 42,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3110
+      },
+      "mid": {
+        "score": 18.8,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 17.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "JS-MED-SET043-01": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 54,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3045
+      },
+      "mid": {
+        "score": 18.5,
+        "strategy": "spread",
+        "count": 9,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 700
+      },
+      "low": {
+        "score": 13.4,
+        "strategy": "markers",
+        "count": 3,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 228
+      }
+    },
+    "JS-MED-SET043-02": {
+      "high": {
+        "score": 38.8,
+        "strategy": "document",
+        "count": 49,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3022
+      },
+      "mid": {
+        "score": 15.2,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 274
+      },
+      "low": {
+        "score": 14.0,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "JS-MED-SET043-03": {
+      "high": {
+        "score": 35.1,
+        "strategy": "document",
+        "count": 54,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3001
+      },
+      "mid": {
+        "score": 14.0,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 13.0,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "JS-MED-SET044-01": {
+      "high": {
+        "score": 23.8,
+        "strategy": "document",
+        "count": 65,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3070
+      },
+      "mid": {
+        "score": 16.2,
+        "strategy": "hybrid",
+        "count": 34,
+        "trim_chars": 160,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 1358
+      },
+      "low": {
+        "score": 10.3,
+        "strategy": "markers",
+        "count": 6,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 236
+      }
+    },
+    "JS-MED-SET044-02": {
+      "high": {
+        "score": 23.8,
+        "strategy": "document",
+        "count": 63,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3130
+      },
+      "mid": {
+        "score": 10.8,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 10.0,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "JS-MED-SET044-03": {
+      "high": {
+        "score": 23.8,
+        "strategy": "document",
+        "count": 68,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2999
+      },
+      "mid": {
+        "score": 10.8,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 10.1,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "JS-MED-SET044-04": {
+      "high": {
+        "score": 23.8,
+        "strategy": "document",
+        "count": 67,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3015
+      },
+      "mid": {
+        "score": 14.3,
+        "strategy": "hybrid",
+        "count": 35,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1623
+      },
+      "low": {
+        "score": 10.3,
+        "strategy": "markers",
+        "count": 5,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 232
+      }
+    },
+    "JS-MED-SET044-05": {
+      "high": {
+        "score": 23.8,
+        "strategy": "document",
+        "count": 61,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3050
+      },
+      "mid": {
+        "score": 10.8,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 268
+      },
+      "low": {
+        "score": 10.0,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 164
+      }
+    },
+    "JS-MED-SET045-01": {
+      "high": {
+        "score": 52.0,
+        "strategy": "document",
+        "count": 53,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2998
+      },
+      "mid": {
+        "score": 16.0,
+        "strategy": "template_interpersonal_mid_2",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 175
+      },
+      "low": {
+        "score": 14.7,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "JS-MED-SET045-02": {
+      "high": {
+        "score": 52.0,
+        "strategy": "document",
+        "count": 62,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3051
+      },
+      "mid": {
+        "score": 18.9,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 17.5,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 186
+      }
+    },
+    "JS-MED-SET046-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 67,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3450
+      },
+      "mid": {
+        "score": 51.7,
+        "strategy": "markers",
+        "count": 9,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 554
+      },
+      "low": {
+        "score": 30.5,
+        "strategy": "dialogue_focus",
+        "count": 7,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 225
+      }
+    },
+    "JS-MED-SET046-02": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 67,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3286
+      },
+      "mid": {
+        "score": 56.2,
+        "strategy": "markers",
+        "count": 8,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 440
+      },
+      "low": {
+        "score": 30.7,
+        "strategy": "spread",
+        "count": 6,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 234
+      }
+    },
+    "JS-MED-SET046-03": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 58,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3283
+      },
+      "mid": {
+        "score": 52.4,
+        "strategy": "hybrid",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 785
+      },
+      "low": {
+        "score": 30.2,
+        "strategy": "dialogue_focus",
+        "count": 6,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 228
+      }
+    },
+    "JS-MED-SET047-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 79,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3284
+      },
+      "mid": {
+        "score": 34.4,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 268
+      },
+      "low": {
+        "score": 28.9,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 162
+      }
+    },
+    "JS-MED-SET047-02": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 66,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3260
+      },
+      "mid": {
+        "score": 25.7,
+        "strategy": "template_interpersonal_mid_1",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 182
+      },
+      "low": {
+        "score": 23.3,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "JS-MED-SET047-03": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 71,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3460
+      },
+      "mid": {
+        "score": 48.2,
+        "strategy": "leading",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 636
+      },
+      "low": {
+        "score": 30.4,
+        "strategy": "spread",
+        "count": 5,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 240
+      }
+    },
+    "JS-MED-SET048-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 80,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3432
+      },
+      "mid": {
+        "score": 55.5,
+        "strategy": "markers",
+        "count": 42,
+        "trim_chars": 160,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 1777
+      },
+      "low": {
+        "score": 30.5,
+        "strategy": "markers",
+        "count": 5,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 229
+      }
+    },
+    "JS-MED-SET048-02": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 66,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3460
+      },
+      "mid": {
+        "score": 51.2,
+        "strategy": "spread",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 588
+      },
+      "low": {
+        "score": 29.9,
+        "strategy": "markers",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 221
+      }
+    },
+    "JS-MED-SET048-03": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 59,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3466
+      },
+      "mid": {
+        "score": 45.2,
+        "strategy": "spread",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 690
+      },
+      "low": {
+        "score": 29.8,
+        "strategy": "spread",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 224
+      }
+    },
+    "JS-MED-SET049-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 83,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3701
+      },
+      "mid": {
+        "score": 33.0,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 272
+      },
+      "low": {
+        "score": 29.5,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "JS-MED-SET049-02": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 72,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3631
+      },
+      "mid": {
+        "score": 53.1,
+        "strategy": "markers",
+        "count": 9,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 547
+      },
+      "low": {
+        "score": 30.2,
+        "strategy": "dialogue_focus",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 256
+      }
+    },
+    "JS-MED-SET049-03": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 93,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3726
+      },
+      "mid": {
+        "score": 32.4,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 270
+      },
+      "low": {
+        "score": 29.1,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "JS-MED-SET050-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 65,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3803
+      },
+      "mid": {
+        "score": 33.0,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 275
+      },
+      "low": {
+        "score": 29.4,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 168
+      }
+    },
+    "JS-MED-SET050-02": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 87,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 4087
+      },
+      "mid": {
+        "score": 52.0,
+        "strategy": "leading",
+        "count": 9,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 596
+      },
+      "low": {
+        "score": 30.0,
+        "strategy": "spread",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 249
+      }
+    },
+    "JS-MED-SET051-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 82,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3859
+      },
+      "mid": {
+        "score": 51.1,
+        "strategy": "leading",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 547
+      },
+      "low": {
+        "score": 30.0,
+        "strategy": "hybrid",
+        "count": 3,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 220
+      }
+    },
+    "JS-MED-SET051-02": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 114,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 4262
+      },
+      "mid": {
+        "score": 46.3,
+        "strategy": "hybrid",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 472
+      },
+      "low": {
+        "score": 32.2,
+        "strategy": "leading",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 257
+      }
+    },
+    "JS-MED-SET051-03": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 104,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 4353
+      },
+      "mid": {
+        "score": 44.0,
+        "strategy": "spread",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 634
+      },
+      "low": {
+        "score": 29.9,
+        "strategy": "markers",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 228
+      }
+    },
+    "JS-MED-SET052-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 43,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3323
+      },
+      "mid": {
+        "score": 52.0,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 307
+      },
+      "low": {
+        "score": 50.3,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 239
+      }
+    },
+    "JS-MED-SET052-02": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 44,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3124
+      },
+      "mid": {
+        "score": 52.4,
+        "strategy": "spread",
+        "count": 23,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1535
+      },
+      "low": {
+        "score": 34.9,
+        "strategy": "spread",
+        "count": 26,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 848
+      }
+    },
+    "JS-MED-SET053-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 47,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3558
+      },
+      "mid": {
+        "score": 51.8,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 305
+      },
+      "low": {
+        "score": 50.0,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 236
+      }
+    },
+    "JS-MED-SET053-02": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 41,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3366
+      },
+      "mid": {
+        "score": 52.0,
+        "strategy": "leading",
+        "count": 21,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1535
+      },
+      "low": {
+        "score": 32.6,
+        "strategy": "hybrid",
+        "count": 25,
+        "trim_chars": 160,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 730
+      }
+    },
+    "JS-MED-SET053-03": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 47,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3293
+      },
+      "mid": {
+        "score": 25.7,
+        "strategy": "template_interpersonal_mid_1",
+        "count": 4,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 183
+      },
+      "low": {
+        "score": 23.4,
+        "strategy": "template_interpersonal_low_2",
+        "count": 2,
+        "trim_chars": null,
+        "sanitization": "heavy",
+        "oral": true,
+        "effective_length": 53
+      }
+    },
+    "JS-MED-SET054-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 49,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3037
+      },
+      "mid": {
+        "score": 52.7,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 341
+      },
+      "low": {
+        "score": 50.9,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 270
+      }
+    },
+    "JS-MED-SET054-02": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 51,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3112
+      },
+      "mid": {
+        "score": 48.2,
+        "strategy": "markers",
+        "count": 32,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1810
+      },
+      "low": {
+        "score": 32.1,
+        "strategy": "spread",
+        "count": 16,
+        "trim_chars": 120,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 701
+      }
+    },
+    "JS-MED-SET054-03": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 48,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3066
+      },
+      "mid": {
+        "score": 51.1,
+        "strategy": "hybrid",
+        "count": 25,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1246
+      },
+      "low": {
+        "score": 33.6,
+        "strategy": "analysis_focus",
+        "count": 19,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 741
+      }
+    },
+    "JS-MED-SET055-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 54,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3048
+      },
+      "mid": {
+        "score": 28.9,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 257
+      },
+      "low": {
+        "score": 26.8,
+        "strategy": "template_analysis_low_1",
+        "count": 5,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 167
+      }
+    },
+    "JS-MED-SET055-02": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 51,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3043
+      },
+      "mid": {
+        "score": 52.4,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 325
+      },
+      "low": {
+        "score": 50.5,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 254
+      }
+    },
+    "JS-MED-SET055-03": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 56,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3090
+      },
+      "mid": {
+        "score": 51.5,
+        "strategy": "hybrid",
+        "count": 29,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1290
+      },
+      "low": {
+        "score": 35.3,
+        "strategy": "hybrid",
+        "count": 18,
+        "trim_chars": 120,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 709
+      }
+    },
+    "JS-MED-SET056-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 48,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2497
+      },
+      "mid": {
+        "score": 54.1,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 305
+      },
+      "low": {
+        "score": 53.8,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 252
+      }
+    },
+    "JS-MED-SET056-02": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 61,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3079
+      },
+      "mid": {
+        "score": 35.0,
+        "strategy": "leading",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 453
+      },
+      "low": {
+        "score": 33.9,
+        "strategy": "dialogue_focus",
+        "count": 20,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 757
+      }
+    },
+    "JS-MED-SET056-03": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 58,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2860
+      },
+      "mid": {
+        "score": 51.8,
+        "strategy": "leading",
+        "count": 30,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1240
+      },
+      "low": {
+        "score": 28.1,
+        "strategy": "spread",
+        "count": 5,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 224
+      }
+    },
+    "JS-MED-SET057-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 55,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3447
+      },
+      "mid": {
+        "score": 52.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 329
+      },
+      "low": {
+        "score": 50.4,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 258
+      }
+    },
+    "JS-MED-SET057-02": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 47,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2519
+      },
+      "mid": {
+        "score": 50.4,
+        "strategy": "template_scene_mid_2",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 309
+      },
+      "low": {
+        "score": 25.3,
+        "strategy": "template_scene_low_1",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 213
+      }
+    },
+    "JS-MED-SET058-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 46,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3052
+      },
+      "mid": {
+        "score": 52.0,
+        "strategy": "markers",
+        "count": 24,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1380
+      },
+      "low": {
+        "score": 35.7,
+        "strategy": "analysis_focus",
+        "count": 15,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 716
+      }
+    },
+    "JS-MED-SET058-02": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 56,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3004
+      },
+      "mid": {
+        "score": 52.8,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 329
+      },
+      "low": {
+        "score": 50.8,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 258
+      }
+    },
+    "JS-MED-SET058-03": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 46,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2982
+      },
+      "mid": {
+        "score": 51.3,
+        "strategy": "hybrid",
+        "count": 24,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1231
+      },
+      "low": {
+        "score": 40.5,
+        "strategy": "hybrid",
+        "count": 23,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 873
+      }
+    },
+    "JS-MED-SET059-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 68,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3471
+      },
+      "mid": {
+        "score": 52.2,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 329
+      },
+      "low": {
+        "score": 50.5,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 258
+      }
+    },
+    "JS-MED-SET059-02": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 60,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3518
+      },
+      "mid": {
+        "score": 52.1,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 327
+      },
+      "low": {
+        "score": 50.4,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 256
+      }
+    },
+    "JS-MED-SET060-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 56,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3498
+      },
+      "mid": {
+        "score": 52.1,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 329
+      },
+      "low": {
+        "score": 50.3,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 258
+      }
+    },
+    "JS-MED-SET060-02": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 52,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3313
+      },
+      "mid": {
+        "score": 52.0,
+        "strategy": "leading",
+        "count": 32,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1512
+      },
+      "low": {
+        "score": 32.5,
+        "strategy": "dialogue_focus",
+        "count": 21,
+        "trim_chars": 120,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 704
+      }
+    },
+    "JS-MED-SET060-03": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 49,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2562
+      },
+      "mid": {
+        "score": 51.6,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 311
+      },
+      "low": {
+        "score": 51.3,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 264
+      }
+    },
+    "JS-MED-SET061-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 62,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3752
+      },
+      "mid": {
+        "score": 51.9,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 325
+      },
+      "low": {
+        "score": 50.2,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 254
+      }
+    },
+    "JS-MED-SET061-02": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 47,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3264
+      },
+      "mid": {
+        "score": 52.2,
+        "strategy": "leading",
+        "count": 29,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1532
+      },
+      "low": {
+        "score": 34.9,
+        "strategy": "leading",
+        "count": 24,
+        "trim_chars": 120,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 703
+      }
+    },
+    "JS-MED-SET061-03": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 43,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3345
+      },
+      "mid": {
+        "score": 52.7,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 365
+      },
+      "low": {
+        "score": 50.8,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 294
+      }
+    },
+    "JS-MED-SET061-04": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 43,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2848
+      },
+      "mid": {
+        "score": 46.0,
+        "strategy": "leading",
+        "count": 22,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1132
+      },
+      "low": {
+        "score": 28.3,
+        "strategy": "markers",
+        "count": 5,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 224
+      }
+    },
+    "JS-MED-SET062-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 55,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3134
+      },
+      "mid": {
+        "score": 52.7,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 347
+      },
+      "low": {
+        "score": 50.8,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 276
+      }
+    },
+    "JS-MED-SET062-02": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 55,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3841
+      },
+      "mid": {
+        "score": 51.6,
+        "strategy": "leading",
+        "count": 29,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1609
+      },
+      "low": {
+        "score": 35.0,
+        "strategy": "spread",
+        "count": 22,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 732
+      }
+    },
+    "JS-MED-SET063-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 51,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3274
+      },
+      "mid": {
+        "score": 51.9,
+        "strategy": "hybrid",
+        "count": 27,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1455
+      },
+      "low": {
+        "score": 50.6,
+        "strategy": "markers",
+        "count": 6,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 224
+      }
+    },
+    "JS-MED-SET063-02": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 42,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2775
+      },
+      "mid": {
+        "score": 51.4,
+        "strategy": "hybrid",
+        "count": 22,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1150
+      },
+      "low": {
+        "score": 51.1,
+        "strategy": "leading",
+        "count": 5,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 222
+      }
+    },
+    "JS-MED-SET064-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 51,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2953
+      },
+      "mid": {
+        "score": 33.6,
+        "strategy": "markers",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 509
+      },
+      "low": {
+        "score": 28.1,
+        "strategy": "spread",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 221
+      }
+    },
+    "JS-MED-SET064-02": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 42,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2763
+      },
+      "mid": {
+        "score": 51.7,
+        "strategy": "markers",
+        "count": 22,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1175
+      },
+      "low": {
+        "score": 28.4,
+        "strategy": "markers",
+        "count": 3,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 222
+      }
+    },
+    "JS-MED-SET064-03": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 38,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2924
+      },
+      "mid": {
+        "score": 49.5,
+        "strategy": "leading",
+        "count": 20,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1304
+      },
+      "low": {
+        "score": 32.1,
+        "strategy": "spread",
+        "count": 12,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 702
+      }
+    },
+    "JS-MED-SET065-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 51,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2981
+      },
+      "mid": {
+        "score": 39.7,
+        "strategy": "markers",
+        "count": 8,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 446
+      },
+      "low": {
+        "score": 27.8,
+        "strategy": "dialogue_focus",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 221
+      }
+    },
+    "JS-MED-SET065-02": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 63,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2992
+      },
+      "mid": {
+        "score": 52.0,
+        "strategy": "markers",
+        "count": 33,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1353
+      },
+      "low": {
+        "score": 33.8,
+        "strategy": "dialogue_focus",
+        "count": 20,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 728
+      }
+    },
+    "JS-MED-SET065-03": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 64,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3254
+      },
+      "mid": {
+        "score": 40.8,
+        "strategy": "hybrid",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 561
+      },
+      "low": {
+        "score": 35.2,
+        "strategy": "dialogue_focus",
+        "count": 20,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 905
+      }
+    },
+    "JS-MED-SET066-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 55,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3635
+      },
+      "mid": {
+        "score": 52.3,
+        "strategy": "hybrid",
+        "count": 29,
+        "trim_chars": 160,
+        "sanitization": "light",
+        "oral": false,
+        "effective_length": 1746
+      },
+      "low": {
+        "score": 27.7,
+        "strategy": "markers",
+        "count": 3,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 231
+      }
+    },
+    "JS-MED-SET067-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 51,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2988
+      },
+      "mid": {
+        "score": 33.6,
+        "strategy": "markers",
+        "count": 10,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 504
+      },
+      "low": {
+        "score": 28.3,
+        "strategy": "markers",
+        "count": 5,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 227
+      }
+    },
+    "JS-MED-SET067-02": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 44,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2588
+      },
+      "mid": {
+        "score": 49.5,
+        "strategy": "leading",
+        "count": 23,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1142
+      },
+      "low": {
+        "score": 28.5,
+        "strategy": "spread",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 223
+      }
+    },
+    "JS-MED-SET067-03": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 41,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2793
+      },
+      "mid": {
+        "score": 51.5,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 315
+      },
+      "low": {
+        "score": 51.2,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 272
+      }
+    },
+    "JS-MED-SET067-04": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 52,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2966
+      },
+      "mid": {
+        "score": 26.5,
+        "strategy": "template_scene_mid_1",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 249
+      },
+      "low": {
+        "score": 24.9,
+        "strategy": "template_scene_low_3",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 210
+      }
+    },
+    "JS-MED-SET068-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 73,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 4759
+      },
+      "mid": {
+        "score": 52.3,
+        "strategy": "hybrid",
+        "count": 38,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1964
+      },
+      "low": {
+        "score": 30.3,
+        "strategy": "leading",
+        "count": 23,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 729
+      }
+    },
+    "JS-MED-SET069-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 33,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2611
+      },
+      "mid": {
+        "score": 51.6,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 314
+      },
+      "low": {
+        "score": 51.3,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 270
+      }
+    },
+    "JS-MED-SET069-02": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 47,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2985
+      },
+      "mid": {
+        "score": 51.0,
+        "strategy": "hybrid",
+        "count": 24,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1204
+      },
+      "low": {
+        "score": 50.8,
+        "strategy": "analysis_focus",
+        "count": 4,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 232
+      }
+    },
+    "JS-MED-SET069-03": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 46,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3639
+      },
+      "mid": {
+        "score": 26.2,
+        "strategy": "template_scene_mid_1",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 249
+      },
+      "low": {
+        "score": 24.6,
+        "strategy": "template_scene_low_3",
+        "count": 7,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 210
+      }
+    },
+    "JS-MED-SET070-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 51,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3603
+      },
+      "mid": {
+        "score": 52.0,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 331
+      },
+      "low": {
+        "score": 50.3,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 262
+      }
+    },
+    "JS-MED-SET070-02": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 58,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 4243
+      },
+      "mid": {
+        "score": 52.0,
+        "strategy": "template_analysis_mid_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 373
+      },
+      "low": {
+        "score": 50.3,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 302
+      }
+    },
+    "JS-MED-SET071-01": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 43,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3082
+      },
+      "mid": {
+        "score": 51.3,
+        "strategy": "template_analysis_mid_1",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 319
+      },
+      "low": {
+        "score": 51.1,
+        "strategy": "template_analysis_low_2",
+        "count": 6,
+        "trim_chars": null,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 282
+      }
+    },
+    "JS-MED-SET071-02": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 45,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 3089
+      },
+      "mid": {
+        "score": 52.0,
+        "strategy": "markers",
+        "count": 28,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1405
+      },
+      "low": {
+        "score": 28.8,
+        "strategy": "spread",
+        "count": 6,
+        "trim_chars": 90,
+        "sanitization": "medium",
+        "oral": true,
+        "effective_length": 266
+      }
+    },
+    "JS-MED-SET071-03": {
+      "high": {
+        "score": 97.0,
+        "strategy": "document",
+        "count": 40,
+        "trim_chars": null,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 2720
+      },
+      "mid": {
+        "score": 52.1,
+        "strategy": "hybrid",
+        "count": 25,
+        "trim_chars": 160,
+        "sanitization": "none",
+        "oral": false,
+        "effective_length": 1256
+      },
+      "low": {
+        "score": 50.8,
+        "strategy": "spread",
+        "count": 7,
+        "trim_chars": 120,
+        "sanitization": "medium",
+        "oral": false,
+        "effective_length": 225
+      }
+    }
+  }
+}

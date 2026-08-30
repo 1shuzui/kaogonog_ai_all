@@ -1,0 +1,202 @@
+{
+  "id": "JS-MED-SET020-02",
+  "type": "应急应变·职业使命类",
+  "province": "江苏",
+  "fullScore": 39.0,
+  "question": "你答应同事明天参加他的婚礼，但是领导临时安排你做急救手术，你应该怎么处理？",
+  "dimensions": [
+    {
+      "name": "决策判断",
+      "score": 10.0
+    },
+    {
+      "name": "沟通表达",
+      "score": 10.0
+    },
+    {
+      "name": "善后处理",
+      "score": 8.0
+    },
+    {
+      "name": "反思提升",
+      "score": 4.0
+    },
+    {
+      "name": "语言表达",
+      "score": 2.0
+    }
+  ],
+  "scoringPoints": [
+    {
+      "name": "决策判断",
+      "score": 10.0
+    },
+    {
+      "name": "沟通表达",
+      "score": 10.0
+    },
+    {
+      "name": "善后处理",
+      "score": 8.0
+    },
+    {
+      "name": "反思提升",
+      "score": 4.0
+    },
+    {
+      "name": "语言表达",
+      "score": 2.0
+    }
+  ],
+  "coreKeywords": [
+    "生命至上",
+    "医者仁心",
+    "职业道德",
+    "急救手术",
+    "坦诚沟通",
+    "职业使命"
+  ],
+  "strongKeywords": [
+    "人际关系",
+    "祝福代转",
+    "弹性预留",
+    "同事关系",
+    "善后处理",
+    "同行理解"
+  ],
+  "weakKeywords": [],
+  "bonusKeywords": [
+    "人民至上",
+    "生命至上",
+    "健康所系性命相托",
+    "救死扶伤是天职"
+  ],
+  "penaltyKeywords": [],
+  "scoringCriteria": [
+    "决策判断（10分）：正确判断急救优先于婚礼，态度坚决",
+    "沟通表达（10分）：与同事坦诚沟通、真心争取理解",
+    "善后处理（8分）：妥善弥补、委托代转祝福、术后联系",
+    "反思提升（4分）：认识到今后承诺需预留弹性空间",
+    "语言表达（2分）"
+  ],
+  "deductionRules": [
+    "犹豫不决不知如何选择扣4-6分",
+    "只做手术不沟通扣3-5分",
+    "沟通后不处理善后扣2-4分"
+  ],
+  "sourceDocument": "江苏新套20_灌云县卫健委面试题.docx",
+  "originFile": "江苏新套20_灌云县卫健委面试题.docx",
+  "sourceQuestionId": "JS-MED-SET020-02",
+  "sourceDocumentType": "docx_xml",
+  "examCategory": "事业单位考试",
+  "examSubcategory": "江苏省",
+  "subcategory": null,
+  "subcategory2": null,
+  "system": "医疗卫生系统",
+  "portalTags": [
+    "医疗卫生面试"
+  ],
+  "displayPortals": [
+    "医疗卫生面试"
+  ],
+  "positionTags": [
+    "medical",
+    "事业单位"
+  ],
+  "positionType": "事业单位",
+  "interviewFormat": "医疗卫生结构化面试",
+  "questionTypeCategory": "应急应变",
+  "jobLevel": "",
+  "classificationSource": "profile_explicit",
+  "classificationConfidence": "high",
+  "reviewStatus": "已确认",
+  "reviewReason": "",
+  "hasCompleteSuiteLevel": true,
+  "suiteId": "JS-MED-SET020",
+  "suiteKey": "JS-MED-SET020",
+  "suiteName": "2023年7月23日江苏省连云港市灌云县卫健委所属事业单位面试题",
+  "sourceTitleRaw": "2023年7月23日江苏省连云港市灌云县卫健委所属事业单位面试题",
+  "examDate": "2023-07-23",
+  "position": "事业单位",
+  "batch": "",
+  "questionNo": 2,
+  "questionScore": 34.0,
+  "appearanceScore": 5.0,
+  "appearanceScoreMax": 5.0,
+  "appearanceScoreSource": "source_explicit",
+  "appearanceScoreScope": "suite",
+  "effectiveFullScore": 39.0,
+  "hasAppearanceScore": true,
+  "scoreCalculationNote": "仪态分按套题统一计算，仅计入套题总分一次；题目满分展示为内容分与仪态分上限之和。",
+  "referenceAnswer": "构建和谐的医患关系需要双方的共同努力。基层医生要善于在诊疗过程中与患者建立信任,通过一次次的成功诊疗和真诚沟通,逐步赢得患者的信赖。在每一次接诊中都做到认真负责、耐心细致,不仅关注疾病本身,也关心患者的心理感受和经济负担。当患者感受到医生的真诚和负责,对过度医疗的疑虑自然会消除。医患信任的建立没有捷径,唯有靠日复一日的用心服务来积累。 各位考官，面对这种突发情况，我认为这本质上是个人的社会承诺与职业的神圣使命之间发生了冲突。作为一名医务工作者，救死扶伤是我们的天职和神圣职责，急救手术直接关系到患者的宝贵生命安危，其紧迫性和重要性不言而喻、不容置疑。同时我也非常珍视与同事的深厚情谊和对他的庄重承诺，因此必须妥善处理好这两者之间的关系。 第一，我会毫不犹豫地接受领导的安排，立即着手准备急救手术的各项事宜。生命至上这是不容置疑的第一原则和最高准则，在医疗工作中患者的生命安全永远高于一切个人的社交事务和私人安排。在确认手术的具体时间、患者的病情严重程度和我在手术中需要承担的具体任务后，我会快速评估手术可能需要的大致时长和术后需要处理的事项，做到心中有数、有条不紊。 第二，在接到紧急任务的第一时间，我会立即与即将举行婚礼的同事取得联系，进行坦承而真诚的沟通。我会如实向他说明现在的情况——医院临时有一台紧急的急救手术任务需要我立即参与，作为医护人员我必须以患者的生命为重，因此可能无法准时出席他的婚礼仪式，甚至可能完全错过整个婚礼。我会用最真诚的态度向他表达我发自内心的歉意，并耐心解释这是职业职责所在不容推辞，作为同样长期工作在医疗一线的同行，他一定能够充分理解我的处境和选择。同时我会提前准备好礼金和祝福，委托另一位当天能够正常出席婚礼的可靠同事在现场代为转交我的心意和祝福。如果手术结束的时间比较早，我会第一时间尽快赶赴婚宴现场，哪怕只是在宴会厅门口送上当面祝福也好。 第三，在手术顺利结束后，我会主动联系同事再次表达我诚挚的歉意和美好的祝福，并真诚邀请他和新婚妻子在方便的时候一起吃饭，当面为他们送上祝福。同时我也会向领导汇报手术的完成情况和患者的状态。这件事也给我提了一个醒，在今后的工作中对于非工作性质的私人重要承诺，需要更加审慎地预留弹性空间和备选方案，在做出确定性承诺前要充分考虑到医疗工作随时可能出现的突发性和不确定性。通过这次经历我对医者仁心和职业使命的深刻含义有了更加具体的体会和认识，在坚守职业底线的前提下最大程度地维护好珍贵的人际情谊和同事关系。",
+  "tags": [
+    "医疗卫生",
+    "应急应变",
+    "生命至上",
+    "急救手术",
+    "职业道德",
+    "人际关系",
+    "医者仁心",
+    "坦诚沟通",
+    "职业使命",
+    "34分）"
+  ],
+  "scoreBands": [
+    {
+      "label": "低分/偏弱",
+      "min_score": 0,
+      "max_score": 21.5,
+      "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
+    },
+    {
+      "label": "基本合格",
+      "min_score": 21.6,
+      "max_score": 27.3,
+      "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
+    },
+    {
+      "label": "中高档",
+      "min_score": 27.4,
+      "max_score": 33.1,
+      "description": "内容较完整，逻辑较清晰，接近高分答案。"
+    },
+    {
+      "label": "高分标杆",
+      "min_score": 33.2,
+      "max_score": 39.0,
+      "description": "高分参考答案区间，用于回归验证。"
+    }
+  ],
+  "regressionCases": [
+    {
+      "label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_jiangsu_medical/JS-MED-SET020-02/reference_high.txt",
+      "expected_min": 36.0,
+      "expected_max": 39.0,
+      "llmExpectedMin": 36.0,
+      "llmExpectedMax": 39.0,
+      "notes": "来自原始题库文档的核心采分基准答案。"
+    },
+    {
+      "label": "程序化中档参考答案",
+      "sample_path": "assets/regression_samples/generated_jiangsu_medical/JS-MED-SET020-02/reference_mid.txt",
+      "expected_min": 12.5,
+      "expected_max": 15.7,
+      "llmExpectedMin": 13.2,
+      "llmExpectedMax": 17.7,
+      "notes": "基于高分答案程序化压缩生成；策略=template_interpersonal_mid_2，句数=3，截断=none，关键词削弱=medium。"
+    },
+    {
+      "label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_jiangsu_medical/JS-MED-SET020-02/reference_low.txt",
+      "expected_min": 9.5,
+      "expected_max": 12.7,
+      "llmExpectedMin": 0.0,
+      "llmExpectedMax": 12.7,
+      "notes": "基于高分答案程序化降档生成；策略=template_interpersonal_low_2，句数=2，截断=none，关键词削弱=heavy，口语化=是。"
+    }
+  ],
+  "answerScoreTotal": 100.0,
+  "suiteTotalScore": 105.0,
+  "totalScore": 105.0
+}

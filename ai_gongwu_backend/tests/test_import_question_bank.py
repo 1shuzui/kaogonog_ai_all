@@ -18,10 +18,12 @@ from scripts.import_question_bank import (
     clean_section_body,
     detect_template_family,
     extract_sections,
+    extract_appearance_score,
     normalize_question_id,
     normalize_source_text,
     parse_question_block,
     parse_scored_items,
+    QUESTION_SOURCE_ARCHIVE_ROOT,
     resolve_question_province,
 )
 
@@ -47,9 +49,8 @@ class ExtractDocxTextTestCase(unittest.TestCase):
         @return: None；函数通过写库、注册路由、落盘或抛错体现结果。
         @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
         """
-        repo_root = Path(__file__).resolve().parents[2]
-        docx_path = repo_root / "湖南-2020-通用岗.docx"
-        extracted_path = repo_root / "湖南-2020-通用岗.extracted.txt"
+        docx_path = QUESTION_SOURCE_ARCHIVE_ROOT / "湖南-2020-通用岗.docx"
+        extracted_path = QUESTION_SOURCE_ARCHIVE_ROOT / "湖南-2020-通用岗.extracted.txt"
 
         self.assertEqual(
             extract_docx_text(docx_path),
@@ -69,6 +70,24 @@ class ImportQuestionBankNormalizationTestCase(unittest.TestCase):
     """
 
     maxDiff = None
+
+    def test_extract_appearance_score_prefers_global_total_over_subscores(self):
+        """共享仪态细则中的语言 2 分不能覆盖整套仪态 5 分。"""
+
+        shandong_style = (
+            "【全局统一表达仪态分】语言流畅度2分：流畅不卡顿得满分；"
+            "【总分计算规则】整套试卷总分=各题得分之和+仪态分（满分100分，含全局仪态分5分）。"
+        )
+        self.assertEqual(extract_appearance_score(shandong_style), 5.0)
+        self.assertEqual(extract_appearance_score("10.全局统一表达仪态分（5分）"), 5.0)
+        self.assertEqual(extract_appearance_score("答题95分+仪态5分=100分"), 5.0)
+        self.assertEqual(extract_appearance_score("本题仪态分：满分5分"), 5.0)
+        self.assertIsNone(
+            extract_appearance_score(
+                "【全局统一表达仪态分】语言流畅度2分；"
+                "【总分计算规则】总分=各题得分之和+仪态分（满分100分）。"
+            )
+        )
 
     def test_normalize_question_id_supports_anhui_variants(self):
         """

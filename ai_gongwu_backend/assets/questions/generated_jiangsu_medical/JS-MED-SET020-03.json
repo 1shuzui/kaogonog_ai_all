@@ -1,0 +1,205 @@
+{
+  "id": "JS-MED-SET020-03",
+  "type": "人际沟通·医患信任类",
+  "province": "江苏",
+  "fullScore": 39.0,
+  "question": "李大爷来看病，你确诊他得了结膜炎，但是他不信，非要让你开CT、X线各项检查，你会怎么办？",
+  "dimensions": [
+    {
+      "name": "倾听理解",
+      "score": 8.0
+    },
+    {
+      "name": "专业解释",
+      "score": 10.0
+    },
+    {
+      "name": "替代方案",
+      "score": 8.0
+    },
+    {
+      "name": "沟通技巧",
+      "score": 6.0
+    },
+    {
+      "name": "语言表达",
+      "score": 2.0
+    }
+  ],
+  "scoringPoints": [
+    {
+      "name": "倾听理解",
+      "score": 8.0
+    },
+    {
+      "name": "专业解释",
+      "score": 10.0
+    },
+    {
+      "name": "替代方案",
+      "score": 8.0
+    },
+    {
+      "name": "沟通技巧",
+      "score": 6.0
+    },
+    {
+      "name": "语言表达",
+      "score": 2.0
+    }
+  ],
+  "coreKeywords": [
+    "医患沟通",
+    "患者教育",
+    "信任构建",
+    "过度检查",
+    "医疗原则",
+    "健康焦虑",
+    "老年患者"
+  ],
+  "strongKeywords": [
+    "影像学检查",
+    "裂隙灯检查",
+    "上级会诊",
+    "信息不对称",
+    "医学伦理",
+    "不必要检查"
+  ],
+  "weakKeywords": [],
+  "bonusKeywords": [
+    "以患者为中心",
+    "必要有效经济原则",
+    "信任之桥",
+    "医者仁心",
+    "真心关怀"
+  ],
+  "penaltyKeywords": [],
+  "scoringCriteria": [
+    "倾听理解（8分）：先耐心倾听患者担忧不急于反驳",
+    "专业解释（10分）：用通俗语言解释诊断依据和检查局限性",
+    "替代方案（8分）：提供裂隙灯复查、上级会诊等替代方案",
+    "沟通技巧（6分）：态度诚恳、关注老年患者沟通特点",
+    "语言表达（2分）"
+  ],
+  "deductionRules": [
+    "不倾听直接拒绝扣4-6分",
+    "医生态度生硬扣3-5分",
+    "不做任何解释只开药扣3-5分"
+  ],
+  "sourceDocument": "江苏新套20_灌云县卫健委面试题.docx",
+  "originFile": "江苏新套20_灌云县卫健委面试题.docx",
+  "sourceQuestionId": "JS-MED-SET020-03",
+  "sourceDocumentType": "docx_xml",
+  "examCategory": "事业单位考试",
+  "examSubcategory": "江苏省",
+  "subcategory": null,
+  "subcategory2": null,
+  "system": "医疗卫生系统",
+  "portalTags": [
+    "医疗卫生面试"
+  ],
+  "displayPortals": [
+    "医疗卫生面试"
+  ],
+  "positionTags": [
+    "medical",
+    "事业单位"
+  ],
+  "positionType": "事业单位",
+  "interviewFormat": "医疗卫生结构化面试",
+  "questionTypeCategory": "人际沟通",
+  "jobLevel": "",
+  "classificationSource": "profile_explicit",
+  "classificationConfidence": "high",
+  "reviewStatus": "已确认",
+  "reviewReason": "",
+  "hasCompleteSuiteLevel": true,
+  "suiteId": "JS-MED-SET020",
+  "suiteKey": "JS-MED-SET020",
+  "suiteName": "2023年7月23日江苏省连云港市灌云县卫健委所属事业单位面试题",
+  "sourceTitleRaw": "2023年7月23日江苏省连云港市灌云县卫健委所属事业单位面试题",
+  "examDate": "2023-07-23",
+  "position": "事业单位",
+  "batch": "",
+  "questionNo": 3,
+  "questionScore": 34.0,
+  "appearanceScore": 5.0,
+  "appearanceScoreMax": 5.0,
+  "appearanceScoreSource": "source_explicit",
+  "appearanceScoreScope": "suite",
+  "effectiveFullScore": 39.0,
+  "hasAppearanceScore": true,
+  "scoreCalculationNote": "仪态分按套题统一计算，仅计入套题总分一次；题目满分展示为内容分与仪态分上限之和。",
+  "referenceAnswer": "构建和谐的医患关系需要双方的共同努力。基层医生要善于在诊疗过程中与患者建立信任,通过一次次的成功诊疗和真诚沟通,逐步赢得患者的信赖。在每一次接诊中都做到认真负责、耐心细致,不仅关注疾病本身,也关心患者的心理感受和经济负担。当患者感受到医生的真诚和负责,对过度医疗的疑虑自然会消除。医患信任的建立没有捷径,唯有靠日复一日的用心服务来积累。 各位考官，面对李大爷对我的诊断明显不信任、坚持要求做CT和X线等影像学检查的情况，我的核心处理原则是：以扎实的专业知识来化解患者的疑虑和恐惧，以真诚的沟通和共情来建立医患之间的基本信任，在毫不动摇地坚持医疗原则的前提下充分保障患者的知情权和良好的就医体验。 第一，我会首先充分理解李大爷此刻的焦虑和担心心情。他之所以不相信我诊断的结膜炎并要求做CT和X线这样的大检查，背后可能有多种深层次的原因——可能是他觉得自己目前的症状很严重、担心存在更严重的眼病被漏诊误诊；可能是他之前在其他地方有过不好的就医经历导致他对医生普遍缺乏信任感；也可能仅仅是因为对我这个年轻医生的年龄和资历不够信任。不管是哪种原因，我都会先耐心坐下来倾听他完整的想法和具体的担忧，让他把心里的话毫无保留地说完。在认真倾听的过程中，我会通过点头、做记录、眼神交流等方式让他切实感受到我是真心尊重他的意见和感受的。然后我会用通俗易懂、老少咸宜的语言向他详细解释结膜炎的发病原因、典型症状表现（如眼睛发红、发痒、异物感、分泌物增多等），并对照他本人的具体症状表现进行直观的对照说明，让他明白我做出的诊断是建立在对症状体征的仔细观察和扎实的专业知识判断基础上的。同时我可以拿出医学图谱或手机上的眼部解剖图片直观地展示给他看。 第二，针对他强烈要求做CT和X线检查的要求，我会用既专业又通俗的方式进行耐心解释。我会告诉他，CT和X线这两种影像学检查技术主要针对的是骨骼、内脏器官或颅内占位性病变的检查诊断，对于眼球表面的炎症来说诊断价值是非常有限的，而且眼部CT和X线从来就不是结膜炎诊断的常规首选检查方法——结膜炎的诊断主要依靠临床症状体征、裂隙灯显微镜检查和分泌物病原学检测。更重要的是，让他接受完全没有医学必要性的检查不仅会增加他本人的经济负担和跑腿时间，还可能带来不必要的电离辐射暴露风险，从医学伦理的角度来看，让患者接受不必要的医疗检查是严重违背医者职业道德和医疗原则的。我会强调我们的诊疗方案始终是建立在\"必要、有效、经济\"的合理原则基础上的，绝不是为了图省事或者敷衍他。如果李大爷听完我的解释后依然不完全放心，我可以建议进行一项与他的病情更加相关、性价比更高的检查，比如用裂隙灯显微镜为他做一次详细的眼前段复查，让他通过显微镜亲眼看到自己眼部病变的真实情况。也可以请科室里资历更深的上级医生为他进行一次会诊，借助第三方的专业权威来增强诊断的说服力和可信度。 第三，在整个沟通交流的全过程中，我会始终保持诚恳温和、不厌其烦的态度。对于老年患者来说，他们最终选择信任哪位医生，往往首先建立在信任这个人的品行之上，而不仅仅是专业技术的判断。我会让李大爷真真切切地感受到我是打心底里站在维护他健康利益的立场上来考虑问题和做出建议的，绝对不是嫌麻烦或者不愿意给他开检查。当一位患者的的确确感受到面前这个医生是真心实意为他着想的时候，他对医生的信任感就会大大增强，也自然更加愿意接受医生给出的专业建议和治疗方案。通过这件事的处理，我更加深刻地认识到在基层医疗工作中，扎实的专业医术固然是根本和基础，但温暖有效的沟通艺术同样也是关键和灵魂。面对医学信息的不对称和群众普遍存在的健康焦虑心理，每一位医生都有责任主动搭建起一座通往患者内心的信任之桥，通过每一次耐心细致的解释和每一次真诚用心的服务，不仅解决好患者当下的健康问题，更在日复一日的积累中建立长久而牢固的医患互信基础。",
+  "tags": [
+    "医疗卫生",
+    "人际沟通",
+    "医患沟通",
+    "患者教育",
+    "过度检查",
+    "信任构建",
+    "结膜炎",
+    "医学伦理",
+    "老年患者",
+    "医患信任",
+    "基层医疗"
+  ],
+  "scoreBands": [
+    {
+      "label": "低分/偏弱",
+      "min_score": 0,
+      "max_score": 21.5,
+      "description": "核心要点覆盖不足，结构或岗位适配明显欠缺。"
+    },
+    {
+      "label": "基本合格",
+      "min_score": 21.6,
+      "max_score": 27.3,
+      "description": "能覆盖主要要求，但深度、结构或本土化仍有短板。"
+    },
+    {
+      "label": "中高档",
+      "min_score": 27.4,
+      "max_score": 33.1,
+      "description": "内容较完整，逻辑较清晰，接近高分答案。"
+    },
+    {
+      "label": "高分标杆",
+      "min_score": 33.2,
+      "max_score": 39.0,
+      "description": "高分参考答案区间，用于回归验证。"
+    }
+  ],
+  "regressionCases": [
+    {
+      "label": "文档高分基准答案",
+      "sample_path": "assets/regression_samples/generated_jiangsu_medical/JS-MED-SET020-03/reference_high.txt",
+      "expected_min": 36.0,
+      "expected_max": 39.0,
+      "llmExpectedMin": 36.0,
+      "llmExpectedMax": 39.0,
+      "notes": "来自原始题库文档的核心采分基准答案。"
+    },
+    {
+      "label": "程序化中档参考答案",
+      "sample_path": "assets/regression_samples/generated_jiangsu_medical/JS-MED-SET020-03/reference_mid.txt",
+      "expected_min": 12.3,
+      "expected_max": 15.5,
+      "llmExpectedMin": 13.0,
+      "llmExpectedMax": 17.5,
+      "notes": "基于高分答案程序化压缩生成；策略=template_interpersonal_mid_1，句数=4，截断=none，关键词削弱=medium。"
+    },
+    {
+      "label": "程序化低档参考答案",
+      "sample_path": "assets/regression_samples/generated_jiangsu_medical/JS-MED-SET020-03/reference_low.txt",
+      "expected_min": 9.3,
+      "expected_max": 12.5,
+      "llmExpectedMin": 0.0,
+      "llmExpectedMax": 12.5,
+      "notes": "基于高分答案程序化降档生成；策略=template_interpersonal_low_2，句数=2，截断=none，关键词削弱=heavy，口语化=是。"
+    }
+  ],
+  "answerScoreTotal": 100.0,
+  "suiteTotalScore": 105.0,
+  "totalScore": 105.0
+}

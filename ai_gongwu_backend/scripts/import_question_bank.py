@@ -16,7 +16,7 @@ import re
 import sys
 import zipfile
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 from xml.etree import ElementTree
@@ -51,6 +51,21 @@ class ImportProfile:
     regression_sample_base_path: str
     source_files: tuple[Path, ...]
     source_priority: dict[str, int]
+    # 新 profile 的行为开关集中放在配置中，旧 profile 保持原有套题汇总语义。
+    exam_category: str = ""
+    exam_subcategory: str = ""
+    portal_tags: tuple[str, ...] = ()
+    display_portals: tuple[str, ...] = ()
+    position_tags: tuple[str, ...] = ()
+    position_type: str = ""
+    interview_format: str = ""
+    force_file_suite: bool = False
+    suite_id_prefix: str = ""
+    source_batch_name: str = ""
+    has_complete_suite_level: bool = True
+    score_scope: str = "suite"
+    default_appearance_score: float = 0.0
+    default_appearance_score_scope: str = "suite"
 
 
 def normalize_profile_key(raw_name: str) -> str:
@@ -118,6 +133,40 @@ def resolve_cli_path(raw_path: str | Path) -> Path:
         return archive_candidate
 
     return cwd_candidate
+
+
+def resolve_source_dir_files(source_dirs: list[str | Path]) -> list[Path]:
+    """按稳定文件名收集一个或多个外部题源目录中的文档。"""
+
+    resolved: dict[str, Path] = {}
+    for raw_dir in source_dirs:
+        directory = resolve_cli_path(raw_dir)
+        if not directory.exists() or not directory.is_dir():
+            raise FileNotFoundError(f"未找到题源目录: {directory}")
+        for path in sorted(directory.iterdir(), key=lambda item: item.name.casefold()):
+            if not path.is_file() or path.suffix.lower() not in {".docx", ".doc", ".txt"}:
+                continue
+            if path.suffix.lower() == ".txt" and not path.name.endswith(".extracted.txt"):
+                continue
+            resolved[str(path.resolve())] = path.resolve()
+    files = sorted(resolved.values(), key=lambda item: (item.name.casefold(), str(item).casefold()))
+    if not files:
+        joined = ", ".join(str(item) for item in source_dirs)
+        raise ValueError(f"题源目录中没有可导入的 .docx/.doc/.extracted.txt 文件: {joined}")
+    return files
+
+
+def profile_with_sources(profile: ImportProfile, source_files: list[str | Path]) -> ImportProfile:
+    """复制 profile 配置，只替换源文件，保证 `--source-dir` 可重复运行且不污染内置配置。"""
+
+    resolved = tuple(resolve_cli_path(path) for path in source_files)
+    if not resolved:
+        raise ValueError("至少需要一个题源文件")
+    return replace(
+        profile,
+        source_files=resolved,
+        source_priority=build_source_priority(resolved),
+    )
 
 
 def build_runtime_profile(
@@ -214,6 +263,108 @@ IMPORT_PROFILES = {
     ),
 }
 
+
+def archive_source_files(archive_name: str) -> tuple[Path, ...]:
+    """读取外部题源归档中的文件，目录不存在时返回空元组，便于先列 profile 再归档。"""
+
+    directory = QUESTION_SOURCE_ARCHIVE_ROOT / archive_name
+    if not directory.exists():
+        return ()
+    return tuple(
+        sorted(
+            (
+                path.resolve()
+                for path in directory.iterdir()
+                if path.is_file() and path.suffix.lower() in {".docx", ".doc", ".txt"}
+                and (path.suffix.lower() != ".txt" or path.name.endswith(".extracted.txt"))
+            ),
+            key=lambda item: (item.name.casefold(), str(item).casefold()),
+        )
+    )
+
+
+IMPORT_PROFILES.update(
+    {
+        "medical_general": ImportProfile(
+            name="medical_general",
+            default_province="全国",
+            question_output_dir=BACKEND_ROOT / "assets" / "questions" / "generated_medical_general",
+            sample_output_dir=BACKEND_ROOT / "assets" / "regression_samples" / "generated_medical_general",
+            summary_path=BACKEND_ROOT / "assets" / "questions" / "generated_medical_general" / "import_summary.txt",
+            regression_sample_base_path="assets/regression_samples/generated_medical_general",
+            source_files=archive_source_files("medical_general"),
+            source_priority={},
+            exam_category="事业单位考试",
+            exam_subcategory="通用医疗卫生题库",
+            portal_tags=("医疗卫生面试",),
+            display_portals=("医疗卫生面试",),
+            position_tags=("medical",),
+            interview_format="医疗卫生结构化面试",
+            force_file_suite=True,
+            suite_id_prefix="MED-GENERAL-BATCH",
+            source_batch_name="通用医疗卫生题库",
+            has_complete_suite_level=False,
+            score_scope="question",
+            default_appearance_score=5.0,
+            default_appearance_score_scope="question",
+        ),
+        "shandong_medical": ImportProfile(
+            name="shandong_medical",
+            default_province="山东",
+            question_output_dir=BACKEND_ROOT / "assets" / "questions" / "generated_shandong_medical",
+            sample_output_dir=BACKEND_ROOT / "assets" / "regression_samples" / "generated_shandong_medical",
+            summary_path=BACKEND_ROOT / "assets" / "questions" / "generated_shandong_medical" / "import_summary.txt",
+            regression_sample_base_path="assets/regression_samples/generated_shandong_medical",
+            source_files=archive_source_files("shandong_medical"),
+            source_priority={},
+            exam_category="事业单位考试",
+            exam_subcategory="山东省",
+            portal_tags=("医疗卫生面试",),
+            display_portals=("医疗卫生面试",),
+            position_tags=("medical",),
+            interview_format="医疗卫生结构化面试",
+            force_file_suite=True,
+            suite_id_prefix="SD-MED-SET",
+            source_batch_name="山东省医疗卫生事业单位面试题库",
+            has_complete_suite_level=True,
+            score_scope="question",
+            default_appearance_score=5.0,
+            default_appearance_score_scope="question",
+        ),
+        "jiangsu_medical": ImportProfile(
+            name="jiangsu_medical",
+            default_province="江苏",
+            question_output_dir=BACKEND_ROOT / "assets" / "questions" / "generated_jiangsu_medical",
+            sample_output_dir=BACKEND_ROOT / "assets" / "regression_samples" / "generated_jiangsu_medical",
+            summary_path=BACKEND_ROOT / "assets" / "questions" / "generated_jiangsu_medical" / "import_summary.txt",
+            regression_sample_base_path="assets/regression_samples/generated_jiangsu_medical",
+            source_files=archive_source_files("jiangsu_medical"),
+            source_priority={},
+            exam_category="事业单位考试",
+            exam_subcategory="江苏省",
+            portal_tags=("医疗卫生面试",),
+            display_portals=("医疗卫生面试",),
+            position_tags=("medical",),
+            interview_format="医疗卫生结构化面试",
+            force_file_suite=True,
+            suite_id_prefix="JS-MED-SET",
+            source_batch_name="江苏省医疗卫生事业单位面试题库",
+            has_complete_suite_level=True,
+            score_scope="question",
+            default_appearance_score=5.0,
+            default_appearance_score_scope="question",
+        ),
+    }
+)
+
+# 动态 profile 的源优先级也必须按稳定文件名重建；空归档在 CLI --source-dir 覆盖后会被替换。
+for _profile in IMPORT_PROFILES.values():
+    if _profile.source_files and not _profile.source_priority:
+        IMPORT_PROFILES[_profile.name] = replace(
+            _profile,
+            source_priority=build_source_priority(_profile.source_files),
+        )
+
 ACTIVE_PROFILE = IMPORT_PROFILES["hunan"]
 QUESTION_OUTPUT_DIR = ACTIVE_PROFILE.question_output_dir
 SAMPLE_OUTPUT_DIR = ACTIVE_PROFILE.sample_output_dir
@@ -277,12 +428,18 @@ SECTION_HEADERS = (
     "全局统一表达",
     "全局统一仪态分",
     "全局统一表达仪态分",
+    "总分计算",
     "总分计算规则",
     "本题总分计算规则",
     "检索标签",
 )
 SECTION_HEADERS_FOR_NORMALIZATION = tuple(sorted(SECTION_HEADERS, key=len, reverse=True))
 SECTION_HEADER_ALTERNATION = "|".join(re.escape(header) for header in SECTION_HEADERS_FOR_NORMALIZATION)
+BRACKET_SECTION_PATTERN = re.compile(
+    r"【(?P<label>"
+    + "|".join(re.escape(header) for header in SECTION_HEADERS_FOR_NORMALIZATION)
+    + r")】"
+)
 SECTION_INDEX_ALIASES = {
     "一": "1",
     "二": "2",
@@ -301,7 +458,7 @@ SECTION_PATTERN = re.compile(
     r"(?:^|\n)\s*(\d{1,2})[.、 ]\s*"
     r"(题干|题型定位|核心观点(?:（多维）)?|核心采分(?:基准(?:答案|表达)?)?|多角度同义表述库|"
     r"加分点(?:（创新思维）)?|得分标准|扣分标准|AI评分(?:使用的)?结构化数据|"
-    r"全局统一(?:表达(?:仪态分)?|仪态分)|(?:本题)?总分计算规则|检索标签)"
+    r"全局统一(?:表达(?:仪态分)?|仪态分)|(?:本题)?总分计算(?:规则)?|检索标签)"
 )
 QUESTION_ID_PATTERN = re.compile(r"题号[:：]\s*([^\n（(]+)")
 HEADER_PATTERN = re.compile(r"题号[:：]\s*([^\n（(]+)(?:（([^）]+)）)?")
@@ -395,13 +552,13 @@ PROVINCE_LEVEL_NAMES = {
     "中央",
     "国家",
 }
-SCORE_MARK_PATTERN = re.compile(r"（\d+(?:\.\d+)?分）")
+SCORE_MARK_PATTERN = re.compile(r"[（(]\d+(?:\.\d+)?分[）)]")
 DEDUCTION_MARK_PATTERN = re.compile(r"扣\d+(?:\.\d+)?(?:[—-]\d+(?:\.\d+)?)?分")
 EXPLICIT_SCORED_ITEM_PATTERN = re.compile(
-    r"(?P<title>[^\s：:；;，,。、“”\"'（）()]{1,16})\s*(?P<score>（\d+(?:\.\d+)?分）)\s*(?P<colon>[：:]?)"
+    r"(?P<title>[^\s：:；;，,。、'（）()]{1,24})\s*(?P<score>[（(]\d+(?:\.\d+)?分[）)])\s*(?P<colon>[：:]?)"
 )
 EXPLICIT_DIMENSION_TITLE_PATTERN = re.compile(
-    r"^(?P<title>[^\s：:；;，,。、“”\"'（）()]{1,16})\s*(?P<score>（\d+(?:\.\d+)?分）)\s*(?P<colon>[：:]?)"
+    r"^(?P<title>[^\s：:；;，,。、'（）()]{1,24})\s*(?P<score>[（(]\d+(?:\.\d+)?分[）)])\s*(?P<colon>[：:]?)"
 )
 PLAIN_SCORED_ITEM_PATTERN = re.compile(
     r"(?P<title>[^\d０-９\s：:；;，,。、“”\"'（）()①②③④⑤⑥⑦⑧⑨⑩]{1,20})"
@@ -544,6 +701,8 @@ class QuestionBlockContext:
     position: str = ""
     batch: str = ""
     source_document_type: str = ""
+    source_question_id: str = ""
+    appearance_score_scope: str = ""
 
 
 @dataclass
@@ -625,6 +784,8 @@ def normalize_province_label(value: str) -> str:
     province = re.sub(r"\s+", "", str(value or "").strip())
     if not province:
         return ""
+    if province in {"全国", "通用", "全国通用"}:
+        return "全国"
     if province in PROVINCE_SUFFIX_MUNICIPALITIES or province.endswith(("省", "市", "区")):
         return province
     if province in {"内蒙古", "广西", "西藏", "宁夏", "新疆"}:
@@ -716,6 +877,12 @@ def infer_exam_category(
 
     value = f"{text} {source_document}"
     province_name = normalize_province_label(default_province)
+    if ACTIVE_PROFILE.exam_category:
+        return (
+            ACTIVE_PROFILE.exam_category,
+            ACTIVE_PROFILE.exam_subcategory or province_name or default_province,
+            "profile_explicit",
+        )
     profile_default = PROFILE_EXAM_CATEGORY_DEFAULTS.get(ACTIVE_PROFILE.name)
     if profile_default:
         return profile_default[0], province_name or default_province, profile_default[1]
@@ -831,6 +998,32 @@ def build_classification_metadata(
     interview_format = _first_rule_match(source_evidence_text, INTERVIEW_FORMAT_RULES)
     question_type_category = infer_question_type_category(question_type, question_text)
     job_level = infer_job_level(source_evidence_text)
+    is_medical = bool(
+        ACTIVE_PROFILE.portal_tags
+        or any(
+            token in source_evidence_text
+            for token in ("医疗卫生", "医师岗", "护理岗", "药师岗", "医技岗", "疾控", "医务")
+        )
+    )
+    if is_medical:
+        portal_tags = list(ACTIVE_PROFILE.portal_tags or ("医疗卫生面试",))
+        display_portals = list(ACTIVE_PROFILE.display_portals or portal_tags)
+        position_tags = list(ACTIVE_PROFILE.position_tags or ("medical",))
+        if position and position not in position_tags:
+            position_tags.append(position)
+        medical_position = infer_medical_position(source_evidence_text)
+        position_type = ACTIVE_PROFILE.position_type or position or medical_position or "医疗卫生岗"
+        if medical_position and medical_position not in position_tags:
+            position_tags.append(medical_position)
+        if ACTIVE_PROFILE.interview_format:
+            interview_format = ACTIVE_PROFILE.interview_format
+        system = "医疗卫生系统"
+    else:
+        portal_tags = []
+        display_portals = []
+        position_tags = []
+        position_type = ""
+        system = subcategory or ""
 
     review_reasons: list[str] = []
     if not exam_category:
@@ -861,6 +1054,11 @@ def build_classification_metadata(
         "examSubcategory": exam_subcategory,
         "subcategory": subcategory,
         "subcategory2": subcategory2,
+        "system": system,
+        "portalTags": portal_tags,
+        "displayPortals": display_portals,
+        "positionTags": position_tags,
+        "positionType": position_type,
         "interviewFormat": interview_format,
         "questionTypeCategory": question_type_category,
         "jobLevel": job_level,
@@ -868,7 +1066,10 @@ def build_classification_metadata(
         "classificationConfidence": confidence,
         "reviewStatus": review_status,
         "reviewReason": "；".join(review_reasons),
-        "hasCompleteSuiteLevel": bool(suite_key and suite_name and question_no),
+        "hasCompleteSuiteLevel": (
+            ACTIVE_PROFILE.has_complete_suite_level
+            and bool(suite_key and suite_name and question_no)
+        ),
     }
 
 
@@ -907,6 +1108,88 @@ def normalize_section_index(raw_index: str) -> str:
     return SECTION_INDEX_ALIASES.get(index, index)
 
 
+def source_file_index(source_name: str) -> int:
+    """返回当前 profile 中源文件的稳定序号（从 1 开始）。
+
+    山东、江苏医疗题源的文件名本身带有套题号。优先使用这个显式编号，
+    这样即使源目录缺少某一套（例如江苏缺少套 03），后续套题的 ID 也不会
+    因稳定排序后的文件位置变化而整体顺移。
+    """
+
+    filename = Path(source_name).name
+    explicit_match = re.search(r"(?:山东|江苏)新套(?P<number>\d{1,3})", filename)
+    if explicit_match:
+        return int(explicit_match.group("number"))
+
+    names = [path.name for path in SOURCE_FILES]
+    try:
+        return names.index(Path(source_name).name) + 1
+    except ValueError:
+        return 1
+
+
+def source_file_suite_key(source_name: str) -> str:
+    """为医疗 profile 生成文件级套题键；旧 profile 仍由原题号推导。"""
+
+    if not ACTIVE_PROFILE.force_file_suite:
+        return ""
+    if ACTIVE_PROFILE.suite_id_prefix == "MED-GENERAL-BATCH":
+        return ACTIVE_PROFILE.suite_id_prefix
+    return f"{ACTIVE_PROFILE.suite_id_prefix}{source_file_index(source_name):03d}"
+
+
+def stable_medical_question_id(source_name: str, question_no: int) -> str:
+    suite_key = source_file_suite_key(source_name)
+    if not suite_key:
+        return ""
+    return f"{suite_key}-{question_no:02d}"
+
+
+def normalize_bare_medical_headers(text: str, source_name: str) -> str:
+    """把山东/江苏源文档的裸 `第N题` 题头转换成现有题号格式。"""
+
+    if not ACTIVE_PROFILE.force_file_suite:
+        return text
+
+    pattern = re.compile(
+        r"(?m)^(?P<indent>\s*)第(?P<number>[一二三四五六七八九十]{1,3}|\d{1,2})题"
+        r"\s*(?:（(?P<description>[^）\n]*)）|\((?P<ascii_description>[^)\n]*)\))?\s*$"
+    )
+
+    # 个别源文件只有“第2题”正文（题源本身从第二题开始），但文件级套题仍然
+    # 需要从 1 开始连续编号。按文件内真实出现顺序重排，避免把这类文件误判为
+    # 不完整套题；正常的第1题、第2题文件映射结果不变。
+    valid_headers = [
+        match
+        for match in pattern.finditer(text)
+        if "+第" not in match.group(0)
+        and "+ 第" not in match.group(0)
+        and "总分" not in match.group(0)
+    ]
+    ordinal_by_start = {
+        match.start(): ordinal
+        for ordinal, match in enumerate(valid_headers, start=1)
+    }
+
+    def replace_header(match: re.Match[str]) -> str:
+        line = match.group(0)
+        # 排除卷首 “第1题（32分）+第2题（36分）” 汇总行，避免生成伪题。
+        if "+第" in line or "+ 第" in line or "总分" in line:
+            return line
+        number = ordinal_by_start.get(
+            match.start(),
+            int(normalize_section_index(match.group("number"))),
+        )
+        question_id = stable_medical_question_id(source_name, number)
+        if not question_id:
+            return line
+        description = (match.group("description") or match.group("ascii_description") or "").strip()
+        suffix = f"（{description}）" if description else ""
+        return f"题号：{question_id}{suffix}"
+
+    return pattern.sub(replace_header, text)
+
+
 def normalize_source_text(raw_text: str, source_name: str) -> str:
     """
     把文档提取文本先整理成更容易正则处理的形态。
@@ -921,6 +1204,7 @@ def normalize_source_text(raw_text: str, source_name: str) -> str:
 
     text = raw_text.replace("\r", "\n").replace("\u3000", " ")
     text = text.replace("－", "-").replace("＋", "+").replace("／", "/")
+    text = text.replace("【总分计算】", "【总分计算规则】")
     text = re.sub(r"\n+", "\n", text)
 
     # `.doc` 粗提取结果会把题号拆成多行，这里先补回正常 question_id。
@@ -944,6 +1228,7 @@ def normalize_source_text(raw_text: str, source_name: str) -> str:
         lambda match: f"{match.group(1)}{normalize_question_id(match.group(2))}",
         text,
     )
+    text = normalize_bare_medical_headers(text, source_name)
     text = re.sub(r"(?m)^\s*[.．]\s*题干", "1. 题干", text)
     text = re.sub(
         rf"第([一二三四五六七八九十]{{1,3}}|\d{{1,2}})题[:：][^\S\n]*({SECTION_HEADER_ALTERNATION})",
@@ -1187,6 +1472,22 @@ def infer_suite_position(text: str) -> str:
     return "、".join(item for item in found if item not in {"省考"})[:40]
 
 
+def infer_medical_position(text: str) -> str:
+    """从医疗卫生题源标题/文件名提取岗位方向，供岗位筛选和门户展示使用。"""
+
+    value = str(text or "")
+    for label, aliases in (
+        ("医师岗", ("医师岗", "医生岗", "临床岗", "全科岗")),
+        ("护理岗", ("护理岗", "护士岗")),
+        ("医技岗", ("医技岗", "检验岗", "影像岗", "疾病控制岗", "疾控岗", "公卫岗")),
+        ("药师岗", ("药师岗", "药学岗")),
+        ("行政岗", ("行政岗", "管理岗")),
+    ):
+        if any(alias in value for alias in aliases):
+            return label
+    return ""
+
+
 def infer_suite_batch(text: str) -> str:
     """
     从标题里提取批次类信息。
@@ -1280,6 +1581,134 @@ def iter_question_blocks(text: str) -> list[str]:
     return blocks
 
 
+def extract_declared_question_count(text: str) -> int:
+    """读取“全套共 N 题”，没有显式声明时返回 0。"""
+
+    match = re.search(r"全套共\s*(\d{1,3})\s*题", text)
+    return int(match.group(1)) if match else 0
+
+
+def extract_bracket_section_lists(text: str) -> dict[str, list[str]]:
+    """保留括号标签的重复顺序，供特殊布局按题序重组。"""
+
+    grouped: dict[str, list[str]] = {}
+    matches = list(BRACKET_SECTION_PATTERN.finditer(text))
+    for index, match in enumerate(matches):
+        label = canonical_section_name(match.group("label"))
+        start = match.end()
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+        body = clean_section_body(text[start:end])
+        body = re.sub(r"(?m)^={5,}\s*$", "", body).strip()
+        body = re.sub(r"(?m)^第\d+题（[^\n]*）\s*$", "", body).strip()
+        if re.match(r"^(?:其中)?\s*占\s*\d+(?:\.\d+)?分[，,。；;]", body):
+            continue
+        if body:
+            grouped.setdefault(label, []).append(body)
+    return grouped
+
+
+def _first_source_title(text: str, source_path: Path) -> tuple[str, str, str, str]:
+    """从特殊布局文档的卷首提取套题标题和基础上下文。"""
+
+    candidates = title_candidates_from_segment(text)
+    raw_title = candidates[0] if candidates else ""
+    if not raw_title:
+        for line in text.splitlines()[:12]:
+            compact = line.strip()
+            if compact and ("面试题" in compact or "面试题库" in compact):
+                raw_title = compact
+                break
+    suite_name = clean_suite_title(raw_title, DEFAULT_PROVINCE) if raw_title else ""
+    fallback_name, fallback_raw, fallback_position, fallback_batch = infer_suite_title_from_source(
+        source_path,
+        source_file_suite_key(source_path.name) or source_path.stem,
+    )
+    return (
+        suite_name or fallback_name,
+        raw_title or fallback_raw,
+        infer_suite_position(raw_title) or fallback_position,
+        infer_suite_batch(raw_title) or fallback_batch,
+    )
+
+
+def build_repeated_medical_contexts(
+    text: str,
+    source_path: Path,
+    source_document_type: str,
+) -> list[QuestionBlockContext]:
+    """重组江苏第39/45套及同类“按标签分栏”的完整题目块。"""
+
+    if not ACTIVE_PROFILE.force_file_suite:
+        return []
+    section_lists = extract_bracket_section_lists(text)
+    question_values = section_lists.get("题干", [])
+    declared_count = extract_declared_question_count(text)
+    question_count = declared_count or len(question_values)
+    if question_count < 2 or len(question_values) < question_count:
+        return []
+    # 只有题干和基准答案均能按题序重建时才启用该路径，其他硬失败继续交给常规解析。
+    answer_values = section_lists.get("核心采分基准答案", [])
+    scoring_values = section_lists.get("得分标准", [])
+    if len(answer_values) < question_count or len(scoring_values) < question_count:
+        return []
+
+    suite_key = source_file_suite_key(source_path.name)
+    if not suite_key:
+        return []
+    suite_name, source_title_raw, fallback_position, fallback_batch = _first_source_title(text, source_path)
+
+    header_matches = list(
+        re.finditer(
+            r"(?m)^第(?P<number>[一二三四五六七八九十]{1,3}|\d{1,2})题"
+            r"\s*(?:（(?P<description>[^）\n]*)）|\((?P<ascii_description>[^)\n]*)\))?",
+            text,
+        )
+    )
+    descriptions: dict[int, str] = {}
+    for match in header_matches:
+        number = int(normalize_section_index(match.group("number")))
+        description = (match.group("description") or match.group("ascii_description") or "").strip()
+        if number not in descriptions and description:
+            descriptions[number] = description
+
+    contexts: list[QuestionBlockContext] = []
+    shared_labels = {label for label, values in section_lists.items() if len(values) == 1}
+    for index in range(question_count):
+        question_no = index + 1
+        question_id = stable_medical_question_id(source_path.name, question_no)
+        if not question_id:
+            return []
+        description = descriptions.get(question_no, "")
+        if not description:
+            description = clean_section_body(section_lists.get("题型定位", [""])[index]).split("，", 1)[0]
+        parts = [f"题号：{question_id}（{description}）" if description else f"题号：{question_id}"]
+        for label, values in section_lists.items():
+            if len(values) >= question_count:
+                value = values[index]
+            elif label in shared_labels:
+                value = values[0]
+            else:
+                continue
+            if value:
+                bracket_label = "总分计算规则" if label == "本题总分计算规则" else label
+                parts.append(f"【{bracket_label}】{value}")
+        contexts.append(
+            QuestionBlockContext(
+                block="\n".join(parts).strip(),
+                suite_id=suite_key,
+                suite_key=suite_key,
+                suite_name=suite_name,
+                source_title_raw=source_title_raw,
+                exam_date=parse_chinese_exam_date(source_title_raw),
+                position=fallback_position,
+                batch=fallback_batch,
+                source_document_type=source_document_type,
+                source_question_id=question_id,
+            )
+        )
+    return contexts
+
+
 def iter_question_blocks_with_context(text: str, source_path: Path, source_document_type: str = "") -> list[QuestionBlockContext]:
     """
     按题号切分题目块，并附带最近的真实套题标题。
@@ -1292,6 +1721,10 @@ def iter_question_blocks_with_context(text: str, source_path: Path, source_docum
     @return: 返回可直接交给接口、页面或脚本继续使用的数据结构。
     @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
     """
+
+    repeated_contexts = build_repeated_medical_contexts(text, source_path, source_document_type)
+    if repeated_contexts:
+        return repeated_contexts
 
     matches = list(QUESTION_ID_PATTERN.finditer(text))
     contexts: list[QuestionBlockContext] = []
@@ -1313,7 +1746,17 @@ def iter_question_blocks_with_context(text: str, source_path: Path, source_docum
             active_batch = infer_suite_batch(active_raw_title)
 
         question_id = normalize_question_id(match.group(1))
-        suite_key = question_id.rsplit("-", 1)[0] if "-" in question_id else question_id
+        original_question_id = question_id
+        inferred_question_no = infer_question_no(question_id)
+        if ACTIVE_PROFILE.force_file_suite:
+            inferred_question_no = inferred_question_no or (index + 1)
+            stable_id = stable_medical_question_id(source_path.name, inferred_question_no)
+            question_id = stable_id or question_id
+        suite_key = (
+            source_file_suite_key(source_path.name)
+            if ACTIVE_PROFILE.force_file_suite
+            else (question_id.rsplit("-", 1)[0] if "-" in question_id else question_id)
+        )
         fallback_name, fallback_raw, fallback_position, fallback_batch = infer_suite_title_from_source(source_path, question_id)
         suite_name = active_suite_name or fallback_name
         source_title_raw = active_raw_title or fallback_raw
@@ -1334,6 +1777,7 @@ def iter_question_blocks_with_context(text: str, source_path: Path, source_docum
                 position=position,
                 batch=batch,
                 source_document_type=source_document_type,
+                source_question_id=original_question_id,
             )
         )
         cursor = match.end()
@@ -1362,7 +1806,7 @@ def canonical_section_name(raw_name: str) -> str:
         return "AI评分结构化数据"
     if raw_name.startswith("全局统一表达") or raw_name.startswith("全局统一仪态分"):
         return "全局统一表达仪态分"
-    if raw_name.startswith("总分计算规则") or raw_name.startswith("本题总分计算规则"):
+    if raw_name.startswith("总分计算") or raw_name.startswith("本题总分计算"):
         return "本题总分计算规则"
     return raw_name
 
@@ -1385,6 +1829,17 @@ def extract_sections(block: str) -> dict[str, str]:
         start = match.end()
         end = matches[index + 1].start() if index + 1 < len(matches) else len(block)
         sections[section_name] = clean_section_body(block[start:end])
+
+    bracket_matches = list(BRACKET_SECTION_PATTERN.finditer(block))
+    for index, match in enumerate(bracket_matches):
+        section_name = canonical_section_name(match.group("label"))
+        start = match.end()
+        end = bracket_matches[index + 1].start() if index + 1 < len(bracket_matches) else len(block)
+        body = clean_section_body(block[start:end])
+        body = re.sub(r"(?m)^={5,}\s*$", "", body).strip()
+        body = re.sub(r"(?m)^第\d+题（[^\n]*）\s*$", "", body).strip()
+        if body:
+            sections[section_name] = body
     return sections
 
 
@@ -1738,6 +2193,7 @@ def clean_dimension_fragment(text: str, *, limit: int = 14) -> str:
     value = re.sub(r"^[：:\s]+", "", text.strip())
     value = re.split(r"[：:；;，,。]", value, maxsplit=1)[0]
     value = re.sub(r"\s+", "", value)
+    value = re.sub(r"[\"'“”‘’『』「」]", "", value)
     return value[:limit]
 
 
@@ -1839,7 +2295,13 @@ def normalize_scored_item_text(item: str) -> str:
     @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
     """
 
-    cleaned = strip_item_marker(item.strip("；; "))
+    cleaned = strip_item_marker(item.strip("；; ")).lstrip("+、，, ")
+    cleaned = re.sub(
+        r"(?P<title>[^\s：:；;，,。、“”\"'（）()]{1,20})\s*\((?P<score>\d+(?:\.\d+)?)分\)",
+        lambda match: f"{match.group('title')}（{match.group('score')}分）",
+        cleaned,
+        count=1,
+    )
     return LEADING_PLAIN_SCORE_PATTERN.sub(
         lambda match: f"{match.group('title')}（{match.group('score')}分）：",
         cleaned,
@@ -1910,6 +2372,10 @@ def parse_scored_items(section_text: str) -> list[str]:
                 items.append(item)
         return items
 
+    compact_items = parse_compact_scored_items(normalized)
+    if len(compact_items) >= 2:
+        return compact_items
+
     cursor = 0
     items: list[str] = []
     for match in SCORE_MARK_PATTERN.finditer(normalized):
@@ -1925,6 +2391,32 @@ def parse_scored_items(section_text: str) -> list[str]:
         if not item or "总分" in item or item.startswith("（"):
             continue
         items.append(item)
+    return items
+
+
+def parse_compact_scored_items(normalized: str) -> list[str]:
+    """解析 `肯定态度15分倾听了解25分` 这类没有分隔符的评分项。"""
+
+    token_pattern = re.compile(
+        r"(?P<title>[^\d０-９\s：:；;，,。、“”\"'（）()+=]{2,24}?)"
+        r"(?P<score>\d+(?:\.\d+)?)\s*分"
+    )
+    matches = []
+    for match in token_pattern.finditer(normalized):
+        title = clean_dimension_fragment(match.group("title"), limit=24)
+        if not title or not is_explicit_dimension_title(title):
+            continue
+        if title in {"总分", "满分", "分值", "内容分", "仪态分"} or "总分" in title:
+            continue
+        matches.append(match)
+    items: list[str] = []
+    for index, match in enumerate(matches):
+        title = clean_dimension_fragment(match.group("title"), limit=24)
+        score = match.group("score")
+        end = matches[index + 1].start("title") if index + 1 < len(matches) else len(normalized)
+        body = normalized[match.end():end].strip(" +、，,；;。")
+        suffix = f"：{body}" if body else "："
+        items.append(f"{title}（{score}分）{suffix}")
     return items
 
 
@@ -1969,7 +2461,7 @@ def extract_score(item_text: str) -> float:
     @raises ValueError: 当输入、权限、外部服务或数据状态不满足业务边界时向上抛出。
     """
 
-    match = re.search(r"（(\d+(?:\.\d+)?)分）", item_text) or re.search(r"(\d+(?:\.\d+)?)\s*分", item_text)
+    match = re.search(r"[（(](\d+(?:\.\d+)?)分[）)]", item_text) or re.search(r"(\d+(?:\.\d+)?)\s*分", item_text)
     if not match:
         raise ValueError(f"无法从评分项中提取分值: {item_text}")
     return float(match.group(1))
@@ -5342,6 +5834,43 @@ def has_counted_appearance_score(text: str) -> bool:
     return True
 
 
+def extract_appearance_score(text: str) -> float | None:
+    """读取源文档明确给出的仪态分上限；没有可执行数字时返回 None。"""
+
+    value = str(text or "")
+    # 先匹配“含全局仪态分 5 分”“答题 95 分+仪态 5 分”等总分语义。
+    # 不能直接用“仪态分后面的第一个数字”：山东/江苏的共享仪态细则通常紧跟
+    # “语言流畅度 2 分”，那是仪态子项，不是仪态分总上限。
+    patterns = (
+        r"(?:含|计入)[^\n]{0,30}?全局\s*仪态分[^\d]{0,10}(\d+(?:\.\d+)?)\s*分",
+        r"答题[^\n]{0,30}?\+\s*仪态\s*(\d+(?:\.\d+)?)\s*分",
+        r"全局\s*仪态分[^\d]{0,10}(\d+(?:\.\d+)?)\s*分",
+        r"仪态(?:分)?\s*[（(：:]\s*(?:满分\s*)?(\d+(?:\.\d+)?)\s*分",
+        r"仪态(?:分)?\s+(?:满分\s*)?(\d+(?:\.\d+)?)\s*分",
+        r"仪态\s*(\d+(?:\.\d+)?)\s*分",
+    )
+    for pattern in patterns:
+        match = re.search(pattern, value)
+        if match:
+            score = float(match.group(1))
+            # 医疗卫生题源当前的仪态分上限是 5 分；“仪态分（满分100分）”
+            # 中的 100 是整套试卷总分，不能覆盖 profile 默认仪态分。
+            if 0 < score <= 20:
+                return round(score, 1)
+    return None
+
+
+def infer_appearance_score_scope(text: str) -> str:
+    """按源文档语义判断仪态分是题目级还是整套级。"""
+
+    value = str(text or "")
+    if any(token in value for token in ("全局统一表达仪态分", "全局统一仪态分", "整套试卷总分", "全局仪态分")):
+        return "suite"
+    if any(token in value for token in ("本题满分", "每题含仪态分", "本题仪态分", "每题仪态分")):
+        return "question"
+    return ACTIVE_PROFILE.default_appearance_score_scope if ACTIVE_PROFILE.default_appearance_score else "suite"
+
+
 def parse_question_block(
     block: str,
     source_path: Path,
@@ -5368,6 +5897,12 @@ def parse_question_block(
     sections = extract_sections(block)
 
     question_text = sections.get("题干", "").strip()
+    # 裸题头文档常把“第一题：/第1题：”再次写进题干，保留真实题意但去掉重复编号。
+    question_text = re.sub(
+        r"^(?:第\s*(?:[一二三四五六七八九十]{1,3}|\d{1,2})\s*题)\s*[：:]\s*",
+        "",
+        question_text,
+    ).strip()
     reference_answer = clean_reference_answer_section(sections.get("核心采分基准答案", ""))
     scoring_text = sections.get("得分标准", "")
     ai_text = sections.get("AI评分结构化数据", "")
@@ -5398,10 +5933,16 @@ def parse_question_block(
     suite_key = context.suite_key if context else (question_id.rsplit("-", 1)[0] if "-" in question_id else question_id)
     suite_name = context.suite_name if context else ""
     source_title_raw = context.source_title_raw if context else ""
+    if ACTIVE_PROFILE.force_file_suite and not suite_name:
+        # 医疗源文件有些只保留题目正文，没有独立中文套题标题；文件名仍是稳定、
+        # 可追溯的套题名称，不能因此把真实套题降为“待确认/非完整套题”。
+        suite_name = Path(source_document).stem
+        source_title_raw = source_title_raw or suite_name
     exam_date = context.exam_date if context else parse_compact_exam_date(question_id)
     position = (context.position if context else "") or infer_suite_position(source_title_raw or source_document)
     batch = (context.batch if context else "") or infer_suite_batch(source_title_raw or source_document)
     question_no = infer_question_no(question_id)
+    source_question_id = (context.source_question_id if context else "") or question_id
     question_type = clean_question_type(
         extract_field(ai_text, FIELD_PATTERNS["type"]) or sections.get("题型定位", ""),
         header_description,
@@ -5424,6 +5965,21 @@ def parse_question_block(
         question_score=full_score,
         suite_key=suite_key,
     )
+    appearance_explicit_score = extract_appearance_score(block)
+    appearance_score_scope = (
+        context.appearance_score_scope
+        if context and context.appearance_score_scope
+        else infer_appearance_score_scope(block)
+    )
+    has_appearance_score = bool(
+        appearance_explicit_score is not None
+        or has_counted_appearance_score(block)
+        or ACTIVE_PROFILE.default_appearance_score > 0
+    )
+    appearance_score = appearance_explicit_score
+    appearance_source = "source_explicit" if appearance_explicit_score is not None else (
+        "profile_default" if ACTIVE_PROFILE.default_appearance_score > 0 else ""
+    )
 
     data = {
         "id": question_id,
@@ -5432,6 +5988,8 @@ def parse_question_block(
         "fullScore": full_score,
         "question": question_text,
         "dimensions": dimensions,
+        # 对外题目契约保留标准化采分点名称；dimensions 继续兼容现有前端资产格式。
+        "scoringPoints": [dict(item) for item in dimensions],
         "coreKeywords": core_keywords,
         "strongKeywords": strong_keywords,
         "weakKeywords": weak_keywords,
@@ -5440,6 +5998,8 @@ def parse_question_block(
         "scoringCriteria": scoring_criteria,
         "deductionRules": deduction_rules,
         "sourceDocument": source_document,
+        "originFile": source_document,
+        "sourceQuestionId": source_question_id,
         "sourceDocumentType": context.source_document_type if context else "",
         **classification_meta,
         "suiteId": suite_key,
@@ -5451,7 +6011,19 @@ def parse_question_block(
         "batch": batch,
         "questionNo": question_no,
         "questionScore": full_score,
-        "hasAppearanceScore": has_counted_appearance_score(block),
+        "appearanceScore": appearance_score,
+        "appearanceScoreMax": appearance_explicit_score or ACTIVE_PROFILE.default_appearance_score or 0.0,
+        "appearanceScoreSource": appearance_source,
+        "appearanceScoreScope": appearance_score_scope,
+        "effectiveFullScore": full_score,
+        "hasAppearanceScore": has_appearance_score,
+        "scoreCalculationNote": (
+            "仪态分已按 profile 默认值计入；后续实际仪态分应替换默认值。"
+            if appearance_source == "profile_default"
+            else "源文档明确包含仪态分，按源文档作用域计入。"
+            if appearance_source == "source_explicit"
+            else ""
+        ),
         "referenceAnswer": reference_answer,
         "tags": build_tags(
             sections.get("检索标签", ""),
@@ -5473,7 +6045,20 @@ def parse_question_block(
             "batch": batch,
             "questionNo": question_no,
             "questionScore": full_score,
-            "hasAppearanceScore": has_counted_appearance_score(block),
+            "appearanceScore": appearance_score,
+            "appearanceScoreMax": appearance_explicit_score or ACTIVE_PROFILE.default_appearance_score or 0.0,
+            "appearanceScoreSource": appearance_source,
+            "appearanceScoreScope": appearance_score_scope,
+            "effectiveFullScore": full_score,
+            "hasAppearanceScore": has_appearance_score,
+            "scoreCalculationNote": (
+                "仪态分已按 profile 默认值计入；后续实际仪态分应替换默认值。"
+                if appearance_source == "profile_default"
+                else "源文档明确包含仪态分，按源文档作用域计入。"
+                if appearance_source == "source_explicit"
+                else ""
+            ),
+            "sourceQuestionId": source_question_id,
         },
     }
     return ParsedQuestion(data=data, source_path=source_path, block_length=len(block))
@@ -5558,6 +6143,110 @@ def apply_suite_score_totals(parsed_questions: dict[str, ParsedQuestion]) -> Non
         grouped.setdefault(suite_key, []).append(parsed)
 
     for suite_key, items in grouped.items():
+        if ACTIVE_PROFILE.score_scope == "question":
+            answer_score_total = round(
+                sum(float(item.data.get("questionScore") or 0) for item in items),
+                1,
+            )
+            suite_scoped_items = [
+                item
+                for item in items
+                if str(item.data.get("appearanceScoreScope") or "") == "suite"
+                and bool(item.data.get("hasAppearanceScore"))
+            ]
+            suite_appearance_score = round(
+                max(
+                    (
+                        float(item.data.get("appearanceScore") or item.data.get("appearanceScoreMax") or 0)
+                        for item in suite_scoped_items
+                    ),
+                    default=0.0,
+                ),
+                1,
+            )
+            suite_appearance_max = round(
+                max(
+                    (
+                        float(item.data.get("appearanceScoreMax") or item.data.get("appearanceScore") or 0)
+                        for item in suite_scoped_items
+                    ),
+                    default=0.0,
+                ),
+                1,
+            )
+            question_scoped_appearance_total = round(
+                sum(
+                    float(item.data.get("appearanceScore") or item.data.get("appearanceScoreMax") or 0)
+                    for item in items
+                    if str(item.data.get("appearanceScoreScope") or "") == "question"
+                    and bool(item.data.get("hasAppearanceScore"))
+                ),
+                1,
+            )
+            suite_total_score = round(
+                answer_score_total
+                + question_scoped_appearance_total
+                + suite_appearance_score,
+                1,
+            )
+            for item in items:
+                content_score = round(float(item.data.get("questionScore") or 0), 1)
+                appearance_max = round(float(item.data.get("appearanceScoreMax") or 0), 1)
+                if item.data.get("hasAppearanceScore"):
+                    appearance_value = round(
+                        float(item.data.get("appearanceScore") or appearance_max or ACTIVE_PROFILE.default_appearance_score),
+                        1,
+                    )
+                else:
+                    appearance_value = 0.0
+                scope = str(item.data.get("appearanceScoreScope") or ACTIVE_PROFILE.default_appearance_score_scope)
+                effective_full_score = round(content_score + appearance_max, 1)
+                item_total = round(content_score + appearance_value, 1)
+                item.data.update(
+                    {
+                        "suiteId": suite_key,
+                        "suiteKey": suite_key,
+                        "hasAppearanceScore": bool(item.data.get("hasAppearanceScore")),
+                        "answerScoreTotal": answer_score_total,
+                        "appearanceScore": appearance_value,
+                        "appearanceScoreMax": appearance_max,
+                        "effectiveFullScore": effective_full_score,
+                        "fullScore": effective_full_score,
+                        "scoreBands": build_score_bands(effective_full_score),
+                        "suiteTotalScore": suite_total_score,
+                        # 题目级作用域下可直接显示题目总分；套题级作用域下保留套题汇总，避免重复加分。
+                        "totalScore": item_total if scope == "question" else suite_total_score,
+                        "appearanceScoreScope": scope,
+                        "scoreCalculationNote": (
+                            "仪态分已按默认值计入；后续实际仪态分应替换默认值。"
+                            if item.data.get("appearanceScoreSource") == "profile_default"
+                            and scope == "question"
+                            else "仪态分按套题统一计算，仅计入套题总分一次；题目满分展示为内容分与仪态分上限之和。"
+                            if scope == "suite"
+                            else str(item.data.get("scoreCalculationNote") or "")
+                        ),
+                    }
+                )
+                meta = item.data.get("_meta")
+                if isinstance(meta, dict):
+                    meta.update(
+                        {
+                            "suiteId": suite_key,
+                            "suiteKey": suite_key,
+                            "hasAppearanceScore": item.data["hasAppearanceScore"],
+                            "answerScoreTotal": answer_score_total,
+                            "appearanceScore": appearance_value,
+                            "appearanceScoreMax": appearance_max,
+                            "effectiveFullScore": effective_full_score,
+                            "fullScore": effective_full_score,
+                            "suiteTotalScore": suite_total_score,
+                            "totalScore": item.data["totalScore"],
+                            "appearanceScoreScope": scope,
+                            "scoreCalculationNote": item.data["scoreCalculationNote"],
+                        }
+                    )
+            continue
+
         answer_score_total = round(
             sum(float(item.data.get("questionScore") or item.data.get("fullScore") or 0) for item in items),
             1,
@@ -5766,6 +6455,20 @@ def run_profile_import(profile_name: str | ImportProfile) -> int:
     if not parsed_questions:
         raise RuntimeError("未解析到任何有效题目")
 
+    if parse_failures:
+        # 硬解析失败不能继续生成“看似完整”的资产；调用者可以从摘要里定位具体源文件和题号。
+        write_summary(
+            parsed_questions,
+            duplicates,
+            {},
+            skipped_blocks,
+            parse_failures,
+            source_stats,
+        )
+        raise RuntimeError(
+            f"{ACTIVE_PROFILE.name} 存在 {len(parse_failures)} 个硬解析失败，已阻止生成不完整题库；详情见 {SUMMARY_PATH}"
+        )
+
     apply_suite_score_totals(parsed_questions)
     sample_generation_summary = write_question_files(parsed_questions)
     write_summary(
@@ -5835,7 +6538,13 @@ def build_argument_parser() -> argparse.ArgumentParser:
         "--source-file",
         action="append",
         dest="source_files",
-        help="自定义 profile 的 .extracted.txt 源文件路径，可重复传入多个。",
+        help="题源文件路径，可重复传入多个；支持 .docx/.doc/.extracted.txt，.doc 需要同名提取文本兜底。",
+    )
+    parser.add_argument(
+        "--source-dir",
+        action="append",
+        dest="source_dirs",
+        help="题源目录，可重复传入多个；目录内文件按稳定文件名排序。",
     )
     parser.add_argument(
         "--list-profiles",
@@ -5857,7 +6566,17 @@ def resolve_profile_from_args(args: argparse.Namespace, parser: argparse.Argumen
     @raises: 不主动包装底层错误；文件、数据库或网络异常会沿调用栈向上传递。
     """
 
-    custom_mode = bool(args.profile_name or args.province or args.source_files)
+    source_files = list(args.source_files or [])
+    source_files.extend(resolve_source_dir_files(args.source_dirs or []))
+    custom_mode = bool(args.profile_name or args.province or source_files)
+    if args.profile and (args.source_dirs or args.source_files):
+        base_profile = IMPORT_PROFILES[args.profile]
+        return profile_with_sources(base_profile, source_files)
+    if args.profile_name and normalize_profile_key(args.profile_name) in IMPORT_PROFILES and not args.province:
+        base_profile = IMPORT_PROFILES[normalize_profile_key(args.profile_name)]
+        if source_files:
+            return profile_with_sources(base_profile, source_files)
+        return base_profile
     if custom_mode:
         if args.profile:
             parser.error("自定义地区导入模式下不要同时传 --profile，请改用 --profile-name/--province/--source-file。")
@@ -5865,9 +6584,9 @@ def resolve_profile_from_args(args: argparse.Namespace, parser: argparse.Argumen
             parser.error("自定义地区导入模式下必须提供 --profile-name，例如 guangdong。")
         if not args.province:
             parser.error("自定义地区导入模式下必须提供 --province，例如 广东。")
-        if not args.source_files:
-            parser.error("自定义地区导入模式下至少需要一个 --source-file。")
-        return build_runtime_profile(args.profile_name, args.province, args.source_files)
+        if not source_files:
+            parser.error("自定义地区导入模式下至少需要一个 --source-file 或 --source-dir。")
+        return build_runtime_profile(args.profile_name, args.province, source_files)
     return args.profile or "hunan"
 
 
