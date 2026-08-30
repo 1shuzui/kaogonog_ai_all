@@ -30,6 +30,8 @@ from app.services.auth_service import (
     bind_wechat_miniprogram,
     bind_wechat_miniprogram_invite,
     confirm_password_reset,
+    issue_password_reset_code,
+    list_password_reset_cases,
     login_user,
     login_wechat_miniprogram,
     register_user,
@@ -159,7 +161,7 @@ def password_reset_request(data: PasswordResetRequest, db: Session = Depends(get
     """
     申请密码重置验证码的路由。
 
-    通知通道尚未完善，服务层会返回临时 debugCode 供管理员协助；路由层不记录验证码，避免日志和响应处理分叉。
+    用户侧只提交待办，不生成或返回验证码；管理员核验后再从后台签发，避免验证码泄露给申请端。
 
     @param data: 密码重置申请。
     @param db: 请求级数据库会话。
@@ -167,6 +169,33 @@ def password_reset_request(data: PasswordResetRequest, db: Session = Depends(get
     @raises HTTPException: 用户不存在时由服务层抛出。
     """
     return request_password_reset(db, data)
+
+
+@router.get("/password-reset/admin/requests")
+def password_reset_admin_requests(
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    返回当前密码重置待办。
+
+    继续复用现有管理员身份判断，不引入新的后台角色体系；普通用户会在服务层被拒绝。
+    """
+    return list_password_reset_cases(db, current_user)
+
+
+@router.post("/password-reset/admin/requests/{request_id}/issue")
+def password_reset_admin_issue(
+    request_id: int,
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    管理员核验申请后生成一次性验证码。
+
+    明文验证码只在这次管理员响应中出现一次，后台刷新后需重新签发，不会从数据库还原明文。
+    """
+    return issue_password_reset_code(db, current_user, request_id)
 
 
 @router.post("/password-reset/verify")

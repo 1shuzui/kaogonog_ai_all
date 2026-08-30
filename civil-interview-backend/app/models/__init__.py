@@ -18,6 +18,7 @@ from app.models.entities import (
     InvitePartner,
     InvitePaymentEvent,
     InviteRegistrationEvent,
+    PasswordResetCase,
     Question,
     User,
 )
@@ -29,6 +30,7 @@ __all__ = [
     "Exam",
     "ExamAnswer",
     "HistoryRecord",
+    "PasswordResetCase",
     "InvitePartner",
     "InviteCode",
     "InviteRegistrationEvent",

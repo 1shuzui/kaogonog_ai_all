@@ -216,7 +216,7 @@ class PasswordResetRequest(BaseModel):
     """
     找回密码第一步请求，记录目标账号和可选联系方式。
 
-    当前本地和测试环境没有短信服务，服务层会生成 debug code；保留 contact 是为了未来接短信或人工客服核验。
+    用户侧只提交管理员待办，不接收验证码；contact 用于管理员人工核验和转交，未来也可作为短信或邮件通道收件地址。
 
     @param: 无；FastAPI 根据请求体实例化。
     @return: 密码重置发起请求模型。

@@ -18,9 +18,19 @@ import requests
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from app.core.access import ensure_admin_access
 from app.core.config import settings
 from app.core.security import verify_password, get_password_hash, create_access_token
-from app.models.entities import User
+from app.models.entities import (
+    Exam,
+    HistoryRecord,
+    InviteActivityDaily,
+    InvitePaymentEvent,
+    InviteRegistrationEvent,
+    PasswordResetCase,
+    SupportFeedback,
+    User,
+)
 from app.schemas.common import (
     PasswordResetConfirmRequest,
     PasswordResetRequest,
@@ -44,6 +54,7 @@ from app.services.invite_service import (
 
 WECHAT_ACCOUNT_PREFIX = "wxmp_"
 PASSWORD_RESET_TTL_SECONDS = 15 * 60
+PASSWORD_RESET_MAX_ATTEMPTS = 8
 
 
 def _make_token(username: str) -> str:
@@ -152,6 +163,24 @@ def _account_login_payload(user: User) -> dict:
         "wechatGeneratedUsername": user.username if generated else "",
         "wechatMiniBound": bool(mini.get("openId")),
     }
+
+
+def _migrate_username_references(db: Session, old_username: str, new_username: str) -> None:
+    """迁移没有数据库级 ON UPDATE CASCADE 的用户名引用。"""
+    references = (
+        (Exam, Exam.user_id),
+        (HistoryRecord, HistoryRecord.username),
+        (SupportFeedback, SupportFeedback.username),
+        (InviteRegistrationEvent, InviteRegistrationEvent.username),
+        (InviteActivityDaily, InviteActivityDaily.username),
+        (InvitePaymentEvent, InvitePaymentEvent.username),
+        (PasswordResetCase, PasswordResetCase.username_snapshot),
+    )
+    for model, column in references:
+        db.query(model).filter(column == old_username).update(
+            {column: new_username},
+            synchronize_session=False,
+        )
 
 
 def login_user(db: Session, username: str, password: str) -> dict:
@@ -327,6 +356,8 @@ def setup_wechat_miniprogram_account(db: Session, current_user, data: WechatMini
     if db.query(User).filter(User.username == target_username).first():
         raise HTTPException(status_code=400, detail="用户名已被占用")
 
+    old_username = user.username
+    _migrate_username_references(db, old_username, target_username)
     user.username = target_username
     user.hashed_password = get_password_hash(data.password)
     if not user.full_name or user.full_name == "微信用户":
@@ -354,53 +385,157 @@ def bind_wechat_miniprogram_invite(db: Session, current_user, data: WechatMiniPr
 
 def request_password_reset(db: Session, data: PasswordResetRequest) -> dict:
     """
-    生成密码重置验证码并暂存在用户 preferences。
+    创建一条等待管理员核验的密码重置申请。
 
-    目前没有真正接入短信/邮件通道，所以返回 debugCode 作为管理员协助找回密码的临时妥协；验证码仍按
-    哈希保存并设置过期时间，避免明文长期留在数据库里。接入通知渠道后应移除对外 debugCode。
+    用户接口不生成也不返回验证码；无论用户名是否存在都返回同一提示，避免通过找回密码接口枚举账号。
+    同一用户只保留一条当前申请，重复申请会回到待管理员核验状态，不积累近期审计记录。
 
     @param db: 调用方传入的数据库会话；复用外层事务边界，避免服务层隐式创建连接导致状态不一致。
     @param data: 密码重置申请，包含用户名和可选联系信息。
-    @return: 生成结果、有效期和当前临时 debugCode。
-    @raises HTTPException: 用户不存在时抛出 404。
+    @return: 通用受理提示。
+    @raises HTTPException: 数据库写入失败时抛出 500。
     """
-    user = db.query(User).filter(User.username == data.username).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="用户不存在")
-    code = f"{secrets.randbelow(1_000_000):06d}"
-    prefs = _preferences(user)
-    prefs["passwordReset"] = {
-        "codeHash": get_password_hash(code),
-        "expiresAt": (datetime.now(timezone.utc) + timedelta(seconds=PASSWORD_RESET_TTL_SECONDS)).isoformat(),
-        "contact": data.contact or "",
-        "verified": False,
-        "requestedAt": datetime.now(timezone.utc).isoformat(),
-    }
-    _save_preferences(user, prefs)
-    db.commit()
-    return {
+    generic_response = {
         "success": True,
-        "message": "验证码已生成，请联系管理员获取或查看已接入的通知渠道。",
-        "debugCode": code,
-        "expiresIn": PASSWORD_RESET_TTL_SECONDS,
+        "message": "申请已提交。若账号存在，管理员核验后会通过已核验的联系方式发送验证码。",
+    }
+    username = str(data.username or "").strip()
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        return generic_response
+
+    now = datetime.now(timezone.utc)
+    reset_case = db.query(PasswordResetCase).filter(PasswordResetCase.user_id == user.id).first()
+    if not reset_case:
+        reset_case = PasswordResetCase(user_id=user.id, username_snapshot=user.username)
+        db.add(reset_case)
+    reset_case.username_snapshot = user.username
+    reset_case.contact = str(data.contact or "").strip()[:255]
+    reset_case.status = "pending"
+    reset_case.code_hash = ""
+    reset_case.delivery_channel = "manual"
+    reset_case.handled_by = ""
+    reset_case.failed_attempts = 0
+    reset_case.requested_at = now
+    reset_case.issued_at = None
+    reset_case.expires_at = None
+    reset_case.verified_at = None
+
+    # 清掉旧版本曾写入 preferences 的验证码，防止升级后仍可从旧链路重置。
+    prefs = _preferences(user)
+    prefs.pop("passwordReset", None)
+    _save_preferences(user, prefs)
+    try:
+        db.commit()
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="找回密码申请提交失败，请稍后重试") from None
+    return generic_response
+
+
+def _reset_case_to_dict(reset_case: PasswordResetCase, user: User) -> dict:
+    expires_at = reset_case.expires_at
+    if expires_at and expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    status_value = reset_case.status
+    if expires_at and expires_at <= datetime.now(timezone.utc) and status_value in {"issued", "verified"}:
+        status_value = "expired"
+    return {
+        "requestId": int(reset_case.id or 0),
+        "username": user.username,
+        "contact": reset_case.contact or "",
+        "accountEmail": user.email or "",
+        "status": status_value,
+        "deliveryChannel": reset_case.delivery_channel or "manual",
+        "handledBy": reset_case.handled_by or "",
+        "failedAttempts": int(reset_case.failed_attempts or 0),
+        "requestedAt": reset_case.requested_at.isoformat() if reset_case.requested_at else "",
+        "issuedAt": reset_case.issued_at.isoformat() if reset_case.issued_at else "",
+        "expiresAt": reset_case.expires_at.isoformat() if reset_case.expires_at else "",
+        "verifiedAt": reset_case.verified_at.isoformat() if reset_case.verified_at else "",
     }
 
 
-def _load_valid_password_reset(user: User, code: str) -> dict:
-    prefs = _preferences(user)
-    reset = prefs.get("passwordReset") if isinstance(prefs.get("passwordReset"), dict) else {}
-    if not reset.get("codeHash"):
-        raise HTTPException(status_code=400, detail="请先获取验证码")
-    expires_at_raw = reset.get("expiresAt") or ""
-    try:
-        expires_at = datetime.fromisoformat(expires_at_raw.replace("Z", "+00:00"))
-    except ValueError:
-        raise HTTPException(status_code=400, detail="验证码已失效") from None
-    if expires_at < datetime.now(timezone.utc):
-        raise HTTPException(status_code=400, detail="验证码已过期")
-    if not verify_password(code, reset["codeHash"]):
-        raise HTTPException(status_code=400, detail="验证码错误")
-    return reset
+def list_password_reset_cases(db: Session, current_user) -> dict:
+    """列出当前待处理/已签发的密码重置申请，仅供现有管理员后台使用。"""
+    ensure_admin_access(current_user)
+    rows = (
+        db.query(PasswordResetCase, User)
+        .join(User, User.id == PasswordResetCase.user_id)
+        .order_by(PasswordResetCase.requested_at.desc(), PasswordResetCase.id.desc())
+        .all()
+    )
+    items = [_reset_case_to_dict(reset_case, user) for reset_case, user in rows]
+    return {"list": items, "total": len(items)}
+
+
+def issue_password_reset_code(db: Session, current_user, request_id: int) -> dict:
+    """管理员核验申请后签发一次性验证码；明文只在本次响应中返回。"""
+    ensure_admin_access(current_user)
+    reset_case = (
+        db.query(PasswordResetCase)
+        .filter(PasswordResetCase.id == request_id)
+        .with_for_update()
+        .first()
+    )
+    if not reset_case:
+        raise HTTPException(status_code=404, detail="密码重置申请不存在")
+    user = db.query(User).filter(User.id == reset_case.user_id).first()
+    if not user:
+        db.delete(reset_case)
+        db.commit()
+        raise HTTPException(status_code=404, detail="密码重置申请不存在")
+
+    now = datetime.now(timezone.utc)
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    reset_case.username_snapshot = user.username
+    reset_case.code_hash = get_password_hash(code)
+    reset_case.status = "issued"
+    reset_case.delivery_channel = "manual"
+    reset_case.handled_by = current_user.username
+    reset_case.issued_at = now
+    reset_case.expires_at = now + timedelta(seconds=PASSWORD_RESET_TTL_SECONDS)
+    reset_case.verified_at = None
+    reset_case.failed_attempts = 0
+    db.commit()
+    db.refresh(reset_case)
+    return {
+        **_reset_case_to_dict(reset_case, user),
+        "success": True,
+        "code": code,
+        "expiresIn": PASSWORD_RESET_TTL_SECONDS,
+        "message": "验证码已生成，请通过核验后的联系方式发送给用户。",
+    }
+
+
+def _load_valid_password_reset(db: Session, user: User, code: str) -> PasswordResetCase:
+    reset_case = (
+        db.query(PasswordResetCase)
+        .filter(PasswordResetCase.user_id == user.id)
+        .with_for_update()
+        .first()
+    )
+    invalid = HTTPException(status_code=400, detail="验证码错误或已失效")
+    if not reset_case or reset_case.status not in {"issued", "verified"} or not reset_case.code_hash:
+        raise invalid
+    expires_at = reset_case.expires_at
+    if not expires_at:
+        raise invalid
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at <= datetime.now(timezone.utc):
+        raise invalid
+    if int(reset_case.failed_attempts or 0) >= PASSWORD_RESET_MAX_ATTEMPTS:
+        raise invalid
+    if not verify_password(str(code or "").strip(), reset_case.code_hash):
+        reset_case.failed_attempts = int(reset_case.failed_attempts or 0) + 1
+        if reset_case.failed_attempts >= PASSWORD_RESET_MAX_ATTEMPTS:
+            reset_case.status = "locked"
+            reset_case.code_hash = ""
+            reset_case.expires_at = None
+        db.commit()
+        raise invalid
+    return reset_case
 
 
 def verify_password_reset(db: Session, data: PasswordResetVerifyRequest) -> dict:
@@ -417,13 +552,10 @@ def verify_password_reset(db: Session, data: PasswordResetVerifyRequest) -> dict
     """
     user = db.query(User).filter(User.username == data.username).first()
     if not user:
-        raise HTTPException(status_code=404, detail="用户不存在")
-    reset = _load_valid_password_reset(user, data.code)
-    prefs = _preferences(user)
-    reset["verified"] = True
-    reset["verifiedAt"] = datetime.now(timezone.utc).isoformat()
-    prefs["passwordReset"] = reset
-    _save_preferences(user, prefs)
+        raise HTTPException(status_code=400, detail="验证码错误或已失效")
+    reset_case = _load_valid_password_reset(db, user, data.code)
+    reset_case.status = "verified"
+    reset_case.verified_at = datetime.now(timezone.utc)
     db.commit()
     return {"success": True, "message": "验证码验证通过"}
 
@@ -442,11 +574,12 @@ def confirm_password_reset(db: Session, data: PasswordResetConfirmRequest) -> di
     """
     user = db.query(User).filter(User.username == data.username).first()
     if not user:
-        raise HTTPException(status_code=404, detail="用户不存在")
-    _load_valid_password_reset(user, data.code)
+        raise HTTPException(status_code=400, detail="验证码错误或已失效")
+    reset_case = _load_valid_password_reset(db, user, data.code)
     user.hashed_password = get_password_hash(data.newPassword)
     prefs = _preferences(user)
     prefs.pop("passwordReset", None)
     _save_preferences(user, prefs)
+    db.delete(reset_case)
     db.commit()
     return {"success": True, "message": "密码已重置"}

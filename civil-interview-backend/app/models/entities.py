@@ -49,7 +49,7 @@ class User(Base):
     @raises: 类定义阶段不主动抛出异常；唯一索引、外键和非空约束错误会在数据库提交时暴露。
     """
     __tablename__ = "users"
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(MYSQL_BIGINT, primary_key=True, autoincrement=True)
     username = Column(String(64), unique=True, nullable=False, index=True)
     hashed_password = Column(String(128), nullable=False)
     full_name = Column(String(64), default="")
@@ -75,6 +75,33 @@ class User(Base):
     subscriptions = relationship("UserSubscription", back_populates="user", cascade="all, delete-orphan")
     usage_records = relationship("UsageRecord", back_populates="user", cascade="all, delete-orphan")
     entitlement_adjustments = relationship("EntitlementAdjustment", back_populates="user", cascade="all, delete-orphan")
+
+
+class PasswordResetCase(Base):
+    """
+    当前有效的人工密码重置申请。
+
+    用户侧只创建待处理申请；管理员核对账号和联系方式后才生成一次性验证码。验证码仅保存哈希，
+    明文只在管理员签发响应中出现一次；重置完成后整条记录删除，因此本表不承担历史审计用途。
+
+    @param: 无；由认证服务创建、签发、验证并在完成时删除。
+    @return: 当前密码重置申请 ORM 实例。
+    @raises: 唯一用户约束或用户外键错误在数据库提交时暴露。
+    """
+    __tablename__ = "password_reset_cases"
+    id = Column(MYSQL_BIGINT, primary_key=True, autoincrement=True)
+    user_id = Column(MYSQL_BIGINT, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    username_snapshot = Column(String(64), nullable=False, index=True)
+    contact = Column(String(255), default="")
+    status = Column(String(24), nullable=False, default="pending", index=True)
+    code_hash = Column(String(255), default="")
+    delivery_channel = Column(String(24), default="manual")
+    handled_by = Column(String(64), default="")
+    failed_attempts = Column(Integer, nullable=False, default=0)
+    requested_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    issued_at = Column(DateTime, nullable=True)
+    expires_at = Column(DateTime, nullable=True)
+    verified_at = Column(DateTime, nullable=True)
 
 
 class InvitePartner(Base):

@@ -20,7 +20,16 @@ from app.api.v1 import api_router
 from app.core.config import settings
 from app.core.security import verify_password
 from app.db.session import Base
-from app.models.entities import PaymentOrder, SubscriptionPackage, User, UserSubscription
+from app.models.entities import (
+    Exam,
+    ExamAnswer,
+    HistoryRecord,
+    PasswordResetCase,
+    PaymentOrder,
+    SubscriptionPackage,
+    User,
+    UserSubscription,
+)
 from app.schemas.common import (
     PasswordResetConfirmRequest,
     PasswordResetRequest,
@@ -32,6 +41,8 @@ from app.schemas.common import (
 )
 from app.services.auth_service import (
     confirm_password_reset,
+    issue_password_reset_code,
+    list_password_reset_cases,
     login_wechat_miniprogram,
     request_password_reset,
     setup_wechat_miniprogram_account,
@@ -122,6 +133,8 @@ class AuthAndPaymentEndpointTestCase(unittest.TestCase):
             "/password-reset/request",
             "/password-reset/verify",
             "/password-reset/confirm",
+            "/password-reset/admin/requests",
+            "/password-reset/admin/requests/{request_id}/issue",
             "/payment/admin/refund-stats",
             "/payment/admin/refund",
         }:
@@ -170,6 +183,27 @@ class AuthAndPaymentEndpointTestCase(unittest.TestCase):
         self.assertEqual(user.agreed_terms_version, "v1.0")
         self.assertEqual(user.preferences["wechatMiniProgram"]["openId"], "openid_1")
 
+        self.db.add_all([
+            Exam(
+                id="wx_answer_exam",
+                user_id=generated_username,
+                question_ids=["wx_answer_q1"],
+                status="completed",
+            ),
+            ExamAnswer(
+                exam_id="wx_answer_exam",
+                question_id="wx_answer_q1",
+                transcript="这是微信临时账号下保存的回答",
+                score_result={},
+            ),
+            HistoryRecord(
+                exam_id="wx_answer_history",
+                username=generated_username,
+                question_count=1,
+            ),
+        ])
+        self.db.commit()
+
         setup = setup_wechat_miniprogram_account(
             self.db,
             DummyAuthUser(generated_username),
@@ -181,6 +215,14 @@ class AuthAndPaymentEndpointTestCase(unittest.TestCase):
         renamed = self.db.query(User).filter(User.username == "pc_user").first()
         self.assertIsNotNone(renamed)
         self.assertTrue(verify_password("new_password", renamed.hashed_password))
+        self.assertEqual(
+            self.db.query(Exam).filter(Exam.id == "wx_answer_exam").one().user_id,
+            "pc_user",
+        )
+        self.assertEqual(
+            self.db.query(HistoryRecord).filter(HistoryRecord.exam_id == "wx_answer_history").one().username,
+            "pc_user",
+        )
 
     def test_wechat_login_rejects_invalid_invite_even_for_existing_user(self):
         old_appid = settings.wechat_pay_appid
@@ -214,11 +256,11 @@ class AuthAndPaymentEndpointTestCase(unittest.TestCase):
 
         self.assertTrue(first_login["access_token"])
 
-    def test_password_reset_generates_verifies_and_confirms_code(self):
+    def test_password_reset_requires_admin_issue_and_never_leaks_code_to_user(self):
         """
         本地密码重置要覆盖“生成、校验、确认”完整闭环。
 
-        当前没有接入真实短信服务，debugCode 是本地和测试环境排查账号问题的兜底；确认成功后必须清掉临时重置状态。
+        用户申请只能生成后台待办，验证码必须由管理员核验后签发；用户响应不能包含明文验证码。
 
         @param: 无；先写入测试用户，再执行三步重置流程。
         @return: None；新密码可校验且 preferences 中不残留 passwordReset 时通过。
@@ -227,8 +269,29 @@ class AuthAndPaymentEndpointTestCase(unittest.TestCase):
         self.db.add(User(username="alice", hashed_password="old"))
         self.db.commit()
 
-        requested = request_password_reset(self.db, PasswordResetRequest(username="alice", contact="phone"))
-        code = requested["debugCode"]
+        requested = request_password_reset(self.db, PasswordResetRequest(username="alice", contact="13800000000"))
+        self.assertNotIn("debugCode", requested)
+
+        with self.assertRaises(HTTPException):
+            verify_password_reset(self.db, PasswordResetVerifyRequest(username="alice", code="123456"))
+
+        with self.assertRaises(HTTPException):
+            list_password_reset_cases(self.db, DummyAuthUser("alice", is_admin=False))
+
+        cases = list_password_reset_cases(self.db, DummyAuthUser("admin", is_admin=True))
+        self.assertEqual(cases["total"], 1)
+        self.assertEqual(cases["list"][0]["username"], "alice")
+
+        issued = issue_password_reset_code(
+            self.db,
+            DummyAuthUser("admin", is_admin=True),
+            cases["list"][0]["requestId"],
+        )
+        code = issued["code"]
+        self.assertRegex(code, r"^\d{6}$")
+
+        with self.assertRaises(HTTPException):
+            verify_password_reset(self.db, PasswordResetVerifyRequest(username="alice", code="wrong-code"))
 
         verified = verify_password_reset(self.db, PasswordResetVerifyRequest(username="alice", code=code))
         self.assertTrue(verified["success"])
@@ -240,7 +303,17 @@ class AuthAndPaymentEndpointTestCase(unittest.TestCase):
         self.assertTrue(confirmed["success"])
         user = self.db.query(User).filter(User.username == "alice").first()
         self.assertTrue(verify_password("new_password", user.hashed_password))
-        self.assertNotIn("passwordReset", user.preferences)
+        self.assertEqual(self.db.query(PasswordResetCase).count(), 0)
+
+    def test_password_reset_request_is_generic_for_unknown_username(self):
+        requested = request_password_reset(
+            self.db,
+            PasswordResetRequest(username="unknown-user", contact="unknown@example.com"),
+        )
+
+        self.assertTrue(requested["success"])
+        self.assertNotIn("debugCode", requested)
+        self.assertEqual(self.db.query(PasswordResetCase).count(), 0)
 
     def test_admin_refund_stats_and_apply_refund_update_order_and_subscription(self):
         """

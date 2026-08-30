@@ -116,6 +116,27 @@ TABLE_STATEMENTS = [
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     """,
     """
+    CREATE TABLE IF NOT EXISTS password_reset_cases (
+        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+        user_id BIGINT NOT NULL UNIQUE,
+        username_snapshot VARCHAR(64) NOT NULL,
+        contact VARCHAR(255) NULL DEFAULT '',
+        status VARCHAR(24) NOT NULL DEFAULT 'pending',
+        code_hash VARCHAR(255) NULL DEFAULT '',
+        delivery_channel VARCHAR(24) NULL DEFAULT 'manual',
+        handled_by VARCHAR(64) NULL DEFAULT '',
+        failed_attempts INT NOT NULL DEFAULT 0,
+        requested_at DATETIME NOT NULL,
+        issued_at DATETIME NULL,
+        expires_at DATETIME NULL,
+        verified_at DATETIME NULL,
+        CONSTRAINT fk_password_reset_cases_user FOREIGN KEY (user_id) REFERENCES users(id)
+            ON DELETE CASCADE ON UPDATE CASCADE,
+        INDEX idx_password_reset_cases_status_requested (status, requested_at),
+        INDEX idx_password_reset_cases_username (username_snapshot)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    """,
+    """
     CREATE TABLE IF NOT EXISTS invite_partners (
         id BIGINT PRIMARY KEY AUTO_INCREMENT,
         name VARCHAR(100) NOT NULL UNIQUE,

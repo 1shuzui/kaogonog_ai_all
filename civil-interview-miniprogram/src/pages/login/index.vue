@@ -37,11 +37,29 @@
       <input v-model="form.username" class="field" placeholder="请输入用户名" />
 
       <view class="form-label">密码</view>
-      <input v-model="form.password" class="field" password placeholder="请输入密码" />
+      <view class="password-field">
+        <input v-model="form.password" class="field password-field__input" :password="mode === 'login' ? !passwordVisibility.login : !passwordVisibility.register" placeholder="请输入密码" />
+        <button
+          class="password-field__toggle"
+          :aria-label="`${mode === 'login' ? (passwordVisibility.login ? '隐藏' : '显示') : (passwordVisibility.register ? '隐藏' : '显示')}密码`"
+          @tap="togglePasswordVisibility(mode === 'login' ? 'login' : 'register')"
+        >
+          <text class="password-field__eye" :class="{ 'password-field__eye--open': mode === 'login' ? passwordVisibility.login : passwordVisibility.register }"></text>
+        </button>
+      </view>
 
       <template v-if="mode === 'register'">
         <view class="form-label">确认密码</view>
-        <input v-model="form.confirmPassword" class="field" password placeholder="请再次输入密码" />
+        <view class="password-field">
+          <input v-model="form.confirmPassword" class="field password-field__input" :password="!passwordVisibility.confirm" placeholder="请再次输入密码" />
+          <button
+            class="password-field__toggle"
+            :aria-label="`${passwordVisibility.confirm ? '隐藏' : '显示'}确认密码`"
+            @tap="togglePasswordVisibility('confirm')"
+          >
+            <text class="password-field__eye" :class="{ 'password-field__eye--open': passwordVisibility.confirm }"></text>
+          </button>
+        </view>
         <view class="form-label">邀请码（选填）</view>
         <input v-model="form.inviteCode" class="field" placeholder="请输入邀请码" />
       </template>
@@ -98,12 +116,12 @@
         </view>
         <view class="form-label">用户名</view>
         <input v-model="resetForm.username" class="field" placeholder="请输入要找回的用户名" />
-        <view class="form-label">邮箱或手机号（可选）</view>
-        <input v-model="resetForm.contact" class="field" placeholder="若已绑定邮箱，可填写用于校验" />
+        <view class="form-label">管理员核验联系方式（选填）</view>
+        <input v-model="resetForm.contact" class="field" placeholder="填写可联系的邮箱或手机号" />
         <view class="reset-code-row">
           <input v-model="resetForm.code" class="field reset-code-row__input" placeholder="验证码" />
           <button class="secondary-button reset-code-row__button" :loading="resetRequesting" @tap="requestResetCode">
-            获取验证码
+            申请验证码
           </button>
         </view>
         <text v-if="resetTip" class="reset-tip">{{ resetTip }}</text>
@@ -186,6 +204,11 @@ const form = reactive({
   inviteCode: '',
   agreedTerms: false
 })
+const passwordVisibility = reactive({
+  login: false,
+  register: false,
+  confirm: false
+})
 const resetForm = reactive({
   username: '',
   contact: '',
@@ -207,6 +230,12 @@ function goHomeWithCachedSession() {
 function clearLocalSession() {
   userStore.logout()
   toast('已清除本地登录态，请重新登录')
+}
+
+function togglePasswordVisibility(field) {
+  if (Object.prototype.hasOwnProperty.call(passwordVisibility, field)) {
+    passwordVisibility[field] = !passwordVisibility[field]
+  }
 }
 
 function openResetPanel() {
@@ -487,12 +516,10 @@ async function requestResetCode() {
       username,
       contact: resetForm.contact.trim()
     })
-    resetTip.value = result?.debugCode
-      ? `验证码：${result.debugCode}。短信未接入时请由管理员转交。`
-      : (result?.message || '验证码已生成，请查收。')
-    toast('验证码已生成', 'success')
+    resetTip.value = result?.message || '申请已提交，请等待管理员核验并发送验证码。'
+    toast('申请已提交', 'success')
   } catch (error) {
-    toast(error?.message || '验证码生成失败')
+    toast(error?.message || '申请提交失败')
   } finally {
     resetRequesting.value = false
   }
@@ -618,6 +645,60 @@ function goLegalDocuments() {
 
 .login-submit {
   margin-top: 34rpx;
+}
+
+.password-field {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.password-field__input {
+  flex: 1;
+  min-width: 0;
+}
+
+.password-field__toggle {
+  flex: 0 0 88rpx;
+  min-height: 88rpx;
+  padding: 0;
+  border: 1rpx solid #DCEAF7;
+  border-radius: 14rpx;
+  background: #F6FAFE;
+  color: #2F7FD6;
+}
+
+.password-field__eye {
+  position: relative;
+  display: inline-block;
+  width: 34rpx;
+  height: 22rpx;
+  border: 3rpx solid currentColor;
+  border-radius: 70% 0;
+  transform: rotate(45deg);
+}
+
+.password-field__eye::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8rpx;
+  height: 8rpx;
+  border-radius: 50%;
+  background: currentColor;
+  content: '';
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.password-field__eye:not(.password-field__eye--open)::before {
+  position: absolute;
+  top: 50%;
+  left: -5rpx;
+  width: 44rpx;
+  height: 3rpx;
+  background: currentColor;
+  content: '';
+  transform: translateY(-50%) rotate(-45deg);
 }
 
 .forgot-button {

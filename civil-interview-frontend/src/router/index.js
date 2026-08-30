@@ -166,6 +166,12 @@ const routes = [
     meta: { title: '余额与退款', layout: 'simple', requiresAdmin: true }
   },
   {
+    path: '/admin/password-resets',
+    name: 'PasswordResetAdmin',
+    component: () => import('@/views/Admin/PasswordResetAdminPage.vue'),
+    meta: { title: '密码重置核验', layout: 'simple', requiresAdmin: true }
+  },
+  {
     path: '/admin/invites',
     name: 'InviteAdmin',
     component: () => import('@/views/Admin/InviteAdminPage.vue'),
