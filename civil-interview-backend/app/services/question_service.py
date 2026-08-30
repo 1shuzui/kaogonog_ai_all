@@ -107,6 +107,25 @@ CLASSIFICATION_META_KEYS = (
     "reviewReason",
     "hasCompleteSuiteLevel",
     "hasAppearanceScore",
+    "portalTags",
+    "displayPortals",
+    "positionTags",
+    "positionType",
+    "system",
+    "sourceDocument",
+    "originFile",
+    "sourceQuestionId",
+    "suiteId",
+    "suiteKey",
+    "suiteName",
+    "questionNo",
+    "questionScore",
+    "appearanceScore",
+    "appearanceScoreMax",
+    "appearanceScoreSource",
+    "appearanceScoreScope",
+    "effectiveFullScore",
+    "scoreCalculationNote",
 )
 
 
@@ -452,21 +471,30 @@ def _build_question_meta(
                     return value
         return None
 
+    def has_explicit_metadata(*keys: str) -> bool:
+        for key in keys:
+            for source in (item, item_meta, keyword_meta):
+                if isinstance(source, dict) and key in source:
+                    return True
+        return False
+
+    explicit_position_tags = _split_tags(metadata_value("positionTags"))
+    inferred_position_tags = _infer_position_tags(
+        source_document,
+        origin_file,
+        item.get("type"),
+        item.get("question"),
+        item.get("stem"),
+        " ".join(tags),
+    )
     meta = {
         "source": source_kind,
         "sourceLabel": _question_source_label(source_kind),
-        "sourceDocument": source_document,
-        "originFile": origin_file,
-        "sourceQuestionId": source_question_id or str(item.get("id") or "").strip(),
+        "sourceDocument": metadata_value("sourceDocument") or source_document,
+        "originFile": metadata_value("originFile") or origin_file,
+        "sourceQuestionId": metadata_value("sourceQuestionId") or source_question_id or str(item.get("id") or "").strip(),
         "tags": tags,
-        "positionTags": _infer_position_tags(
-            source_document,
-            origin_file,
-            item.get("type"),
-            item.get("question"),
-            item.get("stem"),
-            " ".join(tags),
-        ),
+        "positionTags": _unique_preserve_order(explicit_position_tags + inferred_position_tags),
         "referenceAnswer": str(item.get("referenceAnswer") or "").strip(),
         "scoreBands": item.get("scoreBands") if isinstance(item.get("scoreBands"), list) else [],
         "regressionCases": item.get("regressionCases") if isinstance(item.get("regressionCases"), list) else [],
@@ -487,6 +515,11 @@ def _build_question_meta(
         "questionScore": metadata_value("questionScore", "fullScore", "questionMaxScore"),
         "answerScoreTotal": metadata_value("answerScoreTotal", "fullExamAnswerScoreTotal"),
         "appearanceScore": metadata_value("appearanceScore", "fullExamAppearanceScore"),
+        "appearanceScoreMax": metadata_value("appearanceScoreMax"),
+        "appearanceScoreSource": metadata_value("appearanceScoreSource"),
+        "appearanceScoreScope": metadata_value("appearanceScoreScope"),
+        "effectiveFullScore": metadata_value("effectiveFullScore", "fullScore"),
+        "scoreCalculationNote": metadata_value("scoreCalculationNote"),
         "suiteTotalScore": metadata_value("suiteTotalScore", "totalScore", "fullExamTotalScore"),
         "totalScore": metadata_value("totalScore", "suiteTotalScore", "fullExamTotalScore"),
         "sourceDocumentType": metadata_value("sourceDocumentType"),
@@ -494,7 +527,7 @@ def _build_question_meta(
     classification_meta = _infer_classification_meta(item, meta, source_document)
     for key in CLASSIFICATION_META_KEYS:
         value = metadata_value(key)
-        if value in ("", [], None):
+        if not has_explicit_metadata(key):
             value = classification_meta.get(key)
         if value not in ("", [], None):
             meta[key] = value
@@ -527,7 +560,12 @@ def _q_to_dict(q: Question) -> dict:
             "sourceDocument": meta.get("sourceDocument", ""),
             "sourceFile": meta.get("originFile", ""),
             "sourceQuestionId": meta.get("sourceQuestionId", ""),
+            "originFile": meta.get("originFile", ""),
+            "portalTags": meta.get("portalTags", []),
+            "displayPortals": meta.get("displayPortals", []),
             "positionTags": meta.get("positionTags", []),
+            "positionType": meta.get("positionType", ""),
+            "system": meta.get("system", ""),
             "tags": meta.get("tags", []),
             "hasReferenceAnswer": bool(meta.get("referenceAnswer")),
             "suiteId": meta.get("suiteId", ""),
@@ -539,9 +577,14 @@ def _q_to_dict(q: Question) -> dict:
             "batch": meta.get("batch", ""),
             "questionNo": meta.get("questionNo"),
             "questionScore": meta.get("questionScore"),
-            "fullScore": meta.get("questionScore"),
+            "fullScore": meta.get("effectiveFullScore") or meta.get("questionScore"),
+            "effectiveFullScore": meta.get("effectiveFullScore") or meta.get("questionScore"),
             "answerScoreTotal": meta.get("answerScoreTotal"),
             "appearanceScore": meta.get("appearanceScore"),
+            "appearanceScoreMax": meta.get("appearanceScoreMax"),
+            "appearanceScoreSource": meta.get("appearanceScoreSource", ""),
+            "appearanceScoreScope": meta.get("appearanceScoreScope", ""),
+            "scoreCalculationNote": meta.get("scoreCalculationNote", ""),
             "suiteTotalScore": meta.get("suiteTotalScore") or meta.get("totalScore"),
             "totalScore": meta.get("totalScore") or meta.get("suiteTotalScore"),
             "hasAppearanceScore": meta.get("hasAppearanceScore"),
@@ -611,6 +654,10 @@ def _question_input_meta(data) -> dict:
 PROVINCE_CODE_BY_NAME = {name: code for code, name in PROVINCE_NAMES.items()}
 PROVINCE_ALIASES = {
     "national": "national",
+    "全国": "national",
+    "通用": "national",
+    "全国通用": "national",
+    "全国省": "national",
     "国家": "national",
     "国家公务员考试": "national",
     "国考": "national",
@@ -855,6 +902,7 @@ def _upsert_normalized_question(
     item: dict,
     *,
     allow_update: bool = True,
+    match_by_stem: bool = True,
     by_id: dict[str, Question] | None = None,
     by_stem: dict[str, Question] | None = None,
 ) -> Question:
@@ -865,7 +913,7 @@ def _upsert_normalized_question(
     else:
         question = db.query(Question).filter(Question.id == preferred_id).first()
 
-    if not question and stem_key:
+    if not question and match_by_stem and stem_key:
         if by_stem is not None:
             question = by_stem.get(stem_key)
         else:
@@ -933,12 +981,22 @@ def sync_curated_question_assets(db: Session) -> dict:
         )
         for item in normalized_items:
             stem_key = _normalize_stem_key(item.get("stem"))
-            existing = by_id.get(_pick_question_id(item.get("id"))) or by_stem.get(stem_key)
+            source_id = str(item.get("id") or "").strip()
+            stable_source_id = bool(source_id and not source_id.startswith(("preview_", "import_")))
+            existing = by_id.get(_pick_question_id(source_id))
+            if not existing and not stable_source_id:
+                existing = by_stem.get(stem_key)
             if existing:
                 updated += 1
             else:
                 synced += 1
-            _upsert_normalized_question(db, item, by_id=by_id, by_stem=by_stem)
+            _upsert_normalized_question(
+                db,
+                item,
+                match_by_stem=not stable_source_id,
+                by_id=by_id,
+                by_stem=by_stem,
+            )
             changed = True
 
     if changed:
@@ -1069,10 +1127,17 @@ def _question_matches_position(question: Question, position: str) -> bool:
         return True
     meta = _question_meta_from_keywords(question.keywords)
     position_tags = meta.get("positionTags") if isinstance(meta.get("positionTags"), list) else []
+    portal_tags = meta.get("portalTags") if isinstance(meta.get("portalTags"), list) else []
+    display_portals = meta.get("displayPortals") if isinstance(meta.get("displayPortals"), list) else []
     if position in position_tags:
         return True
     exam_category = str(meta.get("examCategory") or "")
-    if position == "medical" and "医疗卫生面试" in exam_category:
+    if position == "medical" and (
+        "medical" in position_tags
+        or "医疗卫生面试" in portal_tags
+        or "医疗卫生面试" in display_portals
+        or "医疗卫生面试" in exam_category
+    ):
         return True
     if position == "bank" and "银行招考面试" in exam_category:
         return True
@@ -1122,6 +1187,40 @@ def _question_matches_target_filters(question: Question, target_filters: dict | 
         expected = clean(target_filters.get(field))
         actual = clean(meta.get(field))
         if expected and actual and not values_match(expected, actual):
+            return False
+
+    portal_expected = clean(target_filters.get("portalTag") or target_filters.get("displayPortal"))
+    if portal_expected:
+        portal_values = [
+            *(meta.get("portalTags") if isinstance(meta.get("portalTags"), list) else []),
+            *(meta.get("displayPortals") if isinstance(meta.get("displayPortals"), list) else []),
+        ]
+        if not any(values_match(portal_expected, clean(value)) for value in portal_values):
+            return False
+
+    position_expected_values: list[str] = []
+    for key in ("positionType", "positionTag", "positionTags"):
+        raw_value = target_filters.get(key)
+        if isinstance(raw_value, list):
+            position_expected_values.extend(clean(value) for value in raw_value)
+        elif raw_value:
+            position_expected_values.extend(
+                clean(value)
+                for value in re.split(r"[、，,；;/\s]+", clean(raw_value))
+            )
+    position_expected_values = [value for value in position_expected_values if value]
+    if position_expected_values:
+        position_values = [
+            clean(meta.get("positionType")),
+            *(meta.get("positionTags") if isinstance(meta.get("positionTags"), list) else []),
+            clean(meta.get("position")),
+        ]
+        if not any(
+            values_match(expected, clean(value))
+            for expected in position_expected_values
+            for value in position_values
+            if value
+        ):
             return False
 
     year_filter = target_filters.get("year")
@@ -1519,6 +1618,12 @@ def _suite_question_order(question: Question) -> int:
 def _is_complete_suite(questions: list[Question]) -> bool:
     if len(questions) < 2:
         return False
+    for question in questions:
+        meta = _question_meta_from_keywords(question.keywords)
+        if "hasCompleteSuiteLevel" in meta and meta.get("hasCompleteSuiteLevel") is False:
+            return False
+        if str(meta.get("hasCompleteSuiteLevel") or "").strip().lower() == "false":
+            return False
     orders = [_suite_question_order(question) for question in questions]
     if any(order <= 0 or order == 999999 for order in orders):
         return False
@@ -1549,6 +1654,39 @@ def _question_matches_full_suite_filters(question: Question, filters: dict | Non
             continue
         actual = str(meta.get(field) or "").strip()
         if actual and expected != actual and expected not in actual and actual not in expected:
+            return False
+
+    portal_expected = str(filters.get("portalTag") or filters.get("displayPortal") or "").strip()
+    if portal_expected:
+        portal_values = [
+            *(meta.get("portalTags") if isinstance(meta.get("portalTags"), list) else []),
+            *(meta.get("displayPortals") if isinstance(meta.get("displayPortals"), list) else []),
+        ]
+        if portal_expected not in portal_values:
+            return False
+
+    position_expected_values: list[str] = []
+    for key in ("positionType", "positionTag", "positionTags"):
+        raw_value = filters.get(key)
+        if isinstance(raw_value, list):
+            position_expected_values.extend(str(value).strip() for value in raw_value)
+        elif raw_value:
+            position_expected_values.extend(
+                value.strip() for value in re.split(r"[、，,；;/\s]+", str(raw_value))
+            )
+    position_expected_values = [value for value in position_expected_values if value]
+    if position_expected_values:
+        position_values = [
+            str(meta.get("positionType") or "").strip(),
+            *(meta.get("positionTags") if isinstance(meta.get("positionTags"), list) else []),
+            str(meta.get("position") or "").strip(),
+        ]
+        if not any(
+            expected == value or expected in value or value in expected
+            for expected in position_expected_values
+            for value in position_values
+            if value
+        ):
             return False
 
     year = str(filters.get("year") or "").strip()
@@ -1603,6 +1741,7 @@ def _build_full_exam_suites(db: Session, filters: dict | None = None, include_qu
         answer_score_total = answer_score_total or calculated_answer_total
         total_score = _first_number(first_meta.get("suiteTotalScore"), first_meta.get("totalScore")) or answer_score_total
         appearance_score = _first_number(first_meta.get("appearanceScore"))
+        appearance_score_max = _first_number(first_meta.get("appearanceScoreMax"), appearance_score)
         has_appearance_flag = first_meta.get("hasAppearanceScore") not in ("", None, [])
         has_appearance_score = _boolean_meta(first_meta.get("hasAppearanceScore")) if has_appearance_flag else appearance_score > 0
         if not appearance_score and has_appearance_score and total_score > answer_score_total:
@@ -1631,6 +1770,13 @@ def _build_full_exam_suites(db: Session, filters: dict | None = None, include_qu
             "answerScoreTotal": answer_score_total,
             "totalScore": total_score,
             "appearanceScore": appearance_score,
+            "appearanceScoreMax": appearance_score_max,
+            "appearanceScoreSource": _first_text(first_meta.get("appearanceScoreSource")),
+            "appearanceScoreScope": _first_text(first_meta.get("appearanceScoreScope")),
+            "effectiveFullScore": _first_number(first_meta.get("effectiveFullScore"), first_meta.get("fullScore")),
+            "scoreCalculationNote": _first_text(first_meta.get("scoreCalculationNote")),
+            "portalTags": first_meta.get("portalTags") if isinstance(first_meta.get("portalTags"), list) else [],
+            "displayPortals": first_meta.get("displayPortals") if isinstance(first_meta.get("displayPortals"), list) else [],
             "hasAppearanceScore": has_appearance_score,
             "sortKey": _suite_sort_key(suite_key, exam_date),
         }

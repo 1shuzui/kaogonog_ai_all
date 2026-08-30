@@ -19,6 +19,8 @@ const TARGET_FIELDS = [
   'year',
   'system',
   'positionType',
+  'positionTag',
+  'positionTags',
   'portalTag',
   'displayPortal',
   'targetCode',
@@ -356,6 +358,46 @@ export const DEFAULT_TARGETED_POSITION_TREE = [
     name: '医疗卫生面试',
     desc: '按已确认题源展示，题目真实主分类仍保留原考试体系。',
     children: [
+      {
+        id: 'medical_shandong',
+        name: '山东省',
+        province: 'shandong',
+        examCategory: '事业单位考试',
+        examSubcategory: '山东省',
+        portalTag: '医疗卫生面试',
+        directions: MEDICAL_JOB_DIRECTIONS.map(([code, name]) => ({
+          id: `medical_shandong_${code}`,
+          name,
+          province: 'shandong',
+          position: 'medical',
+          examCategory: '事业单位考试',
+          examSubcategory: '山东省',
+          portalTag: '医疗卫生面试',
+          displayPortal: '医疗卫生面试',
+          positionType: name,
+          interviewFormat: '医疗卫生结构化面试'
+        }))
+      },
+      {
+        id: 'medical_general',
+        name: '通用医疗卫生题库',
+        province: 'national',
+        examCategory: '事业单位考试',
+        examSubcategory: '通用医疗卫生题库',
+        portalTag: '医疗卫生面试',
+        directions: MEDICAL_JOB_DIRECTIONS.map(([code, name]) => ({
+          id: `medical_general_${code}`,
+          name,
+          province: 'national',
+          position: 'medical',
+          examCategory: '事业单位考试',
+          examSubcategory: '通用医疗卫生题库',
+          portalTag: '医疗卫生面试',
+          displayPortal: '医疗卫生面试',
+          positionType: name,
+          interviewFormat: '医疗卫生结构化面试'
+        }))
+      },
       {
         id: 'medical_sichuan_partial',
         name: '四川省 / 部分地区',

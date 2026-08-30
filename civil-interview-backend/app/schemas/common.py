@@ -624,6 +624,11 @@ class FocusAnalysisRequest(BaseModel):
     questionCount: Optional[str | int] = Field(default="", validation_alias=AliasChoices("questionCount", "question_count"))
     prepTime: Optional[int] = Field(default=None, validation_alias=AliasChoices("prepTime", "prep_time"))
     answerTime: Optional[int] = Field(default=None, validation_alias=AliasChoices("answerTime", "answer_time"))
+    portalTag: Optional[str] = Field(default="", validation_alias=AliasChoices("portalTag", "portal_tag"))
+    displayPortal: Optional[str] = Field(default="", validation_alias=AliasChoices("displayPortal", "display_portal"))
+    positionTag: Optional[str] = Field(default="", validation_alias=AliasChoices("positionTag", "position_tag"))
+    positionTags: Optional[list[str] | str] = Field(default=None, validation_alias=AliasChoices("positionTags", "position_tags"))
+    positionType: Optional[str] = Field(default="", validation_alias=AliasChoices("positionType", "position_type"))
 
 class GenerateQuestionsRequest(BaseModel):
     """
@@ -652,6 +657,11 @@ class GenerateQuestionsRequest(BaseModel):
     questionCount: Optional[str | int] = Field(default="", validation_alias=AliasChoices("questionCount", "question_count"))
     prepTime: Optional[int] = Field(default=None, validation_alias=AliasChoices("prepTime", "prep_time"))
     answerTime: Optional[int] = Field(default=None, validation_alias=AliasChoices("answerTime", "answer_time"))
+    portalTag: Optional[str] = Field(default="", validation_alias=AliasChoices("portalTag", "portal_tag"))
+    displayPortal: Optional[str] = Field(default="", validation_alias=AliasChoices("displayPortal", "display_portal"))
+    positionTag: Optional[str] = Field(default="", validation_alias=AliasChoices("positionTag", "position_tag"))
+    positionTags: Optional[list[str] | str] = Field(default=None, validation_alias=AliasChoices("positionTags", "position_tags"))
+    positionType: Optional[str] = Field(default="", validation_alias=AliasChoices("positionType", "position_type"))
 
 class TrainingGenerateRequest(BaseModel):
     """

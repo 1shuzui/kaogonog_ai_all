@@ -377,6 +377,36 @@ TARGETED_POSITION_TREE = [
                 _direction("medical_bj_pharmacist", "药师岗", "beijing", "medical", positionType="药师岗", interviewFormat="结构化+药学知识"),
                 _direction("medical_bj_admin", "行政岗", "beijing", "medical", positionType="行政岗", interviewFormat="结构化面试"),
             ]),
+            _region("medical_shandong", "山东省", "shandong", "事业单位考试", "山东省", directions=[
+                _direction(
+                    f"medical_shandong_{code}",
+                    name,
+                    "shandong",
+                    "medical",
+                    "事业单位考试",
+                    "山东省",
+                    portalTag="医疗卫生面试",
+                    displayPortal="医疗卫生面试",
+                    positionType=name,
+                    interviewFormat="医疗卫生结构化面试",
+                )
+                for code, name in MEDICAL_JOB_DIRECTIONS
+            ]),
+            _region("medical_general", "通用医疗卫生题库", "national", "事业单位考试", "通用医疗卫生题库", directions=[
+                _direction(
+                    f"medical_general_{code}",
+                    name,
+                    "national",
+                    "medical",
+                    "事业单位考试",
+                    "通用医疗卫生题库",
+                    portalTag="医疗卫生面试",
+                    displayPortal="医疗卫生面试",
+                    positionType=name,
+                    interviewFormat="医疗卫生结构化面试",
+                )
+                for code, name in MEDICAL_JOB_DIRECTIONS
+            ]),
             *[
                 _region(f"medical_{code}", province, code, directions=[
                     _direction(f"medical_{code}_doctor", "医师岗", code, "medical", positionType="医师岗"),
@@ -695,6 +725,15 @@ def _target_filters_from_request(data: FocusAnalysisRequest | GenerateQuestionsR
         value = str(getattr(data, key, "") or "").strip()
         if value:
             filters[key] = value
+    for key in ("portalTag", "displayPortal", "positionTag", "positionType"):
+        value = str(getattr(data, key, "") or "").strip()
+        if value:
+            filters[key] = value
+    position_tags = getattr(data, "positionTags", None)
+    if isinstance(position_tags, list):
+        filters["positionTags"] = [str(value).strip() for value in position_tags if str(value).strip()]
+    elif isinstance(position_tags, str) and position_tags.strip():
+        filters["positionTags"] = position_tags.strip()
     # 兼容小程序端 city/system → subcategory 映射
     if not filters.get("subcategory"):
         for alt in ("system", "city"):
