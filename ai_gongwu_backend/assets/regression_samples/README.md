@@ -4,9 +4,14 @@
 
 ## 目录结构
 
-当前主要使用：
+当前按 profile 分目录使用：
 
-1. `generated_hunan/`
+| 目录 | 当前样本题目数 |
+| --- | ---: |
+| `generated_hunan/` | 29 |
+| `generated_medical_general/` | 100 |
+| `generated_shandong_medical/` | 259 |
+| `generated_jiangsu_medical/` | 187 |
 
 目录形式为：
 
@@ -40,30 +45,31 @@ assets/regression_samples/
 2. 而是先读取题目 JSON
 3. 再根据 `regressionCases[*].sample_path` 找到这里的文本
 
-## generated_hunan 的维护方式
+## generated_* 的维护方式
 
-`generated_hunan/` 是由下面脚本自动生成的：
+所有 `generated_*` 目录由导入器自动生成。以医疗 profile 为例：
 
 ```bash
-cd /home/quyu/ai_interview/ai_gongwu_backend
-./venv/bin/python scripts/import_hunan_question_bank.py
+cd /home/quyu/kaogong_ai
+.venv/bin/python ai_gongwu_backend/scripts/import_question_bank.py \
+  --profile-name shandong_medical \
+  --source-dir /home/quyu/doc_kaogong/question-bank/source/shandong_medical
 ```
 
 因此：
 
-1. 不建议手工逐个改 `generated_hunan` 下的样本文本
+1. 不建议手工逐个改任何 `generated_*` 下的样本文本
 2. 如果你想批量调整样本风格、长度或题型模板，应修改导入脚本后重新生成
 3. 手工逐个修改很容易和下一次导入结果冲突
 
 ## 当前状态
 
-截至 2026-04-11：
+医疗题库当前的样本目录数量与生成题目数量一致：通用 100、山东 259、江苏 187。每题默认配套高 / 中 / 低三档文本，这些样本已经用于：
 
-1. `generated_hunan/` 共 `29` 个题目样本目录
-2. 每题默认配套高 / 中 / 低三档文本
-3. 这些样本已经用于：
-   - `scripts/run_regression.py`
-   - `scripts/run_llm_regression.py`
+1. `scripts/run_regression.py`
+2. `scripts/run_llm_regression.py`
+
+医疗题库的分值和仪态分回归还必须通过后端的资产/评分测试，不能只依赖文本样本回归。详细规则见 [医疗卫生题库知识库](../../../docs/data/medical-question-bank.md)。
 
 ## 使用建议
 

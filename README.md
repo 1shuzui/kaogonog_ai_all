@@ -73,8 +73,13 @@ DEPLOY_BACKEND=1 bash scripts/deploy_clean_to_server.sh
 
 ## 文档导航
 
+- [AI 项目知识库入口](docs/ai/README.md)
 - [文档总索引](docs/README.md)
 - [项目地图](docs/overview/project-map.md)
+- [API 契约总览](docs/api/README.md)
+- [医疗卫生题库知识库](docs/data/medical-question-bank.md)
+- [题库、套题与评分接口](docs/api/question-bank-and-suites.md)
+- [题库导入、重建与验收](docs/ops/question-bank-maintenance.md)
 - [本地开发与运行](docs/ops/local-development.md)
 - [部署与同步手册](docs/ops/deployment-runbook.md)
 - [数据库内容与字段说明](docs/data/数据库内容与字段说明.md)

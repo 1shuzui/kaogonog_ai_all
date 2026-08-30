@@ -20,6 +20,10 @@ pytest
 python database_setup.py --check
 ```
 
+后端启动后，进程内接口文档位于 <http://127.0.0.1:8050/docs>，健康检查位于 <http://127.0.0.1:8050/health>。本地 FastAPI 路由直接从根路径开始，例如 <http://127.0.0.1:8050/questions>；生产环境的 `/api` 前缀由网关或客户端 API 基址提供。
+
+题库、套题、评分和定向备面字段的人工可读契约见 [API 契约总览](../api/README.md)。修改文档后可从仓库根目录运行 `.venv/bin/python scripts/validate_project_docs.py`。
+
 ## 评分与答案保存
 
 默认把 `LOCAL_REFERENCE_SCORING` 设为 `false`，题库参考答案只注入外部模型提示词，不绕过统一的两阶段点评流程。
@@ -28,6 +32,11 @@ python database_setup.py --check
 
 前端提交录音转写时应同时传 `questionId` 和 `examId`。后端会在转写成功后立即更新 `ExamAnswer.transcript`，再进入点评阶段；
 历史详情接口因此可以在最终分数尚未生成时先展示文字稿，结果页打开带 `examId` 的历史记录时也不会复用其他考试的本地 store 状态。
+
+前期不要为了节省少量调用而把线上点评切回本地规则、减少用户应得的点评内容，或增加额外等待步骤。保持
+`LOCAL_REFERENCE_SCORING=false` 和当前外部模型点评体验；成本优化优先使用已有 Redis 评分缓存、避免同一考试重复提交、
+复用已保存结果，并先观察真实调用量和延迟。以后只有在不减少反馈质量、不让用户感知额外排队的前提下，再评估提示词压缩、
+模型分层或异步预处理。题库参考答案继续作为模型上下文使用，而不是直接替代外部模型点评。
 
 ## PC 前端
 

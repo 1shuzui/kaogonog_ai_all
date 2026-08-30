@@ -11,7 +11,7 @@
 | `scripts/` | 根级运维脚本 | 部署、冒烟、停止/重启服务。 |
 | `data/question-bank/` | 题库资料索引 | 模板、外置源文档索引、校验文件。 |
 | `reports/` | 最新报告 | 每类只保留最近关键结果，旧报告外置归档。 |
-| `docs/` | 文档体系 | 一线说明、运行手册、数据字典、决策记录。 |
+| `docs/` | 文档体系 | AI 知识库、接口契约、一线说明、运行手册、数据字典、决策记录。 |
 
 ## 当前核心链路
 
@@ -20,6 +20,8 @@
 - Redis 用于题库、LLM 评分和 ASR 转写缓存。
 - ASR 使用 FunASR ONNX，本地模型缓存位于 `civil-interview-backend/storage/modelscope_cache/`。
 - 题库真实套题信息主要保存在 `questions.keywords._meta`，没有拆出独立套题表。
+- 医疗卫生题库的仪态分同样在 `_meta` 中保存；内容分、仪态分和有效满分分开返回，不能仅用 `fullScore` 猜测规则。
+- FastAPI 进程内路由直接挂在根路径；生产 `/api` 前缀由网关和客户端 API 基址提供。
 
 ## PC 管理端边界
 
@@ -41,3 +43,10 @@
 - `ai_gongwu_backend/assets/questions/`：运行和导入依赖的题库 JSON。
 - `civil-interview-backend/storage/modelscope_cache/`：FunASR 模型缓存，可重建但下载成本高。
 - 三个项目的 `src/`、`app/`、`tests/`：源码结构不属于本次整理范围。
+
+## 深入阅读
+
+- [AI 项目知识库入口](../ai/README.md)
+- [API 契约总览](../api/README.md)
+- [医疗卫生题库知识库](../data/medical-question-bank.md)
+- [题库导入、重建与验收](../ops/question-bank-maintenance.md)

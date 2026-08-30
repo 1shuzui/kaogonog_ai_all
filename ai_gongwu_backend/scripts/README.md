@@ -12,7 +12,7 @@
 | 脚本 | 作用 | 什么时候用 |
 | --- | --- | --- |
 | `extract_docx_text.py` | 把 `.docx` 提取成逐段换行的 `.extracted.txt` | 新拿到 Word 题库原文时先跑它 |
-| `import_question_bank.py` | 通用题库导入器，负责把 `.extracted.txt` 转成题库 JSON + 回归样本 | 湖南、安徽，以及未来新增地区都优先用它 |
+| `import_question_bank.py` | 通用题库导入器，直接读取 DOCX XML、legacy .doc 的提取文本或 .extracted.txt，生成题库 JSON + 回归样本 | 湖南、安徽、江苏事业单位和医疗卫生等题库都优先用它 |
 | `import_hunan_question_bank.py` | 湖南兼容入口，内部实际调用 `import_question_bank.py` | 老命令兼容、已有文档/习惯不想改时 |
 | `import_anhui_question_bank.py` | 安徽兼容入口，内部实际调用 `import_question_bank.py` | 想直接导安徽时 |
 | `run_regression.py` | 跑确定性回归，检查题库样本是否落在预期分档 | 改了题库、样本、评分规则后先跑它 |
@@ -60,6 +60,25 @@ python scripts/import_question_bank.py --profile hunan
 python scripts/import_question_bank.py --profile anhui
 ```
 
+医疗卫生的正式 profile 及其稳定输出目录为：
+
+| Profile | 题源 | 题库输出 | 说明 |
+| --- | --- | --- | --- |
+| `medical_general` | 通用医疗卫生 100 题 | `generated_medical_general` | 统一批次键，不展示为正式 100 题整卷。 |
+| `shandong_medical` | 山东 137 个 DOCX | `generated_shandong_medical` | 每个 DOCX 一个正式套题。 |
+| `jiangsu_medical` | 江苏实际 70 个 DOCX | `generated_jiangsu_medical` | 每个 DOCX 一个正式套题；江苏新套03 已在清单标为缺失。 |
+
+重建医疗题库时推荐把外部归档目录显式传入，目录内文件会按稳定文件名排序：
+
+```bash
+cd /home/quyu/kaogong_ai
+python ai_gongwu_backend/scripts/import_question_bank.py \
+  --profile-name shandong_medical \
+  --source-dir /home/quyu/doc_kaogong/question-bank/source/shandong_medical
+```
+
+`--source-dir` 可重复传入多个目录，`--source-file` 也可重复传入多个文件。目录仅接收 `.docx`、`.doc` 和 `.extracted.txt`；legacy `.doc` 仍需要同名 `.extracted.txt` 作为读取兜底。完整题源、分值和验收规则见 [医疗卫生题库知识库](../../docs/data/medical-question-bank.md) 与 [题库导入、重建与验收](../../docs/ops/question-bank-maintenance.md)。
+
 ### 3.2 使用临时自定义地区 profile
 
 如果是未来新增地区，优先不要新建 `import_xxx_question_bank.py`，直接用：
@@ -85,8 +104,8 @@ python scripts/import_question_bank.py \
 
 1. `--profile-name` 决定输出目录名里的 `generated_<profile-name>`
 2. `--province` 是默认省份字段，落到题目 JSON 的 `province`
-3. `--source-file` 传 `.extracted.txt`，不是 `.docx`
-4. 如果同题号在多个源文件里重复，越靠前传入的 `--source-file` 优先级越高
+3. `--source-file` 可传 `.docx`、`.doc` 或 `.extracted.txt`；`.doc` 需要同名提取文本
+4. `--source-dir` 适合目录题源，文件收集顺序固定；如果同题号在多个源文件里重复，越靠前传入的 `--source-file` 优先级越高
 
 ## 4. 以后新增地区时，优先改哪里
 
@@ -149,8 +168,9 @@ python scripts/import_question_bank.py \
 
 1. `assets/questions/generated_hunan/`
 2. `assets/questions/generated_anhui/`
-3. `assets/questions/generated_<其他地区>/`
-4. `assets/regression_samples/generated_*/`
+3. `assets/questions/generated_medical_general/`、`generated_shandong_medical/`、`generated_jiangsu_medical/`
+4. `assets/questions/generated_<其他地区>/`
+5. `assets/regression_samples/generated_*/`
 
 正确姿势是：
 

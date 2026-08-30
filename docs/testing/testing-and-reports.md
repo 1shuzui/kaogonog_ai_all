@@ -31,6 +31,27 @@ cd /home/quyu/kaogong_ai/civil-interview-miniprogram
 npm run build:mp-weixin:prod
 ```
 
+## 题库与文档验收
+
+医疗卫生题库、导入器、套题或仪态分变更后，除常规后端测试外至少执行：
+
+```bash
+cd /home/quyu/kaogong_ai
+sha256sum -c data/question-bank/checksums.sha256 --ignore-missing
+PYTHONPATH=ai_gongwu_backend .venv/bin/python -m pytest -q \
+  ai_gongwu_backend/tests/test_medical_question_bank.py
+
+cd civil-interview-backend
+pytest -q tests/test_medical_question_bank_assets.py \
+  tests/test_scoring_appearance_score.py
+
+cd /home/quyu/kaogong_ai
+.venv/bin/python scripts/validate_project_docs.py
+git diff --check
+```
+
+三批题库的数量、文件级套题规则、江苏第 39/45 套和默认/实际仪态分替换均由上述测试覆盖。完整运行顺序见 [题库导入、重建与验收](../ops/question-bank-maintenance.md)。
+
 ## 报告归档
 
 外部归档清单：
