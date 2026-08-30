@@ -69,7 +69,12 @@
 
 <script setup>
 import { ref } from 'vue'
-import { confirmVirtualPaymentOrder, createPaymentOrder, getPaymentOrder } from '../../api/payment'
+import {
+  confirmVirtualPaymentOrder,
+  createPaymentOrder,
+  getPaymentOrder,
+  verifyVirtualPaymentOrder
+} from '../../api/payment'
 import { useBillingStore } from '../../stores/billing'
 import { useUserStore } from '../../stores/user'
 import { promptLoginForAction, toast } from '../../utils/navigation'
@@ -184,8 +189,17 @@ function requestWechatVirtualPayment(payParams = {}) {
 
 async function waitOrderPaid(orderNo) {
   for (let index = 0; index < 8; index += 1) {
-    const order = await getPaymentOrder(orderNo)
+    let order = await getPaymentOrder(orderNo)
     if (order?.status === 'paid') return order
+    // wx.requestVirtualPayment 的 success 回调或首次确认请求都可能因退后台/网络抖动而丢失。
+    // pending 时由后端重新向微信查单，端侧结果本身始终不能作为到账凭据。
+    try {
+      const verification = await verifyVirtualPaymentOrder(orderNo)
+      order = verification?.order || order
+      if (order?.status === 'paid') return order
+    } catch {
+      // 微信可能尚未把订单推进到“已支付待发货”，按原轮询节奏继续等待即可。
+    }
     await new Promise((resolve) => setTimeout(resolve, 1500))
   }
   return null

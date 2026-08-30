@@ -26,6 +26,8 @@ from app.schemas.common import PaymentOrderCreateRequest
 VIRTUAL_PAY_SCENE = "mini_program_virtual"
 X_PAY_QUERY_ORDER_PATH = "/xpay/query_order"
 X_PAY_QUERY_ORDER_URL = f"https://api.weixin.qq.com{X_PAY_QUERY_ORDER_PATH}"
+X_PAY_NOTIFY_PROVIDE_GOODS_PATH = "/xpay/notify_provide_goods"
+X_PAY_NOTIFY_PROVIDE_GOODS_URL = f"https://api.weixin.qq.com{X_PAY_NOTIFY_PROVIDE_GOODS_PATH}"
 X_PAY_REFUND_ORDER_PATH = "/xpay/refund_order"
 X_PAY_REFUND_ORDER_URL = f"https://api.weixin.qq.com{X_PAY_REFUND_ORDER_PATH}"
 
@@ -119,12 +121,63 @@ class WechatPayService:
             raise HTTPException(status_code=502, detail=f"微信虚拟支付查单失败: {errcode} {errmsg}")
         return {
             "verified": self._virtual_order_is_paid(result),
+            "orderId": self._extract_virtual_merchant_order_id(result),
+            "orderStatus": self._extract_virtual_order_status(result),
+            "orderType": self._extract_virtual_order_type(result),
             "transactionId": self._extract_virtual_order_id(result),
             "amountTotal": self._extract_virtual_order_amount(result),
             "paidAt": self._extract_virtual_paid_at(result),
             "raw": result,
             "request": body_payload,
         }
+
+    def notify_provide_goods(self, order: PaymentOrder) -> dict:
+        """
+        在本地权益已经成功入账后，通知微信 XPay 现金单已完成发货。
+
+        官方轮询发货分支要求本地交付成功后调用 `/xpay/notify_provide_goods`。本接口只发送本地订单号和
+        下单环境，不发送客户端回传字段或 openId；重复调用由微信订单号保证幂等语义。
+
+        @param order: 已由本地事务标记 paid 且权益已落库的支付订单。
+        @return: 不含 access_token 和用户标识的发货通知摘要。
+        @raises HTTPException: 微信 HTTP 失败、响应异常或返回非零错误码时抛出 502。
+        """
+        extra_payload = order.extra_payload if isinstance(order.extra_payload, dict) else {}
+        body_payload = {
+            "order_id": order.order_no,
+            "env": int(extra_payload.get("virtualPayEnv") or settings.wechat_virtual_pay_env or 0),
+        }
+        try:
+            response = requests.post(
+                X_PAY_NOTIFY_PROVIDE_GOODS_URL,
+                params={"access_token": self._get_access_token()},
+                json=body_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=settings.wechat_pay_request_timeout,
+            )
+        except requests.RequestException as exc:
+            raise HTTPException(status_code=502, detail="微信虚拟支付发货通知网络请求失败") from exc
+        if response.status_code >= 400:
+            raise HTTPException(status_code=502, detail=f"微信虚拟支付发货通知失败: HTTP {response.status_code}")
+
+        result: dict = {}
+        if str(getattr(response, "text", "") or "").strip():
+            try:
+                parsed = response.json()
+            except ValueError as exc:
+                raise HTTPException(status_code=502, detail="微信虚拟支付发货通知响应不是 JSON") from exc
+            if not isinstance(parsed, dict):
+                raise HTTPException(status_code=502, detail="微信虚拟支付发货通知响应格式无效")
+            result = parsed
+
+        try:
+            errcode = int(result.get("errcode") or result.get("err_code") or 0)
+        except (TypeError, ValueError) as exc:
+            raise HTTPException(status_code=502, detail="微信虚拟支付发货通知错误码无效") from exc
+        if errcode:
+            errmsg = result.get("errmsg") or result.get("err_msg") or "unknown error"
+            raise HTTPException(status_code=502, detail=f"微信虚拟支付发货通知失败: {errcode} {errmsg}")
+        return {"success": True, "orderId": order.order_no, "env": body_payload["env"]}
 
     def refund_virtual_order(self, order: PaymentOrder, refund_order_id: str, left_fee: int, refund_fee: int, refund_reason: str = "1", req_from: str = "1") -> dict:
         """
@@ -408,21 +461,89 @@ class WechatPayService:
                 order_info.get("pay_status"),
                 order_info.get("payStatus"),
             ])
-        paid_values = {"success", "paid", "complete", "completed", "finish", "finished", "1", "2", "3"}
+        # 微信 XPay 现金单的官方状态枚举：1 仅代表订单创建成功，2 才是已支付待发货，
+        # 3/4 分别为发货中/已发货。数值状态一旦存在，就必须按这套枚举判断，不能再用 paid_fee
+        # 或宽松的通用支付状态兜底，否则创建成功但尚未付款的订单也可能被误发权益。
+        numeric_statuses: list[int] = []
         for value in status_values:
             if value is None:
                 continue
             normalized = str(value).strip().lower()
-            if normalized in paid_values or normalized == "success":
+            try:
+                numeric_statuses.append(int(normalized))
+            except (TypeError, ValueError):
+                continue
+        if numeric_statuses:
+            return any(status in {2, 3, 4} for status in numeric_statuses)
+
+        paid_values = {"success", "paid", "complete", "completed", "finish", "finished"}
+        for value in status_values:
+            if value is None:
+                continue
+            if str(value).strip().lower() in paid_values:
                 return True
         if result.get("paid") is True or result.get("is_paid") is True or result.get("isPaid") is True:
             return True
-        if isinstance(order_info, dict):
-            try:
-                return int(order_info.get("paid_fee") or 0) > 0
-            except (TypeError, ValueError):
-                return False
         return False
+
+    def _extract_virtual_merchant_order_id(self, result: dict) -> str:
+        order_info = result.get("order") or result.get("orderInfo") or result.get("order_info")
+        candidates = [
+            result.get("order_id"),
+            result.get("orderId"),
+            result.get("out_trade_no"),
+            result.get("outTradeNo"),
+        ]
+        if isinstance(order_info, dict):
+            candidates.extend([
+                order_info.get("order_id"),
+                order_info.get("orderId"),
+                order_info.get("out_trade_no"),
+                order_info.get("outTradeNo"),
+            ])
+        for value in candidates:
+            if value not in (None, ""):
+                return str(value)
+        return ""
+
+    def _extract_virtual_order_status(self, result: dict) -> int | str | None:
+        order_info = result.get("order") or result.get("orderInfo") or result.get("order_info")
+        candidates = []
+        if isinstance(order_info, dict):
+            candidates.extend([
+                order_info.get("status"),
+                order_info.get("order_status"),
+                order_info.get("orderStatus"),
+            ])
+        candidates.extend([
+            result.get("status"),
+            result.get("order_status"),
+            result.get("orderStatus"),
+            result.get("trade_state"),
+            result.get("tradeState"),
+        ])
+        for value in candidates:
+            if value in (None, ""):
+                continue
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                return str(value)
+        return None
+
+    def _extract_virtual_order_type(self, result: dict) -> int | None:
+        order_info = result.get("order") or result.get("orderInfo") or result.get("order_info")
+        candidates = [result.get("order_type"), result.get("orderType")]
+        if isinstance(order_info, dict):
+            candidates = [order_info.get("order_type"), order_info.get("orderType"), *candidates]
+        for value in candidates:
+            if value in (None, ""):
+                continue
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                return None
+        return None
 
     def _extract_virtual_order_id(self, result: dict) -> str:
         candidates = [
@@ -454,8 +575,6 @@ class WechatPayService:
                 order_info.get("transactionId"),
                 order_info.get("payment_order_id"),
                 order_info.get("paymentOrderId"),
-                order_info.get("order_id"),
-                order_info.get("orderId"),
             ])
         for value in candidates:
             if value not in (None, ""):
@@ -468,6 +587,8 @@ class WechatPayService:
             result.get("amountTotal"),
             result.get("total_fee"),
             result.get("totalFee"),
+            result.get("order_fee"),
+            result.get("orderFee"),
             result.get("goods_price"),
             result.get("goodsPrice"),
         ]
@@ -476,14 +597,13 @@ class WechatPayService:
             candidates.extend([amount.get("total"), amount.get("payer_total"), amount.get("payerTotal")])
         order_info = result.get("order") or result.get("orderInfo") or result.get("order_info")
         if isinstance(order_info, dict):
-            candidates.extend([
-                order_info.get("paid_fee"),
-                order_info.get("paidFee"),
+            candidates = [
                 order_info.get("order_fee"),
                 order_info.get("orderFee"),
-                order_info.get("left_fee"),
-                order_info.get("leftFee"),
-            ])
+                order_info.get("paid_fee"),
+                order_info.get("paidFee"),
+                *candidates,
+            ]
         for value in candidates:
             if value in (None, ""):
                 continue

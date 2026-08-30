@@ -285,3 +285,58 @@ def test_virtual_pay_query_extracts_wechat_order_fields_from_nested_order():
     assert wechat_pay_service._extract_virtual_order_id(result) == "4500000144202605202996404879"
     assert wechat_pay_service._extract_virtual_order_amount(result) == 1
     assert wechat_pay_service._extract_virtual_paid_at(result).startswith("2026-05-20")
+
+
+def test_virtual_pay_status_only_accepts_paid_or_fulfilment_states():
+    """微信 XPay 状态 1 只是创建成功，只有 2/3/4 可以进入本地发货流程。"""
+    assert wechat_pay_service._virtual_order_is_paid({"order": {"status": 0}}) is False
+    assert wechat_pay_service._virtual_order_is_paid({"order": {"status": 1, "paid_fee": 1}}) is False
+    assert wechat_pay_service._virtual_order_is_paid({"order": {"status": 2}}) is True
+    assert wechat_pay_service._virtual_order_is_paid({"order": {"status": 3}}) is True
+    assert wechat_pay_service._virtual_order_is_paid({"order": {"status": 4}}) is True
+    assert wechat_pay_service._virtual_order_is_paid({"order": {"status": 5, "paid_fee": 1}}) is False
+
+
+def test_virtual_pay_amount_prefers_order_fee_over_paid_or_remaining_fee():
+    """本地商品价应与微信订单金额 order_fee 对账，不能误用优惠后实付或剩余可退金额。"""
+    result = {
+        "order": {
+            "status": 2,
+            "order_fee": 100,
+            "paid_fee": 80,
+            "left_fee": 60,
+        },
+    }
+
+    assert wechat_pay_service._extract_virtual_order_amount(result) == 100
+
+
+def test_notify_provide_goods_uses_server_token_and_local_order_identity(monkeypatch):
+    """本地权益到账后通知微信发货，只能使用服务端 token、订单号和下单环境。"""
+    monkeypatch.setattr(wechat_pay_service, "_get_access_token", lambda: "SERVER_ACCESS_TOKEN")
+    calls = []
+
+    class FakeResponse:
+        status_code = 200
+        text = '{"errcode":0,"errmsg":"ok"}'
+
+        def json(self):
+            return {"errcode": 0, "errmsg": "ok"}
+
+    def fake_post(url, params, json, headers, timeout):
+        calls.append((url, params, json, headers, timeout))
+        return FakeResponse()
+
+    monkeypatch.setattr(wechat_pay_module.requests, "post", fake_post)
+    order = PaymentOrder(
+        order_no="PAY_DELIVER_001",
+        username="alice",
+        extra_payload={"openId": "must-not-be-sent", "virtualPayEnv": 1},
+    )
+
+    result = wechat_pay_service.notify_provide_goods(order)
+
+    assert result["success"] is True
+    assert calls[0][1] == {"access_token": "SERVER_ACCESS_TOKEN"}
+    assert calls[0][2] == {"order_id": "PAY_DELIVER_001", "env": 1}
+    assert "openId" not in calls[0][2]

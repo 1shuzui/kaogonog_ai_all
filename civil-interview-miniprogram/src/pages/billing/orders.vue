@@ -67,6 +67,17 @@
         <text>支付时间</text>
         <text>{{ formatDate(selectedOrder.paidAt || selectedOrder.paid_at) || '-' }}</text>
       </view>
+      <button
+        v-if="selectedOrder.status === 'pending'"
+        class="secondary-button verify-button"
+        :loading="verifying"
+        @tap="verifySelectedOrder"
+      >
+        查询微信到账状态
+      </button>
+      <text v-if="selectedOrder.status === 'pending'" class="verify-tip">
+        已完成支付但尚未到账时，可在这里由服务器重新向微信核验，无需再次下单。
+      </text>
     </view>
   </view>
 </template>
@@ -75,13 +86,14 @@
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import EmptyState from '../../components/EmptyState.vue'
-import { getMyPaymentOrders, getPaymentOrder } from '../../api/payment'
+import { getMyPaymentOrders, getPaymentOrder, verifyVirtualPaymentOrder } from '../../api/payment'
 import { formatDate, normalizeListResponse } from '../../utils/format'
 import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
 
 const orders = ref([])
 const selectedOrder = ref(null)
 const loading = ref(false)
+const verifying = ref(false)
 
 onShow(() => {
   if (!requireLogin()) return
@@ -136,6 +148,27 @@ async function selectOrder(order) {
     toast(error?.message || '订单详情加载失败')
   } finally {
     hideLoading()
+  }
+}
+
+async function verifySelectedOrder() {
+  const orderNo = selectedOrder.value?.orderNo || selectedOrder.value?.order_no
+  if (!orderNo || verifying.value) return
+  verifying.value = true
+  try {
+    const result = await verifyVirtualPaymentOrder(orderNo)
+    selectedOrder.value = result?.order || selectedOrder.value
+    await fetchOrders()
+    toast('支付已核验，权益已到账', 'success')
+  } catch (error) {
+    const detail = error?.message || ''
+    if (detail.includes('未确认支付成功')) {
+      toast('微信暂未确认到账，请稍后再试')
+    } else {
+      toast(detail || '到账状态查询失败')
+    }
+  } finally {
+    verifying.value = false
   }
 }
 </script>
@@ -226,6 +259,18 @@ async function selectOrder(order) {
 
 .detail-row:last-child {
   border-bottom: 0;
+}
+
+.verify-button {
+  margin-top: 22rpx;
+}
+
+.verify-tip {
+  display: block;
+  margin-top: 10rpx;
+  color: #64748B;
+  font-size: 23rpx;
+  line-height: 1.6;
 }
 
 .detail-row text:last-child {

@@ -14,6 +14,7 @@ from decimal import Decimal
 import uuid
 
 from fastapi import HTTPException
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.models.entities import PaymentOrder, SubscriptionPackage, User, UserSubscription
@@ -362,6 +363,24 @@ def get_payment_order(db: Session, current_user: AuthUser, order_no: str) -> dic
     return _serialize_payment_response(order, package, pay_payload)
 
 
+def _serialize_payment_verification(query_result: dict | None, order: PaymentOrder) -> dict:
+    """只向端侧返回核验摘要，不暴露微信原始响应、openid 或签名请求参数。"""
+    source = query_result if isinstance(query_result, dict) else {}
+    callback_payload = order.callback_payload if isinstance(order.callback_payload, dict) else {}
+    amount_total = source.get("amountTotal")
+    try:
+        amount_total = int(amount_total) if amount_total not in (None, "") else None
+    except (TypeError, ValueError):
+        amount_total = None
+    return {
+        "verified": source.get("verified") is True or callback_payload.get("verified") is True,
+        "orderStatus": source.get("orderStatus"),
+        "amountTotal": amount_total,
+        "transactionId": str(source.get("transactionId") or order.third_party_order_no or ""),
+        "paidAt": str(source.get("paidAt") or (order.paid_at.isoformat() if order.paid_at else "")),
+    }
+
+
 def verify_virtual_payment_order(db: Session, current_user: AuthUser, order_no: str) -> dict:
     """
     主动向微信核验当前用户订单是否已支付。
@@ -374,22 +393,44 @@ def verify_virtual_payment_order(db: Session, current_user: AuthUser, order_no: 
     @return: 本地订单摘要和微信核验结果。
     @raises HTTPException: 订单/套餐不存在、微信查单失败或微信返回未支付时抛出。
     """
-    order = db.query(PaymentOrder).filter(
-        PaymentOrder.order_no == order_no,
-        PaymentOrder.username == current_user.username,
-    ).first()
+    user = get_user_or_404(db, current_user.username)
+    order = (
+        db.query(PaymentOrder)
+        .filter(
+            PaymentOrder.order_no == order_no,
+            PaymentOrder.username == current_user.username,
+        )
+        .with_for_update()
+        .first()
+    )
     if not order:
         raise HTTPException(status_code=404, detail="订单不存在")
+    if order.status not in {"pending", "paid"}:
+        raise HTTPException(status_code=409, detail="当前订单状态不能核验到账")
     package = db.query(SubscriptionPackage).filter(SubscriptionPackage.package_code == order.package_code).first()
     if not package:
         raise HTTPException(status_code=404, detail="订单关联套餐不存在")
-    query_result = _verify_order_with_wechat(order, package, raise_on_error=True)
-    db.commit()
+    callback_payload = order.callback_payload if isinstance(order.callback_payload, dict) else {}
+    idempotent = order.status == "paid" and callback_payload.get("verified") is True
+    query_result = callback_payload.get("verification") if idempotent else _verify_order_with_wechat(
+        order,
+        package,
+        raise_on_error=True,
+    )
+    try:
+        subscription = _finalize_verified_order(db, user, order, package)
+        db.commit()
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="订单核验成功，但权益入账失败，请稍后重试") from None
+    _sync_wechat_delivery_after_commit(db, order)
     db.refresh(order)
     return {
         "success": True,
+        "idempotent": idempotent,
         "order": _serialize_order(order),
-        "verification": query_result,
+        "verification": _serialize_payment_verification(query_result, order),
+        "subscription": _serialize_subscription(subscription),
     }
 
 
@@ -448,25 +489,67 @@ def _extract_virtual_transaction_id(data: PaymentVirtualConfirmRequest) -> str:
 
 
 def _verify_order_with_wechat(order: PaymentOrder, package: SubscriptionPackage, raise_on_error: bool = False) -> dict:
-    callback_payload = dict(order.callback_payload) if isinstance(order.callback_payload, dict) else {}
     try:
         query_result = wechat_pay_service.query_virtual_order(order, package)
     except HTTPException as exc:
-        callback_payload["verified"] = False
-        callback_payload["verifyPending"] = True
-        callback_payload["verifyError"] = str(exc.detail)
-        callback_payload["verifiedAt"] = datetime.now(timezone.utc).isoformat()
-        order.callback_payload = callback_payload
         if raise_on_error:
             raise
         return {"verified": False, "verifyPending": True, "verifyError": str(exc.detail)}
 
-    callback_payload["verified"] = bool(query_result.get("verified"))
-    callback_payload["verifyPending"] = not bool(query_result.get("verified"))
+    if not query_result.get("verified"):
+        if raise_on_error:
+            raise HTTPException(status_code=409, detail="微信虚拟支付查单未确认支付成功")
+        return {**query_result, "verified": False, "verifyPending": True, "verifyError": "微信未确认支付成功"}
+
+    extra_payload = order.extra_payload if isinstance(order.extra_payload, dict) else {}
+    expected_amount = extra_payload.get("virtualGoodsPrice")
+    if expected_amount in (None, ""):
+        expected_amount = Decimal(str(order.amount or 0)) * Decimal("100")
+    try:
+        expected_amount = int(expected_amount)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=500, detail="本地订单金额配置无效，已停止发放权益") from None
+
+    authoritative_order_id = str(query_result.get("orderId") or "").strip()
+    if authoritative_order_id and authoritative_order_id != order.order_no:
+        if raise_on_error:
+            raise HTTPException(status_code=409, detail="微信订单号与本地订单不一致，已停止发放权益")
+        return {**query_result, "verified": False, "verifyPending": True, "verifyError": "订单号不一致"}
+
+    order_type = query_result.get("orderType")
+    try:
+        invalid_order_type = order_type not in (None, "") and int(order_type) != 0
+    except (TypeError, ValueError):
+        invalid_order_type = True
+    if invalid_order_type:
+        if raise_on_error:
+            raise HTTPException(status_code=409, detail="微信返回的不是支付订单，已停止发放权益")
+        return {**query_result, "verified": False, "verifyPending": True, "verifyError": "订单类型不一致"}
+
+    reported_amount = query_result.get("amountTotal")
+    try:
+        amount_mismatch = reported_amount in (None, "") or int(reported_amount) != expected_amount
+    except (TypeError, ValueError):
+        amount_mismatch = True
+    if amount_mismatch:
+        if raise_on_error:
+            raise HTTPException(status_code=409, detail="微信订单金额与本地订单不一致，已停止发放权益")
+        return {**query_result, "verified": False, "verifyPending": True, "verifyError": "订单金额不一致"}
+
+    callback_payload = dict(order.callback_payload) if isinstance(order.callback_payload, dict) else {}
+    callback_payload["mode"] = "wechat_virtual_server_verify"
+    callback_payload["verified"] = True
+    callback_payload["verifyPending"] = False
     callback_payload["verifyError"] = ""
     callback_payload["verifiedAt"] = datetime.now(timezone.utc).isoformat()
     callback_payload["queryResult"] = query_result.get("raw") or {}
-    callback_payload["queryRequest"] = query_result.get("request") or {}
+    request_payload = query_result.get("request") if isinstance(query_result.get("request"), dict) else {}
+    callback_payload["queryRequest"] = {
+        key: request_payload[key]
+        for key in ("order_id", "wx_order_id", "env", "product_id")
+        if request_payload.get(key) not in (None, "")
+    }
+    callback_payload["verification"] = _serialize_payment_verification(query_result, order)
     transaction_id = query_result.get("transactionId") or ""
     if transaction_id:
         order.third_party_order_no = transaction_id
@@ -474,8 +557,6 @@ def _verify_order_with_wechat(order: PaymentOrder, package: SubscriptionPackage,
     if paid_at:
         order.paid_at = paid_at
     order.callback_payload = callback_payload
-    if raise_on_error and not query_result.get("verified"):
-        raise HTTPException(status_code=409, detail="微信虚拟支付查单未确认支付成功")
     return query_result
 
 
@@ -515,11 +596,113 @@ def _ensure_subscription_for_paid_order(db: Session, order: PaymentOrder, packag
     return subscription
 
 
+def _serialize_subscription(subscription: UserSubscription) -> dict:
+    return {
+        "username": subscription.username,
+        "packageCode": subscription.package_code,
+        "planType": subscription.plan_type,
+        "planName": subscription.plan_name,
+        "status": subscription.status,
+        "totalMinutes": subscription.total_minutes,
+        "dailyLimitMinutes": subscription.daily_limit_minutes,
+        "startAt": subscription.start_at.isoformat() if subscription.start_at else "",
+        "endAt": subscription.end_at.isoformat() if subscription.end_at else "",
+    }
+
+
+def _finalize_verified_order(
+    db: Session,
+    user: User,
+    order: PaymentOrder,
+    package: SubscriptionPackage,
+) -> UserSubscription:
+    callback_payload = order.callback_payload if isinstance(order.callback_payload, dict) else {}
+    if callback_payload.get("verified") is not True:
+        raise HTTPException(status_code=409, detail="微信尚未确认支付成功，不能发放权益")
+    order.status = "paid"
+    order.paid_at = order.paid_at or datetime.now(timezone.utc)
+    subscription = _ensure_subscription_for_paid_order(db, order, package, order.paid_at)
+    _sync_user_preferences_subscription(user, package, subscription)
+    record_payment_event_for_order(db, order)
+    return subscription
+
+
+def _sync_wechat_delivery_after_commit(db: Session, order: PaymentOrder) -> dict:
+    """
+    本地权益提交成功后同步微信发货状态；外部通知失败不回滚用户已经到账的权益。
+
+    微信 XPay 状态 2 表示已支付待发货，需要调用 notify_provide_goods；状态 3/4 已进入或完成发货，
+    只补记本地状态。失败状态写回订单供后续 confirm/verify 幂等重试，不把微信原始响应暴露给端侧。
+    """
+    callback_payload = dict(order.callback_payload) if isinstance(order.callback_payload, dict) else {}
+    verification = callback_payload.get("verification") if isinstance(callback_payload.get("verification"), dict) else {}
+    raw_status = verification.get("orderStatus")
+    try:
+        order_status = int(raw_status) if raw_status not in (None, "") else None
+    except (TypeError, ValueError):
+        order_status = None
+
+    current_delivery = callback_payload.get("delivery") if isinstance(callback_payload.get("delivery"), dict) else {}
+    if current_delivery.get("status") == "confirmed":
+        return {"status": "confirmed", "idempotent": True}
+    if order_status not in {2, 3, 4}:
+        return {"status": "not_applicable", "idempotent": True}
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    if order_status in {3, 4}:
+        callback_payload["delivery"] = {
+            "status": "confirmed",
+            "source": "wechat_query",
+            "confirmedAt": now_iso,
+            "error": "",
+        }
+        order.callback_payload = callback_payload
+        try:
+            db.commit()
+        except SQLAlchemyError:
+            db.rollback()
+        return {"status": "confirmed", "idempotent": True}
+
+    try:
+        wechat_pay_service.notify_provide_goods(order)
+    except Exception as exc:
+        detail = getattr(exc, "detail", None) if isinstance(exc, HTTPException) else None
+        detail = detail or "微信发货通知暂时失败"
+        callback_payload["delivery"] = {
+            "status": "pending",
+            "source": "notify_provide_goods",
+            "attemptedAt": now_iso,
+            "error": str(detail)[:240],
+        }
+        order.callback_payload = callback_payload
+        try:
+            db.commit()
+        except SQLAlchemyError:
+            db.rollback()
+        return {"status": "pending", "idempotent": False}
+
+    callback_payload["delivery"] = {
+        "status": "confirmed",
+        "source": "notify_provide_goods",
+        "attemptedAt": now_iso,
+        "confirmedAt": datetime.now(timezone.utc).isoformat(),
+        "error": "",
+    }
+    order.callback_payload = callback_payload
+    try:
+        db.commit()
+    except SQLAlchemyError:
+        db.rollback()
+        return {"status": "confirmed_unrecorded", "idempotent": False}
+    return {"status": "confirmed", "idempotent": False}
+
+
 def confirm_virtual_payment_order(db: Session, current_user: AuthUser, order_no: str, data: PaymentVirtualConfirmRequest) -> dict:
     """
     确认小程序虚拟支付成功并发放权益。
 
-    端侧必须传 payResult=success 且 scene=mini_program_virtual；服务端随后核验订单、标记 paid、创建订阅并刷新用户 preferences。已支付订单重复确认时只补齐权益，避免重复发放。
+    端侧的 payResult 只用于决定是否立即发起查单，不能作为到账依据。服务端持锁查询微信订单，
+    核对支付状态和金额后，才在同一事务里标记 paid、创建权益并刷新用户 preferences；重复确认保持幂等。
 
     @param db: 请求级数据库会话。
     @param current_user: 当前登录用户。
@@ -529,60 +712,64 @@ def confirm_virtual_payment_order(db: Session, current_user: AuthUser, order_no:
     @raises HTTPException: 场景不匹配、支付未成功、订单不存在或核验失败时抛出。
     """
     user = get_user_or_404(db, current_user.username)
-    order = db.query(PaymentOrder).filter(
-        PaymentOrder.order_no == order_no,
-        PaymentOrder.username == current_user.username,
-    ).first()
+    order = (
+        db.query(PaymentOrder)
+        .filter(
+            PaymentOrder.order_no == order_no,
+            PaymentOrder.username == current_user.username,
+        )
+        .with_for_update()
+        .first()
+    )
     if not order:
         raise HTTPException(status_code=404, detail="订单不存在")
     if data.scene != "mini_program_virtual":
         raise HTTPException(status_code=400, detail="订单确认场景不匹配")
     if data.payResult != "success":
         raise HTTPException(status_code=400, detail="小程序虚拟支付未成功，不能确认订单")
+    if order.status not in {"pending", "paid"}:
+        raise HTTPException(status_code=409, detail="当前订单状态不能确认到账")
 
-    package = _get_package_or_404(db, order.package_code)
-    paid_at = _parse_paid_at(data.paidAt)
-    if order.status == "paid":
-        subscription = _ensure_subscription_for_paid_order(db, order, package, order.paid_at or paid_at)
-        _sync_user_preferences_subscription(user, package, subscription)
-        record_payment_event_for_order(db, order)
-        db.commit()
+    package = db.query(SubscriptionPackage).filter(SubscriptionPackage.package_code == order.package_code).first()
+    if not package:
+        raise HTTPException(status_code=404, detail="订单关联套餐不存在")
+    callback_payload = order.callback_payload if isinstance(order.callback_payload, dict) else {}
+    already_verified = order.status == "paid" and callback_payload.get("verified") is True
+    if already_verified:
+        try:
+            subscription = _finalize_verified_order(db, user, order, package)
+            db.commit()
+        except SQLAlchemyError:
+            db.rollback()
+            raise HTTPException(status_code=500, detail="订单已支付，但权益恢复失败，请稍后重试") from None
+        _sync_wechat_delivery_after_commit(db, order)
         return {
             "success": True,
             "idempotent": True,
             "message": "订单已支付，重复确认已忽略",
             "order": _serialize_order(order),
+            "subscription": _serialize_subscription(subscription),
         }
 
-    order.status = "paid"
-    order.third_party_order_no = _extract_virtual_transaction_id(data) or order.third_party_order_no or ""
-    order.paid_at = paid_at
-    order.callback_payload = {
-        "mode": "wechat_virtual_client_confirm",
-        "verified": False,
-        "verifyPending": True,
+    _verify_order_with_wechat(order, package, raise_on_error=True)
+    verified_payload = dict(order.callback_payload) if isinstance(order.callback_payload, dict) else {}
+    verified_payload["clientConfirmation"] = {
         "payResult": data.payResult,
-        "rawResult": data.rawResult or {},
+        "reportedTransactionId": str(data.thirdPartyOrderNo or _extract_virtual_transaction_id(data))[:128],
+        "reportedPaidAt": str(data.paidAt or "")[:64],
     }
-    _verify_order_with_wechat(order, package, raise_on_error=False)
-    subscription = _ensure_subscription_for_paid_order(db, order, package, paid_at)
-    _sync_user_preferences_subscription(user, package, subscription)
-    record_payment_event_for_order(db, order)
-    db.commit()
+    order.callback_payload = verified_payload
+    try:
+        subscription = _finalize_verified_order(db, user, order, package)
+        db.commit()
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="支付已核验，但权益入账失败，请稍后重试") from None
+    _sync_wechat_delivery_after_commit(db, order)
     db.refresh(order)
     return {
         "success": True,
         "idempotent": False,
         "order": _serialize_order(order),
-        "subscription": {
-            "username": subscription.username,
-            "packageCode": subscription.package_code,
-            "planType": subscription.plan_type,
-            "planName": subscription.plan_name,
-            "status": subscription.status,
-            "totalMinutes": subscription.total_minutes,
-            "dailyLimitMinutes": subscription.daily_limit_minutes,
-            "startAt": subscription.start_at.isoformat() if subscription.start_at else "",
-            "endAt": subscription.end_at.isoformat() if subscription.end_at else "",
-        },
+        "subscription": _serialize_subscription(subscription),
     }
