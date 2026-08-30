@@ -15,6 +15,7 @@ from app.core.access import ensure_exam_start_access, ensure_paid_access
 from app.core.security import get_current_user
 from app.db.session import get_db
 from app.schemas.common import AuthUser, ExamStartRequest
+from app.services.exam_access_service import get_owned_exam_or_404
 from app.services.exam_service import start_exam, upload_recording, complete_exam
 from app.services.question_service import list_full_exam_suites, get_full_exam_suite_questions
 
@@ -124,6 +125,7 @@ async def exam_upload(
     @return: 媒体保存结果和可用于评分的引用信息。
     @raises HTTPException: 文件缺失、考试无权访问或保存失败时抛出。
     """
+    get_owned_exam_or_404(db, exam_id, current_user.username, question_id=questionId)
     content = await recording.read()
     return upload_recording(
         db,
@@ -150,4 +152,5 @@ def exam_complete(exam_id: str, current_user: AuthUser = Depends(get_current_use
     @return: 完成后的考试状态。
     @raises HTTPException: 考试不存在或无权访问时抛出。
     """
+    get_owned_exam_or_404(db, exam_id, current_user.username)
     return complete_exam(db, exam_id)

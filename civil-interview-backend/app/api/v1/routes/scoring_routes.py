@@ -20,8 +20,9 @@ from app.core.ai import _resolve_asr_model, _resolve_remote_asr_model
 from app.core.config import settings
 from app.core.security import get_current_user
 from app.db.session import get_db
-from app.models.entities import Exam, Question
+from app.models.entities import Question
 from app.schemas.common import AuthUser, EvaluateRequest
+from app.services.exam_access_service import get_owned_exam_or_404
 from app.services.scoring_service import _build_zero_score_result, _persist_result, transcribe, evaluate_answer, get_scoring_result
 
 router = APIRouter(prefix="/scoring", tags=["scoring"])
@@ -141,19 +142,15 @@ async def scoring_transcribe(
     @return: 转写文本、ASR 状态和诊断信息。
     @raises HTTPException: 未登录、文件异常或 ASR 服务错误时抛出。
     """
-    audio_bytes = await audio.read()
     normalized_exam_id = str(examId or "").strip()
     if normalized_exam_id:
-        owned_exam = (
-            db.query(Exam.id)
-            .filter(
-                Exam.id == normalized_exam_id,
-                Exam.user_id == current_user.username,
-            )
-            .first()
+        get_owned_exam_or_404(
+            db,
+            normalized_exam_id,
+            current_user.username,
+            question_id=questionId,
         )
-        if not owned_exam:
-            raise HTTPException(status_code=404, detail="Exam not found")
+    audio_bytes = await audio.read()
     return await transcribe(
         audio_bytes,
         filename=audio.filename or "answer.webm",
@@ -217,6 +214,14 @@ async def scoring_evaluate(data: EvaluateRequest, current_user: AuthUser = Depen
     @return: 评分结果、文字稿、能力维度和建议。
     @raises HTTPException: 未登录、题目不存在、答案缺失或评分服务失败时抛出。
     """
+    normalized_exam_id = str(data.examId or "").strip()
+    if normalized_exam_id:
+        get_owned_exam_or_404(
+            db,
+            normalized_exam_id,
+            current_user.username,
+            question_id=data.questionId,
+        )
     if not db.query(Question.id).filter(Question.id == data.questionId).first():
         raise HTTPException(status_code=404, detail="Question not found")
 
@@ -259,4 +264,5 @@ def scoring_result(exam_id: str, question_id: str, current_user: AuthUser = Depe
     @return: 评分结果详情。
     @raises HTTPException: 未登录、结果不存在或无权访问时抛出。
     """
+    get_owned_exam_or_404(db, exam_id, current_user.username, question_id=question_id)
     return get_scoring_result(db, exam_id, question_id)

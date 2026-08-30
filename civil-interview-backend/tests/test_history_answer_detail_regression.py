@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.db.session import Base
 from app.models.entities import Exam, ExamAnswer, Question
-from app.services.history_service import get_history_detail
+from app.services.history_service import get_history_detail, get_history_list
 
 
 class HistoryAnswerDetailRegressionTestCase(unittest.TestCase):
@@ -60,11 +60,26 @@ class HistoryAnswerDetailRegressionTestCase(unittest.TestCase):
         self.engine.dispose()
 
     def test_detail_returns_transcript_before_final_score_exists(self):
-        detail = get_history_detail(self.db, "history_transcript_exam")
+        detail = get_history_detail(self.db, "history_transcript_exam", "test-user")
 
         self.assertEqual(detail["examId"], "history_transcript_exam")
         self.assertEqual(detail["answers"][0]["transcript"], "我会主动沟通群众，了解诉求后协调资源。")
         self.assertEqual(detail["answers"][0]["scoringResult"], {})
+
+    def test_list_includes_transcript_while_scoring_is_pending(self):
+        listing = get_history_list(self.db, "test-user")
+
+        self.assertEqual(listing["total"], 1)
+        self.assertEqual(listing["list"][0]["examId"], "history_transcript_exam")
+        self.assertEqual(listing["list"][0]["questionCount"], 1)
+        self.assertEqual(listing["list"][0]["scoringStatus"], "pending")
+        self.assertIn("点评中", listing["list"][0]["questionSummary"])
+
+    def test_detail_does_not_reveal_another_users_answer(self):
+        with self.assertRaises(Exception) as raised:
+            get_history_detail(self.db, "history_transcript_exam", "another-user")
+
+        self.assertEqual(getattr(raised.exception, "status_code", None), 404)
 
 
 if __name__ == "__main__":

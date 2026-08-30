@@ -99,4 +99,4 @@ def history_detail(exam_id: str, current_user: AuthUser = Depends(get_current_us
     @return: 历史记录详情。
     @raises HTTPException: 记录不存在或无权访问时抛出。
     """
-    return get_history_detail(db, exam_id)
+    return get_history_detail(db, exam_id, current_user.username)

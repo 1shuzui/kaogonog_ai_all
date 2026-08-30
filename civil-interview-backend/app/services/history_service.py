@@ -173,8 +173,9 @@ def _in_date_range(row: dict, start_at: datetime | None, end_at: datetime | None
 
 
 def _build_exam_summary(exam: Exam, answers: list[ExamAnswer], question_lookup: dict[str, Question], question_ids: list[str], record: HistoryRecord | None = None) -> dict:
-    scored_answers = [answer for answer in answers if answer.score_result]
-    question_count = int(record.question_count or 0) if record else len(scored_answers)
+    scored_answers = [answer for answer in answers if _has_final_score(answer)]
+    answered_answers = [answer for answer in answers if _has_answer_content(answer) or _has_final_score(answer)]
+    question_count = int(record.question_count or 0) if record else len(answered_answers)
     total_score = float(record.total_score or 0) if record else 0.0
     max_score = float(record.max_score or 100) if record else 100.0
     grade = record.grade if record and record.grade else ""
@@ -186,8 +187,8 @@ def _build_exam_summary(exam: Exam, answers: list[ExamAnswer], question_lookup: 
             total_score += float(sr.get("totalScore", 0) or 0)
             if sr.get("dimensions"):
                 dimensions = _normalize_dimensions(sr["dimensions"])
-        total_score = round(total_score / question_count, 2) if question_count else 0.0
-        grade = _grade_for_score(total_score, max_score)
+        total_score = round(total_score / len(scored_answers), 2) if scored_answers else 0.0
+        grade = _grade_for_score(total_score, max_score) if scored_answers else ""
 
     latest_answered_at = max((answer.answered_at for answer in answers if answer.answered_at), default=None)
     if record and record.completed_at:
@@ -201,11 +202,13 @@ def _build_exam_summary(exam: Exam, answers: list[ExamAnswer], question_lookup: 
     sort_at = sort_dt.isoformat() if sort_dt else ""
     total_questions = len(question_ids) or question_count
     status = exam.status or ("completed" if record else "in_progress")
-    question_summary = (
-        f"{question_count}题模拟练习"
-        if status == "completed"
-        else f"已答{question_count}/{total_questions or question_count}题（未完成）"
-    )
+    scoring_status = "completed" if record or (bool(scored_answers) and len(scored_answers) == len(answered_answers)) else "pending"
+    if scoring_status == "pending":
+        question_summary = f"已提交{question_count}/{total_questions or question_count}题（点评中）"
+    elif status == "completed":
+        question_summary = f"{question_count}题模拟练习"
+    else:
+        question_summary = f"已答{question_count}/{total_questions or question_count}题（未完成）"
 
     return {
         "examId": exam.id,
@@ -214,12 +217,13 @@ def _build_exam_summary(exam: Exam, answers: list[ExamAnswer], question_lookup: 
         "totalQuestions": total_questions or question_count,
         "totalScore": total_score,
         "maxScore": max_score,
-        "grade": grade or _grade_for_score(total_score, max_score),
+        "grade": grade or (_grade_for_score(total_score, max_score) if scored_answers or record else ""),
         "province": _resolve_exam_province(exam, record, question_lookup, question_ids),
         "dimensions": dimensions,
         "completedAt": record.completed_at.isoformat() if record and record.completed_at else sort_at,
         "date": sort_at,
         "status": status,
+        "scoringStatus": scoring_status,
         "questionSummary": question_summary,
         "sortAt": sort_at,
     }
@@ -324,7 +328,8 @@ def get_history_list(
             continue
         question_ids, answers, question_lookup = _load_exam_context(db, exam)
         scored_answers = [answer for answer in answers if _has_final_score(answer)]
-        if not scored_answers:
+        has_answer_content = any(_has_answer_content(answer) for answer in answers)
+        if not scored_answers and not has_answer_content:
             continue
         merged_rows.append(_build_exam_summary(exam, answers, question_lookup, question_ids))
 
@@ -347,7 +352,7 @@ def get_history_list(
     }
 
 
-def get_history_detail(db: Session, exam_id: str) -> dict:
+def get_history_detail(db: Session, exam_id: str, username: str) -> dict:
     """
     返回单次考试的题目、答案、媒体和评分详情，给结果页和历史详情页共用。
 
@@ -355,11 +360,18 @@ def get_history_detail(db: Session, exam_id: str) -> dict:
 
     @param db: 当前请求复用的数据库会话。
     @param exam_id: 考试记录 ID。
+    @param username: 当前登录用户名，只能读取本人考试和历史快照。
     @return: 单次考试详情、题目序列、答案、媒体和评分结果。
     @raises HTTPException: 考试和历史记录都不存在，或考试尚无可回看答案时抛出 404。
     """
-    r = db.query(HistoryRecord).filter(HistoryRecord.exam_id == exam_id).first()
-    exam = db.query(Exam).filter(Exam.id == exam_id).first()
+    r = db.query(HistoryRecord).filter(
+        HistoryRecord.exam_id == exam_id,
+        HistoryRecord.username == username,
+    ).first()
+    exam = db.query(Exam).filter(
+        Exam.id == exam_id,
+        Exam.user_id == username,
+    ).first()
     if not exam and not r:
         raise HTTPException(status_code=404, detail="历史记录未找到")
     if not exam:
