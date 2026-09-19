@@ -15,6 +15,8 @@
 
 客户端后台提交边界与界面验收记录见 [2026-09-19 考生端验收](background-submission-2026-09-19.md)。该记录区分真实构建/代码回归、本机演示页面检查与未完成的微信真机验收。
 
+后续微信开发者工具中发现的主题丢失、SVG 不显示和组件样式隔离问题，见 [微信原生界面修复与验收](wechat-design-runtime-2026-09-19.md)。微信生产构建现在同时校验实际 WXSS、图标与操作栏布局；不能只凭 PC 预览或编译成功判定小程序 UI 正确。
+
 ```bash
 # 后端单元测试
 cd /home/quyu/kaogong_ai/civil-interview-backend

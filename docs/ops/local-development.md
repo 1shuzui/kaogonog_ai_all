@@ -72,6 +72,9 @@ npm run build:mp-weixin:prod
 
 ## 常见本地问题
 
+- 微信页面与设计不一致：共用主题在 App.vue 的 `<style>` 中用 CSS `@import` 引入，不使用外部 `<style src>`；组件布局应放在该组件自身样式中，不能依赖父页面 scoped 选择器跨组件生效。详见 [微信原生界面验收](../testing/wechat-design-runtime-2026-09-19.md)。
+- 微信图标不显示：从 inline SVG 导出图片时必须包含 SVG 命名空间，运行 `node scripts/export_learner_icons.mjs` 重新生成。不要以 `getImageInfo` 对 SVG 的结果替代 `<image>` 的实际渲染检查。
+
 - 后端启动报缺少数据库或 Redis 配置：先恢复 `civil-interview-backend/.env`。
 - 微信虚拟支付无法调起：确认小程序端 `.env`、后端 `.env`、支付证书和微信现网配置均已恢复。
 - FunASR 首次转写慢：模型可能需要下载或读取 `civil-interview-backend/storage/modelscope_cache/`。
