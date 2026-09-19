@@ -62,3 +62,19 @@ test('pending media records are distinct from genuine zero scores', () => {
   assert.equal(hasFinalScore({ totalScore: 0 }), true)
   assert.equal(hasFinalScore({ totalScore: 75 }), true)
 })
+
+test('audio and video transcription both allow a cold ASR model to finish', async () => {
+  const calls = []
+  const code = await readFile(new URL('../src/api/scoring.js', import.meta.url), 'utf8')
+  const module = new vm.SourceTextModule(code)
+  await module.link(() => new vm.SyntheticModule(['request', 'uploadFile'], function () {
+    this.setExport('request', options => options)
+    this.setExport('uploadFile', options => { calls.push(options); return Promise.resolve({}) })
+  }))
+  await module.evaluate()
+  for (const mediaType of ['audio', 'video']) {
+    await module.namespace.transcribeAudio('record.mp3', { mediaType, questionId: 'q1', examId: 'exam1' })
+    assert.equal(calls.at(-1).timeout, 120000)
+    assert.deepEqual(calls.at(-1).formData, { mediaType, questionId: 'q1', examId: 'exam1' })
+  }
+})

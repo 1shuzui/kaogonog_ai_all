@@ -31,7 +31,9 @@ export function transcribeAudio(filePath, options = {}) {
     url: '/scoring/transcribe',
     filePath,
     name: 'audio',
-    timeout: mediaType === 'video' ? 120000 : 60000,
+    // A cold local ASR model can need ~50 seconds for a 2.5-minute answer.
+    // Leave upload/inference headroom for both media types; completed calls return immediately.
+    timeout: 120000,
     formData
   })
 }
