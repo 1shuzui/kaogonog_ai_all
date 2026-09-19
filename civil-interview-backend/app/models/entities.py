@@ -395,6 +395,7 @@ class Exam(Base):
     id = Column(String(32), primary_key=True, default=lambda: gen_id("exam_"))
     user_id = Column(String(64), nullable=False, index=True)
     question_ids = Column(JSON, default=list)
+    practice_mode = Column(String(16), default="legacy", nullable=False)
     status = Column(String(16), default="in_progress")
     start_time = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     end_time = Column(DateTime, nullable=True)

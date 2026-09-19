@@ -1433,6 +1433,19 @@ async def _generate_targeted_questions_with_llm(
     return [{**item, "generationSource": "llm"} for item in generated]
 
 
+def _filter_bank_rows(rows, *, position="", subcategory="", subcategory2="", examCategory="", year=""):
+    """列表与随机练习共用同一套元数据过滤，不能无题时放宽条件。"""
+    if position:
+        rows = _apply_position_filter(rows, position)
+    for key, value in (("subcategory", subcategory), ("subcategory2", subcategory2), ("examCategory", examCategory)):
+        if value:
+            rows = [q for q in rows if _question_meta_from_keywords(q.keywords).get(key) == value]
+    if year:
+        years = set(_normalize_year_values(year))
+        rows = [q for q in rows if years & set(_question_years_from_meta(_question_meta_from_keywords(q.keywords)))]
+    return rows
+
+
 def list_questions(
     db: Session,
     keyword: str = "",
@@ -1481,19 +1494,7 @@ def list_questions(
             rows = _apply_position_filter(_position_prefilter_query(query, position).all(), position)
         else:
             rows = query.all()
-        if subcategory:
-            rows = [q for q in rows if _question_meta_from_keywords(q.keywords).get("subcategory") == subcategory]
-        if subcategory2:
-            rows = [q for q in rows if _question_meta_from_keywords(q.keywords).get("subcategory2") == subcategory2]
-        if examCategory:
-            rows = [q for q in rows if _question_meta_from_keywords(q.keywords).get("examCategory") == examCategory]
-        if year:
-            year_set = set(str(y).strip() for y in year.split(",") if str(y).strip())
-            if year_set:
-                rows = [
-                    q for q in rows
-                    if year_set & set(_question_years_from_meta(_question_meta_from_keywords(q.keywords)))
-                ]
+        rows = _filter_bank_rows(rows, subcategory=subcategory, subcategory2=subcategory2, examCategory=examCategory, year=year)
         total = len(rows)
         start = (current - 1) * page_size
         rows = rows[start:start + page_size]
@@ -1508,7 +1509,7 @@ def list_questions(
     }
 
 
-def get_random_questions(db: Session, province: str = "national", count: int = 5, dimension: str = "", position: str = "") -> List[dict]:
+def get_random_questions(db: Session, province: str = "national", count: int = 5, dimension: str = "", position: str = "", *, keyword: str = "", subcategory: str = "", subcategory2: str = "", examCategory: str = "", year: str = "") -> List[dict]:
     """
     从题库中随机抽取练习题。
 
@@ -1524,19 +1525,16 @@ def get_random_questions(db: Session, province: str = "national", count: int = 5
     @raises: 不主动包装数据库异常，查询失败会沿调用栈上抛。
     """
     count = max(1, min(int(count or 5), 100))
-    query = _question_base_query(db, province=province, dimension=dimension)
-
+    query = db.query(Question)
+    if province and province != "all":
+        query = query.filter(Question.province == province)
+    if dimension:
+        query = query.filter(Question.dimension == dimension)
+    if keyword:
+        query = query.filter(Question.stem.contains(keyword))
     if position:
-        all_qs = _apply_position_filter(_position_prefilter_query(query, position).all(), position)
-    else:
-        total = query.count()
-        if total <= count:
-            all_qs = query.all()
-        else:
-            sample_limit = min(total, max(count * 6, 80))
-            max_offset = max(total - sample_limit, 0)
-            offset = random.randint(0, max_offset) if max_offset else 0
-            all_qs = query.order_by(Question.id).offset(offset).limit(sample_limit).all()
+        query = _position_prefilter_query(query, position)
+    all_qs = _filter_bank_rows(query.all(), position=position, subcategory=subcategory, subcategory2=subcategory2, examCategory=examCategory, year=year)
 
     count = min(count, len(all_qs))
     return [_q_to_dict(q) for q in random.sample(all_qs, count)] if all_qs else []

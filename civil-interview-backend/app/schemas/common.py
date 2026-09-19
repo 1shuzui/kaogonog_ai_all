@@ -9,7 +9,7 @@
 @return: 暴露 Pydantic 模型，供路由、服务层和测试构造稳定的数据契约。
 @raises ImportError: Pydantic 或类型依赖缺失时导入失败；字段校验错误由 FastAPI 转成 422 响应。
 """
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Literal
 from pydantic import AliasChoices, BaseModel, Field
 
 
@@ -445,6 +445,7 @@ class ExamStartRequest(BaseModel):
     @raises: 题目 ID 列表缺失或类型错误时由 Pydantic 校验暴露。
     """
     questionIds: List[str]
+    practiceMode: Literal["legacy", "free", "fullExam", "training", "targeted", "trial"] = "legacy"
 
 
 class UsageReportRequest(BaseModel):

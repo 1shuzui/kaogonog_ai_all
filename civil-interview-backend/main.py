@@ -446,6 +446,14 @@ async def run_dashboard_metric_sampler() -> None:
         await asyncio.sleep(5 * 60)
 
 
+def ensure_exam_practice_mode_schema() -> None:
+    """旧库只新增带默认值的练习类型列，重复启动不改变历史记录。"""
+    columns = {column["name"] for column in inspect(engine).get_columns("exams")}
+    if "practice_mode" not in columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE exams ADD COLUMN practice_mode VARCHAR(16) NOT NULL DEFAULT 'legacy'"))
+
+
 # ── lifespan ──────────────────────────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -460,6 +468,7 @@ async def lifespan(app: FastAPI):
     @raises: 建表失败会中断启动；种子同步失败只记录 warning，避免题库或套餐 seed 阻断主服务。
     """
     Base.metadata.create_all(bind=engine)
+    ensure_exam_practice_mode_schema()
     ensure_user_activity_schema()
     ensure_invite_schema()
     ensure_dashboard_schema()

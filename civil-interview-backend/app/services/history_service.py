@@ -15,19 +15,11 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.models.entities import Exam, ExamAnswer, HistoryRecord, Question
+from app.services.score_summary import DIM_DEFS, normalized_dimensions, summarize_answers
 
 DIMENSION_NAME_ALIASES = {
     "法治思维": "行政思维",
 }
-
-DIM_DEFS = [
-    {"name": "行政思维", "maxScore": 20},
-    {"name": "实务落地", "maxScore": 20},
-    {"name": "逻辑结构", "maxScore": 15},
-    {"name": "语言表达", "maxScore": 15},
-    {"name": "综合分析", "maxScore": 15},
-    {"name": "应急应变", "maxScore": 15},
-]
 
 
 def _normalize_dimension_name(name: str) -> str:
@@ -49,7 +41,7 @@ def _normalize_dimensions(dimensions) -> list:
 
 
 def _has_final_score(answer: ExamAnswer) -> bool:
-    return isinstance(answer.score_result, dict) and "totalScore" in answer.score_result
+    return isinstance(answer.score_result, dict) and answer.score_result.get("totalScore") is not None
 
 
 def _has_answer_content(answer: ExamAnswer) -> bool:
@@ -175,19 +167,15 @@ def _in_date_range(row: dict, start_at: datetime | None, end_at: datetime | None
 def _build_exam_summary(exam: Exam, answers: list[ExamAnswer], question_lookup: dict[str, Question], question_ids: list[str], record: HistoryRecord | None = None) -> dict:
     scored_answers = [answer for answer in answers if _has_final_score(answer)]
     answered_answers = [answer for answer in answers if _has_answer_content(answer) or _has_final_score(answer)]
-    question_count = int(record.question_count or 0) if record else len(answered_answers)
+    question_count = len(answered_answers) if answered_answers else int(record.question_count or 0) if record else 0
     total_score = float(record.total_score or 0) if record else 0.0
     max_score = float(record.max_score or 100) if record else 100.0
     grade = record.grade if record and record.grade else ""
     dimensions = _normalize_dimensions(record.dimensions) if record else []
 
-    if not record:
-        for answer in scored_answers:
-            sr = answer.score_result or {}
-            total_score += float(sr.get("totalScore", 0) or 0)
-            if sr.get("dimensions"):
-                dimensions = _normalize_dimensions(sr["dimensions"])
-        total_score = round(total_score / len(scored_answers), 2) if scored_answers else 0.0
+    if scored_answers:
+        summary = summarize_answers(scored_answers, question_lookup)
+        total_score, max_score, dimensions = summary['totalScore'], summary['maxScore'], summary['dimensions']
         grade = _grade_for_score(total_score, max_score) if scored_answers else ""
 
     latest_answered_at = max((answer.answered_at for answer in answers if answer.answered_at), default=None)
@@ -202,16 +190,22 @@ def _build_exam_summary(exam: Exam, answers: list[ExamAnswer], question_lookup: 
     sort_at = sort_dt.isoformat() if sort_dt else ""
     total_questions = len(question_ids) or question_count
     status = exam.status or ("completed" if record else "in_progress")
-    scoring_status = "completed" if record or (bool(scored_answers) and len(scored_answers) == len(answered_answers)) else "pending"
+    scoring_status = "completed" if bool(scored_answers) and len(scored_answers) == len(answered_answers) else "pending"
+    practice_mode = getattr(exam, "practice_mode", "legacy") or "legacy"
+    mode_name = {"free": "自由练习", "fullExam": "全真模拟", "training": "专项训练", "targeted": "定向练习", "trial": "试用练习"}.get(practice_mode, "模拟练习")
     if scoring_status == "pending":
         question_summary = f"已提交{question_count}/{total_questions or question_count}题（点评中）"
     elif status == "completed":
-        question_summary = f"{question_count}题模拟练习"
+        question_summary = f"{question_count}题{mode_name}"
     else:
         question_summary = f"已答{question_count}/{total_questions or question_count}题（未完成）"
+    if status != "completed" or scoring_status == "pending":
+        question_summary = f"{mode_name} · {question_summary}"
 
     return {
         "examId": exam.id,
+        "practiceMode": practice_mode,
+        "practiceModeName": mode_name,
         "username": exam.user_id,
         "questionCount": question_count,
         "totalQuestions": total_questions or question_count,
@@ -230,7 +224,9 @@ def _build_exam_summary(exam: Exam, answers: list[ExamAnswer], question_lookup: 
 
 
 def _answer_to_dict(ans: ExamAnswer, question: Question | None, usage_record=None) -> dict:
-    score_result = ans.score_result or {}
+    score_result = dict(ans.score_result or {})
+    if "dimensions" in score_result:
+        score_result["dimensions"] = normalized_dimensions(score_result)
     media_record = score_result.get("mediaRecord", {}) if isinstance(score_result, dict) else {}
     answer_timing = score_result.get("answerTiming") if isinstance(score_result.get("answerTiming"), dict) else {}
     if not answer_timing and isinstance(media_record.get("answerTiming"), dict):
@@ -418,6 +414,21 @@ def get_history_detail(db: Session, exam_id: str, username: str) -> dict:
     return detail
 
 
+def _record_summaries(db: Session, records: list[HistoryRecord]) -> dict:
+    """一次批量取出本人历史的原始成绩，列表、统计与趋势共用汇总口径。"""
+    if not records:
+        return {}
+    ids = [record.exam_id for record in records]
+    answers = db.query(ExamAnswer).join(Exam).filter(Exam.id.in_(ids), Exam.user_id == records[0].username).all()
+    questions = db.query(Question).filter(Question.id.in_({answer.question_id for answer in answers})).all()
+    lookup = {question.id: question for question in questions}
+    grouped = {}
+    for answer in answers:
+        if _has_final_score(answer):
+            grouped.setdefault(answer.exam_id, []).append(answer)
+    return {exam_id: summarize_answers(items, lookup) for exam_id, items in grouped.items()}
+
+
 def get_history_stats(db: Session, username: str) -> dict:
     """
     汇总用户练习次数、均分、最高分和薄弱能力维度，供首页和个人页展示。
@@ -437,10 +448,11 @@ def get_history_stats(db: Session, username: str) -> dict:
     }
     if not rows:
         return empty
-    scores = [float(r.total_score or 0) for r in rows]
+    summaries = _record_summaries(db, rows)
+    scores = [summaries.get(r.exam_id, {}).get('totalScore', float(r.total_score or 0) / float(r.max_score or 100) * 100) for r in rows]
     totals = {d["name"]: [] for d in DIM_DEFS}
     for r in rows:
-        for dim in (r.dimensions or []):
+        for dim in summaries.get(r.exam_id, {}).get('dimensions', r.dimensions or []):
             name = _normalize_dimension_name(dim.get("name"))
             if name in totals:
                 totals[name].append(dim.get("score", 0))
@@ -450,7 +462,7 @@ def get_history_stats(db: Session, username: str) -> dict:
         avgs.append({"name": d["name"], "avg": round(sum(vals) / len(vals), 2) if vals else 0, "maxScore": d["maxScore"]})
     weakest, lowest = "", 100
     for a in avgs:
-        if a["avg"] > 0:
+        if totals[a["name"]]:
             pct = a["avg"] / a["maxScore"] * 100
             if pct < lowest:
                 lowest, weakest = pct, a["name"]
@@ -482,11 +494,12 @@ def get_history_trend(db: Session, username: str, days: int = 30) -> list:
         .order_by(HistoryRecord.completed_at.asc())
         .all()
     )
+    summaries = _record_summaries(db, rows)
     return [
         {
             "index": i + 1,
             "label": f"第{i + 1}次",
-            "score": float(r.total_score or 0),
+            "score": summaries.get(r.exam_id, {}).get('totalScore', float(r.total_score or 0) / float(r.max_score or 100) * 100),
             "date": r.completed_at.strftime("%Y-%m-%d") if r.completed_at else "",
         }
         for i, r in enumerate(rows)

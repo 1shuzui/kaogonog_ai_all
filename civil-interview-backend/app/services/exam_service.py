@@ -20,6 +20,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.entities import Exam, ExamAnswer, HistoryRecord, Question
+from app.services.score_summary import summarize_answers
 from app.schemas.common import ExamStartRequest
 
 UPLOAD_DIR = Path(__file__).resolve().parents[2] / "uploads"
@@ -58,6 +59,7 @@ def start_exam(db: Session, data: ExamStartRequest, username: str) -> dict:
         id=exam_id,
         user_id=username,
         question_ids=question_ids,
+        practice_mode=data.practiceMode,
         status="in_progress",
         start_time=datetime.now(timezone.utc),
     )
@@ -149,17 +151,10 @@ def complete_exam(db: Session, exam_id: str) -> dict:
     exam.status = "completed"
 
     answers = db.query(ExamAnswer).filter(ExamAnswer.exam_id == exam_id).all()
-    total_score, question_count, dimensions = 0.0, 0, []
-    for ans in answers:
-        sr = ans.score_result or {}
-        if "totalScore" not in sr:
-            continue
-        total_score += sr.get("totalScore", 0)
-        question_count += 1
-        if sr.get("dimensions"):
-            dimensions = sr["dimensions"]
-
-    avg = round(total_score / question_count, 2) if question_count else 0
+    questions = db.query(Question).filter(Question.id.in_([answer.question_id for answer in answers])).all()
+    summary = summarize_answers(answers, {question.id: question for question in questions})
+    question_count, dimensions = summary['questionCount'], summary['dimensions']
+    avg = summary['totalScore']
     max_score = 100
     grade = "A" if avg / max_score > 0.85 else "B" if avg / max_score >= 0.75 else "C" if avg / max_score >= 0.60 else "D"
 

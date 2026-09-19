@@ -55,7 +55,11 @@
 
 ### GET /questions/random
 
-接受 **province**、**count**、**dimension**、**position**。这是普通随机练习接口，不接受 portalTag、displayPortal 或 positionTags 这一组高级筛选；需要按门户/岗位/真实考试体系精确选题时，使用 [定向备面接口](targeted-training.md)。
+接受 **province**、**count**、**dimension**、**position**、**keyword**、**examCategory**、**subcategory**、**subcategory2**、**year**。随机练习与题库列表共用筛选规则，年份可用逗号多选；没有匹配题时返回空列表，不自动放宽筛选。不接受 portalTag、displayPortal 或 positionTags 这一组高级筛选；高级定向选题使用 [定向备面接口](targeted-training.md)。
+
+## 开考与练习类型
+
+POST /exam/start 除 questionIds 外接收可选 practiceMode：free、fullExam、training、targeted、trial；旧客户端省略时保存 legacy。数据库启动时幂等补齐 exams.practice_mode 列，旧记录保持 legacy，不猜测其历史类型。历史列表和详情返回 practiceMode、practiceModeName，并据此显示练习标题。提前结束训练仍保留完整题目顺序、已答文字与未答占位。
 
 ### GET /questions/{questionId}
 

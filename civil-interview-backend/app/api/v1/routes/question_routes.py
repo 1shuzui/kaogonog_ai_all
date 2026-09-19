@@ -70,6 +70,7 @@ def list_qs(
 @router.get("/random")
 def random_qs(
     province: str = "national", count: int = 5, dimension: str = "", position: str = "",
+    keyword: str = "", subcategory: str = "", subcategory2: str = "", examCategory: str = "", year: str = "",
     db: Session = Depends(get_db),
     current_user: AuthUser = Depends(get_current_user),
 ):
@@ -89,7 +90,8 @@ def random_qs(
     @raises HTTPException: 权益不足、题量越界或服务层无题时抛出。
     """
     ensure_random_question_access(current_user, count)
-    return get_random_questions(db, province=province, count=count, dimension=dimension, position=position)
+    return get_random_questions(db, province=province, count=count, dimension=dimension, position=position,
+                                keyword=keyword, subcategory=subcategory, subcategory2=subcategory2, examCategory=examCategory, year=year)
 
 
 @router.get("/{question_id}")

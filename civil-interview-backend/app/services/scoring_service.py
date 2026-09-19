@@ -806,15 +806,8 @@ def _decorate_result(question: Question, transcript: str, result: dict, visual_o
         content_score = max(0.0, min(content_score, content_max_score))
         effective_total = round(content_score + appearance_score, 2)
 
-        dimensions = payload.get("dimensions")
-        if isinstance(dimensions, list):
-            dimension_total = sum(float(item.get("score") or 0) for item in dimensions if isinstance(item, dict))
-            if dimension_total > 0:
-                for item in dimensions:
-                    if isinstance(item, dict):
-                        item["score"] = round(float(item.get("score") or 0) * content_score / dimension_total, 2)
-
         payload["contentScore"] = round(content_score, 2)
+        payload["contentMaxScore"] = round(content_max_score, 2)
         payload["appearanceScore"] = round(appearance_score, 2)
         payload["appearanceScoreMax"] = round(appearance_max, 2)
         payload["appearanceScoreSource"] = appearance_source
@@ -828,6 +821,9 @@ def _decorate_result(question: Question, transcript: str, result: dict, visual_o
         )
         grade_ratio = effective_total / question_max_score if question_max_score > 0 else 0.0
         payload["grade"] = "A" if grade_ratio > 0.85 else "B" if grade_ratio >= 0.75 else "C" if grade_ratio >= 0.60 else "D"
+    from app.services.score_summary import normalized_dimensions
+    payload["dimensions"] = normalized_dimensions(payload)
+    payload["dimensionsBasis"] = "content_percentage"
     payload["matchedKeywords"] = _build_keyword_payload(question, transcript)
     payload["highlightedTranscript"] = transcript or ""
     if visual_observation:
@@ -1230,6 +1226,8 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
         visual_observation = str(cached_result.get("visualObservation") or "") if media_fingerprint else ""
         if visual_observation:
             cached_payload["visualObservation"] = visual_observation
+        from app.services.score_summary import normalized_dimensions
+        cached_payload["dimensions"] = normalized_dimensions(cached_payload)
         return _persist_result(db, exam_id, question_id, transcript, cached_payload)
 
     effective_length = _effective_transcript_length(transcript)
@@ -1494,4 +1492,6 @@ def get_scoring_result(db: Session, exam_id: str, question_id: str) -> dict:
     ).first()
     if not ans or not ans.score_result:
         raise HTTPException(status_code=404, detail="评分结果未找到")
-    return _normalize_result_dimensions(ans.score_result)
+    from app.services.score_summary import normalized_dimensions
+    result = _normalize_result_dimensions(ans.score_result)
+    return {**result, "dimensions": normalized_dimensions(result)}
