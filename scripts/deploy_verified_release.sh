@@ -34,7 +34,7 @@ if [[ "$PHASE" == prepare ]]; then
   (cd "$ROOT_DIR/civil-interview-frontend" && npm run build)
   (cd "$ROOT_DIR/civil-interview-miniprogram" && npm run build:mp-weixin:prod)
   printf '%s\n' "$REVISION" > "$STAGE/REVISION"
-  "${SSH[@]}" "test '\$(readlink -f $REMOTE_ROOT/latest/backend)' = '$REMOTE_ROOT/latest/backend' && mkdir -p '$REMOTE_ROOT/releases/$RELEASE_ID' && chmod 700 '$REMOTE_ROOT/releases/$RELEASE_ID'"
+  "${SSH[@]}" "test \"\$(readlink -f '$REMOTE_ROOT/latest/backend')\" = '$REMOTE_ROOT/latest/backend' && mkdir -p '$REMOTE_ROOT/releases/$RELEASE_ID' && chmod 700 '$REMOTE_ROOT/releases/$RELEASE_ID'"
   rsync -az -e "$RSYNC_RSH" "$STAGE/backend" "$STAGE/REVISION" "$SERVER:$REMOTE_ROOT/releases/$RELEASE_ID/"
   rsync -az -e "$RSYNC_RSH" "$STAGE/source/ai_gongwu_backend" "$SERVER:$REMOTE_ROOT/releases/$RELEASE_ID/"
   rsync -az -e "$RSYNC_RSH" "$ROOT_DIR/civil-interview-frontend/dist/" "$SERVER:$REMOTE_ROOT/releases/$RELEASE_ID/frontend/"
