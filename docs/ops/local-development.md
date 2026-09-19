@@ -26,6 +26,8 @@ python database_setup.py --check
 
 ## 评分与答案保存
 
+客户端后台提交、计时与失败重试的当前行为见 [后台提交与恢复](background-submission.md)。提交按钮不再等待上传、转写和点评；刷新/关闭客户端仍可能中断未完成任务。
+
 默认把 `LOCAL_REFERENCE_SCORING` 设为 `false`，题库参考答案只注入外部模型提示词，不绕过统一的两阶段点评流程。
 这样线上评分口径一致；Redis 命中时仍会复用已有点评缓存，减少重复外部请求。只有离线调试规则评分时，才显式改为
 `LOCAL_REFERENCE_SCORING=true`，不要把这个值作为生产默认配置。

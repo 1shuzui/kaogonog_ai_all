@@ -13,6 +13,8 @@
 
 ## 常用测试命令
 
+客户端后台提交边界与界面验收记录见 [2026-09-19 考生端验收](background-submission-2026-09-19.md)。该记录区分真实构建/代码回归、本机演示页面检查与未完成的微信真机验收。
+
 ```bash
 # 后端单元测试
 cd /home/quyu/kaogong_ai/civil-interview-backend
@@ -30,6 +32,14 @@ npm run build
 cd /home/quyu/kaogong_ai/civil-interview-miniprogram
 npm run build:mp-weixin:prod
 ```
+
+客户端回归从仓库根目录运行：
+
+```bash
+node --experimental-vm-modules --test civil-interview-frontend/tests/*.test.mjs civil-interview-miniprogram/tests/*.test.mjs
+```
+
+本机视觉检查：启动 PC Vite 开发服务，打开 `/tests/visual/learner.html`；窄屏检查打开 `/tests/visual/responsive.html`。这些页面使用明确标注的演示数据与请求适配器，不创建真实账号、考试、订单或收费模型调用，也不作为生产入口打包。
 
 ## 题库与文档验收
 
