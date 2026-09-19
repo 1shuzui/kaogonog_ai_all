@@ -10,6 +10,17 @@
 -->
 <template>
   <view class="page">
+    <view v-if="!result && answerList.length > 1" class="card answer-tabs">
+      <scroll-view scroll-x class="answer-tabs__scroll">
+        <view class="answer-tabs__row">
+          <button v-for="(item, index) in answerList" :key="item.questionId || index"
+            class="answer-tab" :class="{ 'answer-tab--active': index === activeAnswerIndex }"
+            @tap="selectAnswer(index)">
+            第 {{ index + 1 }} 题 {{ formatAnswerScore(item) }}
+          </button>
+        </view>
+      </scroll-view>
+    </view>
     <template v-if="result">
       <view class="result-hero card">
         <view class="result-hero__copy">
@@ -211,6 +222,13 @@
         </view>
       </view>
     </template>
+    <view v-else-if="displayTranscript" class="card">
+      <view class="section-head"><text class="section-title">答案已保存 · 待点评</text></view>
+      <text class="plain-text">{{ displayTranscript }}</text>
+      <button class="primary-button" :loading="retryingScoring" :disabled="retryingScoring" @tap="retryScoring">
+        {{ retryingScoring ? '正在点评' : '继续点评' }}
+      </button>
+    </view>
     <view v-else class="card">
       <EmptyState title="暂无评分结果" desc="如果刚提交作答，请稍后刷新历史记录。" />
     </view>
@@ -224,7 +242,7 @@ import DimensionBars from '../../components/DimensionBars.vue'
 import EmptyState from '../../components/EmptyState.vue'
 import ScoreRing from '../../components/ScoreRing.vue'
 import { getHistoryDetail } from '../../api/history'
-import { getScoringResult } from '../../api/scoring'
+import { evaluateAnswer, getScoringResult } from '../../api/scoring'
 import { getQuestionById } from '../../api/questionBank'
 import { useExamStore } from '../../stores/exam'
 import { useFavoritesStore } from '../../stores/favorites'
@@ -232,6 +250,7 @@ import { useTrainingStore } from '../../stores/training'
 import { getGrade, getProvinceName } from '../../utils/constants'
 import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
 import { canUseLocalAnswers } from '../../utils/resultAnswerSource'
+import { hasFinalScore } from '../../utils/answerStatus'
 import { normalizeImprovementSuggestion, normalizeResult } from '../../utils/scoring'
 
 const examStore = useExamStore()
@@ -249,6 +268,7 @@ const weakRecordedQuestionIds = ref(new Set())
 const activeExamId = ref('')
 const activeQuestionId = ref('')
 const shareVisible = ref(false)
+const retryingScoring = ref(false)
 
 const grade = computed(() => getGrade(result.value?.totalScore || 0, result.value?.maxScore || 100))
 const localFitProvinceName = computed(() => getProvinceName(questionProvince.value || 'national'))
@@ -258,8 +278,8 @@ const currentQuestionLabel = computed(() => (
     ? `第 ${activeAnswerIndex.value + 1} 题${currentAnswer.value?.isPlaceholder ? ' · 未作答' : ''}`
     : currentAnswer.value?.isPlaceholder ? '本题 · 未作答' : '本题'
 ))
-const completedAnswerCount = computed(() => answerList.value.filter((answer) => !answer?.isPlaceholder && answer?.scoringResult).length)
-const unansweredCount = computed(() => answerList.value.filter((answer) => answer?.isPlaceholder || !answer?.scoringResult).length)
+const completedAnswerCount = computed(() => answerList.value.filter((answer) => !answer?.isPlaceholder).length)
+const unansweredCount = computed(() => answerList.value.filter((answer) => answer?.isPlaceholder).length)
 const improvementSuggestion = computed(() => {
   if (currentAnswer.value?.isPlaceholder || isNoContentTranscript(transcript.value, result.value)) return buildNoContentImprovementSuggestion()
   return normalizeImprovementSuggestion(
@@ -460,19 +480,19 @@ async function hydrateMissingQuestionInfo(items = []) {
       answer.questionStem = question.stem || ''
       answer.province = question.province || answer.province || 'national'
       answer.scoringResult = answer.scoringResult
-        ? normalizeDisplayResult(answer.scoringResult, question)
-        : buildEmptyResult(question)
+        ? (hasFinalScore(answer.scoringResult) ? normalizeDisplayResult(answer.scoringResult, question) : null)
+        : (answer.isPlaceholder ? buildEmptyResult(question) : null)
     } catch {
       answer.scoringResult = answer.scoringResult
-        ? normalizeDisplayResult(answer.scoringResult)
-        : buildEmptyResult()
+        ? (hasFinalScore(answer.scoringResult) ? normalizeDisplayResult(answer.scoringResult) : null)
+        : (answer.isPlaceholder ? buildEmptyResult() : null)
     }
   }))
 }
 
 function applyAnswer(answer = {}) {
-  const scoring = answer.scoringResult || buildEmptyResult()
-  result.value = normalizeDisplayResult(scoring)
+  const scoring = answer.isPlaceholder ? buildEmptyResult() : answer.scoringResult
+  result.value = hasFinalScore(scoring) ? normalizeDisplayResult(scoring) : null
   transcript.value = answer.transcript || (answer.isPlaceholder ? '未作答' : '')
   questionStem.value = answer.questionStem || ''
   questionProvince.value = answer.province || questionProvince.value || 'national'
@@ -488,7 +508,8 @@ function selectAnswer(index) {
 }
 
 function formatAnswerScore(answer = {}) {
-  if (answer.isPlaceholder || !answer.scoringResult) return '未作答'
+  if (answer.isPlaceholder) return '未作答'
+  if (!hasFinalScore(answer.scoringResult)) return '待点评'
   const scoring = normalizeDisplayResult(answer.scoringResult)
   const score = Number(scoring.questionScore ?? scoring.totalScore ?? 0) || 0
   const maxScore = Number(scoring.questionMaxScore ?? scoring.maxScore ?? 100) || 100
@@ -550,7 +571,7 @@ async function loadResult(query) {
         return
       }
 
-      result.value = normalizeResult(detail)
+      result.value = detail?.scoringStatus === 'pending' ? null : normalizeResult(detail)
       questionStem.value = detail?.questionSummary || ''
       finalizeLoadedResult()
       return
@@ -565,7 +586,8 @@ async function loadResult(query) {
   } catch (error) {
     if (examId && requestedQuestionId) {
       try {
-        result.value = normalizeResult(await getScoringResult(examId, requestedQuestionId))
+        const savedResult = await getScoringResult(examId, requestedQuestionId)
+        result.value = hasFinalScore(savedResult) ? normalizeResult(savedResult) : null
         await hydrateResultContext(examId, requestedQuestionId)
         answerList.value = [{
           examId,
@@ -594,6 +616,33 @@ async function hydrateResultContext(examId, questionId) {
     applyHistoryDetailContext(detail, questionId)
   } catch {
     // Scoring results can exist briefly before history detail is ready.
+  }
+}
+
+async function retryScoring() {
+  if (retryingScoring.value || !displayTranscript.value || !activeExamId.value || !activeQuestionId.value) return
+  const answer = currentAnswer.value
+  retryingScoring.value = true
+  try {
+    const scored = await evaluateAnswer({
+      examId: activeExamId.value,
+      questionId: activeQuestionId.value,
+      transcript: displayTranscript.value,
+      answerMeta: answerTiming.value ? { answerTiming: answerTiming.value } : {}
+    })
+    if (!hasFinalScore(scored)) throw new Error('点评尚未完成，请稍后重试')
+    if (answer) {
+      answer.scoringResult = scored
+      answer.processingStatus = 'completed'
+      if (currentAnswer.value === answer) applyAnswer(answer)
+    } else {
+      result.value = normalizeDisplayResult(scored)
+    }
+    finalizeLoadedResult()
+  } catch (error) {
+    toast(error?.message || '点评暂未完成，答案已保存')
+  } finally {
+    retryingScoring.value = false
   }
 }
 

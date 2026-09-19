@@ -228,6 +228,11 @@ export const useExamStore = defineStore('exam', {
           return answer
         }
 
+        const previousAnswer = this.answers.find((item) => (
+          item.examId === this.examId && item.questionId === question.id
+          && item.questionIndex === this.currentIndex && item.filePath === filePath
+          && item.processingStatus === 'failed' && !isPlaceholderTranscript(item.transcript)
+        ))
         const answer = {
           examId: this.examId,
           questionId: question.id,
@@ -238,7 +243,8 @@ export const useExamStore = defineStore('exam', {
           mediaType,
           audioFilePath,
           answerTiming: timingMeta,
-          transcript: '',
+          transcript: previousAnswer?.transcript || '',
+          asrMeta: previousAnswer?.asrMeta || {},
           scoringResult: null,
           submittedAt: new Date().toISOString(),
           processingStatus: 'queued',
@@ -249,7 +255,7 @@ export const useExamStore = defineStore('exam', {
           answer
         ].sort((a, b) => a.questionIndex - b.questionIndex)
         this.latestResult = null
-        this.latestTranscript = ''
+        this.latestTranscript = answer.transcript
         const task = this.queueAnswerProcessing(answer)
         if (waitForProcessing !== false) {
           const processed = await task
@@ -271,10 +277,13 @@ export const useExamStore = defineStore('exam', {
 
     queueAnswerProcessing(answer) {
       const taskKey = `${answer.examId}:${answer.questionIndex}`
+      if (answerProcessingTasks.has(taskKey)) return answerProcessingTasks.get(taskKey)
       const task = this.processAnswer(answer)
         .catch((error) => {
           answer.processingStatus = 'failed'
-          answer.processingError = error?.message || '评分失败'
+          answer.processingError = answer.transcript
+            ? '答案已保存，点评暂未完成。请再次提交重试，无需重新录音。'
+            : error?.message || '评分失败'
           answer.asrFailureType = error?.asrFailureType || ''
           answer.asrMessage = error?.asrMessage || ''
           answer.userInvalid = error?.userInvalid === true
@@ -289,11 +298,11 @@ export const useExamStore = defineStore('exam', {
     },
 
     async processAnswer(answer) {
-      let transcript = ''
+      let transcript = isPlaceholderTranscript(answer.transcript) ? '' : String(answer.transcript).trim()
       const mediaType = answer.mediaType || 'audio'
       answer.processingStatus = answer.filePath ? 'uploading' : 'scoring'
 
-      if (answer.filePath) {
+      if (answer.filePath && !transcript) {
         const uploadMedia = await prepareMediaForUpload(answer.filePath, mediaType)
         const transcriptionMedia = mediaType === 'video' && answer.audioFilePath
           ? await prepareMediaForUpload(answer.audioFilePath, 'audio')
@@ -335,6 +344,10 @@ export const useExamStore = defineStore('exam', {
           }
           transcript = String(transcribeResult?.transcript || '').trim()
           answer.asrMeta = transcribeResult?.asrMeta || {}
+          answer.transcript = transcript
+          if (this.examId === answer.examId && this.currentIndex === answer.questionIndex) {
+            this.latestTranscript = transcript
+          }
         }
       }
 
