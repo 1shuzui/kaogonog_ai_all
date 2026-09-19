@@ -2,7 +2,7 @@
    Pre-emit critique: P4 H4 E4 S4 R4 V4. Chinese system fonts intentionally retained. */
 .learner-page { background: #f7f9fd; color: #203047; font-family: "PingFang SC", "Microsoft YaHei", sans-serif; }
 .learner-page.page { padding: 36rpx 28rpx 60rpx; }
-.learner-page.page--tab { padding-bottom: 120rpx; }
+.learner-page.page--tab { padding-bottom: calc(120rpx + env(safe-area-inset-bottom)); }
 .learner-page .card { border: 1rpx solid #dbe3ee; border-radius: 24rpx; background: #fdfefe; box-shadow: none; margin-bottom: 24rpx; }
 .learner-page .primary-button { min-height: 88rpx; background: #326be5; border-color: #285bc7; border-radius: 24rpx; box-shadow: none; font-weight: 600; }
 .learner-page .secondary-button { min-height: 88rpx; background: #fdfefe; color: #285bc7; border: 1rpx solid #dbe3ee; border-radius: 24rpx; box-shadow: none; }

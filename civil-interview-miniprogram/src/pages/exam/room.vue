@@ -1786,4 +1786,3 @@ function goBackHome() {
   background: #ffffff;
 }
 </style>
-<style src="@/styles/learner.css"></style>

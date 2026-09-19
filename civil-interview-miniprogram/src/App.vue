@@ -142,6 +142,9 @@ export default {
 </script>
 
 <style>
+/* Use a CSS import: uni-app's mini compiler drops external SFC <style src>. */
+@import "./styles/learner.css";
+
 page {
   min-height: 100%;
   background: #F6FAFE;

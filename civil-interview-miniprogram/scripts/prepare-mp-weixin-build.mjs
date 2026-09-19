@@ -16,6 +16,7 @@ import {
 } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { validateLearnerAssets } from './validate-learner-assets.mjs'
 
 const scriptDir = dirname(fileURLToPath(import.meta.url))
 const rootDir = dirname(scriptDir)
@@ -105,6 +106,8 @@ function validate({ prod = false } = {}) {
     }
   }
 
+  failures.push(...validateLearnerAssets(outputDir))
+
   if (failures.length) {
     console.error('[mini-build] validation failed')
     for (const failure of failures) {
@@ -113,7 +116,7 @@ function validate({ prod = false } = {}) {
     process.exit(1)
   }
 
-  console.log(`[mini-build] validated ${jsonFiles.length} json files in ${outputLabel}`)
+  console.log(`[mini-build] validated ${jsonFiles.length} JSON files, 4 learner themes and 16 standalone icons in ${outputLabel}`)
 }
 
 const [command, ...flags] = process.argv.slice(2)

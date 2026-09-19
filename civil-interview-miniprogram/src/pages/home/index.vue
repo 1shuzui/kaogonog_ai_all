@@ -1394,4 +1394,3 @@ function startRecommendedPractice(item) {
   }
 }
 </style>
-<style src="@/styles/learner.css"></style>

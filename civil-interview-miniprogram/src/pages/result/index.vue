@@ -1210,4 +1210,3 @@ function home() {
   margin-top: 12rpx;
 }
 </style>
-<style src="@/styles/learner.css"></style>

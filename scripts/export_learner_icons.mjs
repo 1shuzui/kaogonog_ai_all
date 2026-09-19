@@ -9,6 +9,11 @@ const names = ['audio', 'video-camera', 'read', 'field-time', 'aim', 'history', 
 await mkdir(target, { recursive: true })
 for (const name of names) {
   const svg = await readFile(path.join(source, `${name}.svg`), 'utf8')
-  await writeFile(path.join(target, `${name}.svg`), svg.replace('<svg ', '<svg fill="#326BE5" '))
+  // Ant's inline SVGs inherit the browser document namespace. A WeChat <image>
+  // loads a separate document, so it needs an explicit SVG namespace and size.
+  const standalone = svg
+    .replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="#326BE5" ')
+    .replace('<defs><style /></defs>', '')
+  await writeFile(path.join(target, `${name}.svg`), standalone)
 }
 console.log(`Exported ${names.length} Ant Design outlined icons.`)

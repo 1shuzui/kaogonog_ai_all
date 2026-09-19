@@ -1164,4 +1164,3 @@ function goPricing() {
   }
 }
 </style>
-<style src="@/styles/learner.css"></style>
