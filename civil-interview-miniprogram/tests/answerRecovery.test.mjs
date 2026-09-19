@@ -63,12 +63,12 @@ test('pending media records are distinct from genuine zero scores', () => {
   assert.equal(hasFinalScore({ totalScore: 75 }), true)
 })
 
-test('typed answers reach scoring unchanged without upload or ASR', async () => {
+test('retained transcripts reach scoring unchanged without another upload or ASR', async () => {
   const transcript = '第一，了解实际情况。第二，协调解决诉求。第三，及时回访。'
   let evaluations = 0
   const store = await createStore({
-    upload: async () => assert.fail('typed answer must not upload media'),
-    transcribe: async () => assert.fail('typed answer must not invoke ASR'),
+    upload: async () => assert.fail('retained transcript must not upload media again'),
+    transcribe: async () => assert.fail('retained transcript must not invoke ASR again'),
     evaluate: async data => { evaluations++; assert.equal(data.transcript, transcript); return { totalScore: 78, maxScore: 100 } }
   })
   const result = await store.submitCurrentAnswer({ transcript })
@@ -76,6 +76,45 @@ test('typed answers reach scoring unchanged without upload or ASR', async () => 
   assert.equal(result.processingStatus, 'completed')
   assert.equal(evaluations, 1)
   await assert.rejects(store.submitCurrentAnswer({ transcript: '字'.repeat(5001) }), /5000/)
+})
+
+test('only audio and video modes are accepted; legacy text mode returns to audio', async () => {
+  const store = await createStore({})
+  for (const [input, expected] of [['audio', 'audio'], ['video', 'video'], ['text', 'audio'], [undefined, 'audio']]) {
+    store.setMediaMode(input)
+    assert.equal(store.mediaMode, expected)
+  }
+})
+
+test('media-only room submits recorded files and confirms before skipping empty answers', async () => {
+  const source = await readFile(new URL('../src/pages/exam/room.vue', import.meta.url), 'utf8')
+  const calls = []
+  let confirmations = 0
+  const context = {
+    examStore: { loading: false, isLastQuestion: false, submitCurrentAnswer: async payload => { calls.push(payload); return {} } },
+    finishingExam: { value: false }, isJiangsuReading: { value: false },
+    recording: { value: false }, videoRecording: { value: false },
+    currentMedia: { value: { filePath: 'record.mp3', mediaType: 'audio' } }, recordedFile: { value: 'record.mp3' },
+    textAnswer: { value: '旧文字输入' },
+    confirmSkipCurrentQuestion: async () => { confirmations++; return false },
+    stopActiveCaptureAsync: async () => {}, buildTimingMeta: () => ({}),
+    continueAfterSubmittedAnswer: async () => {}, syncUsageAndTrial: async () => {},
+    showLoading() {}, hideLoading() {}, toast: text => assert.fail(text)
+  }
+  const loadFunction = name => {
+    const declaration = source.match(new RegExp(`async function ${name}\\([^]*?^}`, 'm'))?.[0]
+    assert.ok(declaration)
+    return vm.runInNewContext(`(${declaration})`, context)
+  }
+  await loadFunction('submitAnswer')()
+  await loadFunction('submitCurrentAnswerForExit')()
+  assert.equal(calls.length, 2)
+  assert.ok(calls.every(call => call.filePath === 'record.mp3' && !('transcript' in call)))
+  context.currentMedia.value = { filePath: '', mediaType: '' }
+  await loadFunction('submitAnswer')()
+  assert.equal(confirmations, 1)
+  assert.equal(calls.length, 2)
+  assert.equal(await loadFunction('submitCurrentAnswerForExit')(), null)
 })
 
 test('audio and video transcription both allow a cold ASR model to finish', async () => {

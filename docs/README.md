@@ -46,7 +46,7 @@
 | 文档 | 用途 |
 | --- | --- |
 | [测试与报告说明](testing/testing-and-reports.md) | 回归、ASR、题库抽样、库存报告保留规则。 |
-| [2026-09-19 验收修复记录](testing/acceptance-20260919.md) | 登录会话、账号隔离、筛选、文字作答、成绩口径与服务器检查结果。 |
+| [2026-09-19 验收修复记录](testing/acceptance-20260919.md) | 登录会话、账号隔离、筛选、成绩口径、服务器检查及文字入口停用说明。 |
 | [整理决策 ADR](decisions/ADR-001-local-project-organization.md) | 记录本次项目整理的核心取舍。 |
 | [题库源文档外置 ADR](decisions/ADR-002-externalize-question-source-assets.md) | 记录为什么源 Word/抽取文本不再放 Git。 |
 | [敏感配置外置 ADR](decisions/ADR-003-externalize-secrets.md) | 记录为什么真实密钥迁出仓库。 |

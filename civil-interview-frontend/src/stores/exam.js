@@ -79,7 +79,6 @@ export const useExamStore = defineStore('exam', {
     answers: [],
     deviceReady: false,
     videoEnabled: true,
-    answerMode: 'voice',
     mediaStream: null,
     fullExamMode: false,
     examStartTime: null,

@@ -418,7 +418,7 @@ export const useExamStore = defineStore('exam', {
     },
 
     setMediaMode(mode) {
-      this.mediaMode = ['video', 'text'].includes(mode) ? mode : 'audio'
+      this.mediaMode = mode === 'video' ? 'video' : 'audio'
     }
   }
 })

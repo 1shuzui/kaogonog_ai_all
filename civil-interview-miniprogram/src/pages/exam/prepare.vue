@@ -160,10 +160,9 @@
       </view>
     </view>
 
-    <button class="secondary-button" @tap="mediaMode = 'text'">{{ mediaMode === 'text' ? '已选择文字作答，无需录音权限' : '不方便录音？改用文字作答' }}</button>
     <view class="card tips-card">
       <text class="tips-card__title">开考前检查</text>
-      <text class="tips-card__line">{{ mediaMode === 'text' ? '文字作答无需麦克风或摄像头；全真模拟仍按题序和计时完成。' : '保持环境安静，进入考场后请授权麦克风和摄像头。' }}</text>
+      <text class="tips-card__line">保持环境安静，进入考场后请授权麦克风；录像模式还需授权摄像头。</text>
       <text class="tips-card__line">真机调试时，后端地址需使用手机可访问的域名或局域网 IP。</text>
     </view>
 
@@ -171,11 +170,11 @@
       v-if="!readonlyMode"
       class="primary-button"
       :class="{ 'motion-shimmer': loading || accessLoading || enteringExam }"
-      :disabled="loading || accessLoading || enteringExam || (asrUnavailable && mediaMode !== 'text')"
+      :disabled="loading || accessLoading || enteringExam || asrUnavailable"
       :loading="loading"
       @tap="startPractice"
     >
-      {{ asrUnavailable && mediaMode !== 'text' ? '语音服务未就绪' : '进入考场' }}
+      {{ asrUnavailable ? '语音服务未就绪' : '进入考场' }}
     </button>
   </view>
 </template>
@@ -759,7 +758,7 @@ async function startPractice() {
       accessFresh ? Promise.resolve() : refreshAccessState({ timeout: ENTRY_STATE_REFRESH_TIMEOUT_MS }),
       asrFresh ? Promise.resolve() : refreshAsrStatus({ timeout: ENTRY_ASR_STATUS_TIMEOUT_MS })
     ])
-    if (asrUnavailable.value && mediaMode.value !== 'text') {
+    if (asrUnavailable.value) {
       toast('语音转写服务未就绪，请稍后重试')
       return
     }
