@@ -579,6 +579,9 @@ def _build_direct_llm_scoring_prompt(transcript: str, question_data: dict) -> st
 【参考采分点】
 {scoring_points_text}
 
+【题库参考答案（仅供对照，不是考生作答）】
+{question_data.get('referenceAnswer', '') or '未提供'}
+
 【关键词参考】
 {keyword_text}
 
@@ -1188,6 +1191,11 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
     if not question:
         raise HTTPException(status_code=404, detail="Question not found")
 
+    transcript = str(transcript or "").strip()
+    # Includes older clients that only supply examId when requesting scoring.
+    # Commit before any cache/model work so a disconnect cannot lose the answer.
+    persist_transcript_to_answer(db, exam_id, question_id, transcript)
+
     media_record = _media_record_for_exam(db, exam_id, question_id)
     media_fingerprint = _media_cache_fingerprint(media_record)
     question_fingerprint = hashlib.sha256(
@@ -1201,6 +1209,7 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
                 "llmModel": settings.llm_model,
                 "llmReady": bool(settings.llm_api_key),
                 "localReferenceScoring": bool(settings.local_reference_scoring),
+                "scoringSchema": "evidence-source-v2",
                 "media": media_fingerprint,
             },
             ensure_ascii=False,
@@ -1230,6 +1239,8 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
     raw_keywords = question.keywords or {}
     q_dict = {
         "question": question.stem,
+        "transcript": transcript,
+        "referenceAnswer": _question_meta(question)["reference_answer"],
         "type": DIM_MAPPING.get(question.dimension, "综合分析"),
         "stem": question.stem,
         "scoringPoints": [sp.get("content", "") for sp in (question.scoring_points or [])],
@@ -1331,15 +1342,19 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
     logger.info("Stage 1: Evidence extraction")
     evidence_prompt = build_evidence_extraction_prompt(transcript, q_dict)
     evidence_raw = await call_llm_api_async(evidence_prompt)
-    evidence = {"present": [], "absent": [], "penalty": [], "bonus": []}
-    if evidence_raw and isinstance(evidence_raw, dict):
-        evidence = evidence_raw.get("evidence", evidence)
-        evidence = validate_evidence(evidence, transcript)
+    evidence = validate_evidence(
+        evidence_raw.get("evidence") if isinstance(evidence_raw, dict) else None,
+        transcript,
+    )
 
     # Stage 2: Evidence-based scoring
-    logger.info("Stage 2: Evidence-based scoring")
-    scoring_prompt = build_evidence_based_scoring_prompt(evidence, q_dict)
-    scoring_raw = await call_llm_api_async(scoring_prompt)
+    scoring_prompt, scoring_raw = "", None
+    if any(evidence[key] for key in ("present", "penalty", "bonus")):
+        logger.info("Stage 2: Evidence-based scoring with original transcript")
+        scoring_prompt = build_evidence_based_scoring_prompt(evidence, q_dict)
+        scoring_raw = await call_llm_api_async(scoring_prompt)
+    else:
+        logger.warning("No usable extracted evidence; scoring original transcript directly")
     dim_scores, rationale = {}, ""
     max_scores = {d["name"]: d["score"] for d in q_dict["dimensions"]}
     direct_prompt = ""
@@ -1362,7 +1377,8 @@ async def evaluate_answer(db: Session, question_id: str, transcript: str, exam_i
             max_tokens=1800,
         )
         if direct_raw and isinstance(direct_raw, dict):
-            dim_scores = _extract_dimension_scores(direct_raw.get("dimension_scores", {}), max_scores)
+            _, _, validated_direct = validate_scoring_result(direct_raw, evidence, max_scores)
+            dim_scores = _extract_dimension_scores(validated_direct.get("dimension_scores", {}), max_scores)
             rationale = str(direct_raw.get("overall_rationale") or rationale or "").strip()
 
     if not dim_scores:
@@ -1451,6 +1467,12 @@ def _persist_result(db: Session, exam_id: Optional[str], question_id: str, trans
     ans.score_result = result
     ans.answered_at = datetime.now(timezone.utc)
     db.commit()
+    # A retry can finish after the exam was completed. Refresh its summary too,
+    # otherwise My Answers keeps the old zero even though the detail is fixed.
+    exam = db.query(Exam).filter(Exam.id == exam_id).first()
+    if exam and exam.status == "completed":
+        from app.services.exam_service import complete_exam
+        complete_exam(db, exam_id)
     return result
 
 

@@ -144,8 +144,9 @@ def complete_exam(db: Session, exam_id: str) -> dict:
     exam = db.query(Exam).filter(Exam.id == exam_id).first()
     if not exam:
         raise HTTPException(status_code=404, detail="考试未找到")
+    if exam.status != "completed" or not exam.end_time:
+        exam.end_time = datetime.now(timezone.utc)
     exam.status = "completed"
-    exam.end_time = datetime.now(timezone.utc)
 
     answers = db.query(ExamAnswer).filter(ExamAnswer.exam_id == exam_id).all()
     total_score, question_count, dimensions = 0.0, 0, []

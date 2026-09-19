@@ -114,6 +114,14 @@
 
 ## 特殊边界
 
+- 转写接口收到 `examId` 后立即保存文字稿；评分接口也在调用模型前保存原文，兼容旧客户端只在评分请求中传入 `examId`。点评失败后保留原文，不能转换为“未作答”。
+- DeepSeek JSON 请求明确使用 `response_format={"type":"json_object"}` 和 `thinking.type=disabled`。当前 Flash 模型默认思考可能耗尽短输出预算，产生空正文；截断响应必须增加输出预算后重试，不能当成空答案。
+- 第一阶段没有有效原文证据时，跳过空证据评分，直接把完整答案交给外部模型。正常第二阶段同时携带原文和题库参考答案，参考答案不能冒充考生内容。
+- 评分缓存指纹包含 `scoringSchema=evidence-source-v2`，新版本不复用旧版空证据错误分数。小程序只有收到明确的 `totalScore` 才展示分数；已存文字稿、尚未点评的记录显示“答案已保存 · 待点评”。
+- 对已结束考试继续点评后，后端同步刷新历史汇总，并保留原考试结束时间。小程序重试同一录音时复用已识别的文字稿，避免再次上传和转写。
+
+模型调用说明参见 [DeepSeek JSON Output](https://api-docs.deepseek.com/guides/json_mode/) 和 [Chat Completions](https://api-docs.deepseek.com/api/create-chat-completion/)。维持 `LOCAL_REFERENCE_SCORING=false`，不因费用或速度限制正常用户的答题流程。
+
 - 题库中 **95 + 5 = 100** 以及其他内容分上限加仪态分上限的组合都合法，不能产生分值冲突、待确认状态或缩放。
 - **fullScore/effectiveFullScore** 应以源内容分和仪态分上限计算，不能由客户端猜测。部分通用医疗题的内容分并非 95。
 - 无有效文字稿的路由预筛会走全零结果分支，早于正常的评分结果装饰路径。它是“无效作答”处理，不应用来推断正常医疗题的默认仪态分计算；若业务希望无效作答也保留仪态默认分，应先明确规则并改动该分支及测试。

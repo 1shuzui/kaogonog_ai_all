@@ -10,6 +10,7 @@
 @raises ValueError: LLM 返回内容不是可解析 JSON，且无法从文本中提取 JSON 片段时抛出。
 """
 import json
+import math
 import re
 
 
@@ -127,11 +128,17 @@ def build_evidence_based_scoring_prompt(evidence, question_data):
 【已抽取的证据包】
 {evidence_json}
 
+【考生答案原文（评分的事实依据）】
+{question_data.get('transcript', '')}
+
+【题库参考答案（仅作参考，不能当作考生说过的内容）】
+{question_data.get('referenceAnswer', '') or '未提供'}
+
 【视频动作与表情观察】
 {visual_block}
 
 【评分规则】
-1. 必须基于上述证据包进行评分，不能引入新的主观判断
+1. 以考生答案原文为事实依据，证据包用于辅助定位；不能把证据抽取失败当作未作答，也不能把参考答案当作考生内容
 2. 每个维度的得分必须在 0 到满分之间
 3. 采分点命中加分，缺失点扣分，扣分点按严重程度扣分，亮点加分
 4. 维度分之和必须等于总分
@@ -173,6 +180,11 @@ def validate_evidence(evidence, answer_text):
     @return: 清洗后的 present、absent、penalty、bonus 证据。
     @raises: 不主动抛出业务异常；缺失字段按空列表处理。
     """
+    evidence = evidence if isinstance(evidence, dict) else {}
+    evidence = {
+        key: [item for item in value if isinstance(item, dict)] if isinstance(value, list) else []
+        for key, value in ((key, evidence.get(key)) for key in ("present", "absent", "penalty", "bonus"))
+    }
     validated = {
         "present": [],
         "absent": evidence.get("absent", []),
@@ -182,7 +194,7 @@ def validate_evidence(evidence, answer_text):
 
     # 校验 present 证据的 quote 是否在原文中
     for e in evidence.get("present", []):
-        quote = e.get("quote", "")
+        quote = str(e.get("quote") or "")
         if quote and quote in answer_text:
             validated["present"].append(e)
         elif quote:
@@ -194,13 +206,13 @@ def validate_evidence(evidence, answer_text):
 
     # 校验 penalty 证据
     for p in evidence.get("penalty", []):
-        quote = p.get("quote", "")
+        quote = str(p.get("quote") or "")
         if quote and quote in answer_text:
             validated["penalty"].append(p)
 
     # 校验 bonus 证据
     for b in evidence.get("bonus", []):
-        quote = b.get("quote", "")
+        quote = str(b.get("quote") or "")
         if quote and quote in answer_text:
             validated["bonus"].append(b)
 
@@ -222,21 +234,29 @@ def validate_scoring_result(result, evidence, max_scores):
     """
     errors = []
 
-    dim_scores = result.get("dimension_scores", {})
-    total = result.get("total_score", 0)
-
-    # 检查维度分范围
-    for dim, score in dim_scores.items():
+    result = dict(result) if isinstance(result, dict) else {}
+    raw_scores = result.get("dimension_scores")
+    dim_scores = {}
+    for dim, raw_score in (raw_scores.items() if isinstance(raw_scores, dict) else []):
+        try:
+            if isinstance(raw_score, bool):
+                raise ValueError("boolean score")
+            score = float(raw_score)
+            if not math.isfinite(score):
+                raise ValueError("nonfinite score")
+        except (TypeError, ValueError):
+            errors.append(f"维度 {dim} 分数不是有效数值")
+            continue
         max_score = max_scores.get(dim, 100)
         if score < 0 or score > max_score:
             errors.append(f"维度 {dim} 分数 {score} 超出范围 [0, {max_score}]")
+        dim_scores[dim] = max(0.0, min(score, max_score))
 
-    # 检查总分
     sum_dims = sum(dim_scores.values())
-    if sum_dims != total:
-        errors.append(f"维度分之和 {sum_dims} 不等于总分 {total}")
-        # 自动修正
-        result["total_score"] = sum_dims
+    if sum_dims != result.get("total_score"):
+        errors.append("总分已按有效维度分之和重算")
+    result["dimension_scores"] = dim_scores
+    result["total_score"] = sum_dims
 
     return len(errors) == 0, errors, result
 

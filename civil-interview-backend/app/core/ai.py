@@ -145,6 +145,7 @@ def get_client() -> Optional[OpenAI]:
             api_key=settings.llm_api_key,
             base_url=settings.llm_base_url,
             timeout=settings.llm_timeout_seconds,
+            max_retries=0,  # One retry policy here; do not multiply it by SDK retries.
         )
     return _client
 
@@ -174,7 +175,15 @@ def call_llm_api(
         logger.warning("No LLM_API_KEY configured, skipping LLM call")
         return None
 
-    last_error = None
+    request_options = {}
+    if settings.llm_provider == "deepseek":
+        # DeepSeek Flash defaults to thinking. A small JSON budget can be spent
+        # entirely on reasoning, leaving message.content empty (finish=length).
+        request_options = {
+            "response_format": {"type": "json_object"},
+            "extra_body": {"thinking": {"type": "disabled"}},
+        }
+    output_budget = max_tokens
     for attempt in range(LLM_MAX_RETRIES):
         try:
             response = client.chat.completions.create(
@@ -184,19 +193,28 @@ def call_llm_api(
                     {"role": "user", "content": prompt},
                 ],
                 temperature=temperature,
-                max_tokens=max_tokens,
+                max_tokens=output_budget,
                 timeout=settings.llm_timeout_seconds,
+                **request_options,
             )
-            content = response.choices[0].message.content.strip()
+            choice = response.choices[0]
+            if choice.finish_reason == "length":
+                output_budget = min(max(output_budget * 2, 4000), 8192)
+                raise ValueError("LLM JSON output truncated; increasing output budget")
+            content = (choice.message.content or "").strip()
+            if not content:
+                raise ValueError("LLM returned no JSON content")
             if content.startswith("```json"):
                 content = content[7:]
             if content.startswith("```"):
                 content = content[3:]
             if content.endswith("```"):
                 content = content[:-3]
-            return json.loads(content.strip())
+            parsed = json.loads(content.strip())
+            if not isinstance(parsed, dict):
+                raise ValueError("LLM output must be a JSON object")
+            return parsed
         except Exception as e:
-            last_error = e
             if attempt < LLM_MAX_RETRIES - 1:
                 delay = LLM_RETRY_BACKOFF_BASE ** attempt
                 logger.warning("LLM call attempt %s/%s failed, retrying in %.1fs: %s", attempt + 1, LLM_MAX_RETRIES, delay, e)

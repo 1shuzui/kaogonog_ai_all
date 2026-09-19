@@ -5,13 +5,14 @@
 并验证题库参考答案只作为外部模型上下文，不会绕过统一的 LLM 评分链路。
 """
 import unittest
+from datetime import datetime
 from unittest.mock import AsyncMock, patch
 
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
 from app.db.session import Base
-from app.models.entities import Exam, ExamAnswer, Question
+from app.models.entities import Exam, ExamAnswer, HistoryRecord, Question
 from app.services import scoring_service
 
 
@@ -137,6 +138,51 @@ class AnswerPersistenceAndLocalScoringTestCase(unittest.IsolatedAsyncioTestCase)
         self.assertFalse(scoring_service.settings.local_reference_scoring)
         self.assertEqual(result["scoringMode"], "llm")
         self.assertEqual(llm_call.await_count, 2)
+
+
+    async def test_failed_evidence_uses_full_transcript_in_direct_scoring(self):
+        transcript = "政府食堂开放是便民举措。首先了解游客需求，安排轮班和调休保障职工休息。其次做好食品安全和收费公示，最后根据反馈完善服务。"
+        llm_call = AsyncMock(side_effect=[None, {
+            "dimension_scores": {"综合分析": 15, "实务落地": 16, "应急应变": 10,
+                                 "行政思维": 11, "逻辑结构": 12, "语言表达": 11},
+            "overall_rationale": "回应了食堂开放的服务和轮班安排。",
+        }])
+        with patch.object(scoring_service.settings, "llm_api_key", "test-key"), patch.object(
+            scoring_service, "call_llm_api_async", llm_call
+        ), patch.object(scoring_service, "cache_get_json", AsyncMock(return_value=None)), patch.object(
+            scoring_service, "cache_set_json", AsyncMock()
+        ):
+            result = await scoring_service.evaluate_answer(self.db, "local_score_q1", transcript, "local_score_exam")
+        self.assertIn(transcript, llm_call.call_args_list[1].args[0])
+        self.assertIn("【考生答案】", llm_call.call_args_list[1].args[0])
+        self.assertGreater(result["totalScore"], 0)
+        self.assertEqual(result["scoringMode"], "llm")
+        self.assertNotIn("stageTwoPrompt", result["scoringTrace"])
+
+    async def test_transcript_survives_interrupted_evaluation(self):
+        transcript = "首先主动了解群众诉求，其次协调部门解决问题，最后及时跟进并完善工作机制。"
+        with patch.object(scoring_service.settings, "llm_api_key", "test-key"), patch.object(
+            scoring_service, "call_llm_api_async", AsyncMock(side_effect=RuntimeError("interrupted"))
+        ), patch.object(scoring_service, "cache_get_json", AsyncMock(return_value=None)):
+            with self.assertRaisesRegex(RuntimeError, "interrupted"):
+                await scoring_service.evaluate_answer(self.db, "local_score_q1", transcript, "local_score_exam")
+        self.db.expire_all()
+        answer = self.db.query(ExamAnswer).filter_by(exam_id="local_score_exam", question_id="local_score_q1").one()
+        self.assertEqual(answer.transcript, transcript)
+        self.assertNotIn("totalScore", answer.score_result)
+
+    async def test_rescoring_updates_history_without_changing_completion_time(self):
+        exam = self.db.query(Exam).filter_by(id="local_score_exam").one()
+        exam.status = "completed"
+        exam.end_time = datetime(2026, 9, 19, 4, 20)
+        self.db.add(HistoryRecord(exam_id=exam.id, username="test-user", total_score=0))
+        self.db.commit()
+        scoring_service._persist_result(self.db, exam.id, "local_score_q1", "保存的作答", {
+            "totalScore": 75, "maxScore": 100, "dimensions": []
+        })
+        history = self.db.query(HistoryRecord).filter_by(exam_id=exam.id).one()
+        self.assertEqual(history.total_score, 75)
+        self.assertEqual(history.completed_at, datetime(2026, 9, 19, 4, 20))
 
 
 if __name__ == "__main__":
