@@ -84,7 +84,7 @@
 
       <view v-if="mode === 'fullExam'" class="suite-panel">
         <view class="config-row config-row--suite">
-          <text>真题套卷</text>
+          <text>真题套卷（{{ fullExamSuiteOptions.length }} 套）</text>
           <text class="config-row__value">{{ selectedFullExamSuiteLabel }}</text>
         </view>
         <picker
@@ -97,7 +97,7 @@
         >
           <view class="suite-picker">
             <text>{{ selectedFullExamSuite?.title || '选择整套真题' }}</text>
-            <text class="suite-picker__arrow">切换</text>
+            <text class="suite-picker__arrow">点击选卷</text>
           </view>
         </picker>
         <text v-if="selectedFullExamSuite" class="suite-panel__summary">{{ selectedFullExamSuiteSummary }}</text>
@@ -160,6 +160,7 @@
       </view>
     </view>
 
+    <button v-if="mode !== 'fullExam'" class="secondary-button" @tap="mediaMode = 'text'">{{ mediaMode === 'text' ? '已选择文字作答，无需录音权限' : '不方便录音？改用文字作答' }}</button>
     <view class="card tips-card">
       <text class="tips-card__title">开考前检查</text>
       <text class="tips-card__line">保持环境安静，进入考场后请授权麦克风和摄像头。</text>
@@ -170,11 +171,11 @@
       v-if="!readonlyMode"
       class="primary-button"
       :class="{ 'motion-shimmer': loading || accessLoading || enteringExam }"
-      :disabled="loading || accessLoading || enteringExam || asrUnavailable"
+      :disabled="loading || accessLoading || enteringExam || (asrUnavailable && mediaMode !== 'text')"
       :loading="loading"
       @tap="startPractice"
     >
-      {{ asrUnavailable ? '语音服务未就绪' : '进入考场' }}
+      {{ asrUnavailable && mediaMode !== 'text' ? '语音服务未就绪' : '进入考场' }}
     </button>
   </view>
 </template>
@@ -223,6 +224,7 @@ const ASR_STATUS_CACHE_MS = 30000
 const count = ref(DEFAULT_EXAM_QUESTION_COUNT)
 const mode = ref('free')
 const mediaMode = ref('audio')
+watch(mode, value => { if (value === 'fullExam' && mediaMode.value === 'text') mediaMode.value = 'audio' })
 const selectedDimensions = ref(['random'])
 const questionTypeTouched = ref(false)
 // Targeted filter state
@@ -259,7 +261,7 @@ const questionCategoryOptions = [
   { key: RANDOM_DIMENSION_KEY, name: '随机题型' },
   ...QUESTION_CATEGORIES.filter((item) => item.key)
 ]
-const fixedPracticeSources = new Set(['targeted', 'training', 'jiangsu'])
+const fixedPracticeSources = new Set(['targeted', 'training', 'jiangsu', 'bank'])
 const fixedPracticeEntry = computed(() => fixedPracticeSources.has(source.value))
 const showPracticeConfig = computed(() => mode.value === 'free' && !fixedPracticeEntry.value)
 const selectedSpecificDimensions = computed(() => selectedDimensions.value.filter((item) => item && item !== RANDOM_DIMENSION_KEY))
@@ -758,7 +760,7 @@ async function startPractice() {
       accessFresh ? Promise.resolve() : refreshAccessState({ timeout: ENTRY_STATE_REFRESH_TIMEOUT_MS }),
       asrFresh ? Promise.resolve() : refreshAsrStatus({ timeout: ENTRY_ASR_STATUS_TIMEOUT_MS })
     ])
-    if (asrUnavailable.value) {
+    if (asrUnavailable.value && mediaMode.value !== 'text') {
       toast('语音转写服务未就绪，请稍后重试')
       return
     }

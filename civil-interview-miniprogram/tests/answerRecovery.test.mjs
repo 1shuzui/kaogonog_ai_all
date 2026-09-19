@@ -63,6 +63,21 @@ test('pending media records are distinct from genuine zero scores', () => {
   assert.equal(hasFinalScore({ totalScore: 75 }), true)
 })
 
+test('typed answers reach scoring unchanged without upload or ASR', async () => {
+  const transcript = '第一，了解实际情况。第二，协调解决诉求。第三，及时回访。'
+  let evaluations = 0
+  const store = await createStore({
+    upload: async () => assert.fail('typed answer must not upload media'),
+    transcribe: async () => assert.fail('typed answer must not invoke ASR'),
+    evaluate: async data => { evaluations++; assert.equal(data.transcript, transcript); return { totalScore: 78, maxScore: 100 } }
+  })
+  const result = await store.submitCurrentAnswer({ transcript })
+  assert.equal(result.transcript, transcript)
+  assert.equal(result.processingStatus, 'completed')
+  assert.equal(evaluations, 1)
+  await assert.rejects(store.submitCurrentAnswer({ transcript: '字'.repeat(5001) }), /5000/)
+})
+
 test('audio and video transcription both allow a cold ASR model to finish', async () => {
   const calls = []
   const code = await readFile(new URL('../src/api/scoring.js', import.meta.url), 'utf8')

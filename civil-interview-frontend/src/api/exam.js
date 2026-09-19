@@ -12,8 +12,8 @@
 import { http } from './index'
 import { buildExamUploadFormData } from '@/utils/examSubmission'
 
-export async function startExam(questionIds) {
-  return http.post('/exam/start', { questionIds })
+export async function startExam(questionIds, practiceMode = 'free') {
+  return http.post('/exam/start', { questionIds, practiceMode })
 }
 
 export async function uploadRecording(examId, questionId, blob) {

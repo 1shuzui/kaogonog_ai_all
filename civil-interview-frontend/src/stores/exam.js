@@ -47,7 +47,8 @@ async function evaluateEmptyAnswer(questionId, examId) {
       transcript: '',
       examId
     })
-  } catch {
+  } catch (error) {
+    if (error?.code === 'STALE_SESSION' || error?.response?.status === 401) throw error
     return buildZeroScoreResult()
   }
 }
@@ -78,6 +79,7 @@ export const useExamStore = defineStore('exam', {
     answers: [],
     deviceReady: false,
     videoEnabled: true,
+    answerMode: 'voice',
     mediaStream: null,
     fullExamMode: false,
     examStartTime: null,
@@ -123,7 +125,7 @@ export const useExamStore = defineStore('exam', {
   },
 
   actions: {
-    async initExam(questions, fullExamMode = false) {
+    async initExam(questions, fullExamMode = false, practiceMode = 'free') {
       answerProcessingTasks.clear()
       this.questionList = questions
       this.currentIndex = 0
@@ -136,7 +138,7 @@ export const useExamStore = defineStore('exam', {
       this.examStartTime = fullExamMode ? Date.now() : null
       this.examElapsed = 0
       this.submitStep = ''
-      const result = await startExam(questions.map((q) => q.id))
+      const result = await startExam(questions.map((q) => q.id), fullExamMode ? 'fullExam' : practiceMode)
       this.examId = result.examId
     },
 
@@ -151,7 +153,9 @@ export const useExamStore = defineStore('exam', {
       this.status = EXAM_STATUS.ANSWERING
     },
 
-    async submitAnswer(blob) {
+    async submitAnswer(blob, transcript = '') {
+      transcript = String(transcript || '').trim()
+      if (transcript.length > 5000) throw new Error('文字作答最多 5000 字')
       const question = this.currentQuestion
       if (!question) {
         throw new Error('当前题目不存在')
@@ -165,7 +169,7 @@ export const useExamStore = defineStore('exam', {
       this.submitStep = 'uploading'
 
       try {
-        if (!blob || blob.size <= 0) {
+        if ((!blob || blob.size <= 0) && !transcript) {
           assertQuestionScoringSupported(questionId)
           const result = await evaluateEmptyAnswer(questionId, this.examId)
           this.scoringResult = result
@@ -190,7 +194,7 @@ export const useExamStore = defineStore('exam', {
           questionId,
           questionIndex,
           recordingBlob: blob,
-          transcript: '',
+          transcript,
           scoringResult: null,
           submittedAt: new Date().toISOString(),
           processingStatus: 'queued',
@@ -212,24 +216,27 @@ export const useExamStore = defineStore('exam', {
     },
 
     queueExamAnswerProcessing(answer) {
+      const taskKey = `${answer.examId}:${answer.questionIndex}`
       const task = this.processExamAnswer(answer)
         .catch((error) => {
           const normalizedError = normalizeExamError(error)
           answer.processingStatus = 'failed'
           answer.processingError = error?.message || '未知错误'
-          throw normalizedError
+          answer.processingError = normalizedError.message || answer.processingError
+          return answer
         })
         .finally(() => {
-          answerProcessingTasks.delete(answer.questionIndex)
+          answerProcessingTasks.delete(taskKey)
         })
 
-      answerProcessingTasks.set(answer.questionIndex, task)
+      answerProcessingTasks.set(taskKey, task)
       return task
     },
 
     async processExamAnswer(answer) {
       const answerExamId = answer.examId || this.examId
-      if (!answer.recordingBlob || answer.recordingBlob.size <= 0) {
+      let transcript = String(answer.transcript || '').trim()
+      if ((!answer.recordingBlob || answer.recordingBlob.size <= 0) && !transcript) {
         assertQuestionScoringSupported(answer.questionId)
         const result = await evaluateEmptyAnswer(answer.questionId, answerExamId)
         answer.recordingBlob = null
@@ -242,15 +249,17 @@ export const useExamStore = defineStore('exam', {
       }
 
       answer.processingError = ''
-      answer.processingStatus = 'uploading'
-      await uploadRecording(answerExamId, answer.questionId, answer.recordingBlob)
-
-      answer.processingStatus = 'transcribing'
-      const { transcript } = await transcribeAudio(answer.recordingBlob, {
-        questionId: answer.questionId,
-        examId: answerExamId
-      })
-      answer.transcript = transcript
+      if (!transcript) {
+        answer.processingStatus = 'uploading'
+        await uploadRecording(answerExamId, answer.questionId, answer.recordingBlob)
+        answer.processingStatus = 'transcribing'
+        const response = await transcribeAudio(answer.recordingBlob, {
+          questionId: answer.questionId,
+          examId: answerExamId
+        })
+        transcript = response.transcript
+        answer.transcript = transcript
+      }
 
       if (this.examId === answerExamId && this.currentIndex === answer.questionIndex) {
         this.transcript = transcript

@@ -348,6 +348,7 @@ function onCategoryReviewChange(event) {
 
 function onYearChange(event) {
   yearFilter.value = event.detail.value || []
+  onFilterChange()
 }
 
 function onFilterChange() {
@@ -411,9 +412,9 @@ async function startRandomPractice() {
   if (!promptLoginForAction('随机练习', '/pages/bank/index')) return
   if (readonlyMode.value) return
   try {
-    const questions = await bankStore.fetchRandom({ count: 1, province: selectedProvince.value || '' })
+    const questions = await bankStore.fetchRandom({ ...buildFilters(), count: 1 })
     if (questions && questions.length) {
-      uni.navigateTo({ url: `/pages/exam/prepare?random=1&qid=${encodeURIComponent(questions[0].id)}` })
+      uni.navigateTo({ url: `/pages/exam/prepare?source=bank&questionId=${encodeURIComponent(questions[0].id)}` })
     } else {
       toast('暂无可用题目')
     }

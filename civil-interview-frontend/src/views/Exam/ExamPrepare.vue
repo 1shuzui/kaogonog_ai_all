@@ -26,6 +26,8 @@
     <template v-else>
     <h2 class="exam-prepare__title">设备检测</h2>
     <p class="exam-prepare__desc">开始测评前，请确认摄像头和麦克风正常工作</p>
+    <a-button v-if="examMode !== 'fullExam' && examStore.answerMode !== 'text'" @click="useTextAnswer">不方便录音？改用文字作答</a-button>
+    <a-alert v-if="examStore.answerMode === 'text'" type="info" message="文字作答无需麦克风、摄像头或语音识别。" />
     <a-alert
       v-if="asrUnavailable"
       class="exam-prepare__asr-alert"
@@ -34,7 +36,7 @@
       :message="asrStatusText"
     />
 
-    <a-steps :current="currentStep" direction="vertical" class="exam-prepare__steps">
+    <a-steps v-if="examStore.answerMode !== 'text'" :current="currentStep" direction="vertical" class="exam-prepare__steps">
       <a-step title="设备权限检测" :status="stepStatus(0)">
         <template #description>
           <div v-if="currentStep === 0 && !permissionError">
@@ -96,7 +98,7 @@
               <span class="mode-label">专项练习</span>
               <span class="mode-desc">适合专项训练和即时复盘</span>
             </a-radio>
-            <a-radio value="fullExam" class="mode-radio">
+            <a-radio value="fullExam" class="mode-radio" :disabled="examStore.answerMode === 'text'">
               <span class="mode-label">全真模拟</span>
               <span class="mode-desc">按真题套卷连续作答，保留真实题序和考试节奏</span>
             </a-radio>
@@ -217,8 +219,8 @@
           </div>
         </div>
       </div>
-      <a-button type="primary" size="large" block :loading="enteringExam" :disabled="enteringExam || asrUnavailable" @click="enterExam" style="margin-top: 16px">
-        {{ asrUnavailable ? '语音服务未就绪' : examMode === 'fullExam' ? '开始全真模拟' : '进入考场' }}
+      <a-button type="primary" size="large" block :loading="enteringExam" :disabled="enteringExam || (asrUnavailable && examStore.answerMode !== 'text')" @click="enterExam" style="margin-top: 16px">
+        {{ asrUnavailable && examStore.answerMode !== 'text' ? '语音服务未就绪' : examMode === 'fullExam' ? '开始全真模拟' : '进入考场' }}
       </a-button>
     </div>
     </template>
@@ -653,6 +655,7 @@ async function ensureScoringReadyQuestions(questions, options = {}) {
 }
 
 onMounted(() => {
+  examStore.answerMode = 'voice'
   userStore.loadUserInfo().catch(() => null)
   refreshFullExamSuites().catch(() => null)
   loadAsrStatus().catch(() => null)
@@ -674,6 +677,10 @@ async function doPermissionCheck() {
   currentStep.value = 0
   permissionError.value = ''
   const permissionStream = await checkBoth({ keepStream: true })
+  if (examStore.answerMode === 'text') {
+    permissionStream?.getTracks().forEach(track => track.stop())
+    return
+  }
   if (permissionStream) {
     videoEnabled.value = true
     currentStep.value = 1
@@ -749,6 +756,14 @@ function retryTest() {
   currentStep.value = 1
 }
 
+function useTextAnswer() {
+  examStore.answerMode = 'text'
+  examMode.value = 'free'
+  videoEnabled.value = false
+  recorder.destroyStream()
+  allReady.value = true
+}
+
 function confirmDevice() {
   allReady.value = true
   examStore.setDeviceReady(true)
@@ -758,7 +773,7 @@ async function enterExam() {
   if (enteringExam.value) return
 
   await loadAsrStatus().catch(() => null)
-  if (asrUnavailable.value) {
+  if (asrUnavailable.value && examStore.answerMode !== 'text') {
     message.warning('语音转写服务未就绪，请稍后重试。')
     return
   }
@@ -870,7 +885,7 @@ async function enterExam() {
       return
     }
 
-    await examStore.initExam(questions, false)
+    await examStore.initExam(questions, false, ['training', 'targeted'].includes(source.value) ? source.value : isTrialEntry.value ? 'trial' : 'free')
     router.push('/exam/room')
   } catch (error) {
     message.error(error?.normalizedMessage || error?.message || '进入考场失败，请稍后重试。')

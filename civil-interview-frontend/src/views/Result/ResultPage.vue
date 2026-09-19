@@ -205,7 +205,8 @@ PC 评分结果页，负责展示总分、能力维度、扣分分析、文字�
           <div class="result-page__secondary-head">
             <div>
               <h4 class="result-page__secondary-title">维度表现</h4>
-              <p class="result-page__secondary-hint">辅助参考，主分数以上方本题得分为准</p>
+              <p class="result-page__secondary-hint">能力条采用内容百分制权重；本题按题目赋分展示，仪态分单列，整套汇总仅计一次。</p>
+              <p class="result-page__secondary-hint">评分依据：题目采分点、题库参考答案与实际作答。等级按得分率：A ＞85%，B ≥75%，C ≥60%，其余为 D。AI 结果仅供训练参考，不代表官方考试成绩。</p>
             </div>
           </div>
           <RadarChart :dimensions="result.dimensions" size="small" />

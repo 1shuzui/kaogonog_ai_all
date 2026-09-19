@@ -38,7 +38,13 @@
       </div>
     </div>
 
+    <div v-if="examStore.answerMode === 'text'" class="card" style="width: min(90%, 760px); margin: 12px auto; color: #172033">
+      <h3>文字作答</h3>
+      <a-textarea v-model:value="textAnswer" :maxlength="5000" show-count :auto-size="{ minRows: 4, maxRows: 10 }" :disabled="examStore.status === 'completed'" placeholder="请输入答案；与录音转写使用相同的外部模型评分。" />
+      <a-button v-if="examStore.status !== 'completed'" type="primary" :disabled="!textAnswer.trim()" @click="onSubmit">提交文字答案</a-button>
+    </div>
     <div
+      v-if="examStore.answerMode !== 'text'"
       class="exam-room__camera"
       :class="{
         'is-pip': examStore.status === 'answering' || examStore.status === 'submitting' || examStore.status === 'completed',
@@ -164,6 +170,7 @@ const recorderDuration = recorder.duration
 const countdown = useCountdown(0)
 
 const elapsed = ref(0)
+const textAnswer = ref('')
 const finishRequested = ref(false)
 const exitingExam = ref(false)
 const cameraWindow = ref({
@@ -199,7 +206,7 @@ onMounted(async () => {
   const storedStream = examStore.consumeStream()
   if (storedStream) {
     recorder.setStream(storedStream)
-  } else {
+  } else if (examStore.answerMode !== 'text') {
     await recorder.initStream({ videoEnabled: examStore.videoEnabled })
   }
   if (examStore.fullExamMode && examStore.examStartTime) {
@@ -236,7 +243,7 @@ function onStartPrep() {
 function onStartAnswer() {
   countdown.stop()
   examStore.startAnswering()
-  recorder.startRecording()
+  if (examStore.answerMode !== 'text') recorder.startRecording()
   const q = examStore.currentQuestion
   countdown.reset(q.answerTime || 180)
   countdown.onFinish(() => {
@@ -250,8 +257,8 @@ async function onSubmit() {
   countdown.stop()
   try {
     const usageSeconds = Math.max(1, Math.ceil(Number(recorderDuration.value) || 0))
-    const blob = await recorder.stopRecording()
-    const answer = await examStore.submitAnswer(blob)
+    const blob = examStore.answerMode === 'text' ? null : await recorder.stopRecording()
+    const answer = await examStore.submitAnswer(blob, textAnswer.value)
     await syncUsage(answer, usageSeconds)
     if (!examStore.isLastQuestion) {
       message.success('本题已提交，后台评分中。')
@@ -263,6 +270,11 @@ async function onSubmit() {
 }
 
 async function submitCurrentAnswerForExit() {
+  if (examStore.answerMode === 'text' && examStore.status !== EXAM_STATUS.COMPLETED && textAnswer.value.trim()) {
+    const answer = await examStore.submitAnswer(null, textAnswer.value)
+    await syncUsage(answer, 1)
+    return answer
+  }
   if (examStore.status !== EXAM_STATUS.ANSWERING) return null
   countdown.stop()
   const usageSeconds = Math.max(1, Math.ceil(Number(recorderDuration.value) || 0))
@@ -300,6 +312,7 @@ async function syncUsage(answer, usageSeconds) {
 }
 
 function onNext() {
+  textAnswer.value = ''
   examStore.nextQuestion()
   countdown.reset(0)
   if (examStore.fullExamMode) {

@@ -48,6 +48,13 @@
         </scroll-view>
       </view>
 
+      <view class="card">
+        <text class="section-title">评分口径</text>
+        <text class="plain-text">依据本题采分点、题库参考答案与实际作答评估；能力条采用内容百分制权重，不与题目赋分直接相加。历史总评换算为百分制，整套仪态分仅计一次。</text>
+        <text v-if="result.contentScore != null" class="plain-text">内容 {{ result.contentScore }} / {{ result.contentMaxScore || (result.maxScore - result.appearanceScoreMax) }}；仪态 {{ result.appearanceScore }} / {{ result.appearanceScoreMax }}。{{ result.scoreCalculationNote }}</text>
+        <text class="plain-text">等级按得分率：A ＞85%，B ≥75%，C ≥60%，其余为 D。AI 结果仅供训练参考，不代表官方考试成绩。</text>
+      </view>
+
       <view class="card local-fit-card">
         <view class="section-head">
           <text class="section-title">本土岗位贴合度</text>
@@ -66,6 +73,11 @@
           <text class="section-title">题目</text>
         </view>
         <text class="plain-text">{{ questionStem }}</text>
+      </view>
+
+      <view v-if="answerVideoUrl" class="card">
+        <text class="section-title">作答录像回放</text>
+        <video :src="answerVideoUrl" controls style="width: 100%;" />
       </view>
 
       <view v-if="answerTimingView" class="card timing-card">
@@ -242,6 +254,7 @@ import DimensionBars from '../../components/DimensionBars.vue'
 import EmptyState from '../../components/EmptyState.vue'
 import ScoreRing from '../../components/ScoreRing.vue'
 import { getHistoryDetail } from '../../api/history'
+import { API_BASE } from '../../api/request'
 import { evaluateAnswer, getScoringResult } from '../../api/scoring'
 import { getQuestionById } from '../../api/questionBank'
 import { useExamStore } from '../../stores/exam'
@@ -274,6 +287,14 @@ const retryingScoring = ref(false)
 const grade = computed(() => getGrade(result.value?.totalScore || 0, result.value?.maxScore || 100))
 const localFitProvinceName = computed(() => getProvinceName(questionProvince.value || 'national'))
 const currentAnswer = computed(() => answerList.value[activeAnswerIndex.value] || null)
+const answerVideoUrl = computed(() => {
+  const answer = currentAnswer.value || {}
+  const media = result.value?.mediaRecord || answer.scoringResult?.mediaRecord || {}
+  const type = String(media.mediaType || answer.mediaType || '')
+  if (!type.includes('video')) return ''
+  const url = media.fileUrl || answer.mediaUrl || answer.filePath || ''
+  return url.startsWith('/uploads/') ? `${API_BASE}${url}` : url
+})
 const currentQuestionLabel = computed(() => (
   answerList.value.length > 1
     ? `第 ${activeAnswerIndex.value + 1} 题${currentAnswer.value?.isPlaceholder ? ' · 未作答' : ''}`

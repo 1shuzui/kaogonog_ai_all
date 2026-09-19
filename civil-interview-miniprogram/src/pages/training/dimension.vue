@@ -59,12 +59,16 @@
       </LightSelector>
     </view>
 
+    <picker :range="[1, 3, 5]" :value="[1, 3, 5].indexOf(questionCount)" @change="questionCount = [1, 3, 5][Number($event.detail.value)]">
+      <view class="card">本轮题量：{{ questionCount }} 题（点击切换）</view>
+    </picker>
     <button class="primary-button" :loading="trainingStore.generating" @tap="generate">生成训练题</button>
 
     <view v-if="!readonlyMode && trainingStore.generatedQuestions.length" class="generated-list">
       <view class="section-head generated-list__head">
         <text class="section-title">训练题</text>
       </view>
+      <button class="primary-button" @tap="startQuestion(null)">连续练习这 {{ trainingStore.generatedQuestions.length }} 题</button>
       <QuestionCard
         v-for="question in trainingStore.generatedQuestions"
         :key="question.id"
@@ -97,6 +101,7 @@ const trainingStore = useTrainingStore()
 const examStore = useExamStore()
 const userStore = useUserStore()
 const categoryKey = ref('analysis')
+const questionCount = ref(3)
 const category = computed(() => getTrainingCategory(categoryKey.value))
 
 // Targeted filter state
@@ -212,7 +217,7 @@ async function generate() {
       if (dir.province) extraFilters.province = dir.province
     }
     const province = extraFilters.province || userStore.selectedProvince || 'national'
-    const questions = await trainingStore.generate(category.value.requestDimension, 3, province, extraFilters)
+    const questions = await trainingStore.generate(category.value.requestDimension, questionCount.value, province, extraFilters)
     if (!questions.length) toast('暂未生成题目')
   } catch (error) {
     toast(error?.message || '生成失败')
@@ -227,11 +232,12 @@ async function startQuestion(question) {
   showLoading('创建考场')
   try {
     const prefs = userStore.preferences || {}
-    await examStore.startFromQuestions([{
-      ...question,
-      prepTime: Number(prefs.defaultPrepTime || question?.prepTime || 90),
-      answerTime: Number(prefs.defaultAnswerTime || question?.answerTime || 180)
-    }], `training:${categoryKey.value}`)
+    const questions = question ? [question] : trainingStore.generatedQuestions
+    await examStore.startFromQuestions(questions.map(item => ({
+      ...item,
+      prepTime: Number(prefs.defaultPrepTime || item.prepTime || 90),
+      answerTime: Number(prefs.defaultAnswerTime || item.answerTime || 180)
+    })), `training:${categoryKey.value}`)
     uni.navigateTo({ url: '/pages/exam/room' })
   } catch (error) {
     toast(error?.message || '无法开始练习')

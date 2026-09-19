@@ -11,11 +11,11 @@
  */
 import { request, uploadFile } from './request'
 
-export function startExam(questionIds = []) {
+export function startExam(questionIds = [], practiceMode = 'free') {
   return request({
     url: '/exam/start',
     method: 'POST',
-    data: { questionIds }
+    data: { questionIds, practiceMode }
   })
 }
 

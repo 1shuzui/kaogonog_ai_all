@@ -187,14 +187,20 @@
           <view class="card">
             <view class="section-head">
               <text class="section-title">作答区</text>
-              <text class="muted">{{ useVideoMode ? '录像 + 录音' : '仅录音' }}</text>
+              <text class="muted">{{ examStore.mediaMode === 'text' ? '文字作答' : useVideoMode ? '录像 + 录音' : '仅录音' }}</text>
             </view>
 
             <view v-if="finishingExam" class="analysis-status motion-shimmer">
               <text>{{ scoringProgressText }}</text>
             </view>
 
-            <view class="record-panel">
+            <view class="section-head">
+              <text class="muted">{{ examStore.mediaMode === 'text' ? '输入答案后点击提交' : '不方便录音时，也可输入文字提交' }}</text>
+              <text class="muted">{{ textAnswer.length }}/5000</text>
+            </view>
+            <textarea v-model="textAnswer" :maxlength="5000" :disabled="examStore.loading || captureActive" auto-height placeholder="请输入你的答案；文字与录音选择一种提交。" style="width: 100%; min-height: 140rpx; font-size: 28rpx; margin-bottom: 24rpx;" />
+
+            <view v-if="examStore.mediaMode !== 'text'" class="record-panel">
               <view class="record-panel__status" :class="{ 'record-panel__status--active': captureActive }">
                 <text>{{ captureStatusText }}</text>
                 <text v-if="captureReady" class="record-panel__ready">已记录</text>
@@ -352,6 +358,7 @@ const questionBookScrollPadding = computed(() => (
     : 'calc(338rpx + env(safe-area-inset-top))'
 ))
 const isFullExamSource = computed(() => examStore.source === 'fullExam')
+const textAnswer = ref('')
 const roomNavigationTitle = computed(() => (isFullExamSource.value ? '全真考场' : '练习作答'))
 const isJiangsuFullExamTiming = computed(() => isFullExamSource.value && examStore.questions.some((item) => (
   item?.fullExamTimingMode === JIANGSU_FULL_EXAM_TIMING_MODE
@@ -471,6 +478,7 @@ onBeforeUnmount(() => {
 })
 
 watch(() => examStore.currentIndex, (index) => {
+  textAnswer.value = ''
   questionBookIndex.value = Math.max(0, Number(index) || 0)
 })
 
@@ -1171,7 +1179,11 @@ async function submitAnswer() {
   const media = currentMedia.value
   let skipConfirmed = false
   let skipReason = ''
-  if (!media.filePath) {
+  if (media.filePath && textAnswer.value.trim()) {
+    toast('请只保留文字或录音中的一种答案后提交')
+    return
+  }
+  if (!media.filePath && !textAnswer.value.trim()) {
     skipConfirmed = await confirmSkipCurrentQuestion()
     if (!skipConfirmed) return
     skipReason = 'user_confirmed_skip'
@@ -1183,6 +1195,7 @@ async function submitAnswer() {
   try {
     const answer = await examStore.submitCurrentAnswer({
       filePath: media.filePath,
+      transcript: textAnswer.value,
       mediaType: media.mediaType || 'audio',
       audioFilePath: recordedFile.value || '',
       skipConfirmed,
@@ -1211,10 +1224,12 @@ async function submitAnswer() {
 async function submitCurrentAnswerForExit() {
   await stopActiveCaptureAsync()
   const media = currentMedia.value
-  if (!media.filePath) return null
+  if (!media.filePath && !textAnswer.value.trim()) return null
+  if (media.filePath && textAnswer.value.trim()) throw new Error('请先选择保留文字或录音，再提交退出')
 
   const answer = await examStore.submitCurrentAnswer({
     filePath: media.filePath,
+    transcript: textAnswer.value,
     mediaType: media.mediaType || 'audio',
     audioFilePath: recordedFile.value || '',
     timingMeta: buildTimingMeta()

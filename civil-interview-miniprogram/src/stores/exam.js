@@ -163,7 +163,8 @@ export const useExamStore = defineStore('exam', {
     async startFromQuestions(questions = [], source = '') {
       const list = Array.isArray(questions) ? questions.filter(Boolean) : []
       if (!list.length) throw new Error('暂无可用题目')
-      const response = await startExam(list.map((item) => item.id))
+      const practiceMode = source.startsWith('training') ? 'training' : ['fullExam', 'targeted', 'trial'].includes(source) ? source : 'free'
+      const response = await startExam(list.map((item) => item.id), practiceMode)
       this.examId = response.examId
       this.questions = list
       this.currentIndex = 0
@@ -177,6 +178,7 @@ export const useExamStore = defineStore('exam', {
 
     async submitCurrentAnswer({
       filePath = '',
+      transcript = '',
       mediaType = 'audio',
       audioFilePath = '',
       skipConfirmed = false,
@@ -190,7 +192,9 @@ export const useExamStore = defineStore('exam', {
 
       this.loading = true
       try {
-        const hasAnswerPayload = !!filePath
+        transcript = String(transcript || '').trim()
+        if (transcript.length > 5000) throw new Error('文字作答最多 5000 字')
+        const hasAnswerPayload = !!filePath || !!transcript
 
         if (!hasAnswerPayload) {
           if (!skipConfirmed) throw new Error('当前没有录音或录像，请先录制后提交')
@@ -243,7 +247,7 @@ export const useExamStore = defineStore('exam', {
           mediaType,
           audioFilePath,
           answerTiming: timingMeta,
-          transcript: previousAnswer?.transcript || '',
+          transcript: transcript || previousAnswer?.transcript || '',
           asrMeta: previousAnswer?.asrMeta || {},
           scoringResult: null,
           submittedAt: new Date().toISOString(),
@@ -414,7 +418,7 @@ export const useExamStore = defineStore('exam', {
     },
 
     setMediaMode(mode) {
-      this.mediaMode = mode === 'video' ? 'video' : 'audio'
+      this.mediaMode = ['video', 'text'].includes(mode) ? mode : 'audio'
     }
   }
 })
