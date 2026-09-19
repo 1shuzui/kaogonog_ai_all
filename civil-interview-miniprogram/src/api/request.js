@@ -88,6 +88,15 @@ function resolveApiBase() {
 
 export const API_BASE = resolveApiBase()
 let unauthorizedRedirecting = false
+let expireSession = () => {
+  uni.removeStorageSync(TOKEN_STORAGE_KEY)
+  uni.removeStorageSync(USERNAME_STORAGE_KEY)
+}
+
+// 应用入口注入状态清理，避免请求层与用户 store 形成循环依赖。
+export function setSessionExpiredHandler(handler) {
+  expireSession = handler
+}
 
 function nowMs() {
   return Date.now()
@@ -119,12 +128,11 @@ function normalizeErrorMessage(payload, fallback = '请求失败') {
   return detail ? String(detail) : fallback
 }
 
-function handleUnauthorized() {
-  uni.removeStorageSync(TOKEN_STORAGE_KEY)
-  uni.removeStorageSync(USERNAME_STORAGE_KEY)
+function handleUnauthorized(message) {
+  expireSession()
   if (unauthorizedRedirecting) return
   unauthorizedRedirecting = true
-  toast('登录已过期，请重新登录')
+  toast(message || '登录已过期，请重新登录')
   setTimeout(() => {
     uni.reLaunch({
       url: '/pages/login/index',
@@ -142,7 +150,7 @@ function normalizeNetworkError(err) {
     || rawMessage.includes('request:fail')
     || rawMessage.includes('timeout')
   ) {
-    return `后端服务连接失败：${API_BASE || '(未配置 API 地址)'}。请检查 VITE_API_BASE_MP_WEIXIN / VITE_API_BASE_H5 配置，或清理微信开发者工具缓存后重新导入小程序。`
+    return rawMessage.includes('timeout') ? '请求超时，请稍后重试' : '网络连接失败，请检查网络后重试'
   }
   return rawMessage || '网络请求失败，请检查后端服务'
 }
@@ -194,12 +202,14 @@ export function request(options = {}) {
     data = {},
     header = {},
     timeout = 30000,
-    skipErrorHandler = false
+    skipErrorHandler = false,
+    authRequest = false
   } = options
   const requestId = header['X-Request-ID'] || header['x-request-id'] || createRequestId()
   const requestUrl = joinUrl(url)
   const requestMethod = String(method || 'GET').toUpperCase()
   const startedAt = nowMs()
+  const sessionToken = uni.getStorageSync(TOKEN_STORAGE_KEY)
   logRequestStarted({ requestId, method: requestMethod, url: requestUrl })
 
   return new Promise((resolve, reject) => {
@@ -214,6 +224,10 @@ export function request(options = {}) {
         ...header
       },
       success(res) {
+        if (!authRequest && sessionToken !== uni.getStorageSync(TOKEN_STORAGE_KEY)) {
+          reject(Object.assign(new Error('账号已切换，请刷新当前页面'), { code: 'STALE_SESSION' }))
+          return
+        }
         const status = Number(res.statusCode || 0)
         const durationMs = nowMs() - startedAt
         if (status >= 200 && status < 300) {
@@ -241,8 +255,8 @@ export function request(options = {}) {
           error
         })
 
-        if (status === 401) {
-          handleUnauthorized()
+        if (status === 401 && !authRequest) {
+          handleUnauthorized(message)
         } else if (!skipErrorHandler) {
           toast(message)
         }
@@ -277,6 +291,7 @@ export function uploadFile(options = {}) {
   const requestId = header['X-Request-ID'] || header['x-request-id'] || createRequestId()
   const requestUrl = joinUrl(url)
   const startedAt = nowMs()
+  const sessionToken = uni.getStorageSync(TOKEN_STORAGE_KEY)
   logRequestStarted({ requestId, method: 'POST', url: requestUrl, upload: true })
 
   return new Promise((resolve, reject) => {
@@ -292,6 +307,10 @@ export function uploadFile(options = {}) {
         ...header
       },
       success(res) {
+        if (sessionToken !== uni.getStorageSync(TOKEN_STORAGE_KEY)) {
+          reject(Object.assign(new Error('账号已切换，请刷新当前页面'), { code: 'STALE_SESSION' }))
+          return
+        }
         const status = Number(res.statusCode || 0)
         const durationMs = nowMs() - startedAt
         let payload = res.data
@@ -328,7 +347,7 @@ export function uploadFile(options = {}) {
           upload: true
         })
         if (status === 401) {
-          handleUnauthorized()
+          handleUnauthorized(message)
         } else if (!skipErrorHandler) {
           toast(message)
         }

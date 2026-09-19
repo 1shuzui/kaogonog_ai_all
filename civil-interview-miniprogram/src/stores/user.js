@@ -13,6 +13,9 @@ import { bindWechatMiniProgram, bindWechatMiniProgramInvite, login as loginApi, 
 import { getProvinces, getUserInfo, updatePreferences, updateUserProfile } from '../api/user'
 import { useBillingStore } from './billing'
 import { useFavoritesStore } from './favorites'
+import { useExamStore } from './exam'
+import { useHistoryStore } from './history'
+import { useTrainingStore } from './training'
 import {
   DEFAULT_PREFERENCES,
   PREFERENCES_STORAGE_KEY,
@@ -24,9 +27,14 @@ import {
 } from '../utils/constants'
 import { logger } from '../utils/logger'
 
+function scopedPreferenceKey(key) {
+  if (![PREFERENCES_STORAGE_KEY, PROVINCE_STORAGE_KEY].includes(key)) return key
+  return `${key}:${uni.getStorageSync(USERNAME_STORAGE_KEY) || 'guest'}`
+}
+
 function readStorage(key, fallback = '') {
   try {
-    const value = uni.getStorageSync(key)
+    const value = uni.getStorageSync(scopedPreferenceKey(key))
     return value === '' || value === undefined ? fallback : value
   } catch {
     return fallback
@@ -35,7 +43,7 @@ function readStorage(key, fallback = '') {
 
 function readJsonStorage(key, fallback) {
   try {
-    const value = uni.getStorageSync(key)
+    const value = uni.getStorageSync(scopedPreferenceKey(key))
     if (!value) return fallback
     return typeof value === 'string' ? JSON.parse(value) : value
   } catch {
@@ -45,7 +53,7 @@ function readJsonStorage(key, fallback) {
 
 function safeSetStorage(key, value) {
   try {
-    uni.setStorageSync(key, value)
+    uni.setStorageSync(scopedPreferenceKey(key), value)
   } catch (error) {
     logger.warn('Local storage write failed', {
       event: 'mini.storage.write_failed',
@@ -135,25 +143,37 @@ export const useUserStore = defineStore('user', {
   },
 
   actions: {
+    resetAccountData() {
+      useExamStore().reset()
+      useHistoryStore().$reset()
+      useTrainingStore().$reset()
+      useBillingStore().$reset()
+      useFavoritesStore().reloadForCurrentUser()
+      this.selectedProvince = normalizeProvinceCode(readStorage(PROVINCE_STORAGE_KEY, 'national'))
+      this.preferences = normalizePreferences(readJsonStorage(PREFERENCES_STORAGE_KEY, DEFAULT_PREFERENCES))
+    },
     async login(username, password) {
       const response = await loginApi(username, password)
+      this.logout()
+      username = response.username || username.trim()
       this.token = response.access_token
       this.username = username
       uni.setStorageSync(TOKEN_STORAGE_KEY, response.access_token)
       uni.setStorageSync(USERNAME_STORAGE_KEY, username)
-      useFavoritesStore().reloadForCurrentUser()
-      await this.loadUserInfo().catch(() => null)
+      this.resetAccountData()
+      await this.loadUserInfo()
       return response
     },
 
     async loginWithWechat(code, agreedTermsVersion, inviteCode = '') {
       const response = await loginWithWechatApi(code, agreedTermsVersion, inviteCode)
+      this.logout()
       this.token = response.access_token
       this.username = response.username || ''
       uni.setStorageSync(TOKEN_STORAGE_KEY, response.access_token)
       if (response.username) uni.setStorageSync(USERNAME_STORAGE_KEY, response.username)
-      useFavoritesStore().reloadForCurrentUser()
-      await this.loadUserInfo().catch(() => null)
+      this.resetAccountData()
+      await this.loadUserInfo()
       return response
     },
 
@@ -196,7 +216,7 @@ export const useUserStore = defineStore('user', {
       }
       uni.removeStorageSync(TOKEN_STORAGE_KEY)
       uni.removeStorageSync(USERNAME_STORAGE_KEY)
-      useFavoritesStore().reloadForCurrentUser()
+      this.resetAccountData()
     },
 
     async loadUserInfo() {

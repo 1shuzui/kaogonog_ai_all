@@ -13,6 +13,9 @@ import { getUserInfo, updatePreferences, updateUserProfile, getProvinces } from 
 import { login as loginApi, register as registerApi } from '@/api/auth'
 import { useBillingStore } from '@/stores/billing'
 import { useFavoritesStore } from '@/stores/favorites'
+import { useExamStore } from '@/stores/exam'
+import { useHistoryStore } from '@/stores/history'
+import { useTrainingStore } from '@/stores/training'
 
 const PREFERENCES_STORAGE_KEY = 'civil_user_preferences'
 const PROVINCE_STORAGE_KEY = 'civil_selected_province'
@@ -91,7 +94,7 @@ function buildScopedStorageKey(key, username = '') {
 function loadPreferencesForUser(username = '') {
   try {
     const scopedKey = buildScopedStorageKey(PREFERENCES_STORAGE_KEY, username)
-    const raw = localStorage.getItem(scopedKey) || localStorage.getItem(PREFERENCES_STORAGE_KEY)
+    const raw = localStorage.getItem(scopedKey)
     return raw ? normalizePreferences(JSON.parse(raw)) : { ...DEFAULT_PREFERENCES }
   } catch {
     return { ...DEFAULT_PREFERENCES }
@@ -112,7 +115,6 @@ function savePreferencesToStorage(preferences, username = '') {
 function loadProvinceForUser(username = '') {
   try {
     return normalizeProvinceCode(localStorage.getItem(buildScopedStorageKey(PROVINCE_STORAGE_KEY, username))
-      || localStorage.getItem(PROVINCE_STORAGE_KEY)
       || 'national')
   } catch {
     return 'national'
@@ -133,7 +135,7 @@ function saveProvinceToStorage(code, username = '') {
 function loadProvinceConfirmedForUser(username = '') {
   try {
     const scopedKey = buildScopedStorageKey(PROVINCE_CONFIRMED_STORAGE_KEY, username)
-    const raw = localStorage.getItem(scopedKey) ?? localStorage.getItem(PROVINCE_CONFIRMED_STORAGE_KEY)
+    const raw = localStorage.getItem(scopedKey)
     return raw === '1' || raw === 'true'
   } catch {
     return false
@@ -218,8 +220,19 @@ export const useUserStore = defineStore('user', {
   },
 
   actions: {
+    resetAccountData() {
+      const exam = useExamStore()
+      exam.mediaStream?.getTracks().forEach(track => track.stop())
+      exam.$reset()
+      useHistoryStore().$reset()
+      useTrainingStore().$reset()
+      useBillingStore().$reset()
+      useFavoritesStore().reloadForCurrentUser()
+    },
     async login(username, password) {
       const res = await loginApi(username, password)
+      this.logout()
+      username = res.username || username.trim()
       this.token = res.access_token
       this.username = username
       localStorage.setItem(TOKEN_STORAGE_KEY, res.access_token)
@@ -227,7 +240,7 @@ export const useUserStore = defineStore('user', {
       this.selectedProvince = loadProvinceForUser(username)
       this.provinceConfirmed = loadProvinceConfirmedForUser(username)
       this.preferences = loadPreferencesForUser(username)
-      useFavoritesStore().reloadForCurrentUser()
+      this.resetAccountData()
 
       try {
         await this.loadUserInfo()
@@ -284,6 +297,7 @@ export const useUserStore = defineStore('user', {
       this.preferences = loadPreferencesForUser()
       useFavoritesStore().reloadForCurrentUser()
       billingStore.resetToTrial()
+      this.resetAccountData()
     },
 
     async register(form) {

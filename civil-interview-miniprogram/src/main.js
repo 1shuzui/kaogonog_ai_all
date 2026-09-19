@@ -11,10 +11,14 @@
 import { createSSRApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
+import { useUserStore } from './stores/user'
+import { setSessionExpiredHandler } from './api/request'
 
 export function createApp() {
   const app = createSSRApp(App)
-  app.use(createPinia())
+  const pinia = createPinia()
+  app.use(pinia)
+  setSessionExpiredHandler(() => useUserStore(pinia).logout())
   return {
     app
   }

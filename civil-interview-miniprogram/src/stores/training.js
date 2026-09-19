@@ -11,10 +11,11 @@
 import { defineStore } from 'pinia'
 import { generateTrainingQuestions } from '../api/training'
 import { TRAINING_PROGRESS_STORAGE_KEY } from '../utils/constants'
+const storageKey = () => `${TRAINING_PROGRESS_STORAGE_KEY}:${uni.getStorageSync('username') || 'guest'}`
 
 function loadProgress() {
   try {
-    const raw = uni.getStorageSync(TRAINING_PROGRESS_STORAGE_KEY)
+    const raw = uni.getStorageSync(storageKey())
     return raw ? JSON.parse(raw) : {}
   } catch {
     return {}
@@ -22,7 +23,7 @@ function loadProgress() {
 }
 
 function saveProgress(progress) {
-  uni.setStorageSync(TRAINING_PROGRESS_STORAGE_KEY, JSON.stringify(progress))
+  uni.setStorageSync(storageKey(), JSON.stringify(progress))
 }
 
 function defaultProgress() {

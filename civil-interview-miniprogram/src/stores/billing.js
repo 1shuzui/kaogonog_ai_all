@@ -10,6 +10,7 @@
  */
 import { defineStore } from 'pinia'
 import { BILLING_STORAGE_KEY } from '../utils/constants'
+const storageKey = () => `${BILLING_STORAGE_KEY}:${uni.getStorageSync('username') || 'guest'}`
 
 const PLANS = {
   trial: {
@@ -78,7 +79,7 @@ function normalizeState(raw = {}) {
 
 function loadState() {
   try {
-    const raw = uni.getStorageSync(BILLING_STORAGE_KEY)
+    const raw = uni.getStorageSync(storageKey())
     return normalizeState(raw ? JSON.parse(raw) : {})
   } catch {
     return createDefaultState()
@@ -125,7 +126,7 @@ export const useBillingStore = defineStore('billing', {
       this.totalMinutes = Math.max(0, Number(billing.totalMinutes || 0))
       this.monthlyExpireAt = Math.max(0, Number(billing.monthlyExpireAt || 0))
       this.orderHistory = Array.isArray(billing.orderHistory) ? billing.orderHistory : this.orderHistory || []
-      uni.setStorageSync(BILLING_STORAGE_KEY, JSON.stringify(this.$state))
+      uni.setStorageSync(storageKey(), JSON.stringify(this.$state))
     },
 
   }

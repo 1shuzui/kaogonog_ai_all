@@ -16,6 +16,14 @@ import { createRequestId, logger } from '@/utils/logger'
 
 const TOKEN_STORAGE_KEY = 'token'
 const USERNAME_STORAGE_KEY = 'username'
+let expireSession = () => {
+  localStorage.removeItem(TOKEN_STORAGE_KEY)
+  localStorage.removeItem(USERNAME_STORAGE_KEY)
+}
+
+export function setSessionExpiredHandler(handler) {
+  expireSession = handler
+}
 
 const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE || 'https://xzqianmianyuzhoukeji.com/api',
@@ -54,7 +62,7 @@ function logApiCompleted(config = {}, statusCode = 0, error = null) {
   logger.debug('API request completed', metadata)
 }
 
-export function normalizeErrorMessage(payload, fallback = 'Request failed') {
+export function normalizeErrorMessage(payload, fallback = '请求失败') {
   const detail = payload?.detail ?? payload?.message ?? payload
 
   if (Array.isArray(detail)) {
@@ -94,6 +102,7 @@ http.interceptors.request.use((config) => {
     started_at: nowMs()
   }
   const token = localStorage.getItem(TOKEN_STORAGE_KEY)
+  config.metadata.session_token = token
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -109,6 +118,9 @@ http.interceptors.request.use((config) => {
 
 http.interceptors.response.use(
   (res) => {
+    if (!res.config.authRequest && res.config.metadata?.session_token !== localStorage.getItem(TOKEN_STORAGE_KEY)) {
+      return Promise.reject(Object.assign(new Error('账号已切换，请刷新当前页面'), { code: 'STALE_SESSION' }))
+    }
     logApiCompleted(res.config, res.status)
     return res.data
   },
@@ -121,18 +133,17 @@ http.interceptors.response.use(
       ? '网络请求失败，请检查后端服务是否已启动'
       : status >= 500
         ? '服务暂时不可用，请稍后重试'
-        : err.message || 'Request failed'
+        : '请求失败，请稍后重试'
     const msg = normalizeErrorMessage(response?.data, fallbackMessage)
     err.normalizedMessage = msg
 
     if (err.response?.status === 401) {
-      if (isSilentRequest) {
+      if (config.authRequest || config.metadata?.session_token !== localStorage.getItem(TOKEN_STORAGE_KEY)) {
         return Promise.reject(err)
       }
 
-      localStorage.removeItem(TOKEN_STORAGE_KEY)
-      localStorage.removeItem(USERNAME_STORAGE_KEY)
-      message.warning('Session expired, please log in again')
+      expireSession()
+      message.warning(msg || '登录已过期，请重新登录')
       if (router.currentRoute.value.path !== '/login') {
         router.push({ path: '/login', query: { redirect: router.currentRoute.value.fullPath } })
       }

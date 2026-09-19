@@ -16,14 +16,17 @@ export async function login(username, password) {
   const params = new URLSearchParams()
   params.append('username', username)
   params.append('password', password)
+  params.append('client_type', 'web')
   return http.post('/token', params, {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    authRequest: true,
     skipErrorHandler: true
   })
 }
 
 export async function register(form) {
   return http.post('/register', form, {
+    authRequest: true,
     skipErrorHandler: true
   })
 }
@@ -36,18 +39,21 @@ export async function getWechatWebLoginUrl() {
 
 export async function requestPasswordReset(data) {
   return http.post('/password-reset/request', data, {
+    authRequest: true,
     skipErrorHandler: true
   })
 }
 
 export async function verifyPasswordReset(data) {
   return http.post('/password-reset/verify', data, {
+    authRequest: true,
     skipErrorHandler: true
   })
 }
 
 export async function confirmPasswordReset(data) {
   return http.post('/password-reset/confirm', data, {
+    authRequest: true,
     skipErrorHandler: true
   })
 }

@@ -9,7 +9,8 @@
 @return: 返回 token、账号资料、微信绑定结果或密码重置状态。
 @raises HTTPException: 参数校验、鉴权失败或服务层业务错误会按 FastAPI 语义返回给前端。
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Form
+from typing import Literal
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -44,7 +45,7 @@ router = APIRouter(tags=["auth"])
 
 
 @router.post("/token")
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db), client_type: Literal["web", "wechat"] = Form("web")):
     """
     账号密码登录路由。
 
@@ -55,7 +56,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     @return: access_token、用户资料、管理员标记、权限和权益摘要。
     @raises HTTPException: 凭据错误时由服务层抛出 401。
     """
-    return login_user(db, form_data.username, form_data.password)
+    return login_user(db, form_data.username, form_data.password, client_type)
 
 
 @router.post("/register")

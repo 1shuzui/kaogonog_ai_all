@@ -77,6 +77,15 @@ class User(Base):
     entitlement_adjustments = relationship("EntitlementAdjustment", back_populates="user", cascade="all, delete-orphan")
 
 
+class UserLoginSession(Base):
+    """Two current login slots per account; stable user ID survives account completion."""
+    __tablename__ = "user_login_sessions"
+    user_id = Column(MYSQL_BIGINT, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    client_type = Column(String(16), primary_key=True)
+    session_id = Column(String(64), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
 class PasswordResetCase(Base):
     """
     当前有效的人工密码重置申请。

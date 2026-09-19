@@ -12,6 +12,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import bcrypt
+import secrets
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 import jwt
@@ -22,7 +23,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.access import build_access_context
 from app.db.session import get_db
-from app.models.entities import User
+from app.models.entities import User, UserLoginSession
 from app.schemas.common import AuthUser, TokenData
 
 # Prefer PBKDF2 for new hashes so registration/password change stays stable even
@@ -89,6 +90,23 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
 
 
+def create_login_token(db: Session, user: User, client_type: str = "web") -> str:
+    if client_type not in {"web", "wechat"}:
+        raise HTTPException(status_code=400, detail="不支持的登录客户端")
+    # Serialize login-slot updates, including the first login when no slot exists.
+    db.query(User).filter(User.id == user.id).with_for_update().one()
+    slot = db.get(UserLoginSession, (user.id, client_type))
+    session_id = secrets.token_hex(24)
+    if slot is None:
+        slot = UserLoginSession(user_id=user.id, client_type=client_type)
+        db.add(slot)
+    slot.session_id = session_id
+    slot.created_at = datetime.now(timezone.utc)
+    token = create_access_token({"sub": user.username, "sid": session_id, "client": client_type})
+    db.commit()
+    return token
+
+
 def _mark_user_active_if_due(db: Session, user: User) -> None:
     now = datetime.now(timezone.utc)
     last_active = user.last_active_at
@@ -125,7 +143,7 @@ async def get_current_user(
     """
     exc = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
+        detail="登录已失效，请重新登录",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
@@ -138,6 +156,15 @@ async def get_current_user(
     user = db.query(User).filter(User.username == username).first()
     if not user:
         raise exc
+    if user.disabled:
+        raise HTTPException(status_code=401, detail="账号已停用，请联系管理员")
+    if payload.get("sid"):
+        slot = db.get(UserLoginSession, (user.id, payload.get("client")))
+        if slot is None or not secrets.compare_digest(slot.session_id, str(payload["sid"])):
+            raise HTTPException(status_code=401, detail="账号已在其他同类客户端登录，请重新登录")
+    elif db.query(UserLoginSession).filter(UserLoginSession.user_id == user.id).first():
+        # Legacy tokens lack a client label; upgrade on the next explicit login, not on deployment.
+        raise HTTPException(status_code=401, detail="登录会话已更新，请重新登录")
     _mark_user_active_if_due(db, user)
     access_context = build_access_context(user)
     return AuthUser(

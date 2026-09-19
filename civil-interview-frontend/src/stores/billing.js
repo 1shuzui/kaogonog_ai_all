@@ -26,6 +26,7 @@ import {
 } from '@/utils/billing'
 
 const BILLING_STORAGE_KEY = 'civil_billing_state'
+const storageKey = () => `${BILLING_STORAGE_KEY}:${localStorage.getItem('username') || 'guest'}`
 
 function createDefaultState() {
   return {
@@ -94,7 +95,7 @@ function normalizeBillingState(rawState = {}) {
 
 function loadBillingState() {
   try {
-    const raw = localStorage.getItem(BILLING_STORAGE_KEY)
+    const raw = localStorage.getItem(storageKey())
     if (!raw) return createDefaultState()
     return normalizeBillingState(JSON.parse(raw))
   } catch {
@@ -104,7 +105,7 @@ function loadBillingState() {
 
 function persistBillingState(state) {
   try {
-    localStorage.setItem(BILLING_STORAGE_KEY, JSON.stringify(normalizeBillingState(state)))
+    localStorage.setItem(storageKey(), JSON.stringify(normalizeBillingState(state)))
   } catch {
     // ignore local storage failures
   }

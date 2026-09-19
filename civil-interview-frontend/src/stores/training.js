@@ -12,10 +12,11 @@ import { defineStore } from 'pinia'
 import { logger } from '@/utils/logger'
 
 const STORAGE_KEY = 'civil_training_progress'
+const storageKey = () => `${STORAGE_KEY}:${localStorage.getItem('username') || 'guest'}`
 
 function loadProgress() {
   try {
-    const data = localStorage.getItem(STORAGE_KEY)
+    const data = localStorage.getItem(storageKey())
     return data ? JSON.parse(data) : {}
   } catch {
     return {}
@@ -24,7 +25,7 @@ function loadProgress() {
 
 function saveProgress(progress) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress))
+    localStorage.setItem(storageKey(), JSON.stringify(progress))
   } catch (e) {
     logger.warn('Training storage write failed', {
       event: 'training.storage.write_failed',

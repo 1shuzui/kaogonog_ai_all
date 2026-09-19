@@ -15,7 +15,8 @@ export function login(username, password) {
   return request({
     url: '/token',
     method: 'POST',
-    data: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
+    data: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&client_type=wechat`,
+    authRequest: true,
     header: {
       'Content-Type': 'application/x-www-form-urlencoded'
     },
@@ -27,6 +28,7 @@ export function login(username, password) {
 export function register(data) {
   return request({
     url: '/register',
+    authRequest: true,
     method: 'POST',
     data,
     skipErrorHandler: true
@@ -36,6 +38,7 @@ export function register(data) {
 export function loginWithWechat(code, agreedTermsVersion, inviteCode = '') {
   return request({
     url: '/auth/wechat/miniprogram',
+    authRequest: true,
     method: 'POST',
     data: {
       code,
@@ -80,6 +83,7 @@ export function setupWechatMiniProgramAccount(data) {
 export function requestPasswordReset(data) {
   return request({
     url: '/password-reset/request',
+    authRequest: true,
     method: 'POST',
     data,
     skipErrorHandler: true
@@ -89,6 +93,7 @@ export function requestPasswordReset(data) {
 export function verifyPasswordReset(data) {
   return request({
     url: '/password-reset/verify',
+    authRequest: true,
     method: 'POST',
     data,
     skipErrorHandler: true
@@ -98,6 +103,7 @@ export function verifyPasswordReset(data) {
 export function confirmPasswordReset(data) {
   return request({
     url: '/password-reset/confirm',
+    authRequest: true,
     method: 'POST',
     data,
     skipErrorHandler: true

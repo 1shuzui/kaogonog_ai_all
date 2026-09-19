@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 
 from app.core.access import ensure_admin_access
 from app.core.config import settings
-from app.core.security import verify_password, get_password_hash, create_access_token
+from app.core.security import verify_password, get_password_hash, create_access_token, create_login_token
 from app.models.entities import (
     Exam,
     HistoryRecord,
@@ -57,16 +57,13 @@ PASSWORD_RESET_TTL_SECONDS = 15 * 60
 PASSWORD_RESET_MAX_ATTEMPTS = 8
 
 
-def _make_token(username: str) -> str:
-    return create_access_token(
-        {"sub": username},
-        expires_delta=timedelta(minutes=settings.access_token_expire_minutes),
-    )
+def _make_token(db: Session, user: User, client_type: str = "web") -> str:
+    return create_login_token(db, user, client_type)
 
 
-def _auth_response(user: User, extra: dict | None = None) -> dict:
+def _auth_response(db: Session, user: User, extra: dict | None = None, client_type: str = "web") -> dict:
     response = {
-        "access_token": _make_token(user.username),
+        "access_token": _make_token(db, user, client_type),
         "token_type": "bearer",
         "username": user.username,
     }
@@ -183,7 +180,7 @@ def _migrate_username_references(db: Session, old_username: str, new_username: s
         )
 
 
-def login_user(db: Session, username: str, password: str) -> dict:
+def login_user(db: Session, username: str, password: str, client_type: str = "web") -> dict:
     """
     使用账号密码登录并返回端侧通用认证结果。
 
@@ -196,15 +193,17 @@ def login_user(db: Session, username: str, password: str) -> dict:
     @return: 登录响应，包含 access_token、user、permissions、billing 和微信账号补全提示。
     @raises HTTPException: 用户不存在或密码不匹配时抛出 401。
     """
-    user = db.query(User).filter(User.username == username).first()
+    user = db.query(User).filter(User.username == username.strip()).first()
     if not user or not verify_password(password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="用户名或密码错误",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    if user.disabled:
+        raise HTTPException(status_code=401, detail="账号已停用，请联系管理员")
     _mark_login_success(db, user)
-    return _auth_response(user)
+    return _auth_response(db, user, client_type=client_type)
 
 
 def register_user(db: Session, data: RegisterRequest) -> dict:
@@ -219,9 +218,13 @@ def register_user(db: Session, data: RegisterRequest) -> dict:
     @return: 创建成功提示；注册后仍需要走登录接口获取 token。
     @raises HTTPException: 用户名已存在时抛出 400，数据库写入失败时抛出 500。
     """
+    import re
+    data.username = data.username.strip()
+    if not re.fullmatch(r"[A-Za-z0-9_-]{3,32}", data.username):
+        raise HTTPException(status_code=400, detail="用户名需为 3-32 位字母、数字、下划线或短横线")
     existing = db.query(User).filter(User.username == data.username).first()
     if existing:
-        raise HTTPException(status_code=400, detail="Username already registered")
+        raise HTTPException(status_code=400, detail="用户名已被注册，请直接登录或更换用户名")
     resolve_active_invite_code(db, data.inviteCode)
     user = User(
         username=data.username,
@@ -239,11 +242,11 @@ def register_user(db: Session, data: RegisterRequest) -> dict:
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=400, detail="Username already registered") from None
+        raise HTTPException(status_code=400, detail="用户名已被注册，请直接登录或更换用户名") from None
     except SQLAlchemyError:
         db.rollback()
         raise HTTPException(status_code=500, detail="注册失败，请稍后重试") from None
-    return {"success": True, "message": "User created successfully"}
+    return {"success": True, "message": "注册成功，请登录"}
 
 
 def login_wechat_miniprogram(db: Session, data: WechatMiniProgramLoginRequest) -> dict:
@@ -287,7 +290,7 @@ def login_wechat_miniprogram(db: Session, data: WechatMiniProgramLoginRequest) -
         user.agreed_terms_at = datetime.now(timezone.utc)
     _mark_login_success(db, user)
     account_login = _account_login_payload(user)
-    return _auth_response(user, {
+    return _auth_response(db, user, {
         "created": created,
         "requiresPcAccountSetup": account_login["requiresPcAccountSetup"],
         "accountBindings": {
@@ -298,7 +301,7 @@ def login_wechat_miniprogram(db: Session, data: WechatMiniProgramLoginRequest) -
         "accountLogin": account_login,
         "inviteSessionToken": invite_session_token,
         "inviteSessionExpiresIn": INVITE_SESSION_TTL_SECONDS if invite_session_token else 0,
-    })
+    }, client_type="wechat")
 
 
 def bind_wechat_miniprogram(db: Session, current_user, data: WechatMiniProgramBindRequest) -> dict:
@@ -348,7 +351,7 @@ def setup_wechat_miniprogram_account(db: Session, current_user, data: WechatMini
         if data.inviteCode:
             bind_wechat_account_setup_invite(db, user, data.inviteCode, data.inviteSessionToken)
         _mark_login_success(db, user)
-        return _auth_response(user, {"message": "当前账号已可用于 PC 登录", "requiresPcAccountSetup": False})
+        return _auth_response(db, user, {"message": "当前账号已可用于 PC 登录", "requiresPcAccountSetup": False}, client_type="wechat")
 
     target_username = str(data.username or "").strip()
     if len(target_username) < 3 or len(target_username) > 32:
@@ -365,7 +368,7 @@ def setup_wechat_miniprogram_account(db: Session, current_user, data: WechatMini
     if data.inviteCode:
         bind_wechat_account_setup_invite(db, user, data.inviteCode, data.inviteSessionToken)
     _mark_login_success(db, user)
-    return _auth_response(user, {"message": "PC 登录账号已设置", "requiresPcAccountSetup": False})
+    return _auth_response(db, user, {"message": "PC 登录账号已设置", "requiresPcAccountSetup": False}, client_type="wechat")
 
 
 def bind_wechat_miniprogram_invite(db: Session, current_user, data: WechatMiniProgramInviteBindRequest) -> dict:

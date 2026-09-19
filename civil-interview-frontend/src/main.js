@@ -15,9 +15,13 @@ import App from './App.vue'
 import router from './router'
 import './styles/global.less'
 import { logger } from './utils/logger'
+import { useUserStore } from './stores/user'
+import { setSessionExpiredHandler } from './api/index'
 
 const app = createApp(App)
-app.use(createPinia())
+const pinia = createPinia()
+app.use(pinia)
+setSessionExpiredHandler(() => useUserStore(pinia).logout())
 app.use(router)
 
 // 全局错误处理
