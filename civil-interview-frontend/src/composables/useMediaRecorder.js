@@ -101,6 +101,8 @@ export function useMediaRecorder() {
     }
 
     chunks = []
+    duration.value = 0
+    clearInterval(durationTimer)
     const mimeType = getSupportedMimeType(hasVideo.value)
     const recorderOptions = mimeType ? { mimeType } : {}
 

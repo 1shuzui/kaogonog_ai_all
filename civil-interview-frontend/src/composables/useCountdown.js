@@ -17,7 +17,8 @@ export function useCountdown(initialSeconds = 0) {
   const isFinished = ref(false)
 
   let intervalId = null
-  let lastTick = 0
+  let deadline = 0
+  let remainingMs = Math.max(0, initialSeconds * 1000)
   let finishCallback = null
 
   const progress = computed(() => {
@@ -31,24 +32,24 @@ export function useCountdown(initialSeconds = 0) {
     if (isRunning.value) return
     isRunning.value = true
     isFinished.value = false
-    lastTick = performance.now()
+    deadline = Date.now() + remainingMs
 
     intervalId = setInterval(() => {
-      const now = performance.now()
-      const elapsed = Math.floor((now - lastTick) / 1000)
-      if (elapsed >= 1) {
-        remaining.value = Math.max(0, remaining.value - elapsed)
-        lastTick = now
-        if (remaining.value <= 0) {
+      remainingMs = Math.max(0, deadline - Date.now())
+      remaining.value = Math.ceil(remainingMs / 1000)
+      if (remainingMs <= 0) {
           stop()
           isFinished.value = true
           finishCallback?.()
-        }
       }
     }, 200)
   }
 
   function stop() {
+    if (isRunning.value) {
+      remainingMs = Math.max(0, deadline - Date.now())
+      remaining.value = Math.ceil(remainingMs / 1000)
+    }
     clearInterval(intervalId)
     intervalId = null
     isRunning.value = false
@@ -64,6 +65,7 @@ export function useCountdown(initialSeconds = 0) {
       total.value = newTotal
     }
     remaining.value = total.value
+    remainingMs = Math.max(0, total.value * 1000)
     isFinished.value = false
   }
 

@@ -24,6 +24,29 @@ const PLACEHOLDER_TRANSCRIPT_MARKERS = [
 const USER_INVALID_ASR_STATUSES = new Set(['too_short', 'silent_audio', 'empty_audio', 'no_speech'])
 const SERVICE_FAILURE_ASR_STATUSES = new Set(['funasr_error', 'asr_unavailable', 'service_unavailable', 'unavailable', 'timeout', 'error'])
 const answerProcessingTasks = new Map()
+const examFinishingTasks = new Map()
+
+function currentSession() {
+  return typeof uni === 'undefined' ? null : uni.getStorageSync('token')
+}
+
+function assertSession(session) {
+  if (currentSession() !== session) {
+    throw Object.assign(new Error('账号已切换，请在原账号的练习记录中继续处理'), { code: 'STALE_SESSION' })
+  }
+}
+
+function ownsAnswer(store, answer) {
+  return store.answers.includes(answer) || store.archivedAnswers.includes(answer)
+}
+
+function assertAnswerScope(store, scope, answer = null) {
+  store.ensureAnswerSession()
+  assertSession(scope.token)
+  if (store.answerScope !== scope || (answer && !ownsAnswer(store, answer))) {
+    throw Object.assign(new Error('考试任务已清理，请重新开始'), { code: 'STALE_SESSION' })
+  }
+}
 
 function buildZeroScoreResult(options = {}) {
   const skipReason = String(options.skipReason || '').trim()
@@ -98,15 +121,19 @@ function buildAsrError(message, result = {}, fallbackType = 'asr_unavailable') {
   return error
 }
 
-async function transcribeAudioWithRetry(filePath, options = {}) {
+async function transcribeAudioWithRetry(filePath, options = {}, checkOwnership = () => {}) {
+  const session = currentSession()
   let lastResult = null
   let lastError = null
   for (let attempt = 0; attempt < 2; attempt += 1) {
+    checkOwnership()
+    assertSession(session)
     try {
       const result = await transcribeAudio(filePath, options)
       lastResult = { ...result, retryCount: attempt }
       if (!shouldRetryTranscribeResult(result)) return lastResult
     } catch (error) {
+      if (error?.code === 'STALE_SESSION') throw error
       lastError = error
     }
   }
@@ -116,19 +143,26 @@ async function transcribeAudioWithRetry(filePath, options = {}) {
   return lastResult || {}
 }
 
+async function evaluateScoredAnswer(payload) {
+  const result = await evaluateAnswer(payload)
+  const score = result?.totalScore ?? result?.score
+  // Validate before normalization can turn a missing score into an apparent zero.
+  const numeric = typeof score === 'number' || (typeof score === 'string' && score.trim() !== '')
+  if (!numeric || !Number.isFinite(Number(score))) {
+    throw Object.assign(new Error('点评未返回有效分数，作答已保留，请重试'), { code: 'INVALID_SCORING_RESULT' })
+  }
+  return result
+}
+
 async function evaluateEmptyAnswer(questionId, examId, options = {}) {
   const answerMeta = options.answerMeta || {}
   if (!examId) return buildZeroScoreResult({ ...options, ...answerMeta })
-  try {
-    return mergeAnswerMetaIntoResult(await evaluateAnswer({
+  return mergeAnswerMetaIntoResult(await evaluateScoredAnswer({
       questionId,
       transcript: '',
       examId,
       answerMeta
     }), answerMeta)
-  } catch {
-    return buildZeroScoreResult({ ...options, ...answerMeta })
-  }
 }
 
 export const useExamStore = defineStore('exam', {
@@ -137,14 +171,22 @@ export const useExamStore = defineStore('exam', {
     questions: [],
     currentIndex: 0,
     answers: [],
+    archivedAnswers: [],
+    answerScope: { token: currentSession() },
     latestResult: null,
     latestTranscript: '',
     loading: false,
     source: '',
-    mediaMode: 'audio'
+    mediaMode: 'audio',
+    finishError: ''
   }),
 
   getters: {
+    /** All non-completed answers in this login session, oldest exam first; original reactive objects. */
+    pendingAnswers(state) {
+      if (state.answerScope.token !== currentSession()) return []
+      return [...state.archivedAnswers, ...state.answers].filter((answer) => answer.processingStatus !== 'completed')
+    },
     currentQuestion(state) {
       return state.questions[state.currentIndex] || null
     },
@@ -160,11 +202,38 @@ export const useExamStore = defineStore('exam', {
   },
 
   actions: {
+    ensureAnswerSession() {
+      if (this.answerScope.token !== currentSession()) this.reset()
+    },
+
+    /** Session-local original answer objects, including completed archives until reset; no request. */
+    getAnswersForExam(examId) {
+      this.ensureAnswerSession()
+      if (!examId) return []
+      return [...this.archivedAnswers, ...this.answers]
+        .filter((answer) => answer.examId === examId)
+        .sort((a, b) => a.questionIndex - b.questionIndex)
+    },
+
     async startFromQuestions(questions = [], source = '') {
+      this.ensureAnswerSession()
+      const scope = this.answerScope
       const list = Array.isArray(questions) ? questions.filter(Boolean) : []
       if (!list.length) throw new Error('暂无可用题目')
       const practiceMode = source.startsWith('training') ? 'training' : ['fullExam', 'targeted', 'trial'].includes(source) ? source : 'free'
       const response = await startExam(list.map((item) => item.id), practiceMode)
+      assertAnswerScope(this, scope)
+      // Archive only after server success; task maps are released by their own finally handlers.
+      // Keep completed results until session reset so watched old-exam result pages never lose them.
+      const pendingExamIds = new Set(this.pendingAnswers.map((answer) => answer.examId))
+      this.archivedAnswers = [...this.archivedAnswers, ...this.answers]
+      // Retain the whole exam's media if even one answer needs processing/retry.
+      for (const answer of this.archivedAnswers) {
+        if (!pendingExamIds.has(answer.examId)) {
+          answer.filePath = ''
+          answer.audioFilePath = ''
+        }
+      }
       this.examId = response.examId
       this.questions = list
       this.currentIndex = 0
@@ -172,7 +241,7 @@ export const useExamStore = defineStore('exam', {
       this.latestResult = null
       this.latestTranscript = ''
       this.source = source
-      answerProcessingTasks.clear()
+      this.finishError = ''
       return response
     },
 
@@ -186,50 +255,25 @@ export const useExamStore = defineStore('exam', {
       timingMeta = null,
       waitForProcessing = true
     } = {}) {
+      this.ensureAnswerSession()
       const question = this.currentQuestion
       if (!question) throw new Error('当前题目不存在')
       if (!this.examId) throw new Error('考试会话不存在，请重新开始')
+      transcript = String(transcript || '').trim()
+      if (transcript.length > 5000) throw new Error('文字作答最多 5000 字')
+      const existing = this.answers.find((item) => item.examId === this.examId && item.questionIndex === this.currentIndex)
+      if (existing && existing.processingStatus !== 'failed') {
+        if (waitForProcessing !== false) await answerProcessingTasks.get(`${existing.examId}:${existing.questionIndex}`)
+        return existing
+      }
 
       this.loading = true
       try {
-        transcript = String(transcript || '').trim()
-        if (transcript.length > 5000) throw new Error('文字作答最多 5000 字')
         const hasAnswerPayload = !!filePath || !!transcript
 
         if (!hasAnswerPayload) {
           if (!skipConfirmed) throw new Error('当前没有录音或录像，请先录制后提交')
-          const answerMeta = {
-            skipReason: skipReason || 'user_confirmed_skip',
-            ...(timingMeta ? { answerTiming: timingMeta } : {})
-          }
-          const result = await evaluateEmptyAnswer(question.id, this.examId, {
-            answerMeta,
-            skipReason: answerMeta.skipReason,
-            answerTiming: timingMeta,
-            aiComment: answerMeta.skipReason === 'user_confirmed_skip'
-              ? '用户确认跳过本题，按未作答记 0 分。'
-              : '本题未形成有效语音内容，按无效作答记 0 分。'
-          })
-          const answer = {
-            examId: this.examId,
-            questionId: question.id,
-            questionStem: question.stem,
-            questionIndex: this.currentIndex,
-            province: question.province,
-            transcript: EMPTY_TRANSCRIPT_TEXT,
-            scoringResult: result,
-            answerTiming: timingMeta,
-            skipReason: answerMeta.skipReason,
-            submittedAt: new Date().toISOString(),
-            processingStatus: 'completed'
-          }
-          this.answers = [
-            ...this.answers.filter((item) => item.questionIndex !== this.currentIndex),
-            answer
-          ].sort((a, b) => a.questionIndex - b.questionIndex)
-          this.latestResult = result
-          this.latestTranscript = EMPTY_TRANSCRIPT_TEXT
-          return answer
+          skipReason = skipReason || 'user_confirmed_skip'
         }
 
         const previousAnswer = this.answers.find((item) => (
@@ -247,6 +291,7 @@ export const useExamStore = defineStore('exam', {
           mediaType,
           audioFilePath,
           answerTiming: timingMeta,
+          skipReason,
           transcript: transcript || previousAnswer?.transcript || '',
           asrMeta: previousAnswer?.asrMeta || {},
           scoringResult: null,
@@ -260,7 +305,9 @@ export const useExamStore = defineStore('exam', {
         ].sort((a, b) => a.questionIndex - b.questionIndex)
         this.latestResult = null
         this.latestTranscript = answer.transcript
-        const task = this.queueAnswerProcessing(answer)
+        // Read back the reactive proxy: background mutations must update the result page.
+        const queuedAnswer = this.answers.find((item) => item.questionIndex === answer.questionIndex)
+        const task = this.queueAnswerProcessing(queuedAnswer)
         if (waitForProcessing !== false) {
           const processed = await task
           if (processed.processingStatus === 'failed') {
@@ -273,20 +320,23 @@ export const useExamStore = defineStore('exam', {
           }
           return processed
         }
-        return answer
+        return queuedAnswer
       } finally {
         this.loading = false
       }
     },
 
     queueAnswerProcessing(answer) {
+      this.ensureAnswerSession()
+      if (!ownsAnswer(this, answer)) return Promise.resolve(null)
       const taskKey = `${answer.examId}:${answer.questionIndex}`
       if (answerProcessingTasks.has(taskKey)) return answerProcessingTasks.get(taskKey)
-      const task = this.processAnswer(answer)
+      answer.processingError = ''
+      const task = this.processAnswer(answer, currentSession())
         .catch((error) => {
           answer.processingStatus = 'failed'
           answer.processingError = answer.transcript
-            ? '答案已保存，点评暂未完成。请再次提交重试，无需重新录音。'
+            ? '文字稿已保留，点评暂未完成。可在结果页重试，无需重新录音。'
             : error?.message || '评分失败'
           answer.asrFailureType = error?.asrFailureType || ''
           answer.asrMessage = error?.asrMessage || ''
@@ -295,36 +345,50 @@ export const useExamStore = defineStore('exam', {
           return answer
         })
         .finally(() => {
-          answerProcessingTasks.delete(taskKey)
+          if (answerProcessingTasks.get(taskKey) === task) answerProcessingTasks.delete(taskKey)
         })
       answerProcessingTasks.set(taskKey, task)
       return task
     },
 
-    async processAnswer(answer) {
+    async processAnswer(answer, session = currentSession()) {
+      const scope = this.answerScope
+      const checkSession = () => {
+        assertAnswerScope(this, scope, answer)
+        assertSession(session)
+      }
+      checkSession()
       let transcript = isPlaceholderTranscript(answer.transcript) ? '' : String(answer.transcript).trim()
       const mediaType = answer.mediaType || 'audio'
       answer.processingStatus = answer.filePath ? 'uploading' : 'scoring'
 
       if (answer.filePath && !transcript) {
         const uploadMedia = await prepareMediaForUpload(answer.filePath, mediaType)
+        checkSession()
         const transcriptionMedia = mediaType === 'video' && answer.audioFilePath
           ? await prepareMediaForUpload(answer.audioFilePath, 'audio')
           : uploadMedia
 
-        await uploadRecording(answer.examId, answer.questionId, uploadMedia.filePath, {
+        checkSession()
+        if (!answer.mediaUploaded) {
+          await uploadRecording(answer.examId, answer.questionId, uploadMedia.filePath, {
           mediaType,
           source: uploadMedia.compressed
             ? `miniapp_${mediaType}_recording_compressed`
             : `miniapp_${mediaType}_recording`
-        })
+          })
+          checkSession()
+          answer.mediaUploaded = true
+        }
+        checkSession()
         if (!transcript) {
           answer.processingStatus = 'transcribing'
           const transcribeResult = await transcribeAudioWithRetry(transcriptionMedia.filePath, {
             mediaType: transcriptionMedia.mediaType || mediaType,
             questionId: answer.questionId,
             examId: answer.examId
-          })
+          }, checkSession)
+          checkSession()
           if (isServiceAsrFailure(transcribeResult)) {
             throw buildAsrError(
               transcribeResult?.message || '语音服务异常，请重新录制后再提交',
@@ -356,19 +420,23 @@ export const useExamStore = defineStore('exam', {
       }
 
       answer.processingStatus = 'scoring'
+      checkSession()
       const answerMeta = {
+        ...(answer.skipReason ? { skipReason: answer.skipReason } : {}),
         ...(answer.answerTiming ? { answerTiming: answer.answerTiming } : {}),
         ...(answer.asrMeta?.status ? { asrStatus: answer.asrMeta.status } : {}),
         ...(answer.asrMeta?.message ? { asrMessage: answer.asrMeta.message } : {})
       }
       const result = transcript
-        ? mergeAnswerMetaIntoResult(await evaluateAnswer({
+        ? mergeAnswerMetaIntoResult(await evaluateScoredAnswer({
           questionId: answer.questionId,
           transcript,
           examId: answer.examId,
           answerMeta
         }), answerMeta)
         : await evaluateEmptyAnswer(answer.questionId, answer.examId, { answerMeta })
+
+      checkSession()
 
       answer.transcript = transcript || EMPTY_TRANSCRIPT_TEXT
       answer.scoringResult = result
@@ -382,9 +450,18 @@ export const useExamStore = defineStore('exam', {
       return answer
     },
 
-    async waitForPendingProcessing() {
+    async waitForPendingProcessing(examId = this.examId) {
       if (!answerProcessingTasks.size) return
-      await Promise.allSettled(Array.from(answerProcessingTasks.values()))
+      await Promise.allSettled(Array.from(answerProcessingTasks.entries())
+        .filter(([key]) => key.startsWith(`${examId}:`)).map(([, task]) => task))
+    },
+
+    /** Retry a task returned by this store, including archived exams. Invalid/stale objects resolve null. */
+    retryAnswer(answer) {
+      this.ensureAnswerSession()
+      if (!ownsAnswer(this, answer)) return Promise.resolve(null)
+      if (answer.processingStatus === 'completed') return Promise.resolve(answer)
+      return this.queueAnswerProcessing(answer)
     },
 
     goNext() {
@@ -397,11 +474,23 @@ export const useExamStore = defineStore('exam', {
       return false
     },
 
-    async finish() {
-      await this.waitForPendingProcessing()
-      if (this.examId) {
-        await completeExam(this.examId).catch(() => null)
-      }
+    finish() {
+      this.ensureAnswerSession()
+      const examId = this.examId
+      if (!examId) return Promise.resolve()
+      if (examFinishingTasks.has(examId)) return examFinishingTasks.get(examId)
+      const scope = this.answerScope
+      this.finishError = ''
+      const firstSave = completeExam(examId).catch(() => null)
+      const pending = this.waitForPendingProcessing(examId)
+      const task = Promise.all([firstSave, pending]).then(() => {
+        assertAnswerScope(this, scope)
+        return completeExam(examId)
+      }).catch((error) => {
+        if (this.answerScope === scope && this.examId === examId) this.finishError = error?.message || '练习记录同步失败，请重试'
+      }).finally(() => examFinishingTasks.delete(examId))
+      examFinishingTasks.set(examId, task)
+      return task
     },
 
     reset() {
@@ -409,12 +498,14 @@ export const useExamStore = defineStore('exam', {
       this.questions = []
       this.currentIndex = 0
       this.answers = []
+      this.archivedAnswers = []
+      this.answerScope = { token: currentSession() }
       this.latestResult = null
       this.latestTranscript = ''
       this.loading = false
       this.source = ''
       this.mediaMode = 'audio'
-      answerProcessingTasks.clear()
+      this.finishError = ''
     },
 
     setMediaMode(mode) {

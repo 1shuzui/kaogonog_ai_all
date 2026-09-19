@@ -7,14 +7,14 @@
 -->
 <template>
   <view class="room-actions">
-    <button class="secondary-button" @tap="$emit('exit')">{{ exitText }}</button>
+    <button class="secondary-button" :disabled="finishing || loading" @tap="$emit('exit')">{{ exitText }}</button>
     <button
       class="primary-button"
-      :disabled="finishing"
+      :disabled="finishing || loading"
       :loading="loading || finishing"
       @tap="$emit('submit')"
     >
-      {{ finishing ? '正在分析结果...' : isLastQuestion ? '提交并看结果' : '提交本题' }}
+      {{ finishing || loading ? '正在整理录音' : isLastQuestion ? '提交并结束作答' : '提交并继续' }}
     </button>
   </view>
 </template>

@@ -6,20 +6,20 @@
 @raises: 不主动抛业务异常；异常状态应由父页面、请求层或兜底 UI 承接。
 -->
 <template>
-  <div class="exam-room" v-if="examStore.currentQuestion">
+  <div class="exam-room learner-page" v-if="examStore.currentQuestion">
     <div v-if="!isOnline" class="exam-room__offline-banner">
       网络已断开，请检查网络连接。录音数据会暂存，恢复网络后可继续提交。
     </div>
 
     <div class="exam-room__header">
       <span class="exam-room__progress">
-        {{ examStore.currentQuestionNumber }} / {{ examStore.totalQuestions }}
+        <ReadOutlined /> 第 {{ examStore.currentQuestionNumber }} / {{ examStore.totalQuestions }} 题
       </span>
       <span v-if="examStore.fullExamMode" class="exam-room__total-timer">
         {{ formattedElapsed }}
       </span>
       <a-popconfirm title="确定退出考试？已答题目不会丢失。" @confirm="exitExam">
-        <a-button type="text" size="small" style="color: rgba(255,255,255,0.8)">
+        <a-button type="text" size="small">
           <CloseOutlined /> 退出
         </a-button>
       </a-popconfirm>
@@ -27,11 +27,11 @@
 
     <div class="exam-room__main">
       <div class="exam-room__question">
+        <BackgroundAnswers />
         <QuestionMetaTags :question="examStore.currentQuestion" emphasis basic-only />
         <div class="question-stem">
           <QuestionRichContent
             :text="examStore.currentQuestion.stem"
-            dark
             :show-toggle="false"
           />
         </div>
@@ -78,7 +78,7 @@
         <a-spin /> <span style="margin-left: 8px">正在评分，请稍候...</span>
       </div>
       <div v-else-if="examStore.status === 'completed'" style="color: #389E0D; font-size: 16px">
-        <CheckCircleFilled /> 评分完成
+        <CheckCircleFilled /> {{ examStore.scoringResult ? '点评完成' : '本题已暂存，后台处理中' }}
       </div>
     </div>
 
@@ -107,8 +107,8 @@
         :status="examStore.status"
         :isLast="examStore.isLastQuestion"
         :submitting-text="examStore.submitStepText"
-        :finishing="finishRequested"
-        finishing-text="正在分析结果..."
+        :finishing="finishRequested || submittingAnswer"
+        finishing-text="正在整理本题录音..."
         @start-prep="onStartPrep"
         @start-answer="onStartAnswer"
         @submit="onSubmit"
@@ -117,7 +117,7 @@
       />
     </div>
   </div>
-  <div class="exam-room" style="align-items: center; justify-content: center; color: rgba(255,255,255,0.5);" v-else>
+  <div class="exam-room learner-page" style="align-items: center; justify-content: center;" v-else>
     <p>暂无题目，请返回首页开始测试。</p>
     <a-button type="primary" @click="$router.push('/')">返回首页</a-button>
   </div>
@@ -126,17 +126,17 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { CloseOutlined, CheckCircleFilled } from '@ant-design/icons-vue'
+import { CloseOutlined, CheckCircleFilled, ReadOutlined } from '@ant-design/icons-vue'
 import { useExamStore } from '@/stores/exam'
 import { useMediaRecorder } from '@/composables/useMediaRecorder'
 import { useCountdown } from '@/composables/useCountdown'
 import { useNetworkStatus } from '@/composables/useNetworkStatus'
-import { completeExam } from '@/api/exam'
 import { EXAM_STATUS, getGrade } from '@/utils/constants'
 import VideoPreview from '@/components/recording/VideoPreview.vue'
 import AudioWaveform from '@/components/recording/AudioWaveform.vue'
 import CountdownTimer from '@/components/common/CountdownTimer.vue'
 import RecordingControl from '@/components/recording/RecordingControl.vue'
+import BackgroundAnswers from '@/components/exam/BackgroundAnswers.vue'
 import ScoreRing from '@/components/common/ScoreRing.vue'
 import QuestionMetaTags from '@/components/common/QuestionMetaTags.vue'
 import QuestionRichContent from '@/components/common/QuestionRichContent.vue'
@@ -165,6 +165,7 @@ const countdown = useCountdown(0)
 
 const elapsed = ref(0)
 const finishRequested = ref(false)
+const submittingAnswer = ref(false)
 const exitingExam = ref(false)
 const cameraWindow = ref({
   width: CAMERA_DEFAULT.width,
@@ -246,19 +247,24 @@ function onStartAnswer() {
 }
 
 async function onSubmit() {
-  if (finishRequested.value) return
+  if (finishRequested.value || submittingAnswer.value || exitingExam.value) return
+  submittingAnswer.value = true
   countdown.stop()
   try {
     const usageSeconds = Math.max(1, Math.ceil(Number(recorderDuration.value) || 0))
     const blob = await recorder.stopRecording()
     const answer = await examStore.submitAnswer(blob)
-    await syncUsage(answer, usageSeconds)
+    void syncUsage(answer, usageSeconds)
     if (!examStore.isLastQuestion) {
       message.success('本题已提交，后台评分中。')
       onNext()
+    } else {
+      await onFinish()
     }
   } catch (error) {
     message.error(`提交失败: ${error.message || '未知错误'}`)
+  } finally {
+    submittingAnswer.value = false
   }
 }
 
@@ -269,7 +275,7 @@ async function submitCurrentAnswerForExit() {
   const blob = await recorder.stopRecording()
   if (!blob || blob.size <= 0) return null
   const answer = await examStore.submitAnswer(blob)
-  await syncUsage(answer, usageSeconds)
+  void syncUsage(answer, usageSeconds)
   return answer
 }
 
@@ -316,24 +322,14 @@ async function onFinish() {
     return
   }
   finishRequested.value = true
-  try {
-    await examStore.evaluatePendingAnswers()
-    await completeExam(examId)
-  } catch (error) {
-    logger.error('Exam history save failed', {
-      event: 'exam.history.save_failed',
-      exam_id: examId,
-      error
-    })
-  }
+  void examStore.finish()
   countdown.stop()
   recorder.destroyStream()
-  examStore.exitExam()
   router.push(`/result/${examId}`)
 }
 
 async function exitExam() {
-  if (exitingExam.value || finishRequested.value) return
+  if (exitingExam.value || finishRequested.value || submittingAnswer.value) return
   exitingExam.value = true
   countdown.stop()
   const examId = examStore.examId
@@ -352,19 +348,8 @@ async function exitExam() {
   }
 
   if (examId && examStore.answers.length > 0) {
-    try {
-      await examStore.waitForPendingProcessing()
-      await completeExam(examId)
-      message.success('练习记录已保存')
-    } catch (error) {
-      logger.error('Exam progress save failed', {
-        event: 'exam.progress.save_failed',
-        exam_id: examId,
-        error
-      })
-    }
+    void examStore.finish()
     recorder.destroyStream()
-    examStore.exitExam()
     router.push(`/result/${examId}`)
     return
   }
@@ -573,3 +558,4 @@ function stopCameraInteraction() {
   to { transform: translateY(0); }
 }
 </style>
+<style src="@/styles/learner.css"></style>

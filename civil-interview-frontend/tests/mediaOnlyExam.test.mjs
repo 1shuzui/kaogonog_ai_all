@@ -16,7 +16,7 @@ test('full exam records and submits media even with a legacy text-mode state', a
   let stopped = 0
   let blob = { size: 120 }
   const state = {
-    status: 'idle', currentIndex: 0, answerMode: 'text',
+    status: 'idle', currentIndex: 0, answerMode: 'text', answers: [], totalQuestions: 3, examStartTime: Date.now(), goToQuestion() {},
     resetCurrentQuestionState() {},
     startAnswering() { this.status = 'answering' },
     async submitAnswer(blob, transcript) { calls.push({ blob, transcript }); return { examId: 'exam', questionId: 'q1' } }
@@ -27,9 +27,10 @@ test('full exam records and submits media even with a legacy text-mode state', a
     isFutureQuestion: () => false, stopSpeech() {},
     isTextAnswer: { value: true }, textAnswer: { value: '先调查诉求，再协调处理并回访。' },
     EXAM_STATUS: { ANSWERING: 'answering' }, finishRequested: { value: false },
+    submittingAnswer: { value: false }, exitingExam: { value: false },
     totalRemainingSeconds: { value: 600 }, recorderDuration: { value: 0 },
     recorder: { startRecording: () => started++, stopRecording: async () => { stopped++; return blob } },
-    syncUsage: async () => {}, message: { error: text => assert.fail(text), warning: text => assert.fail(text) }
+    syncUsage: async () => {}, message: { success() {}, error: text => assert.fail(text), warning: text => assert.fail(text) }
   }
   await loadFunction(source, 'startCurrentAnswer', context)()
   assert.equal(state.status, 'answering')
@@ -59,6 +60,7 @@ test('standard practice records and preserves the current media on interrupted e
     recorder: { startRecording: () => started++, stopRecording: async () => blob },
     recorderDuration: { value: 1 }, textAnswer: { value: '旧文字输入' },
     finishRequested: { value: false }, syncUsage: async () => {},
+    submittingAnswer: { value: false }, exitingExam: { value: false }, onFinish: async () => {},
     message: { error: text => assert.fail(text) }
   }
   loadFunction(source, 'onStartAnswer', context)()

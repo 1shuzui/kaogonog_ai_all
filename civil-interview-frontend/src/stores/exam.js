@@ -10,7 +10,7 @@
  */
 import { defineStore } from 'pinia'
 import { EXAM_STATUS } from '@/utils/constants'
-import { startExam, uploadRecording } from '@/api/exam'
+import { startExam, uploadRecording, completeExam } from '@/api/exam'
 import { transcribeAudio, evaluateAnswer } from '@/api/scoring'
 import {
   getScoringUnavailableMessage,
@@ -19,7 +19,30 @@ import {
 } from '@/utils/scoringSupport'
 
 const answerProcessingTasks = new Map()
+const examFinishingTasks = new Map()
 const EMPTY_TRANSCRIPT_TEXT = '未作答'
+
+function currentSession() {
+  return typeof localStorage === 'undefined' ? null : localStorage.getItem('token')
+}
+
+function assertSession(session) {
+  if (currentSession() !== session) {
+    throw Object.assign(new Error('账号已切换，请在原账号的练习记录中继续处理'), { code: 'STALE_SESSION' })
+  }
+}
+
+function ownsAnswer(store, answer) {
+  return store.answers.includes(answer) || store.archivedAnswers.includes(answer)
+}
+
+function assertAnswerScope(store, scope, answer = null) {
+  store.ensureAnswerSession()
+  assertSession(scope.token)
+  if (store.answerScope !== scope || (answer && !ownsAnswer(store, answer))) {
+    throw Object.assign(new Error('考试任务已清理，请重新开始'), { code: 'STALE_SESSION' })
+  }
+}
 
 function buildZeroScoreResult() {
   return {
@@ -39,18 +62,24 @@ function buildZeroScoreResult() {
   }
 }
 
+async function evaluateScoredAnswer(payload) {
+  const result = await evaluateAnswer(payload)
+  const score = result?.totalScore ?? result?.score
+  // Validate before normalization can turn a missing score into an apparent zero.
+  const numeric = typeof score === 'number' || (typeof score === 'string' && score.trim() !== '')
+  if (!numeric || !Number.isFinite(Number(score))) {
+    throw Object.assign(new Error('点评未返回有效分数，作答已保留，请重试'), { code: 'INVALID_SCORING_RESULT' })
+  }
+  return result
+}
+
 async function evaluateEmptyAnswer(questionId, examId) {
   if (!examId) return buildZeroScoreResult()
-  try {
-    return await evaluateAnswer({
+  return evaluateScoredAnswer({
       questionId,
       transcript: '',
       examId
     })
-  } catch (error) {
-    if (error?.code === 'STALE_SESSION' || error?.response?.status === 401) throw error
-    return buildZeroScoreResult()
-  }
 }
 
 function assertQuestionScoringSupported(questionId) {
@@ -77,16 +106,25 @@ export const useExamStore = defineStore('exam', {
     transcript: '',
     scoringResult: null,
     answers: [],
+    archivedAnswers: [],
+    // A fresh object also invalidates in-flight work after Pinia $reset with the same token.
+    answerScope: { token: currentSession() },
     deviceReady: false,
     videoEnabled: true,
     mediaStream: null,
     fullExamMode: false,
     examStartTime: null,
     examElapsed: 0,
-    submitStep: ''
+    submitStep: '',
+    finishError: ''
   }),
 
   getters: {
+    /** All non-completed answers in this login session, oldest exam first; original reactive objects. */
+    pendingAnswers(state) {
+      if (state.answerScope.token !== currentSession()) return []
+      return [...state.archivedAnswers, ...state.answers].filter((answer) => answer.processingStatus !== 'completed')
+    },
     currentQuestion(state) {
       return state.questionList[state.currentIndex] || null
     },
@@ -124,8 +162,32 @@ export const useExamStore = defineStore('exam', {
   },
 
   actions: {
+    ensureAnswerSession() {
+      if (this.answerScope.token !== currentSession()) this.exitExam()
+    },
+
+    /** Session-local original answer objects, including completed archives until reset; no request. */
+    getAnswersForExam(examId) {
+      this.ensureAnswerSession()
+      if (!examId) return []
+      return [...this.archivedAnswers, ...this.answers]
+        .filter((answer) => answer.examId === examId)
+        .sort((a, b) => a.questionIndex - b.questionIndex)
+    },
+
     async initExam(questions, fullExamMode = false, practiceMode = 'free') {
-      answerProcessingTasks.clear()
+      this.ensureAnswerSession()
+      const scope = this.answerScope
+      const result = await startExam(questions.map((q) => q.id), fullExamMode ? 'fullExam' : practiceMode)
+      assertAnswerScope(this, scope)
+      // Commit the transition only after server success. Keep the original task-owned objects.
+      // Keep completed results until session reset so watched old-exam result pages never lose them.
+      const pendingExamIds = new Set(this.pendingAnswers.map((answer) => answer.examId))
+      this.archivedAnswers = [...this.archivedAnswers, ...this.answers]
+      // Retain the whole exam's media if even one answer needs processing/retry.
+      for (const answer of this.archivedAnswers) {
+        if (!pendingExamIds.has(answer.examId)) answer.recordingBlob = null
+      }
       this.questionList = questions
       this.currentIndex = 0
       this.answers = []
@@ -137,7 +199,7 @@ export const useExamStore = defineStore('exam', {
       this.examStartTime = fullExamMode ? Date.now() : null
       this.examElapsed = 0
       this.submitStep = ''
-      const result = await startExam(questions.map((q) => q.id), fullExamMode ? 'fullExam' : practiceMode)
+      this.finishError = ''
       this.examId = result.examId
     },
 
@@ -153,6 +215,7 @@ export const useExamStore = defineStore('exam', {
     },
 
     async submitAnswer(blob, transcript = '') {
+      this.ensureAnswerSession()
       transcript = String(transcript || '').trim()
       if (transcript.length > 5000) throw new Error('文字作答最多 5000 字')
       const question = this.currentQuestion
@@ -162,36 +225,22 @@ export const useExamStore = defineStore('exam', {
 
       const questionId = question.id
       const questionIndex = this.currentIndex
+      const existing = this.answers.find((item) => item.examId === this.examId && item.questionIndex === questionIndex)
+      if (existing && existing.processingStatus !== 'failed') return existing
 
       this.status = EXAM_STATUS.SUBMITTING
       this.recordingBlob = blob
       this.submitStep = 'uploading'
 
       try {
-        if ((!blob || blob.size <= 0) && !transcript) {
-          assertQuestionScoringSupported(questionId)
-          const result = await evaluateEmptyAnswer(questionId, this.examId)
-          this.scoringResult = result
-          this.transcript = EMPTY_TRANSCRIPT_TEXT
-          this.answers.push({
-            examId: this.examId,
-            questionId,
-            questionIndex,
-            recordingBlob: null,
-            transcript: EMPTY_TRANSCRIPT_TEXT,
-            scoringResult: result,
-            submittedAt: new Date().toISOString(),
-            processingStatus: 'completed'
-          })
-          this.status = EXAM_STATUS.COMPLETED
-          this.submitStep = ''
-          return this.answers[this.answers.length - 1]
-        }
-
+        assertQuestionScoringSupported(questionId)
+        this.answers = this.answers.filter((item) => item.questionIndex !== questionIndex)
         this.answers.push({
           examId: this.examId,
           questionId,
           questionIndex,
+          questionStem: question.stem || '',
+          province: question.province,
           recordingBlob: blob,
           transcript,
           scoringResult: null,
@@ -215,8 +264,12 @@ export const useExamStore = defineStore('exam', {
     },
 
     queueExamAnswerProcessing(answer) {
+      this.ensureAnswerSession()
+      if (!ownsAnswer(this, answer)) return Promise.resolve(null)
       const taskKey = `${answer.examId}:${answer.questionIndex}`
-      const task = this.processExamAnswer(answer)
+      if (answerProcessingTasks.has(taskKey)) return answerProcessingTasks.get(taskKey)
+      answer.processingError = ''
+      const task = this.processExamAnswer(answer, currentSession())
         .catch((error) => {
           const normalizedError = normalizeExamError(error)
           answer.processingStatus = 'failed'
@@ -225,38 +278,58 @@ export const useExamStore = defineStore('exam', {
           return answer
         })
         .finally(() => {
-          answerProcessingTasks.delete(taskKey)
+          if (answerProcessingTasks.get(taskKey) === task) answerProcessingTasks.delete(taskKey)
         })
 
       answerProcessingTasks.set(taskKey, task)
       return task
     },
 
-    async processExamAnswer(answer) {
+    async processExamAnswer(answer, session = currentSession()) {
+      const scope = this.answerScope
+      const checkSession = () => {
+        assertAnswerScope(this, scope, answer)
+        assertSession(session)
+      }
+      checkSession()
       const answerExamId = answer.examId || this.examId
       let transcript = String(answer.transcript || '').trim()
       if ((!answer.recordingBlob || answer.recordingBlob.size <= 0) && !transcript) {
         assertQuestionScoringSupported(answer.questionId)
         const result = await evaluateEmptyAnswer(answer.questionId, answerExamId)
+        checkSession()
         answer.recordingBlob = null
         answer.transcript = EMPTY_TRANSCRIPT_TEXT
         answer.scoringResult = result
         answer.processingStatus = 'completed'
-        this.transcript = EMPTY_TRANSCRIPT_TEXT
-        this.scoringResult = result
+        if (this.examId === answerExamId && this.currentIndex === answer.questionIndex) {
+          this.transcript = EMPTY_TRANSCRIPT_TEXT
+          this.scoringResult = result
+        }
         return answer
       }
 
       answer.processingError = ''
       if (!transcript) {
         answer.processingStatus = 'uploading'
-        await uploadRecording(answerExamId, answer.questionId, answer.recordingBlob)
+        if (!answer.mediaUploaded) {
+          await uploadRecording(answerExamId, answer.questionId, answer.recordingBlob)
+          checkSession()
+          answer.mediaUploaded = true
+        }
+        checkSession()
         answer.processingStatus = 'transcribing'
         const response = await transcribeAudio(answer.recordingBlob, {
           questionId: answer.questionId,
           examId: answerExamId
         })
-        transcript = response.transcript
+        checkSession()
+        transcript = String(response?.transcript || '').trim()
+        const asrStatus = response?.asrMeta?.status || response?.status || ''
+        if (!transcript || ['too_short', 'silent_audio', 'empty_audio', 'no_speech', 'asr_unavailable', 'funasr_error', 'error', 'timeout'].includes(asrStatus)
+          || /未能识别出有效语音|未配置真实语音转写服务|无法生成可靠文字稿/.test(transcript)) {
+          throw new Error(response?.message || '未取得有效文字稿，录音已保留，可在结果页重试')
+        }
         answer.transcript = transcript
       }
 
@@ -265,12 +338,14 @@ export const useExamStore = defineStore('exam', {
       }
 
       answer.processingStatus = 'scoring'
+      checkSession()
       assertQuestionScoringSupported(answer.questionId)
-      const result = await evaluateAnswer({
+      const result = await evaluateScoredAnswer({
         questionId: answer.questionId,
         transcript,
         examId: answerExamId
       })
+      checkSession()
       const resolvedTranscript = result?.transcript || transcript
       answer.transcript = resolvedTranscript
       answer.scoringResult = result
@@ -284,9 +359,38 @@ export const useExamStore = defineStore('exam', {
       return answer
     },
 
-    async waitForPendingProcessing() {
+    async waitForPendingProcessing(examId = this.examId) {
       if (!answerProcessingTasks.size) return
-      await Promise.allSettled(Array.from(answerProcessingTasks.values()))
+      await Promise.allSettled(Array.from(answerProcessingTasks.entries())
+        .filter(([key]) => key.startsWith(`${examId}:`)).map(([, task]) => task))
+    },
+
+    /** Retry a task returned by this store, including archived exams. Invalid/stale objects resolve null. */
+    retryAnswer(answer) {
+      this.ensureAnswerSession()
+      if (!ownsAnswer(this, answer)) return Promise.resolve(null)
+      if (answer.processingStatus === 'completed') return Promise.resolve(answer)
+      return this.queueExamAnswerProcessing(answer)
+    },
+
+    finish() {
+      this.ensureAnswerSession()
+      const examId = this.examId
+      if (!examId) return Promise.resolve()
+      if (examFinishingTasks.has(examId)) return examFinishingTasks.get(examId)
+      const scope = this.answerScope
+      this.finishError = ''
+      // Freeze completion time now. Scoring later refreshes history without extending the exam.
+      const firstSave = completeExam(examId).catch(() => null)
+      const pending = this.waitForPendingProcessing(examId)
+      const task = Promise.all([firstSave, pending]).then(() => {
+        assertAnswerScope(this, scope)
+        return completeExam(examId)
+      }).catch((error) => {
+        if (this.answerScope === scope && this.examId === examId) this.finishError = error?.message || '练习记录同步失败，请重试'
+      }).finally(() => examFinishingTasks.delete(examId))
+      examFinishingTasks.set(examId, task)
+      return task
     },
 
     async evaluatePendingAnswers() {
@@ -325,7 +429,7 @@ export const useExamStore = defineStore('exam', {
       try {
         for (const answer of finalPendingAnswers) {
           assertQuestionScoringSupported(answer.questionId)
-          const result = await evaluateAnswer({
+          const result = await evaluateScoredAnswer({
             questionId: answer.questionId,
             transcript: answer.transcript,
             examId: answer.examId || this.examId
@@ -396,13 +500,14 @@ export const useExamStore = defineStore('exam', {
     },
 
     exitExam() {
-      answerProcessingTasks.clear()
       this.destroyStream()
       this.status = EXAM_STATUS.IDLE
       this.examId = null
       this.questionList = []
       this.currentIndex = 0
       this.answers = []
+      this.archivedAnswers = []
+      this.answerScope = { token: currentSession() }
       this.recordingBlob = null
       this.transcript = ''
       this.scoringResult = null
@@ -410,6 +515,7 @@ export const useExamStore = defineStore('exam', {
       this.examStartTime = null
       this.examElapsed = 0
       this.submitStep = ''
+      this.finishError = ''
     },
 
     setDeviceReady(ready) {

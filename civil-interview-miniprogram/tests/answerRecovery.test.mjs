@@ -44,7 +44,7 @@ test('a timeout retains the transcript and retry does not upload or transcribe a
       return { totalScore: 78, maxScore: 100 }
     }
   })
-  await assert.rejects(store.submitCurrentAnswer({ filePath: 'record.mp3' }), /答案已保存/)
+  await assert.rejects(store.submitCurrentAnswer({ filePath: 'record.mp3' }), /文字稿已保留/)
   assert.equal(store.answers[0].transcript, transcript)
   assert.equal(store.latestTranscript, transcript)
   const result = await store.submitCurrentAnswer({ filePath: 'record.mp3' })
@@ -93,6 +93,7 @@ test('media-only room submits recorded files and confirms before skipping empty 
   const context = {
     examStore: { loading: false, isLastQuestion: false, submitCurrentAnswer: async payload => { calls.push(payload); return {} } },
     finishingExam: { value: false }, isJiangsuReading: { value: false },
+    submittingAnswer: { value: false }, pauseCaptureClock() {}, resumeCaptureClock() {},
     recording: { value: false }, videoRecording: { value: false },
     currentMedia: { value: { filePath: 'record.mp3', mediaType: 'audio' } }, recordedFile: { value: 'record.mp3' },
     textAnswer: { value: '旧文字输入' },

@@ -10,7 +10,7 @@ test('web text answer retains its transcript after a model failure and retries w
   const mocks = {
     pinia: { defineStore: (_, options) => options },
     '@/utils/constants': { EXAM_STATUS: { IDLE: 'idle', ANSWERING: 'answering', SUBMITTING: 'submitting', COMPLETED: 'completed' } },
-    '@/api/exam': { startExam: async () => ({ examId: 'typed-exam' }), uploadRecording: () => assert.fail('no media upload') },
+    '@/api/exam': { startExam: async () => ({ examId: 'typed-exam' }), completeExam: async () => {}, uploadRecording: () => assert.fail('no media upload') },
     '@/api/scoring': {
       transcribeAudio: () => assert.fail('no ASR'),
       evaluateAnswer: async payload => {

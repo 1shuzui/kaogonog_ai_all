@@ -34,9 +34,11 @@
       danger
       size="large"
       shape="round"
+      :disabled="finishing"
+      :loading="finishing"
       @click="$emit('submit')"
     >
-      <CheckCircleOutlined /> 提交答案
+      <CheckCircleOutlined /> {{ finishing ? '正在整理录音' : isLast ? '提交并结束作答' : '提交并继续' }}
     </a-button>
 
     <a-button

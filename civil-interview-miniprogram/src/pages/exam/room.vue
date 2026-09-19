@@ -10,14 +10,14 @@
 -->
 <template>
   <view
-    class="exam-room"
+    class="exam-room learner-page learner-room"
     :class="{ 'exam-room--full-exam': isFullExamSource, 'exam-room--practice': !isFullExamSource }"
   >
     <view v-if="question" class="exam-room__body">
       <template v-if="isFullExamSource">
         <view class="question-book" :class="{ 'question-book--long': questionBookLong }">
           <view class="question-book__head">
-            <text class="question-book__title">题本区</text>
+            <view class="learner-kicker"><LearnerIcon name="read" :size="18" /><text class="question-book__title">题本</text></view>
             <text class="question-book__meta">第 {{ questionBookIndex + 1 }} / {{ examStore.totalQuestions }} 题</text>
           </view>
           <swiper
@@ -51,11 +51,7 @@
 
         <scroll-view scroll-y show-scrollbar class="exam-room__scroll" :style="{ paddingTop: questionBookScrollPadding }">
           <view class="full-exam-scene">
-            <image
-              class="full-exam-scene__image"
-              src="/static/exam/full-exam-room-live-current.jpg"
-              mode="aspectFill"
-            />
+            <view class="learner-kicker"><LearnerIcon name="sound" :size="20" /><text>专注表达，提交后继续下一题</text></view>
             <view class="full-exam-scene__timer" :class="{ 'full-exam-scene__timer--overtime': isOvertime }">
               <text class="full-exam-scene__timer-label">{{ sceneTimerLabel }}</text>
               <text class="full-exam-scene__timer-value">{{ formatTime(sceneTimeLeft) }}</text>
@@ -63,6 +59,7 @@
           </view>
 
           <view class="question-panel">
+            <BackgroundAnswers />
             <view v-if="isJiangsuReading" class="card reading-list-card">
               <text class="reading-list__title">江苏 5+15 阅读题本</text>
               <text v-for="(item, index) in examStore.questions" :key="item.id || index" class="reading-list__item">
@@ -94,14 +91,14 @@
                 <view class="record-actions">
                   <button
                     class="secondary-button"
-                    :disabled="captureActive || examStore.loading"
+                    :disabled="captureActive || examStore.loading || submittingAnswer"
                     @tap="startCapture"
                   >
                     {{ useVideoMode ? '开始录像+录音' : '开始录音' }}
                   </button>
                   <button
                     class="secondary-button"
-                    :disabled="!captureActive || examStore.loading"
+                    :disabled="!captureActive || examStore.loading || submittingAnswer"
                     @tap="stopCapture"
                   >
                     {{ useVideoMode ? '停止录像+录音' : '停止录音' }}
@@ -155,7 +152,7 @@
 
         <RoomActions
           :finishing="finishingExam"
-          :loading="examStore.loading"
+          :loading="examStore.loading || submittingAnswer"
           :is-last-question="examStore.isLastQuestion"
           :exit-text="exitActionText"
           @exit="goBackHome"
@@ -170,6 +167,7 @@
         </view>
 
         <scroll-view scroll-y show-scrollbar class="question-panel">
+          <BackgroundAnswers />
           <view class="card">
             <view class="question-tags">
               <text class="question-tag">{{ provinceLabel(question) }}</text>
@@ -205,14 +203,14 @@
               <view class="record-actions">
                 <button
                   class="secondary-button"
-                  :disabled="captureActive || examStore.loading"
+                    :disabled="captureActive || examStore.loading || submittingAnswer"
                   @tap="startCapture"
                 >
                   {{ useVideoMode ? '开始录像+录音' : '开始录音' }}
                 </button>
                 <button
                   class="secondary-button"
-                  :disabled="!captureActive || examStore.loading"
+                    :disabled="!captureActive || examStore.loading || submittingAnswer"
                   @tap="stopCapture"
                 >
                   {{ useVideoMode ? '停止录像+录音' : '停止录音' }}
@@ -265,7 +263,7 @@
 
         <RoomActions
           :finishing="finishingExam"
-          :loading="examStore.loading"
+          :loading="examStore.loading || submittingAnswer"
           :is-last-question="examStore.isLastQuestion"
           :exit-text="exitActionText"
           @exit="goBackHome"
@@ -284,6 +282,7 @@
 </template>
 
 <script setup>
+import LearnerIcon from '../../components/LearnerIcon.vue'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { onHide, onLoad, onReady } from '@dcloudio/uni-app'
 import EmptyState from '../../components/EmptyState.vue'
@@ -295,7 +294,8 @@ import { useSubscriptionStore } from '../../stores/subscription'
 import { useUserStore } from '../../stores/user'
 import { formatTime } from '../../utils/format'
 import { getCategoryName, getProvinceName } from '../../utils/constants'
-import { hideLoading, showLoading, toast } from '../../utils/navigation'
+import { toast } from '../../utils/navigation'
+import BackgroundAnswers from '../../components/BackgroundAnswers.vue'
 
 const examStore = useExamStore()
 const subscriptionStore = useSubscriptionStore()
@@ -319,6 +319,7 @@ const selectedMediaType = ref('')
 const questionStartedAt = ref(Date.now())
 const questionBookIndex = ref(0)
 const finishingExam = ref(false)
+const submittingAnswer = ref(false)
 const scoringProgressText = computed(() => {
   const answers = examStore.answers || []
   const pending = answers.filter(a => a.processingStatus && a.processingStatus !== 'completed' && a.processingStatus !== 'failed')
@@ -335,6 +336,9 @@ const JIANGSU_READING_SECONDS = 5 * 60
 const JIANGSU_ANSWER_SECONDS = 15 * 60
 const RECORD_AUTH_SCOPE = 'scope.record'
 let timer = null
+let timerPhase = ''
+let timerDeadline = 0
+let timerPausedAt = null
 let pendingRecordStopResolve = null
 let lastCameraTapAt = 0
 let cameraDragState = null
@@ -551,17 +555,34 @@ function setupCamera() {
 function startTimer() {
   clearInterval(timer)
   timer = setInterval(() => {
+    if (timerPausedAt !== null) return
+    const now = Date.now()
+    if (timerPhase !== phase.value) {
+      timerPhase = phase.value
+      timerDeadline = now + (phase.value === 'answering' ? answerLeft.value : prepLeft.value) * 1000
+    }
     if (phase.value === 'preparing' || phase.value === 'reading') {
-      prepLeft.value -= 1
-      if (prepLeft.value <= 0) phase.value = 'answering'
-      return
+      prepLeft.value = Math.max(0, Math.ceil((timerDeadline - now) / 1000))
+      if (prepLeft.value > 0) return
+      phase.value = 'answering'
+      timerPhase = 'answering'
+      timerDeadline += answerLeft.value * 1000
     }
-    if (answerLeft.value > 0) {
-      answerLeft.value = Math.max(0, answerLeft.value - 1)
-      return
-    }
-    overtimeSeconds.value += 1
-  }, 1000)
+    answerLeft.value = Math.max(0, Math.ceil((timerDeadline - now) / 1000))
+    overtimeSeconds.value = Math.max(0, Math.floor((now - timerDeadline) / 1000))
+  }, 250)
+}
+
+function pauseCaptureClock() {
+  if (timerPausedAt === null) timerPausedAt = Date.now()
+}
+
+function resumeCaptureClock() {
+  if (timerPausedAt === null) return
+  const pausedMs = Date.now() - timerPausedAt
+  timerDeadline += pausedMs
+  questionStartedAt.value += pausedMs
+  timerPausedAt = null
 }
 
 function getWindowRect() {
@@ -634,6 +655,8 @@ function resetQuestionState() {
     : Number(question.value?.answerTime || userStore.preferences.defaultAnswerTime || 180)
   overtimeSeconds.value = 0
   questionStartedAt.value = Date.now()
+  timerPhase = phase.value
+  timerDeadline = questionStartedAt.value + prepLeft.value * 1000
   questionBookIndex.value = Math.max(0, examStore.currentIndex)
   resetAnswerInputState()
 }
@@ -647,7 +670,7 @@ function resetAnswerInputState() {
 }
 
 function currentUsageSeconds() {
-  const elapsed = Math.ceil((Date.now() - questionStartedAt.value) / 1000)
+  const elapsed = Math.ceil(((timerPausedAt ?? Date.now()) - questionStartedAt.value) / 1000)
   return Math.max(1, elapsed)
 }
 
@@ -753,6 +776,8 @@ function startJiangsuAnswer() {
   phase.value = 'answering'
   prepLeft.value = 0
   answerLeft.value = Math.max(Number(answerLeft.value) || 0, JIANGSU_ANSWER_SECONDS)
+  timerPhase = 'answering'
+  timerDeadline = Date.now() + answerLeft.value * 1000
   overtimeSeconds.value = 0
   toast('已进入 15 分钟作答阶段', 'success')
 }
@@ -764,6 +789,7 @@ function usageType() {
 }
 
 async function syncUsageAndTrial(answer) {
+  const completeTrialAfterUsage = examStore.source === 'trial' && examStore.isLastQuestion
   const key = `${answer.examId}:${answer.questionId}:${answer.questionIndex}`
   if (!reportedQuestionKeys.has(key)) {
     reportedQuestionKeys.add(key)
@@ -775,7 +801,7 @@ async function syncUsageAndTrial(answer) {
     }).then(() => subscriptionStore.refresh({ skipErrorHandler: true })).catch(() => null)
   }
 
-  if (examStore.source === 'trial' && examStore.isLastQuestion) {
+  if (completeTrialAfterUsage) {
     await completeTrial().then(() => subscriptionStore.refresh({ skipErrorHandler: true })).catch(() => null)
   }
 }
@@ -823,23 +849,22 @@ async function confirmInvalidAnswer(error) {
 }
 
 async function continueAfterSubmittedAnswer(answer, isFinishing) {
-  await syncUsageAndTrial(answer)
+  void syncUsageAndTrial(answer)
 
   if (isFinishing) {
     const finishedExamId = examStore.examId
-    await examStore.finish()
-    examStore.reset()
+    clearInterval(timer)
+    void examStore.finish()
     uni.redirectTo({
       url: `/pages/result/index?examId=${encodeURIComponent(finishedExamId)}&questionId=${encodeURIComponent(answer.questionId)}`
     })
     return
   }
 
-  toast('本题已提交，已完成评分', 'success')
+  toast('已暂存，后台处理不影响下一题', 'success')
   if (examStore.goNext()) {
     if (isJiangsuFullExamTiming.value) {
       resetAnswerInputState()
-      overtimeSeconds.value = 0
       questionStartedAt.value = Date.now()
     } else {
       resetQuestionState()
@@ -1158,58 +1183,47 @@ function onCameraTouchEnd() {
 }
 
 async function submitAnswer() {
-  if (finishingExam.value || examStore.loading) return
+  if (finishingExam.value || submittingAnswer.value || examStore.loading) return
   if (isJiangsuReading.value) {
     toast('阅读阶段暂不能提交，请阅读结束后作答')
     return
   }
-  if (recording.value) {
-    await stopRecordAsync()
-  }
-  if (videoRecording.value) {
-    await stopVideoRecord()
-  }
-  const media = currentMedia.value
-  let skipConfirmed = false
-  let skipReason = ''
-  if (!media.filePath) {
-    skipConfirmed = await confirmSkipCurrentQuestion()
-    if (!skipConfirmed) return
-    skipReason = 'user_confirmed_skip'
-  }
-
-  const isFinishing = examStore.isLastQuestion
-  if (isFinishing) finishingExam.value = true
-  showLoading(isFinishing ? '正在分析结果' : '保存作答')
+  submittingAnswer.value = true
+  const timingMeta = buildTimingMeta()
+  pauseCaptureClock()
   try {
+    if (recording.value) await stopRecordAsync()
+    if (videoRecording.value) await stopVideoRecord()
+    resumeCaptureClock()
+    const media = { ...currentMedia.value }
+    let skipConfirmed = false
+    if (!media.filePath) {
+      skipConfirmed = await confirmSkipCurrentQuestion()
+      if (!skipConfirmed) return
+    }
+    const isFinishing = examStore.isLastQuestion
+    if (isFinishing) finishingExam.value = true
     const answer = await examStore.submitCurrentAnswer({
       filePath: media.filePath,
       mediaType: media.mediaType || 'audio',
       audioFilePath: recordedFile.value || '',
       skipConfirmed,
-      skipReason,
-      timingMeta: buildTimingMeta()
+      skipReason: skipConfirmed ? 'user_confirmed_skip' : '',
+      timingMeta,
+      waitForProcessing: false
     })
     await continueAfterSubmittedAnswer(answer, isFinishing)
   } catch (error) {
-    if (error?.userInvalid && await confirmInvalidAnswer(error)) {
-      showLoading(isFinishing ? '正在保存结果' : '保存无效作答')
-      const invalidAnswer = await examStore.submitCurrentAnswer({
-        skipConfirmed: true,
-        skipReason: error.asrFailureType || 'no_speech',
-        timingMeta: buildTimingMeta()
-      })
-      await continueAfterSubmittedAnswer(invalidAnswer, isFinishing)
-      return
-    }
-    toast(error?.message || '评分失败')
+    toast(error?.message || '录音暂存失败，请重试')
   } finally {
+    resumeCaptureClock()
+    submittingAnswer.value = false
     finishingExam.value = false
-    hideLoading()
   }
 }
 
 async function submitCurrentAnswerForExit() {
+  const timingMeta = buildTimingMeta()
   await stopActiveCaptureAsync()
   const media = currentMedia.value
   if (!media.filePath) return null
@@ -1218,21 +1232,22 @@ async function submitCurrentAnswerForExit() {
     filePath: media.filePath,
     mediaType: media.mediaType || 'audio',
     audioFilePath: recordedFile.value || '',
-    timingMeta: buildTimingMeta()
+    timingMeta,
+    waitForProcessing: false
   })
-  await syncUsageAndTrial(answer)
+  void syncUsageAndTrial(answer)
   return answer
 }
 
 async function finishInterruptedExam() {
   const finishedExamId = examStore.examId
-  await examStore.finish()
+  clearInterval(timer)
+  void examStore.finish()
   const lastAnswered = examStore.answers
     .slice()
-    .filter((answer) => answer?.questionId && answer?.scoringResult)
+    .filter((answer) => answer?.questionId)
     .sort((a, b) => Number(a.questionIndex || 0) - Number(b.questionIndex || 0))
     .pop()
-  examStore.reset()
   if (finishedExamId && lastAnswered?.questionId) {
     uni.redirectTo({
       url: `/pages/result/index?examId=${encodeURIComponent(finishedExamId)}&questionId=${encodeURIComponent(lastAnswered.questionId)}`
@@ -1248,6 +1263,7 @@ function goPrepare() {
 }
 
 function goBackHome() {
+  if (submittingAnswer.value || finishingExam.value) return
   uni.showModal({
     title: '退出考场',
     content: hasCurrentCapture.value
@@ -1264,15 +1280,15 @@ function goBackHome() {
         }
 
         finishingExam.value = true
-        showLoading(hasCurrentCapture.value ? '正在提交当前作答' : '正在保存结果')
+        pauseCaptureClock()
         try {
           await submitCurrentAnswerForExit()
           await finishInterruptedExam()
         } catch (error) {
           toast(error?.message || '中断提交失败')
         } finally {
+          resumeCaptureClock()
           finishingExam.value = false
-          hideLoading()
         }
       }
     }
@@ -1770,3 +1786,4 @@ function goBackHome() {
   background: #ffffff;
 }
 </style>
+<style src="@/styles/learner.css"></style>
