@@ -29,3 +29,27 @@ defineProps({
 
 defineEmits(['exit', 'submit'])
 </script>
+
+<style scoped>
+/* Mini-program components do not inherit their parent's scoped selectors. */
+.room-actions {
+  display: grid;
+  grid-template-columns: 180rpx minmax(0, 1fr);
+  gap: 16rpx;
+  padding: 20rpx 28rpx calc(20rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid #dbe3ee;
+  background: #fdfefe;
+}
+.room-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  padding: 12rpx;
+  border-radius: 24rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+.room-actions .primary-button { background: #326be5; color: #fff; }
+.room-actions .secondary-button { background: #fdfefe; color: #285bc7; border: 1rpx solid #dbe3ee; }
+</style>

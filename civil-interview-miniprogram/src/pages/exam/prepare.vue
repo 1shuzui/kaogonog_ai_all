@@ -11,9 +11,9 @@
 <template>
   <view class="page learner-page learner-prepare">
     <BackgroundAnswers />
-    <view class="learner-kicker"><LearnerIcon name="audio" :size="18" /><text>准备好，就开口。</text></view>
-    <text class="page-title">{{ pageTitle }}</text>
-    <text class="page-desc">{{ pageDesc }}</text>
+    <view class="learner-kicker"><LearnerIcon name="audio" :size="24" /><text>{{ pageTitle }}</text></view>
+    <text class="page-title">准备好，就开口。</text>
+    <text class="page-desc">检查声音，选好题目。</text>
 
     <view v-if="readonlyMode" class="card access-card">
       <text class="access-card__title">未开通正式训练</text>
@@ -31,25 +31,13 @@
 
     <view class="card">
       <view class="section-head">
-        <text class="section-title">{{ fixedPracticeEntry ? '专项练习配置' : '练习配置' }}</text>
-      </view>
-
-      <view v-if="showPracticeConfig" class="config-row">
-        <text>题目数量</text>
-        <view class="stepper">
-          <button class="stepper__button" @tap="decreaseCount">-</button>
-          <text class="stepper__value">{{ count }}</text>
-          <button class="stepper__button" @tap="increaseCount">+</button>
-        </view>
-      </view>
-
-      <view v-if="!fixedPracticeEntry" class="config-row">
-        <text>练习模式</text>
+        <text class="section-title">{{ fixedPracticeEntry ? '专项练习配置' : '选择练习模式' }}</text>
       </view>
       <view v-if="fixedPracticeEntry" class="fixed-practice-mode">
         <text class="fixed-practice-mode__title">专项练习</text>
         <text class="fixed-practice-mode__desc">已使用当前生成题目进入练习</text>
       </view>
+
       <view v-else class="mode-grid">
         <view class="mode-card" :class="{ 'mode-card--active': mode === 'free' }" @tap.stop="selectFreeMode">
           <LearnerIcon name="aim" /><text class="mode-card__title">专项练习</text>
@@ -58,6 +46,15 @@
         <view class="mode-card" :class="{ 'mode-card--active': mode === 'fullExam' }" @tap.stop="selectFullExamMode">
           <LearnerIcon name="read" /><text class="mode-card__title">全真模拟</text>
           <text class="mode-card__desc">按真题套卷连续作答</text>
+        </view>
+      </view>
+
+      <view v-if="showPracticeConfig" class="config-row">
+        <text>题目数量</text>
+        <view class="stepper">
+          <button class="stepper__button" @tap="decreaseCount">-</button>
+          <text class="stepper__value">{{ count }}</text>
+          <button class="stepper__button" @tap="increaseCount">+</button>
         </view>
       </view>
 
@@ -126,20 +123,6 @@
         </view>
       </view>
 
-      <view class="config-row media-row">
-        <text>录制方式</text>
-      </view>
-      <view class="mode-grid">
-        <view class="mode-card" :class="{ 'mode-card--active': mediaMode === 'audio' }" @tap.stop="selectAudioMode">
-          <LearnerIcon name="audio" /><text class="mode-card__title">仅录音</text>
-          <text class="mode-card__desc">只关注声音和表达</text>
-        </view>
-        <view class="mode-card" :class="{ 'mode-card--active': mediaMode === 'video' }" @tap.stop="selectVideoMode">
-          <LearnerIcon name="video-camera" /><text class="mode-card__title">录像+录音</text>
-          <text class="mode-card__desc">启用前置摄像头，同步记录视频</text>
-        </view>
-      </view>
-
       <view v-if="showPracticeConfig" class="question-type-panel">
         <view class="config-row config-row--type">
           <text>题目类型</text>
@@ -162,10 +145,25 @@
       </view>
     </view>
 
+    <view class="card learner-media-card">
+      <view class="section-head"><text class="section-title">录制方式</text></view>
+      <view class="mode-grid">
+        <view class="mode-card" :class="{ 'mode-card--active': mediaMode === 'audio' }" @tap.stop="selectAudioMode">
+          <LearnerIcon name="audio" /><text class="mode-card__title">仅录音</text>
+          <text class="mode-card__desc">只关注声音和表达</text>
+        </view>
+        <view class="mode-card" :class="{ 'mode-card--active': mediaMode === 'video' }" @tap.stop="selectVideoMode">
+          <LearnerIcon name="video-camera" /><text class="mode-card__title">录像+录音</text>
+          <text class="mode-card__desc">同步记录声音和画面</text>
+        </view>
+      </view>
+    </view>
+
     <view class="card tips-card">
       <text class="tips-card__title">开考前检查</text>
       <text class="tips-card__line">保持环境安静，进入考场后请授权麦克风；录像模式还需授权摄像头。</text>
-      <text class="tips-card__line">真机调试时，后端地址需使用手机可访问的域名或局域网 IP。</text>
+      <text class="tips-card__line">{{ pageDesc }}</text>
+      <text class="tips-card__line">提交后上传和点评在后台处理，可继续下一题。</text>
     </view>
 
     <button

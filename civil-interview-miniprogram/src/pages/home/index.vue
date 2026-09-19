@@ -14,19 +14,11 @@
     <view class="home-hero">
       <view>
         <text class="home-hero__kicker">{{ userStore.selectedProvinceName }} · 面试练习工作台</text>
-        <text class="home-hero__title">今天，练好一道面试题。</text>
+        <view class="home-hero__title"><text>今天，练好</text><text>一道面试题。</text></view>
         <text class="home-hero__desc">开口练习，留住思路。</text>
         <button class="primary-button learner-home__start" @tap="goPractice('free')">开始练习 →</button>
       </view>
-      <ScoreRing
-        v-if="isLoggedIn && historyStore.stats?.totalExams > 0"
-        :score="historyStore.averageScore"
-        :max-score="100"
-        size="medium"
-        label="平均分"
-        color="#326BE5"
-      />
-      <view v-else class="learner-home__sound"><LearnerIcon name="audio" :size="44" /></view>
+      <view class="learner-home__sound"><LearnerIcon name="audio" :size="44" /></view>
     </view>
 
     <view v-if="!isLoggedIn" class="guest-tip card">
@@ -36,8 +28,6 @@
       </view>
       <button class="secondary-button guest-tip__button" @tap="goLogin">登录</button>
     </view>
-
-    <StatGrid :items="statItems" />
 
     <view v-if="showPreferenceSetup" class="preference-modal" @touchmove.stop.prevent>
       <view class="preference-modal__mask"></view>
@@ -123,6 +113,14 @@
         <text class="muted" @tap.stop="goHistory">查看全部</text>
         <text class="section-toggle__arrow">{{ sectionArrow('recent') }}</text>
       </view>
+    </view>
+
+    <view v-if="isLoggedIn" class="learner-home__overview">
+      <view v-if="historyStore.stats?.totalExams > 0" class="learner-home__average">
+        <ScoreRing :score="historyStore.averageScore" :max-score="100" size="small" label="平均分" color="#326BE5" />
+        <text class="muted">每次开口，都有进步的空间。</text>
+      </view>
+      <StatGrid :items="statItems" />
     </view>
 
     <view v-if="sectionOpen.recent && recentRecords.length">

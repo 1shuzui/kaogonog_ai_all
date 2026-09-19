@@ -9,6 +9,8 @@ function fixture(t) {
   const root = mkdtempSync(join(tmpdir(), 'kaogong-learner-assets-'))
   t.after(() => rmSync(root, { recursive: true, force: true }))
   mkdirSync(join(root, 'static/learner-icons'), { recursive: true })
+  mkdirSync(join(root, 'components'), { recursive: true })
+  writeFileSync(join(root, 'components/RoomActions.wxss'), '.room-actions{display:grid;grid-template-columns:180rpx 1fr}')
   writeFileSync(join(root, 'app.wxss'), ['home', 'prepare', 'room', 'result'].map(page => `.learner-page.learner-${page}{color:#203047}`).join(''))
   for (const name of learnerIconNames) {
     writeFileSync(join(root, `static/learner-icons/${name}.svg`), '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M0 0h24v24z"/></svg>')
@@ -42,4 +44,10 @@ test('rejects a missing icon and an SVG that lost its vector paths', t => {
   const failures = validateLearnerAssets(root)
   assert.ok(failures.includes('missing learner asset: static/learner-icons/audio.svg'))
   assert.ok(failures.includes('static/learner-icons/aim.svg must retain its viewBox and vector paths'))
+})
+
+test('rejects a room whose footer layout exists only in the parent page scope', t => {
+  const root = fixture(t)
+  writeFileSync(join(root, 'components/RoomActions.wxss'), '')
+  assert.ok(validateLearnerAssets(root).some(value => value.startsWith('RoomActions.wxss must own')))
 })

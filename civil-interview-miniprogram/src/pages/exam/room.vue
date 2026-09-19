@@ -151,6 +151,7 @@
         </view>
 
         <RoomActions
+          class="exam-room__actions"
           :finishing="finishingExam"
           :loading="examStore.loading || submittingAnswer"
           :is-last-question="examStore.isLastQuestion"
@@ -262,6 +263,7 @@
         </view>
 
         <RoomActions
+          class="exam-room__actions"
           :finishing="finishingExam"
           :loading="examStore.loading || submittingAnswer"
           :is-last-question="examStore.isLastQuestion"
@@ -1302,10 +1304,6 @@ function goBackHome() {
   background: #F6FAFE;
 }
 
-.exam-room--full-exam {
-  background: #2b1b13;
-}
-
 .exam-room__body {
   display: flex;
   flex-direction: column;
@@ -1590,15 +1588,6 @@ function goBackHome() {
   margin-top: 18rpx;
 }
 
-.room-actions {
-  display: grid;
-  grid-template-columns: 180rpx minmax(0, 1fr);
-  gap: 16rpx;
-  padding: 18rpx 28rpx calc(18rpx + env(safe-area-inset-bottom));
-  border-top: 1rpx solid rgba(128, 83, 52, 0.16);
-  background: #fffaf1;
-}
-
 .exam-room__empty {
   padding: 30rpx;
 }
@@ -1777,12 +1766,4 @@ function goBackHome() {
   margin-top: 18rpx;
 }
 
-.exam-room--practice .room-actions {
-  display: grid;
-  grid-template-columns: 180rpx minmax(0, 1fr);
-  gap: 16rpx;
-  padding: 18rpx 28rpx calc(18rpx + env(safe-area-inset-bottom));
-  border-top: 1rpx solid #e8eef5;
-  background: #ffffff;
-}
 </style>

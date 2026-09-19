@@ -17,6 +17,10 @@ export function validateLearnerAssets(outputDir) {
       failures.push(`app.wxss is missing the learner-${page} theme`)
     }
   }
+  const actionStyles = readAsset('components/RoomActions.wxss')
+  if (!/\.room-actions[^{}]*\{[^}]*display\s*:\s*grid/.test(actionStyles)) {
+    failures.push('RoomActions.wxss must own its action-bar layout; parent scoped styles do not cross mini-program components')
+  }
   for (const name of learnerIconNames) {
     const file = `static/learner-icons/${name}.svg`
     const svg = readAsset(file)
