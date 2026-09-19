@@ -78,7 +78,7 @@
                 <text class="section-title">作答区</text>
                 <view class="answer-head-meta">
                   <text class="answer-head-meta__timer" :class="{ 'answer-head-meta__timer--overtime': isOvertime }">{{ sceneTimerLabel }} {{ formatTime(sceneTimeLeft) }}</text>
-                  <text class="muted">{{ useVideoMode ? '录像 + 录音' : '仅录音' }}</text>
+                  <text class="muted">{{ examStore.mediaMode === 'text' ? '文字作答' : useVideoMode ? '录像 + 录音' : '仅录音' }}</text>
                 </view>
               </view>
 
@@ -86,7 +86,11 @@
                 <text>正在分析结果，请稍候</text>
               </view>
 
-              <view class="record-panel">
+              <view v-if="examStore.mediaMode === 'text'">
+                <text class="muted">{{ textAnswer.length }}/5000 · {{ isJiangsuReading ? '阅读结束后开始作答' : '输入后点击提交本题' }}</text>
+                <textarea v-model="textAnswer" :maxlength="5000" :disabled="examStore.loading || isJiangsuReading" auto-height placeholder="请输入本题答案" style="width: 100%; min-height: 180rpx; font-size: 28rpx;" />
+              </view>
+              <view v-else class="record-panel">
                 <view class="record-panel__status" :class="{ 'record-panel__status--active': captureActive }">
                   <text>{{ captureStatusText }}</text>
                   <text v-if="captureReady" class="record-panel__ready">已记录</text>

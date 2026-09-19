@@ -26,7 +26,7 @@
     <template v-else>
     <h2 class="exam-prepare__title">设备检测</h2>
     <p class="exam-prepare__desc">开始测评前，请确认摄像头和麦克风正常工作</p>
-    <a-button v-if="examMode !== 'fullExam' && examStore.answerMode !== 'text'" @click="useTextAnswer">不方便录音？改用文字作答</a-button>
+    <a-button v-if="examStore.answerMode !== 'text'" @click="useTextAnswer">不方便录音？改用文字作答</a-button>
     <a-alert v-if="examStore.answerMode === 'text'" type="info" message="文字作答无需麦克风、摄像头或语音识别。" />
     <a-alert
       v-if="asrUnavailable"
@@ -98,7 +98,7 @@
               <span class="mode-label">专项练习</span>
               <span class="mode-desc">适合专项训练和即时复盘</span>
             </a-radio>
-            <a-radio value="fullExam" class="mode-radio" :disabled="examStore.answerMode === 'text'">
+            <a-radio value="fullExam" class="mode-radio">
               <span class="mode-label">全真模拟</span>
               <span class="mode-desc">按真题套卷连续作答，保留真实题序和考试节奏</span>
             </a-radio>
@@ -758,7 +758,6 @@ function retryTest() {
 
 function useTextAnswer() {
   examStore.answerMode = 'text'
-  examMode.value = 'free'
   videoEnabled.value = false
   recorder.destroyStream()
   allReady.value = true
@@ -772,7 +771,7 @@ function confirmDevice() {
 async function enterExam() {
   if (enteringExam.value) return
 
-  await loadAsrStatus().catch(() => null)
+  if (examStore.answerMode !== 'text') await loadAsrStatus().catch(() => null)
   if (asrUnavailable.value && examStore.answerMode !== 'text') {
     message.warning('语音转写服务未就绪，请稍后重试。')
     return
@@ -817,6 +816,11 @@ async function enterExam() {
       } catch {
         questions = await fetchScoringReadyRandomQuestions(targetQuestionCount, { params: targetFilterParams.value })
       }
+    } else if (source.value === 'training' && route.query.questionIds) {
+      const ids = [...new Set(String(route.query.questionIds).split(',').filter(Boolean))].slice(0, 5)
+      questions = await ensureScoringReadyQuestions(await Promise.all(ids.map(id => getQuestionById(id))), {
+        requiredCount: ids.length, allowAutoSupplement: false
+      })
     } else if (source.value === 'training' && recommendedId) {
       try {
         const cached = sessionStorage.getItem('training_question')

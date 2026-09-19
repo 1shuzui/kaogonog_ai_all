@@ -160,10 +160,10 @@
       </view>
     </view>
 
-    <button v-if="mode !== 'fullExam'" class="secondary-button" @tap="mediaMode = 'text'">{{ mediaMode === 'text' ? '已选择文字作答，无需录音权限' : '不方便录音？改用文字作答' }}</button>
+    <button class="secondary-button" @tap="mediaMode = 'text'">{{ mediaMode === 'text' ? '已选择文字作答，无需录音权限' : '不方便录音？改用文字作答' }}</button>
     <view class="card tips-card">
       <text class="tips-card__title">开考前检查</text>
-      <text class="tips-card__line">保持环境安静，进入考场后请授权麦克风和摄像头。</text>
+      <text class="tips-card__line">{{ mediaMode === 'text' ? '文字作答无需麦克风或摄像头；全真模拟仍按题序和计时完成。' : '保持环境安静，进入考场后请授权麦克风和摄像头。' }}</text>
       <text class="tips-card__line">真机调试时，后端地址需使用手机可访问的域名或局域网 IP。</text>
     </view>
 
@@ -224,7 +224,6 @@ const ASR_STATUS_CACHE_MS = 30000
 const count = ref(DEFAULT_EXAM_QUESTION_COUNT)
 const mode = ref('free')
 const mediaMode = ref('audio')
-watch(mode, value => { if (value === 'fullExam' && mediaMode.value === 'text') mediaMode.value = 'audio' })
 const selectedDimensions = ref(['random'])
 const questionTypeTouched = ref(false)
 // Targeted filter state

@@ -153,7 +153,12 @@
           </div>
         </div>
 
-        <div class="candidate-seat__video">
+        <div v-if="isTextAnswer" class="candidate-seat__text" style="padding: 20px">
+          <h3>文字作答</h3>
+          <p>点击“开始回答本题”后输入答案；按题序提交，保留本套计时规则。</p>
+          <a-textarea v-model:value="textAnswer" :maxlength="5000" show-count :auto-size="{ minRows: 5, maxRows: 12 }" :disabled="!isAnsweringActiveQuestion" placeholder="请输入本题答案" />
+        </div>
+        <div v-else class="candidate-seat__video">
           <VideoPreview
             :stream="stream"
             :recording="isAnsweringActiveQuestion"
@@ -161,7 +166,7 @@
           />
         </div>
 
-        <div v-show="isAnsweringActiveQuestion" class="candidate-seat__wave">
+        <div v-show="isAnsweringActiveQuestion && !isTextAnswer" class="candidate-seat__wave">
           <AudioWaveform
             :stream="stream"
             :active="isAnsweringActiveQuestion"
@@ -352,6 +357,8 @@ const speechInProgress = ref(false)
 const totalRemainingSeconds = ref(0)
 const finishRequested = ref(false)
 const exitingExam = ref(false)
+const textAnswer = ref('')
+const isTextAnswer = computed(() => examStore.answerMode === 'text')
 const currentYearLabel = `${new Date().getFullYear()}年度`
 let totalTimer = null
 let speechUtterance = null
@@ -517,7 +524,7 @@ const examinerNotice = computed(() => {
 const candidateStatusText = computed(() => {
   if (!examStarted.value) return '等待开场'
   if (readingPhaseActive.value) return '阅读题本中'
-  if (examStore.status === EXAM_STATUS.ANSWERING) return '正在录制作答'
+  if (examStore.status === EXAM_STATUS.ANSWERING) return isTextAnswer.value ? '正在文字作答' : '正在录制作答'
   if (examStore.status === EXAM_STATUS.SUBMITTING) return '答案提交中'
   if (allAnswered.value) return '作答完成'
   return '待作答'
@@ -539,6 +546,7 @@ const currentQuestionTag = computed(() => {
 })
 
 const currentQuestionHint = computed(() => {
+  if (isTextAnswer.value) return readingPhaseActive.value ? '阅读阶段结束后，可按题序输入并提交答案。' : '文字作答不启用录音和摄像头；输入内容按同一题库和外部模型评分。'
   if (!examStarted.value) return '开场引导语播放完成后，点击开始作答即可进入真实考场节奏。'
   if (readingPhaseActive.value) return '江苏模式为 5+15：当前仅阅读题本，阅读倒计时结束后再开始录制作答。'
   if (allAnswered.value) return '所有题目均已提交，可以结束本场全真模拟。'
@@ -564,7 +572,7 @@ onMounted(async () => {
   const storedStream = examStore.consumeStream()
   if (storedStream) {
     recorder.setStream(storedStream)
-  } else {
+  } else if (!isTextAnswer.value) {
     await recorder.initStream({ videoEnabled: examStore.videoEnabled })
   }
 
@@ -584,6 +592,7 @@ onUnmounted(() => {
 })
 
 watch(() => examStore.currentIndex, async () => {
+  textAnswer.value = currentAnswer.value?.transcript || ''
   await nextTick()
   scrollCurrentQuestionIntoView()
 })
@@ -624,7 +633,7 @@ function questionCardClass(index) {
 
 function selectQuestion(index) {
   if (examStore.status === EXAM_STATUS.ANSWERING) {
-    message.warning('请先提交当前正在录制的答案。')
+    message.warning('请先提交当前正在作答的答案。')
     return
   }
   if (examStore.status === EXAM_STATUS.SUBMITTING) {
@@ -743,7 +752,7 @@ async function startCurrentAnswer() {
   stopSpeech()
   examStore.resetCurrentQuestionState()
   examStore.startAnswering()
-  recorder.startRecording()
+  if (!isTextAnswer.value) recorder.startRecording()
 }
 
 async function submitCurrentAnswer(options = {}) {
@@ -753,8 +762,8 @@ async function submitCurrentAnswer(options = {}) {
 
   try {
     const usageSeconds = Math.max(1, Math.ceil(Number(recorderDuration.value) || 0))
-    const blob = await recorder.stopRecording()
-    const answer = await examStore.submitAnswer(blob)
+    const blob = isTextAnswer.value ? null : await recorder.stopRecording()
+    const answer = await examStore.submitAnswer(blob, isTextAnswer.value ? textAnswer.value : '')
     await syncUsage(answer, usageSeconds)
 
     if (finishAfterSubmit || totalRemainingSeconds.value <= 0) {
@@ -768,9 +777,10 @@ async function submitCurrentAnswer(options = {}) {
 async function submitCurrentAnswerForExit() {
   if (examStore.status !== EXAM_STATUS.ANSWERING) return null
   const usageSeconds = Math.max(1, Math.ceil(Number(recorderDuration.value) || 0))
-  const blob = await recorder.stopRecording()
-  if (!blob || blob.size <= 0) return null
-  const answer = await examStore.submitAnswer(blob)
+  const blob = isTextAnswer.value ? null : await recorder.stopRecording()
+  const transcript = isTextAnswer.value ? textAnswer.value.trim() : ''
+  if ((!blob || blob.size <= 0) && !transcript) return null
+  const answer = await examStore.submitAnswer(blob, transcript)
   await syncUsage(answer, usageSeconds)
   return answer
 }

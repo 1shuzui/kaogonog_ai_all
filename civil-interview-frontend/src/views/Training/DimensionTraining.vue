@@ -76,6 +76,9 @@
 
     <!-- 生成训练题 -->
     <div class="dim-actions">
+      <a-radio-group v-model:value="questionCount" style="margin-bottom: 12px">
+        <a-radio-button v-for="count in [1, 3, 5]" :key="count" :value="count">{{ count }} 题</a-radio-button>
+      </a-radio-group>
       <a-button
         type="primary"
         size="large"
@@ -91,6 +94,7 @@
     <div v-if="questions.length" class="dim-questions">
       <div class="section-header">
         <h3>训练题目</h3>
+        <a-button type="primary" @click="startAllQuestions">连续练习这 {{ questions.length }} 题</a-button>
         <a-button type="link" size="small" @click="generateQuestions">重新生成</a-button>
       </div>
       <div
@@ -164,6 +168,7 @@ const avgScore = computed(() => {
 
 const generating = ref(false)
 const questions = ref([])
+const questionCount = ref(3)
 
 // Targeted filter state
 const selectedExamCategoryId = ref('')
@@ -209,7 +214,7 @@ async function generateQuestions() {
   if (!categoryInfo.value) return
   generating.value = true
   try {
-    const params = { dimension: categoryInfo.value.requestDimension, count: 3 }
+    const params = { dimension: categoryInfo.value.requestDimension, count: questionCount.value }
     // Build target filters from selection
     const cat = selectedCategoryNode.value
     const region = selectedRegionNode.value
@@ -241,6 +246,13 @@ async function generateQuestions() {
   } finally {
     generating.value = false
   }
+}
+
+function startAllQuestions() {
+  if (!questions.value.length) return
+  const unsupported = questions.value.filter(question => !isQuestionScoringSupported(question))
+  if (unsupported.length) return message.warning(getScoringUnavailableMessage(unsupported.length))
+  router.push({ path: '/exam/prepare', query: { source: 'training', questionIds: questions.value.map(question => question.id).join(',') } })
 }
 
 function startPractice(question) {
