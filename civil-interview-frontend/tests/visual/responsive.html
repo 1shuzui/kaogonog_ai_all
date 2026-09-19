@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>考生页宽度验收 · 演示数据</title><style>body{margin:0;background:#e4eaf3;font:16px system-ui;color:#203047}nav{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:16px;background:#fff}button,select{padding:10px}iframe{display:block;margin:20px auto;border:0;background:#f7f9fd;max-width:100%}</style></head><body>
+<nav><strong>本机响应式验收</strong><label>宽度 <select id="width"><option>320</option><option selected>375</option><option>414</option><option>768</option><option>1280</option></select></label><label>页面 <select id="page"><option value="home">首页</option><option value="room">考场</option><option value="result">待点评结果</option></select></label><button id="inspect">检查溢出</button><output id="report"></output></nav>
+<iframe id="preview" title="真实组件 · 演示数据" width="375" height="1000" src="./learner.html?compact&page=home"></iframe>
+<script>
+const preview=document.querySelector('#preview');const width=document.querySelector('#width');const page=document.querySelector('#page');
+width.onchange=()=>document.querySelector('#preview').width=width.value;
+page.onchange=()=>{const frame=document.createElement('iframe');frame.id='preview';frame.title='真实组件 · 演示数据';frame.width=width.value;frame.height='1000';frame.src='./learner.html?compact&page='+page.value;document.querySelector('#preview').replaceWith(frame);};
+document.querySelector('#inspect').onclick=()=>{const d=document.querySelector('#preview').contentDocument;document.querySelector('#report').textContent='视口 '+d.documentElement.clientWidth+' / 内容 '+d.documentElement.scrollWidth;};
+</script></body></html>

@@ -8,10 +8,11 @@
 @raises: 不主动抛业务异常；权益不足、抽题失败或媒体权限异常由页面提示承接。
 -->
 <template>
-  <div class="exam-prepare page-container">
+  <div class="exam-prepare page-container learner-page">
+    <BackgroundAnswers />
     <!-- 候考室倒计时 -->
     <div v-if="waitingRoom" class="waiting-room card">
-      <div class="waiting-room__icon">🏛️</div>
+      <div class="waiting-room__icon"><SoundOutlined /></div>
       <h2>候考室</h2>
       <p class="waiting-room__hint">全真模拟即将开始，请做好准备</p>
       <div class="waiting-room__countdown">{{ waitCountdown }}</div>
@@ -24,8 +25,9 @@
 
     <!-- 正常设备检测流程 -->
     <template v-else>
-    <h2 class="exam-prepare__title">设备检测</h2>
-    <p class="exam-prepare__desc">开始测评前，请确认摄像头和麦克风正常工作</p>
+    <span class="learner-kicker"><AudioOutlined /> 开考准备</span>
+    <h2 class="exam-prepare__title">准备好，就开口。</h2>
+    <p class="exam-prepare__desc">检查声音，选好题目。提交后可继续下一题，点评会在后台进行。</p>
     <a-alert
       v-if="asrUnavailable"
       class="exam-prepare__asr-alert"
@@ -226,6 +228,8 @@
 </template>
 
 <script setup>
+import { AudioOutlined, SoundOutlined } from '@ant-design/icons-vue'
+import BackgroundAnswers from '@/components/exam/BackgroundAnswers.vue'
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
@@ -1060,3 +1064,4 @@ async function startFullExam(questions) {
   }
 }
 </style>
+<style src="@/styles/learner.css"></style>

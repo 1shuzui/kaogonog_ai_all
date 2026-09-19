@@ -9,7 +9,10 @@
 @raises: 不主动抛业务异常；结果缺失、接口失败或分享失败由页面提示承接。
 -->
 <template>
-  <view class="page">
+  <view class="page learner-page learner-result">
+    <view class="learner-kicker"><LearnerIcon name="solution" :size="20" /><text>练习复盘</text></view>
+    <text class="learner-title">看看这次，哪里更好了。</text>
+    <BackgroundAnswers />
     <view v-if="!result && answerList.length > 1" class="card answer-tabs">
       <scroll-view scroll-x class="answer-tabs__scroll">
         <view class="answer-tabs__row">
@@ -46,6 +49,16 @@
             </button>
           </view>
         </scroll-view>
+      </view>
+
+      <view v-if="displayTranscript" class="card learner-transcript">
+        <view class="section-head"><LearnerIcon name="file-text" /><text class="section-title">我的作答原文</text></view>
+        <text class="plain-text">{{ displayTranscript }}</text>
+      </view>
+      <view v-else-if="noContentReason" class="card transcript-status-card">
+        <text class="section-title">我的作答原文</text>
+        <text class="transcript-status-card__title">{{ noContentReason.title }}</text>
+        <text class="transcript-status-card__desc">{{ noContentReason.desc }}</text>
       </view>
 
       <view class="card">
@@ -185,20 +198,6 @@
         <DimensionBars :dimensions="result.dimensions" />
       </view>
 
-      <view v-if="displayTranscript" class="card">
-        <view class="section-head">
-          <text class="section-title">作答文本</text>
-        </view>
-        <text class="plain-text">{{ displayTranscript }}</text>
-      </view>
-      <view v-else-if="noContentReason" class="card transcript-status-card">
-        <view class="section-head">
-          <text class="section-title">作答文本</text>
-        </view>
-        <text class="transcript-status-card__title">{{ noContentReason.title }}</text>
-        <text class="transcript-status-card__desc">{{ noContentReason.desc }}</text>
-      </view>
-
       <view class="utility-actions card">
         <button class="secondary-button" @tap="toggleStarred">
           {{ isStarred ? '已收藏' : '收藏本题' }}
@@ -234,12 +233,16 @@
         </view>
       </view>
     </template>
-    <view v-else-if="displayTranscript" class="card">
-      <view class="section-head"><text class="section-title">答案已保存 · 待点评</text></view>
+    <view v-else-if="currentAnswer && !currentAnswer.isPlaceholder" class="card">
+      <view class="section-head"><text class="section-title">{{ currentAnswer.processingStatus === 'failed' ? '处理未完成，可重试' : '作答已收到 · 待点评' }}</text></view>
+      <text v-if="!displayTranscript" class="plain-text">{{ currentAnswer.processingStatus === 'failed' ? '文字稿尚未生成，请重试录音处理。' : '录音正在处理，文字稿和点评完成后会自动显示。请保持小程序打开。' }}</text>
       <text class="plain-text">{{ displayTranscript }}</text>
-      <button class="primary-button" :loading="retryingScoring" :disabled="retryingScoring" @tap="retryScoring">
-        {{ retryingScoring ? '正在点评' : '继续点评' }}
+      <text v-if="currentAnswer.processingError" class="plain-text">{{ currentAnswer.processingError }}</text>
+      <video v-if="answerVideoUrl" :src="answerVideoUrl" controls style="width: 100%" />
+      <button v-if="canRetryCurrentAnswer" class="primary-button" :loading="retryingScoring" :disabled="retryingScoring" @tap="retryScoring">
+        {{ retryingScoring ? '正在处理' : '重试处理' }}
       </button>
+      <button class="secondary-button" @tap="home">返回首页</button>
     </view>
     <view v-else class="card">
       <EmptyState title="暂无评分结果" desc="如果刚提交作答，请稍后刷新历史记录。" />
@@ -248,11 +251,13 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import LearnerIcon from '../../components/LearnerIcon.vue'
+import { computed, ref, watch } from 'vue'
 import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import DimensionBars from '../../components/DimensionBars.vue'
 import EmptyState from '../../components/EmptyState.vue'
 import ScoreRing from '../../components/ScoreRing.vue'
+import BackgroundAnswers from '../../components/BackgroundAnswers.vue'
 import { getHistoryDetail } from '../../api/history'
 import { API_BASE } from '../../api/request'
 import { evaluateAnswer, getScoringResult } from '../../api/scoring'
@@ -287,6 +292,8 @@ const retryingScoring = ref(false)
 const grade = computed(() => getGrade(result.value?.totalScore || 0, result.value?.maxScore || 100))
 const localFitProvinceName = computed(() => getProvinceName(questionProvince.value || 'national'))
 const currentAnswer = computed(() => answerList.value[activeAnswerIndex.value] || null)
+const canRetryCurrentAnswer = computed(() => currentAnswer.value?.processingStatus === 'failed'
+  || (!currentAnswer.value?.processingStatus && !!displayTranscript.value && !result.value))
 const answerVideoUrl = computed(() => {
   const answer = currentAnswer.value || {}
   const media = result.value?.mediaRecord || answer.scoringResult?.mediaRecord || {}
@@ -542,25 +549,33 @@ onLoad(async (query) => {
   await loadResult(query || {})
 })
 
+watch(() => examStore.getAnswersForExam(activeExamId.value).map((answer) => [answer.processingStatus, answer.transcript, answer.scoringResult]), () => {
+  const localAnswers = examStore.getAnswersForExam(activeExamId.value)
+  if (!canUseLocalAnswers(activeExamId.value, activeExamId.value, localAnswers)) return
+  const questionIds = activeExamId.value === examStore.examId ? examStore.questions.map((item) => item.id) : localAnswers.map((item) => item.questionId)
+  answerList.value = buildDisplayAnswers(localAnswers, questionIds, activeExamId.value)
+  applyAnswer(answerList.value[activeAnswerIndex.value])
+  finalizeLoadedResult()
+})
+
 async function loadResult(query) {
   const examId = String(query.examId || examStore.examId || '').trim()
-  const localExamId = String(
-    examStore.examId
-      || examStore.answers.find((item) => item?.examId)?.examId
-      || ''
-  ).trim()
-  const canUseLocalExamAnswers = canUseLocalAnswers(examId, localExamId, examStore.answers)
+  const localAnswers = examStore.getAnswersForExam(examId)
+  const canUseLocalExamAnswers = canUseLocalAnswers(examId, examId, localAnswers)
   const requestedQuestionId = String(query.questionId || '').trim()
   const questionId = requestedQuestionId || (canUseLocalExamAnswers ? examStore.currentQuestion?.id : '')
   const answer = canUseLocalExamAnswers
-    ? (examStore.answers.find((item) => item.questionId === questionId) || examStore.answers[examStore.answers.length - 1])
+    ? (localAnswers.find((item) => item.questionId === questionId) || localAnswers[localAnswers.length - 1])
     : null
   activeExamId.value = String(examId || answer?.examId || '')
   activeQuestionId.value = String(questionId || answer?.questionId || '')
 
   if (canUseLocalExamAnswers) {
-    const displayAnswers = buildDisplayAnswers(examStore.answers, examStore.questions.map((item) => item.id), activeExamId.value)
-    await hydrateMissingQuestionInfo(displayAnswers)
+    const questionIds = examId === examStore.examId ? examStore.questions.map((item) => item.id) : localAnswers.map((item) => item.questionId)
+    const displayAnswers = buildDisplayAnswers(localAnswers, questionIds, activeExamId.value).map((item) => {
+      const question = examStore.questions.find((entry) => entry.id === item.questionId)
+      return { ...item, questionStem: item.questionStem || question?.stem || '', province: item.province || question?.province }
+    })
     answerList.value = displayAnswers
     const selectedIndex = Math.max(0, displayAnswers.findIndex((item) => item.questionId === activeQuestionId.value))
     activeAnswerIndex.value = selectedIndex
@@ -641,10 +656,15 @@ async function hydrateResultContext(examId, questionId) {
 }
 
 async function retryScoring() {
-  if (retryingScoring.value || !displayTranscript.value || !activeExamId.value || !activeQuestionId.value) return
+  if (retryingScoring.value || !canRetryCurrentAnswer.value || !activeExamId.value || !activeQuestionId.value) return
   const answer = currentAnswer.value
   retryingScoring.value = true
   try {
+    const local = examStore.getAnswersForExam(activeExamId.value).find((item) => item.questionId === activeQuestionId.value)
+    if (local) {
+      await examStore.retryAnswer(local)
+      return
+    }
     const scored = await evaluateAnswer({
       examId: activeExamId.value,
       questionId: activeQuestionId.value,
@@ -1190,3 +1210,4 @@ function home() {
   margin-top: 12rpx;
 }
 </style>
+<style src="@/styles/learner.css"></style>

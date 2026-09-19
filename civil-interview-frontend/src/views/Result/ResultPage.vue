@@ -9,7 +9,14 @@ PC 评分结果页，负责展示总分、能力维度、扣分分析、文字�
 @raises: 不主动抛业务异常；结果缺失、接口失败或导出失败由页面提示承接。
 -->
 <template>
-  <div class="result-page page-container">
+  <div class="result-page page-container learner-page">
+    <header class="learner-page-heading"><span class="learner-kicker">练习复盘</span><h1>看看这次，哪里更好了。</h1><p>先回看自己的表达，再对照点评调整。AI 点评仅供训练参考。</p></header>
+    <BackgroundAnswers />
+    <div v-if="!loading && !result && answerList.length > 1" class="answer-tabs card">
+      <a-radio-group v-model:value="currentAnswerIdx" button-style="solid">
+        <a-radio-button v-for="(answer, index) in answerList" :key="answer.questionId" :value="index">第 {{ index + 1 }} 题 · {{ formatAnswerScore(answer) }}</a-radio-button>
+      </a-radio-group>
+    </div>
     <div v-if="loading" class="result-skeleton">
       <div class="card" style="padding: 24px; text-align: center;">
         <a-skeleton-avatar :size="100" shape="circle" active />
@@ -73,6 +80,10 @@ PC 评分结果页，负责展示总分、能力维度、扣分分析、文字�
             </a-radio-button>
           </a-radio-group>
         </div>
+
+        <section class="learner-transcript">
+          <TranscriptViewer :transcript="result.highlightedTranscript || transcript" :keywords="result.matchedKeywords" />
+        </section>
 
         <div v-if="currentScoringPoints.length" class="card result-page__assignment-card" style="margin-top: 12px">
           <div class="result-page__assignment-head">
@@ -220,12 +231,6 @@ PC 评分结果页，负责展示总分、能力维度、扣分分析、文字�
           <ScoreBreakdown :keywords="result.matchedKeywords" />
         </div>
 
-        <div style="margin-top: 12px">
-          <TranscriptViewer
-            :transcript="result.highlightedTranscript || transcript"
-            :keywords="result.matchedKeywords"
-          />
-        </div>
       </div>
 
       <SpeechAnalysisPanel v-if="speechAnalysis" :analysis="speechAnalysis" />
@@ -300,6 +305,20 @@ PC 评分结果页，负责展示总分、能力维度、扣分分析、文字�
         :dimensions="result.dimensions || []"
       />
     </template>
+    <section v-else-if="currentAnswer" class="card result-page__pending">
+      <h2>{{ currentAnswer.processingStatus === 'failed' ? '本题处理未完成' : '作答已收到，点评稍后更新' }}</h2>
+      <p>{{ currentAnswer.processingStatus === 'failed' ? '本次录音或文字稿仍保留。点击重试，从未完成的步骤继续处理。' : '上传、转写和点评在后台继续，处理完成后这里会自动更新，不显示临时 0 分。' }}</p>
+      <p v-if="currentAnswer.processingError" role="alert">{{ currentAnswer.processingError }}</p>
+      <TranscriptViewer v-if="transcript" :transcript="transcript" :keywords="[]" />
+      <p v-else>{{ currentAnswer.processingStatus === 'failed' ? '文字稿尚未生成，请重试录音处理。' : '文字稿还未生成，录音仍在处理。' }}</p>
+      <audio v-if="currentRecordingUrl" :src="currentRecordingUrl" controls aria-label="本题录音回放"></audio>
+      <video v-if="currentVideoUrl" :src="currentVideoUrl" controls style="max-width: 100%" aria-label="本题录像回放"></video>
+      <div class="result-page__actions">
+        <a-button v-if="canRetryCurrentAnswer" type="primary" :loading="retryingScoring" @click="retryCurrentAnswer">重试处理</a-button>
+        <a-button @click="$router.push('/')">返回首页</a-button>
+      </div>
+    </section>
+    <section v-else class="card result-page__pending"><h2>暂未取得结果</h2><p>请从练习记录重新进入，已保存的答案不会因此删除。</p><a-button @click="$router.push('/')">返回首页</a-button></section>
   </div>
 </template>
 
@@ -320,6 +339,9 @@ import { useTrainingStore } from '@/stores/training'
 import { getGrade } from '@/utils/constants'
 import { getHistoryDetail } from '@/api/history'
 import { getQuestionById } from '@/api/questionBank'
+import { evaluateAnswer } from '@/api/scoring'
+import { hasFinalScore } from '@/utils/answerStatus'
+import BackgroundAnswers from '@/components/exam/BackgroundAnswers.vue'
 import { canUseLocalAnswers } from '@/utils/resultAnswerSource'
 import { getQuestionScorePair } from '@/utils/scorePresentation'
 import { usePdfExport } from '@/composables/usePdfExport'
@@ -350,9 +372,12 @@ const currentAnswerIdx = ref(0)
 const blobUrls = ref([])
 const questionDetailsMap = ref({})
 const floatingVideoVisible = ref(false)
+const retryingScoring = ref(false)
 
 const activeExamId = computed(() => String(route.params.examId || examStore.examId || ''))
 const currentAnswer = computed(() => answerList.value[currentAnswerIdx.value] || null)
+const canRetryCurrentAnswer = computed(() => currentAnswer.value?.processingStatus === 'failed'
+  || (!currentAnswer.value?.processingStatus && !!transcript.value && !result.value))
 const currentQuestion = computed(() => {
   const answer = currentAnswer.value
   if (!answer?.questionId) return null
@@ -376,7 +401,7 @@ const currentScoringPoints = computed(() => {
     .filter((item) => item.content)
 })
 const completedAnswerCount = computed(() => answerList.value.filter((answer) => !answer?.isPlaceholder && answer?.scoringResult).length)
-const placeholderAnswerCount = computed(() => answerList.value.filter((answer) => answer?.isPlaceholder || !answer?.scoringResult).length)
+const placeholderAnswerCount = computed(() => answerList.value.filter((answer) => answer?.isPlaceholder).length)
 const currentQuestionAssignedScore = computed(() => currentScoringPoints.value.reduce((sum, item) => sum + item.score, 0))
 const improvementReference = computed(() => {
   const rawTranscript = currentAnswer.value?.transcript || transcript.value || ''
@@ -613,7 +638,8 @@ function getAnswerScorePair(answer, question = null) {
 }
 
 function formatAnswerScore(answer) {
-  if (answer?.isPlaceholder || !answer?.scoringResult) return '未作答'
+  if (answer?.isPlaceholder) return '未作答'
+  if (!hasFinalScore(answer?.scoringResult)) return answer?.processingStatus === 'failed' ? '可重试' : '待点评'
   const question = examStore.questionList?.find((item) => item.id === answer?.questionId)
     || questionDetailsMap.value[answer?.questionId]
     || null
@@ -629,7 +655,7 @@ const displayQuestionScore = computed(() => formatScoreNumber(currentScorePair.v
 const displayQuestionMaxScore = computed(() => formatScoreNumber(currentScorePair.value.maxScore))
 const displayPercentScore = computed(() => formatScoreNumber(currentScorePair.value.score / currentScorePair.value.maxScore * 100))
 const answerTabsLabel = computed(() => (
-  answerList.value.length > 1 ? `已答 ${completedAnswerCount.value} 题，未答 ${placeholderAnswerCount.value} 题` : ''
+  answerList.value.length > 1 ? `已点评 ${completedAnswerCount.value} 题，待点评 ${answerList.value.length - completedAnswerCount.value - placeholderAnswerCount.value} 题，未答 ${placeholderAnswerCount.value} 题` : ''
 ))
 
 const gradeInfo = computed(() => {
@@ -735,7 +761,7 @@ function syncDisplayedAnswer(answer) {
   const question = examStore.questionList?.find((item) => item.id === answer?.questionId)
     || questionDetailsMap.value[answer?.questionId]
     || null
-  result.value = answer.scoringResult || buildEmptyScoringResult(question)
+  result.value = hasFinalScore(answer.scoringResult) ? answer.scoringResult : (answer.isPlaceholder ? buildEmptyScoringResult(question) : null)
   transcript.value = answer.transcript || ''
 }
 
@@ -799,14 +825,14 @@ function syncLoadedAnswers(detail = {}, answers = []) {
     const question = examStore.questionList?.find((item) => item.id === answer.questionId)
       || questionDetailsMap.value[answer.questionId]
       || null
-    const scoringResult = answer.scoringResult ? normalizeScoringResult(answer.scoringResult, question) : buildEmptyScoringResult(question)
+    const scoringResult = hasFinalScore(answer.scoringResult) ? normalizeScoringResult(answer.scoringResult, question) : (answer.isPlaceholder ? buildEmptyScoringResult(question) : null)
     return {
       ...answer,
       questionStem: answer.questionStem || question?.stem || '',
       province: answer.province || question?.province || detail?.province || 'national',
       scoringResult,
-      transcript: answer.transcript || (answer.scoringResult ? '' : '未作答'),
-      answerTiming: answer.answerTiming || scoringResult.answerTiming || null
+      transcript: answer.transcript || (answer.isPlaceholder ? '未作答' : ''),
+      answerTiming: answer.answerTiming || scoringResult?.answerTiming || null
     }
   })
 
@@ -821,9 +847,9 @@ function enrichAnswerListWithQuestions() {
       || questionDetailsMap.value[answer?.questionId]
       || null
     if (!question) return answer
-    const scoringResult = answer.scoringResult
+    const scoringResult = hasFinalScore(answer.scoringResult)
       ? normalizeScoringResult(answer.scoringResult, question)
-      : buildEmptyScoringResult(question)
+      : (answer.isPlaceholder ? buildEmptyScoringResult(question) : null)
     return {
       ...answer,
       questionStem: answer.questionStem || question.stem || '',
@@ -834,7 +860,7 @@ function enrichAnswerListWithQuestions() {
 }
 
 function syncFallbackFromDetail(detail = {}) {
-  result.value = buildHistorySummaryResult(detail)
+  result.value = detail.scoringStatus === 'pending' ? null : buildHistorySummaryResult(detail)
   transcript.value = ''
   answerList.value = []
   currentAnswerIdx.value = 0
@@ -845,6 +871,38 @@ watch(currentAnswerIdx, (idx) => {
   closeFloatingVideo()
   syncDisplayedAnswer(answerList.value[idx])
 })
+
+watch(() => examStore.getAnswersForExam(activeExamId.value).map((answer) => [answer.processingStatus, answer.transcript, answer.scoringResult]), () => {
+  const localAnswers = examStore.getAnswersForExam(activeExamId.value)
+  if (!canUseLocalAnswers(activeExamId.value, activeExamId.value, localAnswers)) return
+  answerList.value = localAnswers.map((answer) => ({ ...answer }))
+  enrichAnswerListWithQuestions()
+  syncDisplayedAnswer(answerList.value[currentAnswerIdx.value])
+  autoAddWeakAll()
+  recordTrainingProgress()
+})
+
+async function retryCurrentAnswer() {
+  if (retryingScoring.value || !canRetryCurrentAnswer.value) return
+  const answer = currentAnswer.value
+  const local = examStore.getAnswersForExam(activeExamId.value).find((item) => item.questionId === answer.questionId)
+  retryingScoring.value = true
+  try {
+    if (local) {
+      await examStore.retryAnswer(local)
+    } else {
+      const scored = await evaluateAnswer({ examId: activeExamId.value, questionId: answer.questionId, transcript: answer.transcript })
+      if (!hasFinalScore(scored)) throw new Error('点评尚未完成，请稍后重试')
+      answer.scoringResult = scored
+      answer.processingStatus = 'completed'
+      if (currentAnswer.value === answer) syncDisplayedAnswer(answer)
+    }
+  } catch (error) {
+    answer.processingError = error?.message || '点评暂未完成，请稍后重试'
+  } finally {
+    retryingScoring.value = false
+  }
+}
 
 const isStarred = computed(() => {
   const answer = currentAnswer.value
@@ -900,23 +958,15 @@ function autoAddWeakAll() {
 }
 
 function recordTrainingProgress() {
-  const recordKey = `training-progress-recorded:${activeExamId.value || 'local'}`
-  if (sessionStorage.getItem(recordKey)) return
-
-  let hasRecorded = false
-
   for (const answer of answerList.value) {
     if (answer?.isPlaceholder || !answer?.scoringResult || !answer?.questionId) continue
 
     const question = examStore.questionList?.find((item) => item.id === answer.questionId)
     const trainingCategoryKey = question?.trainingCategoryKey
     if (!trainingCategoryKey) continue
-
+    const recordKey = `training-progress-recorded:${activeExamId.value}:${answer.questionId}`
+    if (sessionStorage.getItem(recordKey)) continue
     trainingStore.recordTrainingResult(trainingCategoryKey, Number(answer.scoringResult.totalScore) || 0)
-    hasRecorded = true
-  }
-
-  if (hasRecorded) {
     sessionStorage.setItem(recordKey, '1')
   }
 }
@@ -933,17 +983,14 @@ function openShareCard() {
 
 onMounted(async () => {
   const requestedExamId = String(route.params.examId || '').trim()
-  const localExamId = String(
-    examStore.examId
-      || examStore.answers.find((answer) => answer?.examId)?.examId
-      || ''
-  ).trim()
-  const canUseLocalExamAnswers = canUseLocalAnswers(requestedExamId, localExamId, examStore.answers)
-  const canUseLocalScoringResult = !requestedExamId || localExamId === requestedExamId
+  const localExamId = requestedExamId || String(examStore.examId || '').trim()
+  const localAnswers = examStore.getAnswersForExam(localExamId)
+  const canUseLocalExamAnswers = canUseLocalAnswers(requestedExamId, localExamId, localAnswers)
+  const canUseLocalScoringResult = !requestedExamId || String(examStore.examId || '') === requestedExamId
 
   if (canUseLocalExamAnswers) {
-    syncAnswerList(examStore.answers)
-    await hydrateQuestionDetails(examStore.answers)
+    syncAnswerList(localAnswers)
+    await hydrateQuestionDetails(localAnswers)
     enrichAnswerListWithQuestions()
     syncDisplayedAnswer(answerList.value[currentAnswerIdx.value])
     loading.value = false
@@ -1002,6 +1049,7 @@ onUnmounted(() => {
 
 <style lang="less" scoped>
 @import '@/styles/variables.less';
+.result-page__pending { padding: 28px; line-height: 1.8; }
 
 .result-page__score {
   padding: 22px 18px 18px;
@@ -1469,3 +1517,4 @@ onUnmounted(() => {
   }
 }
 </style>
+<style src="@/styles/learner.css"></style>

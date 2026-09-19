@@ -9,20 +9,24 @@
 @raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面空态承接。
 -->
 <template>
-  <view class="page page--tab">
+  <view class="page page--tab learner-page learner-home">
+    <BackgroundAnswers />
     <view class="home-hero">
       <view>
-        <text class="home-hero__kicker">{{ userStore.selectedProvinceName }}备考</text>
-        <text class="home-hero__title">公考面试AI测评</text>
-        <text class="home-hero__desc">智能评分、精准诊断、高效提分</text>
+        <text class="home-hero__kicker">{{ userStore.selectedProvinceName }} · 面试练习工作台</text>
+        <text class="home-hero__title">今天，练好一道面试题。</text>
+        <text class="home-hero__desc">开口练习，留住思路。</text>
+        <button class="primary-button learner-home__start" @tap="goPractice('free')">开始练习 →</button>
       </view>
       <ScoreRing
+        v-if="isLoggedIn && historyStore.stats?.totalExams > 0"
         :score="historyStore.averageScore"
         :max-score="100"
         size="medium"
         label="平均分"
-        color="#ffffff"
+        color="#326BE5"
       />
+      <view v-else class="learner-home__sound"><LearnerIcon name="audio" :size="44" /></view>
     </view>
 
     <view v-if="!isLoggedIn" class="guest-tip card">
@@ -78,19 +82,19 @@
     </view>
 
     <view class="quick-grid">
-      <button class="primary-button quick-grid__button" @tap="goPractice('free')">专项练习</button>
-      <button class="primary-button quick-grid__button" @tap="goPractice('fullExam')">全真练习</button>
-      <button class="secondary-button quick-grid__button" @tap="goPricing">套餐中心</button>
+      <button class="secondary-button quick-grid__button" @tap="goPractice('free')"><LearnerIcon name="aim" />专项练习</button>
+      <button class="secondary-button quick-grid__button" @tap="goPractice('fullExam')"><LearnerIcon name="read" />全真练习</button>
+      <button class="secondary-button quick-grid__button" @tap="goPricing"><LearnerIcon name="wallet" />套餐中心</button>
     </view>
 
     <view v-if="showJiangsuEntry" class="jiangsu-entry card">
       <view class="jiangsu-entry__head">
-        <text class="jiangsu-entry__kicker">首页核心入口</text>
+        <text class="jiangsu-entry__kicker">江苏岗位题库</text>
         <text class="jiangsu-entry__title">2026 江苏事业单位统考</text>
-        <text class="jiangsu-entry__desc">分岗精准刷题，岗位优先一眼看懂。</text>
+        <text class="jiangsu-entry__desc">选好方向，练得更有针对性。</text>
       </view>
       <view class="jiangsu-feature">
-        <text class="jiangsu-feature__label">创新点</text>
+        <LearnerIcon name="environment" />
         <view class="jiangsu-feature__copy">
           <text class="jiangsu-feature__title">本土岗位贴合度</text>
           <text class="jiangsu-feature__desc">围绕江苏省情、事业单位岗位系统和真实基层场景组织训练。</text>
@@ -254,6 +258,8 @@
 </template>
 
 <script setup>
+import LearnerIcon from '../../components/LearnerIcon.vue'
+import BackgroundAnswers from '../../components/BackgroundAnswers.vue'
 import { computed, ref } from 'vue'
 import { onPullDownRefresh, onShow } from '@dcloudio/uni-app'
 import DimensionBars from '../../components/DimensionBars.vue'
@@ -1388,3 +1394,4 @@ function startRecommendedPractice(item) {
   }
 }
 </style>
+<style src="@/styles/learner.css"></style>

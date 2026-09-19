@@ -9,17 +9,19 @@ PC 首页，负责展示省份备考概览、江苏事业单位入口、练习�
 @raises: 不主动抛业务异常；接口失败由 store 和页面提示承接。
 -->
 <template>
-  <div class="home-page page-container">
+  <div class="home-page page-container learner-page">
+    <BackgroundAnswers />
     <!-- 快速开始卡片 -->
     <div class="home-hero card">
       <div class="home-hero__info">
-        <h1>公考面试AI测评</h1>
-        <p>智能评分 / 精准诊断 / 高效提分</p>
+        <span class="learner-kicker"><AudioOutlined /> 面试练习工作台</span>
+        <h1>今天，练好一道面试题。</h1>
+        <p>开口练习，留住思路。每次复盘，都更进一步。</p>
         <a-button type="primary" size="large" @click="$router.push('/exam/prepare')">
-          <PlayCircleOutlined /> 开始模考
+          <PlayCircleOutlined /> 开始练习
         </a-button>
       </div>
-      <div class="home-hero__score" v-if="historyStore.stats">
+      <div class="home-hero__score" v-if="historyStore.stats?.totalExams > 0">
         <ScoreRing
           :score="historyStore.averageScore"
           :maxScore="100"
@@ -27,12 +29,22 @@ PC 首页，负责展示省份备考概览、江苏事业单位入口、练习�
           label="平均分"
         />
       </div>
+      <div v-else class="home-hero__guide">
+        <SoundOutlined class="home-hero__guide-icon" />
+        <strong>从一次开口开始</strong>
+        <span>录音作答 · 原文留存 · 逐题复盘</span>
+      </div>
     </div>
+
+    <nav class="learner-shortcuts" aria-label="练习快捷入口">
+      <button @click="$router.push('/exam/prepare')"><AimOutlined /><span>专项练习<small>练一题，解决一个问题</small></span><ArrowRightOutlined /></button>
+      <button @click="$router.push('/history')"><HistoryOutlined /><span>我的练习<small>回听原文，再看点评</small></span><ArrowRightOutlined /></button>
+    </nav>
 
     <div v-if="showJiangsuEntry" class="jiangsu-entry card">
       <div class="jiangsu-entry__banner">
         <div>
-          <span class="jiangsu-entry__eyebrow">首页核心入口</span>
+          <span class="jiangsu-entry__eyebrow"><ReadOutlined /> 江苏岗位题库</span>
           <h2>2026 江苏事业单位统考 · 分岗精准刷题</h2>
           <p>岗位优先，按报考热度进入对应题库。</p>
         </div>
@@ -135,7 +147,8 @@ PC 首页，负责展示省份备考概览、江苏事业单位入口、练习�
 
 <script setup>
 import { ref, computed, defineAsyncComponent, onMounted, onUnmounted } from 'vue'
-import { PlayCircleOutlined, RightOutlined } from '@ant-design/icons-vue'
+import { PlayCircleOutlined, RightOutlined, AudioOutlined, SoundOutlined, AimOutlined, HistoryOutlined, ArrowRightOutlined, ReadOutlined } from '@ant-design/icons-vue'
+import BackgroundAnswers from '@/components/exam/BackgroundAnswers.vue'
 import { useHistoryStore } from '@/stores/history'
 import { useUserStore } from '@/stores/user'
 import { formatDate } from '@/utils/formatter'
@@ -449,3 +462,4 @@ onUnmounted(() => {
   }
 }
 </style>
+<style src="@/styles/learner.css"></style>

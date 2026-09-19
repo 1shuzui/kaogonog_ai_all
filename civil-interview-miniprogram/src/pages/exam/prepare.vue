@@ -9,7 +9,9 @@
 @raises: 不主动抛业务异常；无权益、抽题失败或媒体权限异常由页面提示承接。
 -->
 <template>
-  <view class="page">
+  <view class="page learner-page learner-prepare">
+    <BackgroundAnswers />
+    <view class="learner-kicker"><LearnerIcon name="audio" :size="18" /><text>准备好，就开口。</text></view>
     <text class="page-title">{{ pageTitle }}</text>
     <text class="page-desc">{{ pageDesc }}</text>
 
@@ -50,11 +52,11 @@
       </view>
       <view v-else class="mode-grid">
         <view class="mode-card" :class="{ 'mode-card--active': mode === 'free' }" @tap.stop="selectFreeMode">
-          <text class="mode-card__title">专项练习</text>
+          <LearnerIcon name="aim" /><text class="mode-card__title">专项练习</text>
           <text class="mode-card__desc">适合专项训练和即时复盘</text>
         </view>
         <view class="mode-card" :class="{ 'mode-card--active': mode === 'fullExam' }" @tap.stop="selectFullExamMode">
-          <text class="mode-card__title">全真模拟</text>
+          <LearnerIcon name="read" /><text class="mode-card__title">全真模拟</text>
           <text class="mode-card__desc">按真题套卷连续作答</text>
         </view>
       </view>
@@ -129,11 +131,11 @@
       </view>
       <view class="mode-grid">
         <view class="mode-card" :class="{ 'mode-card--active': mediaMode === 'audio' }" @tap.stop="selectAudioMode">
-          <text class="mode-card__title">仅录音</text>
-          <text class="mode-card__desc">不启用摄像头，真机调试更稳定</text>
+          <LearnerIcon name="audio" /><text class="mode-card__title">仅录音</text>
+          <text class="mode-card__desc">只关注声音和表达</text>
         </view>
         <view class="mode-card" :class="{ 'mode-card--active': mediaMode === 'video' }" @tap.stop="selectVideoMode">
-          <text class="mode-card__title">录像+录音</text>
+          <LearnerIcon name="video-camera" /><text class="mode-card__title">录像+录音</text>
           <text class="mode-card__desc">启用前置摄像头，同步记录视频</text>
         </view>
       </view>
@@ -180,6 +182,8 @@
 </template>
 
 <script setup>
+import LearnerIcon from '../../components/LearnerIcon.vue'
+import BackgroundAnswers from '../../components/BackgroundAnswers.vue'
 import { computed, ref, watch } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import LightSelector from '../../components/LightSelector.vue'
@@ -1160,3 +1164,4 @@ function goPricing() {
   }
 }
 </style>
+<style src="@/styles/learner.css"></style>
