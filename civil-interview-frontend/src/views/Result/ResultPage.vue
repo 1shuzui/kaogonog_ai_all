@@ -34,7 +34,7 @@ PC 评分结果页，负责展示总分、能力维度、扣分分析、文字�
                 <span class="result-page__score-unit">/ {{ displayQuestionMaxScore }} 分</span>
               </div>
               <div class="result-page__score-meta">
-                <span>百分制 {{ displayTotalScore }}/{{ displayMaxScore }}</span>
+                <span>折合百分制 {{ displayPercentScore }}/100</span>
                 <span class="result-page__score-meta-dot"></span>
                 <span>{{ gradeInfo.label }}</span>
                 <template v-if="scoringModeLabel">
@@ -42,6 +42,7 @@ PC 评分结果页，负责展示总分、能力维度、扣分分析、文字�
                   <span>{{ scoringModeLabel }}</span>
                 </template>
               </div>
+              <p v-if="result.contentScore != null && result.appearanceScore != null">内容分 {{ formatScoreNumber(result.contentScore) }} + 仪态分 {{ formatScoreNumber(result.appearanceScore) }} = {{ displayQuestionScore }} 分</p>
               <p v-if="currentQuestionStem" class="result-page__question-stem">{{ currentQuestionStem }}</p>
             </div>
             <div class="result-page__score-side">
@@ -77,7 +78,7 @@ PC 评分结果页，负责展示总分、能力维度、扣分分析、文字�
           <div class="result-page__assignment-head">
             <div>
               <h4 class="result-page__assignment-title">本题赋分</h4>
-              <p class="result-page__assignment-hint">题目总赋分 {{ formatScoreNumber(currentQuestionAssignedScore) }} 分</p>
+              <p class="result-page__assignment-hint">{{ result.contentScore != null ? '内容赋分' : '题目总赋分' }} {{ formatScoreNumber(currentQuestionAssignedScore) }} 分</p>
             </div>
           </div>
           <div class="result-page__assignment-list">
@@ -319,6 +320,7 @@ import { getGrade } from '@/utils/constants'
 import { getHistoryDetail } from '@/api/history'
 import { getQuestionById } from '@/api/questionBank'
 import { canUseLocalAnswers } from '@/utils/resultAnswerSource'
+import { getQuestionScorePair } from '@/utils/scorePresentation'
 import { usePdfExport } from '@/composables/usePdfExport'
 import { analyzeSpeech } from '@/composables/useSpeechAnalysis'
 import { buildImprovementReference } from '@/utils/questionPresentation'
@@ -606,22 +608,7 @@ function getAnswerAssignedScore(question) {
 }
 
 function getAnswerScorePair(answer, question = null) {
-  const scoring = answer?.scoringResult || {}
-  const questionMaxScore = toFiniteNumber(scoring.questionMaxScore, 0)
-  const assignedScore = getAnswerAssignedScore(question)
-  const maxScore = questionMaxScore > 0
-    ? questionMaxScore
-    : assignedScore > 0
-      ? assignedScore
-    : toFiniteNumber(scoring.maxScore, 100)
-  const questionScore = scoring.questionScore !== undefined && scoring.questionScore !== null
-    ? toFiniteNumber(scoring.questionScore, 0)
-    : toFiniteNumber(scoring.totalScore, 0)
-
-  return {
-    score: questionScore,
-    maxScore: maxScore > 0 ? maxScore : 100
-  }
+  return getQuestionScorePair(answer?.scoringResult || {}, getAnswerAssignedScore(question))
 }
 
 function formatAnswerScore(answer) {
@@ -639,8 +626,7 @@ const currentScorePair = computed(() => getAnswerScorePair(
 ))
 const displayQuestionScore = computed(() => formatScoreNumber(currentScorePair.value.score))
 const displayQuestionMaxScore = computed(() => formatScoreNumber(currentScorePair.value.maxScore))
-const displayTotalScore = computed(() => formatScoreNumber(result.value?.totalScore || 0))
-const displayMaxScore = computed(() => formatScoreNumber(result.value?.maxScore || 100))
+const displayPercentScore = computed(() => formatScoreNumber(currentScorePair.value.score / currentScorePair.value.maxScore * 100))
 const answerTabsLabel = computed(() => (
   answerList.value.length > 1 ? `已答 ${completedAnswerCount.value} 题，未答 ${placeholderAnswerCount.value} 题` : ''
 ))

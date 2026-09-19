@@ -120,6 +120,7 @@
 - 评分缓存指纹包含 `scoringSchema=evidence-source-v2`，新版本不复用旧版空证据错误分数。小程序只有收到明确的 `totalScore` 才展示分数；已存文字稿、尚未点评的记录显示“答案已保存 · 待点评”。
 - 对已结束考试继续点评后，后端同步刷新历史汇总，并保留原考试结束时间。小程序重试同一录音时复用已识别的文字稿，避免再次上传和转写。
 - 小程序音频/视频转写超时统一为 120 秒，留出上传、模型冷启动和长录音推理余量；请求完成即返回，不固定等待。2026-09-19 线上实测约 147 秒录音的冷启动转写为 50.72 秒，随后外部模型点评为 10.83 秒。两段耗时应分开观察，不能把点评耗时当作整段流程耗时。
+- 含仪态分的结果，标题、圆环和题目标签统一展示 `totalScore/maxScore`，不能把内容分别名 `questionScore` 与含仪态满分混搭。旧版非仪态题仍保留 `questionScore/questionMaxScore` 的题目赋分换算。标注“百分制”时必须实际换算为百分比，而不是直接将 36 分制等结果冠以百分制。
 
 模型调用说明参见 [DeepSeek JSON Output](https://api-docs.deepseek.com/guides/json_mode/) 和 [Chat Completions](https://api-docs.deepseek.com/api/create-chat-completion/)。维持 `LOCAL_REFERENCE_SCORING=false`，不因费用或速度限制正常用户的答题流程。
 

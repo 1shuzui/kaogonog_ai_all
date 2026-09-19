@@ -251,6 +251,7 @@ import { getGrade, getProvinceName } from '../../utils/constants'
 import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
 import { canUseLocalAnswers } from '../../utils/resultAnswerSource'
 import { hasFinalScore } from '../../utils/answerStatus'
+import { getQuestionScorePair } from '../../utils/scorePresentation'
 import { normalizeImprovementSuggestion, normalizeResult } from '../../utils/scoring'
 
 const examStore = useExamStore()
@@ -511,8 +512,7 @@ function formatAnswerScore(answer = {}) {
   if (answer.isPlaceholder) return '未作答'
   if (!hasFinalScore(answer.scoringResult)) return '待点评'
   const scoring = normalizeDisplayResult(answer.scoringResult)
-  const score = Number(scoring.questionScore ?? scoring.totalScore ?? 0) || 0
-  const maxScore = Number(scoring.questionMaxScore ?? scoring.maxScore ?? 100) || 100
+  const { score, maxScore } = getQuestionScorePair(scoring)
   return `${score}/${maxScore}分`
 }
 
