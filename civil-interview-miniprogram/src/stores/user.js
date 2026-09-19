@@ -16,6 +16,9 @@ import { useFavoritesStore } from './favorites'
 import { useExamStore } from './exam'
 import { useHistoryStore } from './history'
 import { useTrainingStore } from './training'
+import { useSubscriptionStore } from './subscription'
+import { useTargetedStore } from './targeted'
+import { useQuestionBankStore } from './questionBank'
 import {
   DEFAULT_PREFERENCES,
   PREFERENCES_STORAGE_KEY,
@@ -146,6 +149,9 @@ export const useUserStore = defineStore('user', {
     resetAccountData() {
       useExamStore().reset()
       useHistoryStore().$reset()
+      useSubscriptionStore().$reset()
+      useTargetedStore().$reset()
+      useQuestionBankStore().$reset()
       useTrainingStore().$reset()
       useBillingStore().$reset()
       useFavoritesStore().reloadForCurrentUser()
@@ -248,6 +254,7 @@ export const useUserStore = defineStore('user', {
       this.userInfo = {
         id: username,
         name: info?.name || username || '考生',
+        email: info?.email || '',
         avatar: info?.avatar || '',
         province: normalizeProvinceCode(info?.province || this.selectedProvince || 'national'),
         role: info?.role || 'user',

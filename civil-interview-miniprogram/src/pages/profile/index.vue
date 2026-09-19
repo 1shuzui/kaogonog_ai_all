@@ -34,6 +34,15 @@
       登录后可查看权益、订单、历史记录并保存考试设置
     </view>
 
+    <view v-if="userStore.isAuthenticated" class="card">
+      <view class="section-head"><text class="section-title">个人练习总结</text></view>
+      <text class="about-text">已完成 {{ historyStore.stats?.totalExams || 0 }} 次练习，平均分 {{ historyStore.stats?.avgScore || 0 }}。</text>
+      <text class="about-text">{{ historyStore.stats?.weakestDimension ? `建议重点训练：${historyStore.stats.weakestDimension}` : '完成点评后将显示能力表现与训练建议。' }}</text>
+      <view v-for="item in historyStore.stats?.dimensionAverages || []" :key="item.name" class="setting-row">
+        <text>{{ item.name }}</text><text>{{ item.avg }} / {{ item.maxScore }}</text>
+      </view>
+    </view>
+
     <view class="card balance-card">
       <view>
         <text class="balance-card__label">当前权益余额</text>
@@ -110,7 +119,7 @@
         <text class="menu-item__arrow">›</text>
       </view>
       <view class="menu-item card" @tap="goSecurity">
-        <text>账号安全</text>
+        <text>个人资料 / 账号安全</text>
         <text class="menu-item__arrow">›</text>
       </view>
       <view class="menu-item card" @tap="contactSupport">

@@ -16,6 +16,8 @@ import { useFavoritesStore } from '@/stores/favorites'
 import { useExamStore } from '@/stores/exam'
 import { useHistoryStore } from '@/stores/history'
 import { useTrainingStore } from '@/stores/training'
+import { useTargetedStore } from '@/stores/targeted'
+import { useQuestionBankStore } from '@/stores/questionBank'
 
 const PREFERENCES_STORAGE_KEY = 'civil_user_preferences'
 const PROVINCE_STORAGE_KEY = 'civil_selected_province'
@@ -225,6 +227,8 @@ export const useUserStore = defineStore('user', {
       exam.mediaStream?.getTracks().forEach(track => track.stop())
       exam.$reset()
       useHistoryStore().$reset()
+      useTargetedStore().$reset()
+      useQuestionBankStore().$reset()
       useTrainingStore().$reset()
       useBillingStore().$reset()
       useFavoritesStore().reloadForCurrentUser()

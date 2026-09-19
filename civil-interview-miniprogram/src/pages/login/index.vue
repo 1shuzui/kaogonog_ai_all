@@ -35,6 +35,7 @@
 
       <view class="form-label">用户名</view>
       <input v-model="form.username" class="field" placeholder="请输入用户名" />
+      <text v-if="mode === 'register'" class="page-desc">用户名为 3–32 位字母、数字、下划线或短横线；已有电脑账号请直接登录。</text>
 
       <view class="form-label">密码</view>
       <view class="password-field">
@@ -109,30 +110,7 @@
         忘记密码
       </button>
 
-      <view v-if="resetVisible" class="reset-panel">
-        <view class="section-head">
-          <text class="section-title">找回密码</text>
-          <text class="muted" @tap="resetVisible = false">收起</text>
-        </view>
-        <view class="form-label">用户名</view>
-        <input v-model="resetForm.username" class="field" placeholder="请输入要找回的用户名" />
-        <view class="form-label">管理员核验联系方式（选填）</view>
-        <input v-model="resetForm.contact" class="field" placeholder="填写可联系的邮箱或手机号" />
-        <view class="reset-code-row">
-          <input v-model="resetForm.code" class="field reset-code-row__input" placeholder="验证码" />
-          <button class="secondary-button reset-code-row__button" :loading="resetRequesting" @tap="requestResetCode">
-            申请验证码
-          </button>
-        </view>
-        <text v-if="resetTip" class="reset-tip">{{ resetTip }}</text>
-        <view class="form-label">新密码</view>
-        <input v-model="resetForm.newPassword" class="field" password placeholder="至少 6 位" />
-        <view class="form-label">确认新密码</view>
-        <input v-model="resetForm.confirmPassword" class="field" password placeholder="请再次输入新密码" />
-        <button class="primary-button reset-submit" :loading="resetLoading" @tap="confirmResetPassword">
-          重置密码
-        </button>
-      </view>
+
 
       <view v-if="userStore.isAuthenticated" class="session-tools">
         <button class="secondary-button session-tools__button" @tap="goHomeWithCachedSession">进入已登录首页</button>
@@ -157,6 +135,7 @@
         <button class="primary-button account-setup-panel__button" :loading="accountSetupLoading" @tap="submitAccountSetup">
           创建账号并进入
         </button>
+        <button class="link-button" @tap="accountSetupVisible = false; mode = 'login'">已有电脑账号？使用账号密码登录</button>
         <button class="link-button account-setup-panel__skip" @tap="skipAccountSetup">
           暂时跳过
         </button>
@@ -171,11 +150,6 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import {
-  confirmPasswordReset,
-  requestPasswordReset,
-  verifyPasswordReset
-} from '../../api/auth'
 import { useUserStore } from '../../stores/user'
 import { toast } from '../../utils/navigation'
 import { getWechatLoginCode } from '../../utils/wechatLogin'
@@ -186,10 +160,6 @@ const loading = ref(false)
 const wechatLoading = ref(false)
 const accountSetupVisible = ref(false)
 const accountSetupLoading = ref(false)
-const resetVisible = ref(false)
-const resetLoading = ref(false)
-const resetRequesting = ref(false)
-const resetTip = ref('')
 const privacyAuthRequired = ref(false)
 const privacyAuthorizationReady = ref(false)
 const privacyContractName = ref('')
@@ -208,13 +178,6 @@ const passwordVisibility = reactive({
   login: false,
   register: false,
   confirm: false
-})
-const resetForm = reactive({
-  username: '',
-  contact: '',
-  code: '',
-  newPassword: '',
-  confirmPassword: ''
 })
 const accountSetupForm = reactive({
   username: '',
@@ -239,11 +202,11 @@ function togglePasswordVisibility(field) {
 }
 
 function openResetPanel() {
-  resetVisible.value = true
-  resetForm.username = form.username.trim()
+  uni.navigateTo({ url: `/pages/login/reset?username=${encodeURIComponent(form.username.trim())}` })
 }
 
 onLoad((query = {}) => {
+  form.username = query.username || ''
   redirectUrl.value = decodeURIComponent(query.redirect || '')
   restoreAgreementState()
 })
@@ -337,8 +300,8 @@ function validate() {
     return false
   }
   if (mode.value === 'register') {
-    if (form.username.trim().length < 3) {
-      toast('用户名至少 3 个字符')
+    if (!/^[A-Za-z0-9_-]{3,32}$/.test(form.username.trim())) {
+      toast('用户名需为 3–32 位字母、数字、下划线或短横线')
       return false
     }
     if (form.password.length < 6) {
@@ -503,71 +466,10 @@ function skipAccountSetup() {
   })
 }
 
-async function requestResetCode() {
-  const username = resetForm.username.trim()
-  if (!username) {
-    toast('请先填写用户名')
-    return
-  }
-  resetRequesting.value = true
-  resetTip.value = ''
-  try {
-    const result = await requestPasswordReset({
-      username,
-      contact: resetForm.contact.trim()
-    })
-    resetTip.value = result?.message || '申请已提交，请等待管理员核验并发送验证码。'
-    toast('申请已提交', 'success')
-  } catch (error) {
-    toast(error?.message || '申请提交失败')
-  } finally {
-    resetRequesting.value = false
-  }
-}
-
-async function confirmResetPassword() {
-  const username = resetForm.username.trim()
-  const code = resetForm.code.trim()
-  if (!username || !code) {
-    toast('请填写用户名和验证码')
-    return
-  }
-  if (resetForm.newPassword.length < 6) {
-    toast('新密码至少 6 位')
-    return
-  }
-  if (resetForm.newPassword !== resetForm.confirmPassword) {
-    toast('两次新密码不一致')
-    return
-  }
-  resetLoading.value = true
-  try {
-    await verifyPasswordReset({ username, code })
-    await confirmPasswordReset({
-      username,
-      code,
-      newPassword: resetForm.newPassword
-    })
-    form.username = username
-    form.password = ''
-    resetForm.code = ''
-    resetForm.newPassword = ''
-    resetForm.confirmPassword = ''
-    resetTip.value = ''
-    resetVisible.value = false
-    toast('密码已重置，请登录', 'success')
-  } catch (error) {
-    toast(error?.message || '密码重置失败')
-  } finally {
-    resetLoading.value = false
-  }
-}
 
 function toggleAgreement() {
   form.agreedTerms = !form.agreedTerms
-  if (form.agreedTerms) {
-    saveAcceptedTermsVersion()
-  }
+  if (form.agreedTerms) saveAcceptedTermsVersion()
 }
 
 function onAgreePrivacyAuthorization() {

@@ -16,6 +16,12 @@ import { useExamStore } from '@/stores/exam'
 
 const routes = [
   {
+    path: '/password-reset',
+    name: 'PasswordReset',
+    component: () => import('@/views/Auth/PasswordResetPage.vue'),
+    meta: { title: '找回密码', layout: 'blank', requiresAuth: false }
+  },
+  {
     path: '/login',
     name: 'Login',
     component: () => import('@/views/Auth/LoginPage.vue'),

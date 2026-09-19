@@ -10,6 +10,13 @@
   <view class="page">
     <text class="page-title">账号安全</text>
     <text class="page-desc">密码、协议状态和设备风险与后端安全接口同步。</text>
+    <view class="card">
+      <text class="section-title">个人资料</text>
+      <text class="page-desc">登录账号：{{ userStore.username }}；昵称和邮箱不会改变登录账号或权限。</text>
+      <input v-model="profileForm.name" class="field field--mt" maxlength="64" placeholder="昵称" />
+      <input v-model="profileForm.email" class="field field--mt" maxlength="128" placeholder="邮箱（选填）" />
+      <button class="primary-button form-button" :loading="profileSaving" @tap="saveProfile">保存个人资料</button>
+    </view>
 
     <view class="card">
       <view class="section-head">
@@ -128,11 +135,24 @@ import {
 import { requireLogin, toast } from '../../utils/navigation'
 import { getWechatLoginCode } from '../../utils/wechatLogin'
 import { useUserStore } from '../../stores/user'
+import { updateUserProfile } from '../../api/user'
 
 const DEVICE_ID_KEY = 'civil_mini_device_id'
 const SUPPORT_FEEDBACK_STORAGE_KEY = 'civil_support_feedback_records'
 const FAVORITES_STORAGE_KEY = 'civil_favorites'
 const userStore = useUserStore()
+const profileForm = reactive({ name: '', email: '' })
+const profileSaving = ref(false)
+async function saveProfile() {
+  if (!profileForm.name.trim()) return toast('请输入昵称')
+  if (profileForm.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profileForm.email)) return toast('请输入有效邮箱')
+  profileSaving.value = true
+  try {
+    await updateUserProfile({ full_name: profileForm.name.trim(), email: profileForm.email.trim() })
+    await userStore.loadUserInfo()
+    toast('资料已保存', 'success')
+  } catch (error) { toast(error.message || '保存失败') } finally { profileSaving.value = false }
+}
 const passwordLoading = ref(false)
 const termsLoading = ref(false)
 const deviceLoading = ref(false)
@@ -174,7 +194,10 @@ const pcLoginUsername = computed(() => userStore.userInfo?.accountLogin?.pcLogin
 
 onShow(() => {
   if (!requireLogin()) return
-  userStore.loadUserInfo().catch(() => null)
+  userStore.loadUserInfo().then(() => {
+    profileForm.name = userStore.userInfo.name || ''
+    profileForm.email = userStore.userInfo.email || ''
+  }).catch(() => null)
   loadTerms()
   checkDevice()
 })
@@ -324,9 +347,10 @@ function clearLocalData() {
     DEVICE_ID_KEY
   ].forEach((key) => {
     try {
-      uni.removeStorageSync(key)
+      uni.removeStorageSync(key === DEVICE_ID_KEY ? key : `${key}:${userStore.username || 'guest'}`)
     } catch {}
   })
+  userStore.resetAccountData()
   toast('本地缓存已清除', 'success')
 }
 

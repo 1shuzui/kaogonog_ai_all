@@ -12,6 +12,10 @@
       }
     },
     {
+      "path": "pages/login/reset",
+      "style": { "navigationBarTitleText": "找回密码" }
+    },
+    {
       "path": "pages/login/index",
       "style": {
         "navigationBarTitleText": "登录"
