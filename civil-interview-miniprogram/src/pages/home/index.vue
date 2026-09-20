@@ -108,13 +108,8 @@
       </view>
     </view>
 
-    <view class="section-toggle" @tap="toggleSection('recent')">
-      <text class="section-title">近期练习</text>
-      <view class="section-toggle__right">
-        <text class="muted" @tap.stop="goHistory">查看全部</text>
-        <text class="section-toggle__arrow">{{ sectionArrow('recent') }}</text>
-      </view>
-    </view>
+    <MotionCollapse class="home-section-recent" title="近期练习" :open="sectionOpen.recent" :revision="[recentRecords, historyStore.stats]" @toggle="toggleSection('recent')">
+      <template #actions><text class="muted" @tap.stop="goHistory">查看全部</text></template>
 
     <view v-if="isLoggedIn" class="learner-home__overview">
       <view v-if="historyStore.stats?.totalExams > 0" class="learner-home__average">
@@ -124,7 +119,7 @@
       <StatGrid :items="statItems" />
     </view>
 
-    <view v-if="sectionOpen.recent && recentRecords.length">
+    <view v-if="recentRecords.length">
       <view
         v-for="record in recentRecords"
         :key="record.examId"
@@ -138,23 +133,16 @@
         <ScoreRing :score="record.totalScore || 0" :max-score="record.maxScore || 100" size="small" />
       </view>
     </view>
-    <view v-else-if="sectionOpen.recent" class="card">
+    <view v-else class="card">
       <EmptyState :title="isLoggedIn ? '暂无练习记录' : '登录后查看练习记录'" :desc="isLoggedIn ? '完成一次模考后，这里会展示近期得分和趋势。' : '你可以先浏览功能，准备试用或练习时再登录。'" mark="0" />
     </view>
+    </MotionCollapse>
 
-    <view v-if="historyStore.stats?.dimensionAverages?.length" class="section-toggle" @tap="toggleSection('ability')">
-      <text class="section-title">能力概览</text>
-      <text class="section-toggle__arrow">{{ sectionArrow('ability') }}</text>
-    </view>
-    <MotionPresence :show="sectionOpen.ability && !!historyStore.stats?.dimensionAverages?.length"><view class="card">
+    <MotionCollapse v-if="historyStore.stats?.dimensionAverages?.length" class="home-section-ability" title="能力概览" :open="sectionOpen.ability" :revision="historyStore.stats?.dimensionAverages" @toggle="toggleSection('ability')"><view class="card">
       <DimensionBars :dimensions="historyStore.stats?.dimensionAverages || []" />
-    </view></MotionPresence>
+    </view></MotionCollapse>
 
-    <view class="section-toggle" @tap="toggleSection('trend')">
-      <text class="section-title">成绩趋势</text>
-      <text class="section-toggle__arrow">{{ sectionArrow('trend') }}</text>
-    </view>
-    <MotionPresence :show="sectionOpen.trend"><view class="card trend-card">
+    <MotionCollapse class="home-section-trend" title="成绩趋势" :open="sectionOpen.trend" :revision="[trendLimit, trendDisplayData]" @toggle="toggleSection('trend')"><view class="card trend-card">
       <MotionSegmented class="home-trend-segment" :model-value="trendLimit" :options="trendOptions" @change="setTrendLimit" />
       <scroll-view v-if="trendDisplayData.length" class="trend-chart-scroll" scroll-x>
         <view class="trend-chart" :style="trendChartContentStyle">
@@ -191,13 +179,9 @@
         </view>
       </scroll-view>
       <EmptyState v-else :title="isLoggedIn ? '暂无趋势数据' : '登录后查看成绩趋势'" :desc="isLoggedIn ? '完成几次练习后，这里会显示成绩变化。' : '浏览功能无需登录，开始试用或练习后会保存成绩趋势。'" mark="-" />
-    </view></MotionPresence>
+    </view></MotionCollapse>
 
-    <view class="section-toggle" @tap="toggleSection('weakness')">
-      <text class="section-title">薄弱维度分析</text>
-      <text class="section-toggle__arrow">{{ sectionArrow('weakness') }}</text>
-    </view>
-    <MotionPresence :show="sectionOpen.weakness"><view class="card weakness-card">
+    <MotionCollapse class="home-section-weakness" title="薄弱维度分析" :open="sectionOpen.weakness" :revision="weaknessDimensions" @toggle="toggleSection('weakness')"><view class="card weakness-card">
       <view v-if="weaknessDimensions.length" class="weakness-list">
         <view v-for="item in weaknessDimensions" :key="item.name" class="weakness-item">
           <view class="weakness-item__head">
@@ -215,16 +199,11 @@
         </view>
       </view>
       <EmptyState v-else :title="isLoggedIn ? '暂无维度数据' : '登录后查看薄弱维度'" :desc="isLoggedIn ? '完成评分后会生成薄弱维度建议。' : '答题评分后会在这里呈现维度短板。'" mark="-" />
-    </view></MotionPresence>
+    </view></MotionCollapse>
 
-    <view class="section-toggle" @tap="toggleSection('recommendation')">
-      <text class="section-title">智能推荐练习</text>
-      <view class="section-toggle__right">
-        <text class="muted" @tap.stop="refreshRecommendations(true)">刷新</text>
-        <text class="section-toggle__arrow">{{ sectionArrow('recommendation') }}</text>
-      </view>
-    </view>
-    <MotionPresence :show="sectionOpen.recommendation"><view class="card recommendation-card">
+    <MotionCollapse class="home-section-recommendation" title="智能推荐练习" :open="sectionOpen.recommendation" :revision="[recommendations, recommendationLoading, recommendationEmptyText]" @toggle="toggleSection('recommendation')">
+      <template #actions><text class="muted" @tap.stop="refreshRecommendations(true)">刷新</text></template>
+      <view class="card recommendation-card">
       <view v-if="recommendationLoading" class="recommendation-status">正在匹配真实题库...</view>
       <view v-else-if="recommendations.length" class="recommendation-list">
         <view v-for="item in recommendations" :key="item.id" class="recommendation-item">
@@ -242,13 +221,13 @@
       <view v-else class="recommendation-status">
         <text>{{ recommendationEmptyText }}</text>
       </view>
-    </view></MotionPresence>
+    </view></MotionCollapse>
   </view>
 </template>
 
 <script setup>
 import MotionSegmented from '../../components/MotionSegmented.vue'
-import MotionPresence from '../../components/MotionPresence.vue'
+import MotionCollapse from '../../components/MotionCollapse.vue'
 import MotionAccent from '../../components/MotionAccent.vue'
 import MotionSummary from '../../components/MotionSummary.vue'
 import { useScrollSummary } from '../../motion/useScrollSummary'
@@ -551,10 +530,6 @@ function toggleSection(key) {
     [key]: sectionOpen.value[key] !== true
   }
   persistSectionOpenState()
-}
-
-function sectionArrow(key) {
-  return sectionOpen.value[key] ? '⌃' : '⌄'
 }
 
 function normalizeScore(value) {

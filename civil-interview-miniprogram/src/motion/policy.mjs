@@ -7,7 +7,7 @@ export function normalizeMode(mode) {
 export function motionStyle(mode, safeBottom = 0) {
   mode = normalizeMode(mode)
   const duration = (key) => mode === 'off' ? 0 : mode === 'reduced' ? (key === 'segment' ? 0 : Math.min(tokens[key], 100)) : tokens[key]
-  return ['press', 'enter', 'exit', 'segment', 'summary'].map(key => `--motion-${key}:${duration(key)}ms;`).join('') +
+  return ['press', 'enter', 'exit', 'segment', 'summary', 'collapse', 'arrow', 'scan'].map(key => `--motion-${key}:${duration(key)}ms;`).join('') +
     `--motion-ease:${tokens.easing};--motion-offset:${mode === 'full' ? tokens.offsetPx : 0}px;` +
     `--motion-scale:${mode === 'full' ? tokens.pressScale : 1};--motion-float:${tokens.float}ms;` +
     `--motion-summary-height:${tokens.summaryHeightPx}px;--motion-safe-bottom:${safeBottom}px;` +
