@@ -28,7 +28,7 @@
       <view class="section-head">
         <text class="section-title">选择考试方向</text>
       </view>
-      <LightSelector title="考试体系" :options="categoryNames" :value="categoryIndex" @change="onCategoryPickerChange">
+      <LightSelector class="targeted-category-selector" title="考试体系" :options="categoryNames" :value="categoryIndex" @change="onCategoryPickerChange">
         <view class="picker-row">
           <text>考试体系</text>
           <text class="picker-row__value">{{ selectedCategoryName }}</text>
@@ -91,20 +91,18 @@
       />
     </view>
 
-    <view v-if="showYearPicker" class="year-overlay" @tap="showYearPicker = false">
-      <view class="year-modal card" @tap.stop>
-        <view class="section-head">
-          <text class="section-title">选择年份</text>
-          <text class="muted" @tap="showYearPicker = false">完成</text>
-        </view>
+    <LearnerSheet class="targeted-year-sheet" :show="showYearPicker" title="选择年份" :body-height="yearOptions.length * 52 + 110" @close="showYearPicker = false">
+        <text class="ui-helper">{{ !hasFullAccess ? '开通题库后可查看已收录年份。' : filterMetadata.loading.value ? '正在读取题库年份…' : '以下为全题库已收录年份，所选方向是否有题以实际分析结果为准。' }}</text>
+        <view v-if="filterMetadata.error.value"><text class="ui-error">{{ filterMetadata.error.value }}</text><button class="ui-link" @tap="refreshFilterMetadata">重新加载</button></view>
+        <text v-else-if="hasFullAccess && !filterMetadata.loading.value && !yearOptions.length" class="ui-helper">题库暂无可选年份，可继续使用不限年份。</text>
+        <button v-if="selectedYears.length" class="ui-link" @tap="selectedYears = []">清除年份条件</button>
         <checkbox-group @change="onYearChange">
           <label v-for="opt in yearOptions" :key="opt.value" class="year-checkbox">
             <checkbox :value="opt.value" :checked="opt.checked" />
             <text>{{ opt.value }}</text>
           </label>
         </checkbox-group>
-      </view>
-    </view>
+    </LearnerSheet>
   </view>
 </template>
 
@@ -116,6 +114,7 @@ import { computed, ref, watch } from 'vue'
 import { onShow, onHide, onUnload } from '@dcloudio/uni-app'
 import FocusAnalysisCard from '../../components/FocusAnalysisCard.vue'
 import LightSelector from '../../components/LightSelector.vue'
+import LearnerSheet from '../../components/LearnerSheet.vue'
 import QuestionCard from '../../components/QuestionCard.vue'
 import { useBillingStore } from '../../stores/billing'
 import { useExamStore } from '../../stores/exam'
@@ -124,7 +123,7 @@ import { useTargetedStore } from '../../stores/targeted'
 import { useUserStore } from '../../stores/user'
 import { hasPremiumAccess } from '../../utils/access'
 import { buildTargetFocusUrl, mergeTargetPayload } from '../../utils/targetedOptions'
-import { YEAR_OPTIONS } from '../../utils/constants'
+import { useQuestionFilters } from '../../utils/useQuestionFilters'
 import { isQuestionScoringSupported, getScoringUnavailableMessage } from '../../utils/questionPresentation'
 import { promptLoginForAction, showLoading, toast, hideLoading } from '../../utils/navigation'
 
@@ -133,6 +132,7 @@ const subscriptionStore = useSubscriptionStore()
 const targetedStore = useTargetedStore()
 const examStore = useExamStore()
 const userStore = useUserStore()
+const filterMetadata = useQuestionFilters()
 const selectedCategoryId = ref('')
 const selectedRegionId = ref('')
 const selectedTargetCode = ref('')
@@ -191,11 +191,13 @@ const selectedModeHints = computed(() => {
   }
   return hints
 })
-const yearOptions = computed(() => YEAR_OPTIONS.map((y) => ({ value: y, checked: selectedYears.value.includes(y) })))
+const yearOptions = computed(() => filterMetadata.options.value.year.map((y) => ({ value: y, checked: selectedYears.value.includes(y) })))
 const yearLabel = computed(() => selectedYears.value.length ? selectedYears.value.join('、') : '不限年份（可多选）')
 const canProceed = computed(() => !!activeTarget.value?.targetCode)
 const hasFullAccess = computed(() => hasPremiumAccess(userStore, billingStore, subscriptionStore))
 const readonlyMode = computed(() => !hasFullAccess.value)
+function refreshFilterMetadata() { return filterMetadata.refresh({}, hasFullAccess.value && userStore.isAuthenticated) }
+watch(() => hasFullAccess.value && userStore.isAuthenticated, refreshFilterMetadata, { immediate: true })
 const analysisTargetLabel = computed(() => {
   const payload = targetedStore.focusParams || {}
   return [payload.examCategory, payload.examSubcategory, payload.targetName, payload.year?.length ? String(payload.year) : ''].filter(Boolean).join(' / ')
@@ -384,8 +386,8 @@ function startTrial() {
 
 .access-card__desc {
   display: block;
-  color: #5f6f83;
-  font-size: 24rpx;
+  color: var(--ui-muted);
+  font-size: 14px;
   line-height: 1.6;
 }
 
@@ -419,8 +421,8 @@ function startTrial() {
   gap: 24rpx;
   padding: 22rpx 0;
   border-bottom: 1rpx solid #eef2f6;
-  color: #2a3648;
-  font-size: 27rpx;
+  color: var(--ui-text);
+  font-size: 14px;
   transition: transform 160ms ease, background-color 160ms ease;
 }
 
@@ -435,14 +437,14 @@ function startTrial() {
 
 .picker-row__value {
   max-width: 440rpx;
-  color: #2F7FD6;
+  color: var(--ui-link);
   text-align: right;
 }
 
 .picker-summary {
   margin-top: 12rpx;
-  color: #64748B;
-  font-size: 23rpx;
+  color: var(--ui-muted);
+  font-size: 14px;
   line-height: 1.5;
 }
 
@@ -457,9 +459,9 @@ function startTrial() {
   display: inline-flex;
   padding: 8rpx 12rpx;
   border-radius: 8rpx;
-  background: #EAF5FF;
-  color: #2F7FD6;
-  font-size: 22rpx;
+  background: var(--ui-soft);
+  color: var(--ui-link);
+  font-size: 14px;
   line-height: 1.25;
 }
 
@@ -474,16 +476,16 @@ function startTrial() {
 
 .generated-start__title {
   display: block;
-  color: #2a3648;
-  font-size: 27rpx;
+  color: var(--ui-text);
+  font-size: 14px;
   font-weight: 700;
 }
 
 .generated-start__desc {
   display: block;
   margin-top: 8rpx;
-  color: #64748B;
-  font-size: 24rpx;
+  color: var(--ui-muted);
+  font-size: 14px;
 }
 
 .year-overlay {
@@ -515,8 +517,8 @@ function startTrial() {
   gap: 16rpx;
   padding: 22rpx 0;
   border-bottom: 1rpx solid #eef2f6;
-  font-size: 27rpx;
-  color: #2a3648;
+  font-size: 14px;
+  color: var(--ui-text);
 }
 
 .picker-row--year {

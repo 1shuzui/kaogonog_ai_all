@@ -56,18 +56,18 @@
       <view class="section-head">
         <text class="section-title">考试设置</text>
       </view>
-      <picker :range="provinceNames" :value="provinceIndex" @change="onProvinceChange">
+      <LightSelector title="默认省份" :options="provinceNames" :value="provinceIndex" @change="onProvinceChange">
         <view class="setting-row">
           <text>默认省份</text>
           <text>{{ userStore.selectedProvinceName }}</text>
         </view>
-      </picker>
-      <picker :range="examCatPrefNames" :value="examCatPrefIndex" @change="onExamCatPrefChange">
+      </LightSelector>
+      <LightSelector title="考试大类" :options="examCatPrefNames" :value="examCatPrefIndex" @change="onExamCatPrefChange">
         <view class="setting-row">
           <text>考试大类</text>
           <text>{{ selectedExamCatPrefName }}</text>
         </view>
-      </picker>
+      </LightSelector>
       <view class="setting-block">
         <view class="setting-block__head">
           <text>注重题型</text>
@@ -161,6 +161,7 @@
 </template>
 
 <script setup>
+import LightSelector from '../../components/LightSelector.vue'
 import LearnerIcon from '../../components/LearnerIcon.vue'
 import MotionSegmented from '../../components/MotionSegmented.vue'
 import { motionMode, setMotionMode } from '../../motion/useMotion'
@@ -462,7 +463,7 @@ function logout() {
   height: 108rpx;
   margin-right: 24rpx;
   border-radius: 999rpx;
-  background: linear-gradient(135deg, #2F7FD6 0%, #8BC7F7 100%);
+  background: linear-gradient(135deg, var(--ui-link) 0%, #8BC7F7 100%);
   color: #ffffff;
   font-size: 42rpx;
   font-weight: 800;
@@ -471,7 +472,7 @@ function logout() {
 .profile-card__name {
   display: block;
   overflow: hidden;
-  color: #172033;
+  color: var(--ui-text);
   font-size: 36rpx;
   font-weight: 800;
   line-height: 1.25;
@@ -482,8 +483,8 @@ function logout() {
 .profile-card__meta {
   display: block;
   margin-top: 8rpx;
-  color: #64748B;
-  font-size: 24rpx;
+  color: var(--ui-muted);
+  font-size: 14px;
 }
 
 .profile-card__copy {
@@ -496,9 +497,9 @@ function logout() {
   margin-top: 12rpx;
   padding: 6rpx 14rpx;
   border-radius: 999rpx;
-  background: #EAF5FF;
-  color: #2F7FD6;
-  font-size: 22rpx;
+  background: var(--ui-soft);
+  color: var(--ui-link);
+  font-size: 14px;
   font-weight: 700;
 }
 
@@ -513,7 +514,7 @@ function logout() {
   min-width: 0;
   min-height: 120rpx;
   padding: 22rpx 12rpx;
-  border: 1rpx solid #DCEAF7;
+  border: 1rpx solid var(--ui-border);
   border-radius: 16rpx;
   background: #ffffff;
   text-align: center;
@@ -523,7 +524,7 @@ function logout() {
 .profile-stats__value {
   display: block;
   overflow: hidden;
-  color: #2F7FD6;
+  color: var(--ui-link);
   font-size: 32rpx;
   font-weight: 800;
   line-height: 1.2;
@@ -534,18 +535,18 @@ function logout() {
 .profile-stats__label {
   display: block;
   margin-top: 8rpx;
-  color: #64748B;
-  font-size: 23rpx;
+  color: var(--ui-muted);
+  font-size: 14px;
 }
 
 .sync-strip {
   margin-bottom: 20rpx;
   padding: 16rpx 22rpx;
-  border: 1rpx solid #DCEAF7;
+  border: 1rpx solid var(--ui-border);
   border-radius: 14rpx;
   background: #f8fbff;
-  color: #64748B;
-  font-size: 24rpx;
+  color: var(--ui-muted);
+  font-size: 14px;
 }
 
 .sync-strip--error {
@@ -555,16 +556,19 @@ function logout() {
 }
 
 .setting-row {
+  min-height: 48px;
+  align-items: center;
+  gap: 12px;
   display: flex;
   justify-content: space-between;
   padding: 20rpx 0;
   border-bottom: 1rpx solid #eef2f6;
-  color: #2a3648;
-  font-size: 27rpx;
+  color: var(--ui-text);
+  font-size: 14px;
 }
 
 .setting-row text:last-child {
-  color: #2F7FD6;
+  color: var(--ui-link);
   font-weight: 600;
 }
 
@@ -577,14 +581,14 @@ function logout() {
   display: flex;
   justify-content: space-between;
   gap: 16rpx;
-  color: #2a3648;
-  font-size: 27rpx;
+  color: var(--ui-text);
+  font-size: 14px;
 }
 
 .setting-block__head text:last-child {
   overflow: hidden;
   max-width: 430rpx;
-  color: #2F7FD6;
+  color: var(--ui-link);
   font-weight: 700;
   text-align: right;
   text-overflow: ellipsis;
@@ -599,26 +603,30 @@ function logout() {
 }
 
 .preference-chip {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 12rpx 18rpx;
-  border: 1rpx solid #DCEAF7;
+  border: 1rpx solid var(--ui-border);
   border-radius: 999rpx;
   background: #ffffff;
-  color: #2a3648;
-  font-size: 24rpx;
+  color: var(--ui-text);
+  font-size: 14px;
   font-weight: 700;
 }
 
 .preference-chip--active {
-  border-color: #2F7FD6;
-  background: #EAF5FF;
-  color: #2F7FD6;
+  border-color: var(--ui-link);
+  background: var(--ui-soft);
+  color: var(--ui-link);
 }
 
 .setting-hint {
   display: block;
   margin-top: 14rpx;
-  color: #8a96a8;
-  font-size: 22rpx;
+  color: var(--ui-muted);
+  font-size: 14px;
   line-height: 1.5;
 }
 
@@ -636,35 +644,35 @@ function logout() {
 }
 
 .balance-card__label {
-  color: #2F7FD6;
-  font-size: 23rpx;
+  color: var(--ui-link);
+  font-size: 14px;
   font-weight: 800;
 }
 
 .balance-card__title {
   margin-top: 6rpx;
-  color: #172033;
+  color: var(--ui-text);
   font-size: 32rpx;
   font-weight: 900;
 }
 
 .balance-card__desc {
   margin-top: 6rpx;
-  color: #64748B;
-  font-size: 24rpx;
+  color: var(--ui-muted);
+  font-size: 14px;
   line-height: 1.5;
 }
 
 .balance-card__button {
   flex: 0 0 180rpx;
   min-height: 76rpx;
-  font-size: 25rpx;
+  font-size: 14px;
 }
 
 .setting-slider {
   padding: 22rpx 0;
-  color: #2a3648;
-  font-size: 26rpx;
+  color: var(--ui-text);
+  font-size: 14px;
 }
 
 .menu-item {
@@ -683,13 +691,13 @@ function logout() {
 
 .about-text {
   display: block;
-  color: #2a3648;
-  font-size: 26rpx;
+  color: var(--ui-text);
+  font-size: 14px;
   line-height: 1.7;
 }
 
 .about-text--muted {
-  color: #64748B;
-  font-size: 23rpx;
+  color: var(--ui-muted);
+  font-size: 14px;
 }
 </style>

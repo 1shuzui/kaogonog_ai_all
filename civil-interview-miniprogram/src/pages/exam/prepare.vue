@@ -12,8 +12,8 @@
   <view class="motion-page page learner-page learner-prepare" :class="motionClass" :style="motionStyle">
     <BackgroundAnswers />
     <view class="learner-kicker"><LearnerIcon name="audio" :size="24" /><text>{{ pageTitle }}</text></view>
-    <text class="page-title">准备好，就开口。</text>
-    <text class="page-desc">检查声音，选好题目。</text>
+    <text class="page-title">这次，怎么练？</text>
+    <text class="page-desc">{{ practiceSummary }} · 提交后可继续下一题</text>
 
     <view v-if="readonlyMode" class="card access-card">
       <text class="access-card__title">未开通正式训练</text>
@@ -52,16 +52,14 @@
       <view v-if="showPracticeConfig" class="config-row">
         <text>题目数量</text>
         <view class="stepper">
-          <button class="stepper__button" @tap="decreaseCount">-</button>
+          <button class="stepper__button" :disabled="count <= 1" aria-label="减少题目数量" @tap="decreaseCount">−</button>
           <text class="stepper__value">{{ count }}</text>
-          <button class="stepper__button" @tap="increaseCount">+</button>
+          <button class="stepper__button" :disabled="trial || count >= MAX_FREE_QUESTION_COUNT" aria-label="增加题目数量" @tap="increaseCount">+</button>
         </view>
       </view>
 
-      <!-- 定向筛选 -->
-      <view class="section-head" style="margin-top: 20rpx">
-        <text class="section-title">定向筛选（可选）</text>
-      </view>
+      <MotionCollapse class="prepare-advanced" :open="advancedOpen" title="题目范围与题型" :revision="[mode, fullExamSuites, hasDirectionOptions]" @toggle="advancedOpen = !advancedOpen">
+      <text class="ui-helper">{{ mode === 'fullExam' ? '全真模拟按完整真题套卷练习，保留套卷时间规则。' : '可选，不修改也能直接开始。' }}</text>
       <LightSelector title="考试大类" :options="examCategoryNames" :value="examCategoryIndex" @change="onExamCategoryFilterChange">
         <view class="config-row">
           <text>考试大类</text>
@@ -108,20 +106,18 @@
         <text class="config-row__value">{{ yearLabel }}</text>
       </view>
 
-      <view v-if="showYearPicker" class="year-overlay" @tap="showYearPicker = false">
-        <view class="year-modal card" @tap.stop>
-          <view class="section-head">
-            <text class="section-title">选择年份</text>
-            <text class="muted" @tap="showYearPicker = false">完成</text>
-          </view>
+      <LearnerSheet class="prepare-year-sheet" :show="showYearPicker" title="选择年份" :body-height="yearOptions.length * 52 + 56" @close="showYearPicker = false">
+          <text class="ui-helper">{{ !hasFullAccess ? '开通题库后可查看实际收录年份；试用题由系统提供。' : filterMetadata.loading.value ? '正在读取题库年份…' : '仅列出当前地区 / 方向题库已收录的年份，可多选。' }}</text>
+          <view v-if="filterMetadata.error.value"><text class="ui-error">{{ filterMetadata.error.value }}</text><button class="ui-link" @tap="refreshFilterMetadata">重新加载</button></view>
+          <text v-else-if="hasFullAccess && !filterMetadata.loading.value && !yearOptions.length" class="ui-helper">当前范围暂无可用年份，可保留不限年份或调整范围。</text>
+          <button v-if="selectedYearsFilter.length" class="ui-link" @tap="selectedYearsFilter = []">清除年份条件</button>
           <checkbox-group @change="onYearFilterChange">
             <label v-for="opt in yearOptions" :key="opt.value" class="year-checkbox">
               <checkbox :value="opt.value" :checked="opt.checked" />
               <text>{{ opt.value }}</text>
             </label>
           </checkbox-group>
-        </view>
-      </view>
+      </LearnerSheet>
 
       <view v-if="showPracticeConfig" class="question-type-panel">
         <view class="config-row config-row--type">
@@ -143,6 +139,7 @@
           </view>
         </view>
       </view>
+      </MotionCollapse>
     </view>
 
     <view class="card learner-media-card">
@@ -158,6 +155,8 @@
       <text class="tips-card__line">提交后上传和点评在后台处理，可继续下一题。</text>
     </view>
 
+    <view v-if="!readonlyMode" class="prepare-action-bar">
+    <view class="prepare-action-summary"><text>{{ practiceSummary }}</text><text>{{ mediaMode === 'audio' ? '仅录音' : '录像＋录音' }}</text></view>
     <button
       v-if="!readonlyMode"
       class="primary-button"
@@ -166,8 +165,9 @@
       :loading="loading"
       @tap="startPractice"
     >
-      {{ asrUnavailable ? '语音服务未就绪' : '进入考场' }}
+      {{ asrUnavailable ? '语音服务未就绪' : loading || enteringExam ? '正在准备考场…' : '进入考场' }}
     </button>
+    </view>
   </view>
 </template>
 
@@ -181,6 +181,8 @@ import BackgroundAnswers from '../../components/BackgroundAnswers.vue'
 import { computed, ref, watch } from 'vue'
 import { onLoad, onShow, onUnload } from '@dcloudio/uni-app'
 import LightSelector from '../../components/LightSelector.vue'
+import LearnerSheet from '../../components/LearnerSheet.vue'
+import MotionCollapse from '../../components/MotionCollapse.vue'
 import { useExamStore } from '../../stores/exam'
 import { useBillingStore } from '../../stores/billing'
 import { useQuestionBankStore } from '../../stores/questionBank'
@@ -195,7 +197,8 @@ import { getAsrStatus } from '../../api/scoring'
 import { getTrialQuestion, getTrialStatus } from '../../api/trial'
 import { hasPremiumAccess } from '../../utils/access'
 import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
-import { QUESTION_CATEGORIES, YEAR_OPTIONS } from '../../utils/constants'
+import { QUESTION_CATEGORIES } from '../../utils/constants'
+import { useQuestionFilters } from '../../utils/useQuestionFilters'
 import {
   fetchFullExamSuites,
   getFullExamSuiteSummary,
@@ -207,6 +210,7 @@ import { DEFAULT_TARGETED_POSITION_TREE } from '../../utils/targetedOptions'
 const examStore = useExamStore()
 const billingStore = useBillingStore()
 const questionBankStore = useQuestionBankStore()
+const filterMetadata = useQuestionFilters()
 const subscriptionStore = useSubscriptionStore()
 const userStore = useUserStore()
 const DEFAULT_EXAM_QUESTION_COUNT = 5
@@ -219,7 +223,9 @@ const ENTER_ROOM_TIMEOUT_MS = 10000
 const ACCESS_STATE_CACHE_MS = 30000
 const ASR_STATUS_CACHE_MS = 30000
 const count = ref(DEFAULT_EXAM_QUESTION_COUNT)
+const advancedOpen = ref(false)
 const mode = ref('free')
+watch(mode, value => { if (value === 'fullExam') advancedOpen.value = true })
 const mediaMode = ref('audio')
 const selectedDimensions = ref(['random'])
 const questionTypeTouched = ref(false)
@@ -277,6 +283,9 @@ const fullExamPickerOptions = computed(() => fullExamSuiteOptions.value.map((sui
 })))
 const selectedFullExamSuiteLabel = computed(() => selectedFullExamSuite.value?.title || '暂无套题')
 const selectedFullExamSuiteSummary = computed(() => getFullExamSuiteSummary(selectedFullExamSuite.value))
+const practiceSummary = computed(() => trial.value ? '1 道试用题' : mode.value === 'fullExam'
+  ? `全真模拟 · ${selectedFullExamSuite.value?.questionCount || '待选'} 题`
+  : `${recommendedQuestionId.value || fixedPracticeEntry.value ? 1 : count.value} 道题 · ${selectedCategoryName.value}`)
 const pageTitle = computed(() => (mode.value === 'fullExam' ? '全真模拟准备' : '专项练习准备'))
 const pageDesc = computed(() => (
   mode.value === 'fullExam'
@@ -411,7 +420,7 @@ const selectedDirectionNode = computed(() =>
     : null
 )
 const yearOptions = computed(() =>
-  YEAR_OPTIONS.map(y => ({ value: y, checked: selectedYearsFilter.value.includes(y) }))
+  filterMetadata.options.value.year.map(y => ({ value: y, checked: selectedYearsFilter.value.includes(y) }))
 )
 const yearLabel = computed(() =>
   selectedYearsFilter.value.length ? selectedYearsFilter.value.join('、') : '不限年份（可多选）'
@@ -438,6 +447,20 @@ const targetFilterParams = computed(() => {
   if (mode.value !== 'fullExam' && selectedYearsFilter.value.length) params.year = selectedYearsFilter.value.join(',')
   return params
 })
+
+// Use the same effective scope as fetchRandom; keep its province fallback and
+// exact dimension parameter, but exclude the year facet's own selection.
+const metadataFilterParams = computed(() => ({
+  province: targetFilterParams.value.province || userStore.selectedProvince,
+  dimension: selectedDimensionParam.value,
+  ...targetFilterParams.value,
+  year: ''
+}))
+function refreshFilterMetadata() {
+  return filterMetadata.refresh(metadataFilterParams.value, hasFullAccess.value && userStore.isAuthenticated)
+}
+// Do not request on every checkbox change: a facet excludes its own year filter.
+watch(() => JSON.stringify({ ...metadataFilterParams.value, access: hasFullAccess.value && userStore.isAuthenticated }), refreshFilterMetadata, { immediate: true })
 
 function applyDefaultTargetFilters(force = false) {
   if (targetFilterTouched.value && !force) return
@@ -852,6 +875,22 @@ function goPricing() {
 </script>
 
 <style scoped>
+.learner-prepare.page { padding-bottom:calc(148px + env(safe-area-inset-bottom)); }
+.learner-prepare .page-title { font-size:44rpx; margin:12rpx 0; }
+.learner-prepare .page-desc { font-size:28rpx; margin-bottom:24rpx; }
+.prepare-advanced { display:block; margin-top:16px; border-top:1px solid var(--ui-border); padding-top:8px; }
+.prepare-action-bar { position:fixed; left:0; right:0; bottom:0; z-index:800; padding:12px 20px calc(12px + env(safe-area-inset-bottom)); background:var(--ui-surface); border-top:1px solid var(--ui-border); box-shadow:0 -4px 18px #20304708; }
+.prepare-action-summary { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:8px; color:var(--ui-muted); font-size:14px; line-height:1.5; }
+.prepare-action-summary > text:first-child { flex:1; }
+.prepare-action-summary > text:last-child { flex:none; }
+.prepare-action-bar .primary-button { width:100%; }
+.config-row__value::after { content:'›'; margin-left:8px; color:var(--ui-muted); }
+.learner-prepare .access-card__desc,.learner-prepare .service-card__desc,
+.learner-prepare .suite-panel__summary,.learner-prepare .suite-picker__arrow,
+.learner-prepare .mode-card__desc,.learner-prepare .fixed-practice-mode__desc,
+.learner-prepare .tips-card__line { color:var(--ui-muted); font-size:14px; line-height:1.65; }
+.learner-prepare .stepper__button { color:var(--ui-link); }
+.learner-prepare .stepper__button[disabled] { color:var(--ui-muted); background:#f1f3f6; }
 .access-card {
   border-color: #bfd7ef;
   background: #f4f9fe;
@@ -866,7 +905,7 @@ function goPricing() {
 
 .access-card__title,
 .service-card__title {
-  color: #172033;
+  color: var(--ui-text);
   font-size: 30rpx;
   font-weight: 800;
 }
@@ -874,8 +913,8 @@ function goPricing() {
 .access-card__desc,
 .service-card__desc {
   margin-top: 10rpx;
-  color: #5f6f83;
-  font-size: 24rpx;
+  color: var(--ui-muted);
+  font-size: 14px;
   line-height: 1.6;
 }
 
@@ -896,7 +935,7 @@ function goPricing() {
   align-items: center;
   justify-content: space-between;
   padding: 18rpx 0;
-  color: #2a3648;
+  color: var(--ui-text);
   font-size: 28rpx;
   font-weight: 600;
 }
@@ -904,7 +943,7 @@ function goPricing() {
 .config-row__value {
   flex: 1;
   margin-left: 24rpx;
-  color: #2F7FD6;
+  color: var(--ui-link);
   font-weight: 700;
   text-align: right;
 }
@@ -926,7 +965,7 @@ function goPricing() {
 .suite-panel {
   margin-top: 16rpx;
   padding: 18rpx;
-  border: 1rpx solid #DCEAF7;
+  border: 1rpx solid var(--ui-border);
   border-radius: 14rpx;
   background: #f8fbff;
 }
@@ -936,27 +975,27 @@ function goPricing() {
   align-items: center;
   justify-content: space-between;
   gap: 18rpx;
-  min-height: 74rpx;
+  min-height: 44px;
   padding: 0 18rpx;
   border: 1rpx solid #bfd7ef;
   border-radius: 12rpx;
   background: #ffffff;
-  color: #172033;
-  font-size: 25rpx;
+  color: var(--ui-text);
+  font-size: 14px;
   font-weight: 700;
 }
 
 .suite-picker__arrow {
   flex-shrink: 0;
-  color: #2F7FD6;
-  font-size: 23rpx;
+  color: var(--ui-link);
+  font-size: 14px;
 }
 
 .suite-panel__summary {
   display: block;
   margin-top: 12rpx;
-  color: #5f6f83;
-  font-size: 23rpx;
+  color: var(--ui-muted);
+  font-size: 14px;
   line-height: 1.6;
 }
 
@@ -974,15 +1013,15 @@ function goPricing() {
 }
 
 .fixed-practice-mode__title {
-  color: #172033;
+  color: var(--ui-text);
   font-size: 29rpx;
   font-weight: 800;
 }
 
 .fixed-practice-mode__desc {
   margin-top: 8rpx;
-  color: #64748B;
-  font-size: 23rpx;
+  color: var(--ui-muted);
+  font-size: 14px;
 }
 
 .question-type-panel {
@@ -997,13 +1036,17 @@ function goPricing() {
 }
 
 .type-chip {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-width: 148rpx;
   padding: 16rpx 20rpx;
-  border: 1rpx solid #DCEAF7;
+  border: 1rpx solid var(--ui-border);
   border-radius: 14rpx;
   background: #ffffff;
-  color: #2a3648;
-  font-size: 25rpx;
+  color: var(--ui-text);
+  font-size: 14px;
   font-weight: 700;
   text-align: center;
   transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
@@ -1014,9 +1057,9 @@ function goPricing() {
 }
 
 .type-chip--active {
-  border-color: #2F7FD6;
-  background: #EAF5FF;
-  color: #2F7FD6;
+  border-color: var(--ui-link);
+  background: var(--ui-soft);
+  color: var(--ui-link);
 }
 
 .type-chip--disabled {
@@ -1027,22 +1070,25 @@ function goPricing() {
   display: flex;
   align-items: center;
   overflow: hidden;
-  border: 1rpx solid #DCEAF7;
+  border: 1rpx solid var(--ui-border);
   border-radius: 12rpx;
 }
 
 .stepper__button {
-  width: 76rpx;
-  height: 68rpx;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 0;
   background: #f6f8fb;
-  color: #2F7FD6;
+  color: var(--ui-link);
   font-size: 34rpx;
 }
 
 .stepper__value {
   width: 86rpx;
-  color: #172033;
+  color: var(--ui-text);
   font-size: 30rpx;
   font-weight: 800;
   text-align: center;
@@ -1058,15 +1104,15 @@ function goPricing() {
 .mode-card {
   min-height: 150rpx;
   padding: 22rpx;
-  border: 1rpx solid #DCEAF7;
+  border: 1rpx solid var(--ui-border);
   border-radius: 16rpx;
   background: #ffffff;
   transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
 .mode-card--active {
-  border-color: #2F7FD6;
-  background: #EAF5FF;
+  border-color: var(--ui-link);
+  background: var(--ui-soft);
   box-shadow: 0 8rpx 22rpx rgba(47, 127, 214, 0.10);
 }
 
@@ -1080,15 +1126,15 @@ function goPricing() {
 }
 
 .mode-card__title {
-  color: #172033;
+  color: var(--ui-text);
   font-size: 29rpx;
   font-weight: 800;
 }
 
 .mode-card__desc {
   margin-top: 10rpx;
-  color: #64748B;
-  font-size: 23rpx;
+  color: var(--ui-muted);
+  font-size: 14px;
   line-height: 1.5;
 }
 
@@ -1098,15 +1144,15 @@ function goPricing() {
 }
 
 .tips-card__title {
-  color: #172033;
+  color: var(--ui-text);
   font-size: 30rpx;
   font-weight: 800;
 }
 
 .tips-card__line {
   margin-top: 12rpx;
-  color: #64748B;
-  font-size: 24rpx;
+  color: var(--ui-muted);
+  font-size: 14px;
   line-height: 1.6;
 }
 
@@ -1134,13 +1180,14 @@ function goPricing() {
 }
 
 .year-checkbox {
+  min-height: 48px;
   display: flex;
   align-items: center;
   gap: 16rpx;
   padding: 22rpx 0;
   border-bottom: 1rpx solid #eef2f6;
-  color: #2a3648;
-  font-size: 27rpx;
+  color: var(--ui-text);
+  font-size: 14px;
 }
 
 @keyframes prepare-year-mask-in {
