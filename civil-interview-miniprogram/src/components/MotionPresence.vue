@@ -26,6 +26,11 @@ onBeforeUnmount(() => presence.dispose())
 .motion-presence--layer { position:fixed; top:0; right:0; bottom:0; left:0; z-index:2200; }
 .motion-presence--entering { animation:presence-in var(--motion-enter) var(--motion-ease) both; }
 .motion-presence--leaving { animation:presence-out var(--motion-exit) ease-out both; }
+/* Fixed masks never translate: even a 6px movement exposes an interactive page edge. */
+.motion-presence--layer.motion-presence--entering { animation-name:presence-mask-in; }
+.motion-presence--layer.motion-presence--leaving { animation-name:presence-mask-out; }
+@keyframes presence-mask-in { from { opacity:0; } to { opacity:1; } }
+@keyframes presence-mask-out { from { opacity:1; } to { opacity:0; } }
 @keyframes presence-in { from { opacity:0; transform:translateY(var(--motion-offset)); } to { opacity:1; transform:translateY(0); } }
 @keyframes presence-out { from { opacity:1; transform:translateY(0); } to { opacity:0; transform:translateY(calc(-1 * var(--motion-offset))); } }
 </style>

@@ -10,13 +10,7 @@
     <view @tap="open">
       <slot />
     </view>
-    <MotionPresence :show="visible" layer><view class="selector-overlay" @tap="close">
-      <view class="selector-panel" @tap.stop>
-        <view class="selector-head">
-          <text class="selector-title">{{ title }}</text>
-          <text class="selector-done" @tap="close">完成</text>
-        </view>
-        <scroll-view scroll-y class="selector-list">
+    <LearnerSheet class="selector-sheet" :show="visible" :title="title" :body-height="normalizedOptions.length * 56" @close="close">
           <view
             v-for="(item, index) in normalizedOptions"
             :key="`${item.value}-${index}`"
@@ -27,14 +21,12 @@
             <text>{{ item.label }}</text>
             <text v-if="index === activeIndex" class="selector-check">✓</text>
           </view>
-        </scroll-view>
-      </view>
-    </view></MotionPresence>
+    </LearnerSheet>
   </view>
 </template>
 
 <script setup>
-import MotionPresence from './MotionPresence.vue'
+import LearnerSheet from './LearnerSheet.vue'
 import { computed, ref } from 'vue'
 
 const props = defineProps({
@@ -75,62 +67,18 @@ function choose(index) {
 </script>
 
 <style scoped>
-.selector-overlay {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 2200;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  background: rgba(15, 23, 42, 0.42);
-}
-
-.selector-panel {
-  width: 100%;
-  max-height: 68vh;
-  padding: 24rpx 28rpx calc(24rpx + env(safe-area-inset-bottom));
-  border-radius: 24rpx 24rpx 0 0;
-  background: #ffffff;
-  color: #172033;
-  box-shadow: 0 -12rpx 36rpx rgba(47, 127, 214, 0.10);
-}
-
-.selector-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16rpx;
-}
-
-.selector-title {
-  color: #172033;
-  font-size: 30rpx;
-  font-weight: 700;
-}
-
-.selector-done {
-  color: #2F7FD6;
-  font-size: 26rpx;
-  font-weight: 600;
-}
-
-.selector-list {
-  max-height: 54vh;
-}
-
 .selector-option {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 88rpx;
-  padding: 0 6rpx;
+  min-height: 48px;
+  padding: 12px 6px;
+  gap: 12px;
   border-bottom: 1rpx solid #eef2f6;
   color: #2a3648;
-  font-size: 28rpx;
-  transition: transform 160ms ease, background-color 160ms ease, color 160ms ease;
+  font-size: 15px;
+  line-height: 1.6;
+  transition: background-color var(--motion-press) ease;
 }
 
 .selector-option:last-child {
@@ -138,48 +86,16 @@ function choose(index) {
 }
 
 .selector-option--active {
-  padding: 0 16rpx;
+  padding: 12px 12px;
   border-radius: 12rpx;
-  background: #EAF5FF;
-  color: #2F7FD6;
+  background: var(--ui-soft, #edf3ff);
+  color: var(--ui-link, #285bc7);
   font-weight: 700;
-  transform: translateX(4rpx);
 }
 
 .selector-check {
-  color: #2F7FD6;
+  color: var(--ui-link, #285bc7);
   font-size: 28rpx;
-  animation: selector-check-pop 180ms ease-out both;
 }
 
-@keyframes selector-mask-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes selector-sheet-up {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 44rpx, 0);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-@keyframes selector-check-pop {
-  from {
-    opacity: 0;
-    transform: scale(0.72);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
 </style>

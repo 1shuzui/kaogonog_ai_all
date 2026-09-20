@@ -30,9 +30,9 @@ function select(item) {
 .motion-segmented { padding:4px; margin:12px 0 16px; border:1px solid #e5eaf3; border-radius:16px; background:#eef2f8; }
 .motion-segmented__rail { position:relative; display:flex; }
 .motion-segmented__plate { position:absolute; top:0; bottom:0; left:0; border-radius:12px; background:#fdfefe; box-shadow:0 2px 5px rgba(32,48,71,.07); transition:transform var(--motion-segment) var(--motion-ease); pointer-events:none; }
-.motion-segmented__item { position:relative; flex:1; display:flex; justify-content:center; align-items:center; gap:4px; min-width:0; min-height:40px; margin:0; padding:8px 2px; background:transparent; color:#66758b; border-radius:12px; font-size:13px; line-height:1.4; transition:transform var(--motion-press) ease-out,opacity var(--motion-press) ease-out; }
+.motion-segmented__item { position:relative; flex:1; display:flex; justify-content:center; align-items:center; gap:4px; min-width:0; min-height:44px; margin:0; padding:8px 2px; background:transparent; color:var(--ui-muted, #596a80); border-radius:12px; font-size:14px; line-height:1.4; transition:transform var(--motion-press) ease-out,opacity var(--motion-press) ease-out; }
 .motion-segmented__item::after { border:0; }
-.motion-segmented__item--selected { color:#326be5; font-weight:700; }
-.motion-segmented__count { font-size:11px; opacity:.75; }
+.motion-segmented__item--selected { color:var(--ui-link, #285bc7); font-weight:700; }
+.motion-segmented__count { font-size:12px; }
 .motion-segmented__pressed { transform:scale(var(--motion-scale)); opacity:.75; }
 </style>

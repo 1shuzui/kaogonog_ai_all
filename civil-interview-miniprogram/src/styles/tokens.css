@@ -1,0 +1,18 @@
+/* Shared learner semantics. px is used for minimum touch sizes, rpx for scalable spacing. */
+page {
+  --ui-bg: #f7f9fd;
+  --ui-surface: #fdfefe;
+  --ui-soft: #edf3ff;
+  --ui-text: #203047;
+  --ui-muted: #596a80;
+  --ui-primary: #326be5;
+  --ui-link: #285bc7;
+  --ui-border: #dbe3ee;
+  --ui-error: #a52c38;
+  --ui-success: #147d74;
+  --ui-radius: 24rpx;
+  --ui-space: 24rpx;
+  --ui-touch: 44px;
+  --ui-layer-nav: 900;
+  --ui-layer-sheet: 2200;
+}

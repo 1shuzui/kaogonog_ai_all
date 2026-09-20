@@ -37,8 +37,8 @@ defineProps({
   align-items: center;
   flex-direction: column;
   justify-content: center;
-  min-height: 300rpx;
-  padding: 42rpx 24rpx;
+  min-height: 220rpx;
+  padding: 28rpx 24rpx;
   text-align: center;
 }
 
@@ -50,8 +50,8 @@ defineProps({
   height: 88rpx;
   margin-bottom: 18rpx;
   border-radius: 999rpx;
-  background: #EAF5FF;
-  color: #2F7FD6;
+  background: var(--ui-soft, #edf3ff);
+  color: var(--ui-link, #285bc7);
   font-size: 42rpx;
   font-weight: 700;
 }
@@ -64,8 +64,8 @@ defineProps({
 
 .empty__desc {
   margin-top: 8rpx;
-  color: #64748B;
-  font-size: 24rpx;
+  color: var(--ui-muted, #596a80);
+  font-size: 14px;
   line-height: 1.6;
 }
 </style>
