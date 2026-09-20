@@ -14,20 +14,51 @@
     <MotionSummary class="home-motion-summary" :compact="compact" title="面试练习" :detail="userStore.selectedProvinceName" />
     <view class="home-hero">
       <view>
-        <text class="home-hero__kicker">{{ userStore.selectedProvinceName }} · 面试练习工作台</text>
-        <view class="home-hero__title"><text>今天，练好</text><text>一道面试题。</text></view>
-        <text class="home-hero__desc">开口练习，留住思路。</text>
-        <button class="primary-button learner-home__start" @tap="goPractice('free')">开始练习 →</button>
+        <text class="home-hero__kicker">{{ userStore.selectedProvinceName }} · 面试练习</text>
+        <text class="home-hero__title">今天，开口练一练</text>
+        <text class="home-hero__desc">专项练习 · 自选题型与题数</text>
+        <button class="primary-button learner-home__start" @tap="goPractice('free')">{{ isLoggedIn ? '开始练习' : '登录后试用' }} →</button>
       </view>
-      <view class="learner-home__sound"><MotionAccent class="home-motion-accent"><LearnerIcon name="audio" :size="44" /></MotionAccent></view>
+      <view class="learner-home__sound"><MotionAccent class="home-motion-accent"><LearnerIcon name="audio" :size="28" /></MotionAccent></view>
     </view>
+
+    <MotionCollapse v-if="isLoggedIn" class="home-section-recent" title="近期练习" :open="sectionOpen.recent" :revision="[recentRecords, historyStore.stats]" @toggle="toggleSection('recent')">
+      <template #actions><button class="home-text-button" @tap.stop="goHistory">查看全部</button></template>
+      <view v-if="recentRecords.length">
+        <button
+          v-for="record in recentRecords"
+          :key="record.examId"
+          class="record-card card"
+          @tap="openResult(record)"
+        >
+          <view class="record-card__main">
+            <text class="record-card__title">{{ record.questionSummary || '全真模拟练习' }}</text>
+            <text class="record-card__meta">{{ formatDate(record.completedAt || record.date) }} · {{ record.questionCount || 1 }} 题</text>
+            <text class="record-card__action">查看复盘 →</text>
+          </view>
+          <ScoreRing :score="record.totalScore || 0" :max-score="record.maxScore || 100" size="small" />
+        </button>
+      </view>
+      <view v-else class="card home-first-practice">
+        <text class="home-first-practice__title">从一次开口练习开始</text>
+        <text class="home-first-practice__desc">完成练习后，在这里查看记录与点评。</text>
+        <button class="secondary-button" @tap="goPractice('free')">开始首次练习</button>
+      </view>
+      <view v-if="historyStore.stats?.totalExams > 0" class="learner-home__overview">
+        <view class="learner-home__average">
+          <ScoreRing :score="historyStore.averageScore" :max-score="100" size="small" label="平均分" color="#326BE5" />
+          <text class="muted">每次开口，都有进步的空间。</text>
+        </view>
+        <StatGrid :items="statItems" />
+      </view>
+    </MotionCollapse>
 
     <view v-if="!isLoggedIn" class="guest-tip card">
       <view class="guest-tip__copy">
-        <text class="guest-tip__title">可先浏览功能</text>
-        <text class="guest-tip__desc">登录后可使用试用题、保存练习记录并开通训练权益。</text>
+        <text class="guest-tip__title">先浏览，想练时再登录</text>
+        <text class="guest-tip__desc">先看看题库、题型和岗位方向；登录后可使用试用题并保存练习记录。</text>
       </view>
-      <button class="secondary-button guest-tip__button" @tap="goLogin">登录</button>
+      <navigator class="secondary-button guest-tip__button" url="/pages/bank/index" open-type="switchTab">浏览题库</navigator>
     </view>
 
     <view v-if="showPreferenceSetup" class="preference-modal" @touchmove.stop.prevent>
@@ -72,77 +103,48 @@
       </view>
     </view>
 
+    <view class="practice-routes">
+      <navigator class="practice-route" url="/pages/training/index" open-type="switchTab">
+        <LearnerIcon name="aim" :size="24" />
+        <view class="practice-route__copy"><text class="practice-route__title">题型训练</text><text class="practice-route__desc">按单一题型反复练习</text></view>
+        <text class="practice-route__arrow">›</text>
+      </navigator>
+      <navigator class="practice-route" url="/pages/targeted/index" open-type="switchTab">
+        <LearnerIcon name="environment" :size="24" />
+        <view class="practice-route__copy"><text class="practice-route__title">定向备面</text><text class="practice-route__desc">按考试、地区与岗位选方向</text></view>
+        <text class="practice-route__arrow">›</text>
+      </navigator>
+    </view>
     <view class="quick-grid">
-      <button class="secondary-button quick-grid__button" @tap="goPractice('free')"><LearnerIcon name="aim" />专项练习</button>
       <button class="secondary-button quick-grid__button" @tap="goPractice('fullExam')"><LearnerIcon name="read" />全真练习</button>
       <button class="secondary-button quick-grid__button" @tap="goPricing"><LearnerIcon name="wallet" />套餐中心</button>
     </view>
 
     <view v-if="showJiangsuEntry" class="jiangsu-entry card">
-      <view class="jiangsu-entry__head">
-        <text class="jiangsu-entry__kicker">江苏岗位题库</text>
-        <text class="jiangsu-entry__title">2026 江苏事业单位统考</text>
-        <text class="jiangsu-entry__desc">选好方向，练得更有针对性。</text>
-      </view>
-      <view class="jiangsu-feature">
-        <LearnerIcon name="environment" />
-        <view class="jiangsu-feature__copy">
-          <text class="jiangsu-feature__title">本土岗位贴合度</text>
-          <text class="jiangsu-feature__desc">围绕江苏省情、事业单位岗位系统和真实基层场景组织训练。</text>
-        </view>
-      </view>
+      <MotionCollapse class="home-section-jiangsu" title="2026 江苏事业单位统考" :open="jiangsuExpanded" @toggle="jiangsuExpanded = !jiangsuExpanded">
       <view class="jiangsu-grid">
-        <view
+        <button
           v-for="job in jiangsuJobs"
           :key="job.key"
           class="jiangsu-card"
           @tap="goJiangsuJob(job.key)"
         >
-          <text class="jiangsu-card__rank">{{ job.rank }}</text>
           <view class="jiangsu-card__copy">
             <text class="jiangsu-card__title">{{ job.title }}</text>
             <text v-if="job.subtitle" class="jiangsu-card__desc">{{ job.subtitle }}</text>
           </view>
           <text class="jiangsu-card__arrow">›</text>
-        </view>
+        </button>
       </view>
+      </MotionCollapse>
+      <text class="jiangsu-entry__desc">{{ jiangsuExpanded ? '点击岗位查看题库' : `岗位题库 · ${jiangsuJobs.length} 个方向，展开选择` }}</text>
     </view>
 
-    <MotionCollapse class="home-section-recent" title="近期练习" :open="sectionOpen.recent" :revision="[recentRecords, historyStore.stats]" @toggle="toggleSection('recent')">
-      <template #actions><text class="muted" @tap.stop="goHistory">查看全部</text></template>
-
-    <view v-if="isLoggedIn" class="learner-home__overview">
-      <view v-if="historyStore.stats?.totalExams > 0" class="learner-home__average">
-        <ScoreRing :score="historyStore.averageScore" :max-score="100" size="small" label="平均分" color="#326BE5" />
-        <text class="muted">每次开口，都有进步的空间。</text>
-      </view>
-      <StatGrid :items="statItems" />
-    </view>
-
-    <view v-if="recentRecords.length">
-      <view
-        v-for="record in recentRecords"
-        :key="record.examId"
-        class="record-card card"
-        @tap="openResult(record)"
-      >
-        <view class="record-card__main">
-          <text class="record-card__title">{{ record.questionSummary || '全真模拟练习' }}</text>
-          <text class="record-card__meta">{{ formatDate(record.completedAt || record.date) }} · {{ record.questionCount || 1 }} 题</text>
-        </view>
-        <ScoreRing :score="record.totalScore || 0" :max-score="record.maxScore || 100" size="small" />
-      </view>
-    </view>
-    <view v-else class="card">
-      <EmptyState :title="isLoggedIn ? '暂无练习记录' : '登录后查看练习记录'" :desc="isLoggedIn ? '完成一次模考后，这里会展示近期得分和趋势。' : '你可以先浏览功能，准备试用或练习时再登录。'" mark="0" />
-    </view>
-    </MotionCollapse>
-
-    <MotionCollapse v-if="historyStore.stats?.dimensionAverages?.length" class="home-section-ability" title="能力概览" :open="sectionOpen.ability" :revision="historyStore.stats?.dimensionAverages" @toggle="toggleSection('ability')"><view class="card">
+    <MotionCollapse v-if="isLoggedIn && historyStore.stats?.dimensionAverages?.length" class="home-section-ability" title="能力概览" :open="sectionOpen.ability" :revision="historyStore.stats?.dimensionAverages" @toggle="toggleSection('ability')"><view class="card">
       <DimensionBars :dimensions="historyStore.stats?.dimensionAverages || []" />
     </view></MotionCollapse>
 
-    <MotionCollapse class="home-section-trend" title="成绩趋势" :open="sectionOpen.trend" :revision="[trendLimit, trendDisplayData]" @toggle="toggleSection('trend')"><view class="card trend-card">
+    <MotionCollapse v-if="isLoggedIn && historyStore.trendData?.length" class="home-section-trend" title="成绩趋势" :open="sectionOpen.trend" :revision="[trendLimit, trendDisplayData]" @toggle="toggleSection('trend')"><view class="card trend-card">
       <MotionSegmented class="home-trend-segment" :model-value="trendLimit" :options="trendOptions" @change="setTrendLimit" />
       <scroll-view v-if="trendDisplayData.length" class="trend-chart-scroll" scroll-x>
         <view class="trend-chart" :style="trendChartContentStyle">
@@ -181,7 +183,7 @@
       <EmptyState v-else :title="isLoggedIn ? '暂无趋势数据' : '登录后查看成绩趋势'" :desc="isLoggedIn ? '完成几次练习后，这里会显示成绩变化。' : '浏览功能无需登录，开始试用或练习后会保存成绩趋势。'" mark="-" />
     </view></MotionCollapse>
 
-    <MotionCollapse class="home-section-weakness" title="薄弱维度分析" :open="sectionOpen.weakness" :revision="weaknessDimensions" @toggle="toggleSection('weakness')"><view class="card weakness-card">
+    <MotionCollapse v-if="isLoggedIn && weaknessDimensions.length" class="home-section-weakness" title="薄弱维度分析" :open="sectionOpen.weakness" :revision="weaknessDimensions" @toggle="toggleSection('weakness')"><view class="card weakness-card">
       <view v-if="weaknessDimensions.length" class="weakness-list">
         <view v-for="item in weaknessDimensions" :key="item.name" class="weakness-item">
           <view class="weakness-item__head">
@@ -201,8 +203,8 @@
       <EmptyState v-else :title="isLoggedIn ? '暂无维度数据' : '登录后查看薄弱维度'" :desc="isLoggedIn ? '完成评分后会生成薄弱维度建议。' : '答题评分后会在这里呈现维度短板。'" mark="-" />
     </view></MotionCollapse>
 
-    <MotionCollapse class="home-section-recommendation" title="智能推荐练习" :open="sectionOpen.recommendation" :revision="[recommendations, recommendationLoading, recommendationEmptyText]" @toggle="toggleSection('recommendation')">
-      <template #actions><text class="muted" @tap.stop="refreshRecommendations(true)">刷新</text></template>
+    <MotionCollapse v-if="isLoggedIn && (weakDimensionKeys.length || recommendationLoading || recommendations.length)" class="home-section-recommendation" title="智能推荐练习" :open="sectionOpen.recommendation" :revision="[recommendations, recommendationLoading, recommendationEmptyText]" @toggle="toggleSection('recommendation')">
+      <template #actions><button class="home-text-button" @tap.stop="refreshRecommendations(true)">刷新</button></template>
       <view class="card recommendation-card">
       <view v-if="recommendationLoading" class="recommendation-status">正在匹配真实题库...</view>
       <view v-else-if="recommendations.length" class="recommendation-list">
@@ -293,6 +295,7 @@ const hasFullAccess = computed(() => (
   || userStore.userInfo?.permissions?.canAccessPremiumModules === true
 ))
 const sectionOpen = ref(readSectionOpenState())
+const jiangsuExpanded = ref(false)
 const trendLimit = ref(0)
 const preferenceSaving = ref(false)
 const onboardingProvince = ref(userStore.selectedProvince || 'national')
@@ -684,18 +687,18 @@ function startRecommendedPractice(item) {
 </script>
 
 <style scoped>
-.home-hero {
+.learner-page.learner-home .home-hero {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 240rpx;
-  margin-bottom: 20rpx;
-  padding: 32rpx;
-  border: 1rpx solid #DCEAF7;
-  border-radius: 18rpx;
-  background: linear-gradient(135deg, #ffffff 0%, #EAF5FF 58%, #DFF0FF 100%);
-  color: #172033;
-  box-shadow: 0 18rpx 40rpx rgba(47, 127, 214, 0.12);
+  min-height: 0;
+  margin-bottom: 16px;
+  padding: 16px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--ui-soft, #edf3ff);
+  color: var(--ui-text, #203047);
+  box-shadow: none;
   animation: motion-fade-up 240ms ease-out both;
 }
 
@@ -705,42 +708,64 @@ function startRecommendedPractice(item) {
   display: block;
 }
 
-.home-hero__kicker {
-  opacity: 0.84;
-  font-size: 24rpx;
+.learner-page.learner-home .home-hero__kicker {
+  color: var(--ui-muted, #596a80);
+  font-size: 14px;
 }
 
-.home-hero__title {
-  margin-top: 12rpx;
-  font-size: 42rpx;
-  font-weight: 800;
+.learner-page.learner-home .home-hero__title {
+  margin-top: 8px;
+  color: var(--ui-text, #203047);
+  font-size: 24px;
+  line-height: 1.4;
+  font-weight: 700;
 }
 
-.home-hero__desc {
-  margin-top: 10rpx;
-  opacity: 0.86;
-  font-size: 25rpx;
+.learner-page.learner-home .home-hero__desc {
+  margin: 8px 0 16px;
+  color: var(--ui-muted, #596a80);
+  font-size: 14px;
+  line-height: 1.5;
 }
 
-.quick-grid {
+.learner-page.learner-home .learner-home__start {
+  width: auto;
+  max-width: calc(100% - 48px);
+  min-height: 44px;
+  padding: 8px 16px;
+  font-size: 16px;
+  background: var(--ui-primary, #326be5);
+}
+
+.learner-page.learner-home .learner-home__sound {
+  right: 16px;
+  bottom: 16px;
+  width: 36px;
+  height: 44px;
+}
+
+.learner-page.learner-home .quick-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12rpx;
-  margin-bottom: 28rpx;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0 16px;
 }
 
-.quick-grid__button {
-  min-height: 82rpx;
-  padding: 0 8rpx;
-  font-size: 26rpx;
-  font-weight: 800;
+.learner-page.learner-home .quick-grid__button {
+  flex-direction: row;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px;
+  border: 1px solid var(--ui-border, #dbe3ee);
+  border-radius: 12px;
+  color: var(--ui-link, #285bc7);
+  font-size: 14px;
+  font-weight: 500;
 }
 
-.guest-tip {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 144rpx;
-  gap: 18rpx;
-  align-items: center;
+.learner-home .guest-tip {
+  padding: 16px;
+  margin-bottom: 16px;
 }
 
 .guest-tip__title,
@@ -749,21 +774,67 @@ function startRecommendedPractice(item) {
 }
 
 .guest-tip__title {
-  color: #172033;
-  font-size: 29rpx;
-  font-weight: 900;
+  color: var(--ui-text, #203047);
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .guest-tip__desc {
   margin-top: 6rpx;
-  color: #64748B;
-  font-size: 23rpx;
+  color: var(--ui-muted, #596a80);
+  font-size: 14px;
   line-height: 1.5;
 }
 
-.guest-tip__button {
-  min-height: 72rpx;
-  font-size: 25rpx;
+.learner-home .guest-tip__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  margin-top: 12px;
+  padding: 8px 16px;
+  color: var(--ui-link, #285bc7);
+  font-size: 14px;
+}
+
+.practice-routes {
+  margin-top: 16px;
+  border-top: 1px solid var(--ui-border, #dbe3ee);
+}
+
+.practice-route {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--ui-border, #dbe3ee);
+}
+
+.practice-route__copy { flex: 1; min-width: 0; }
+.practice-route__title, .practice-route__desc { display: block; }
+.practice-route__title { color: var(--ui-text, #203047); font-size: 16px; font-weight: 600; }
+.practice-route__desc { margin-top: 4px; color: var(--ui-muted, #596a80); font-size: 14px; line-height: 1.5; }
+.practice-route__arrow { color: var(--ui-muted, #596a80); font-size: 24px; }
+
+.home-text-button {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px;
+  background: transparent;
+  color: var(--ui-link, #285bc7);
+  font-size: 14px;
+}
+
+.home-first-practice__title, .home-first-practice__desc { display: block; }
+.home-first-practice__title { color: var(--ui-text, #203047); font-size: 16px; font-weight: 600; }
+.home-first-practice__desc { margin: 8px 0 16px; color: var(--ui-muted, #596a80); font-size: 14px; line-height: 1.6; }
+
+.learner-home button:focus-visible, .learner-home navigator:focus-visible {
+  outline: 2px solid var(--ui-link, #285bc7);
+  outline-offset: 2px;
 }
 
 .preference-modal {
@@ -814,15 +885,15 @@ function startRecommendedPractice(item) {
 }
 
 .preference-setup__kicker {
-  color: #2F7FD6;
+  color: var(--ui-link, #285bc7);
   font-size: 23rpx;
   font-weight: 800;
 }
 
 .preference-setup__title {
   margin-top: 8rpx;
-  color: #172033;
-  font-size: 32rpx;
+  color: var(--ui-text, #203047);
+  font-size: 20px;
   font-weight: 900;
 }
 
@@ -838,14 +909,14 @@ function startRecommendedPractice(item) {
   justify-content: space-between;
   margin-top: 22rpx;
   padding: 18rpx 0;
-  border-top: 1rpx solid #eef2f6;
-  border-bottom: 1rpx solid #eef2f6;
-  color: #2a3648;
+  border-top: 1px solid var(--ui-border, #dbe3ee);
+  border-bottom: 1px solid var(--ui-border, #dbe3ee);
+  color: var(--ui-text, #203047);
   font-size: 26rpx;
 }
 
 .preference-picker text:last-child {
-  color: #2F7FD6;
+  color: var(--ui-link, #285bc7);
   font-weight: 800;
 }
 
@@ -858,18 +929,18 @@ function startRecommendedPractice(item) {
 
 .preference-chip {
   padding: 12rpx 18rpx;
-  border: 1rpx solid #DCEAF7;
+  border: 1px solid var(--ui-border, #dbe3ee);
   border-radius: 999rpx;
   background: #ffffff;
-  color: #2a3648;
+  color: var(--ui-text, #203047);
   font-size: 24rpx;
   font-weight: 700;
 }
 
 .preference-chip--active {
-  border-color: #2F7FD6;
-  background: #EAF5FF;
-  color: #2F7FD6;
+  border-color: var(--ui-primary, #326be5);
+  background: var(--ui-soft, #edf3ff);
+  color: var(--ui-link, #285bc7);
 }
 
 .preference-setup__actions {
@@ -972,7 +1043,7 @@ function startRecommendedPractice(item) {
   position: absolute;
   height: 4rpx;
   border-radius: 999rpx;
-  background: #2F7FD6;
+  background: var(--ui-primary, #326be5);
   box-shadow: 0 4rpx 12rpx rgba(47, 127, 214, 0.14);
   transform-origin: left center;
   animation: trend-line-in 300ms ease-out both;
@@ -984,7 +1055,7 @@ function startRecommendedPractice(item) {
   height: 18rpx;
   margin-top: -9rpx;
   margin-left: -9rpx;
-  border: 5rpx solid #2F7FD6;
+  border: 5rpx solid var(--ui-primary, #326be5);
   border-radius: 999rpx;
   background: #ffffff;
   box-shadow: 0 6rpx 18rpx rgba(47, 127, 214, 0.18);
@@ -998,7 +1069,7 @@ function startRecommendedPractice(item) {
   display: block;
   min-width: 58rpx;
   font-size: 20rpx;
-  color: #2F7FD6;
+  color: var(--ui-link, #285bc7);
   font-weight: 900;
   line-height: 1.2;
   text-align: center;
@@ -1034,7 +1105,7 @@ function startRecommendedPractice(item) {
 .weakness-item__head {
   display: flex;
   justify-content: space-between;
-  color: #2a3648;
+  color: var(--ui-text, #203047);
   font-size: 25rpx;
   font-weight: 800;
 }
@@ -1054,7 +1125,7 @@ function startRecommendedPractice(item) {
 .weakness-item__bar {
   height: 100%;
   border-radius: 999rpx;
-  background: #2F7FD6;
+  background: var(--ui-primary, #326be5);
   transition: width 300ms ease-out;
 }
 
@@ -1066,7 +1137,6 @@ function startRecommendedPractice(item) {
   display: block;
   margin-top: 10rpx;
   padding: 12rpx 14rpx;
-  border-left: 4rpx solid #d48806;
   border-radius: 8rpx;
   background: #fff8eb;
   color: #6f4a12;
@@ -1083,15 +1153,16 @@ function startRecommendedPractice(item) {
 
 .recommendation-item {
   padding: 18rpx;
-  border: 1rpx solid #DCEAF7;
+  border: 1px solid var(--ui-border, #dbe3ee);
   border-radius: 14rpx;
-  background: #f8fbff;
+  background: var(--ui-bg, #f7f9fd);
   animation: motion-fade-up 220ms ease-out both;
 }
 
 .recommendation-item__head {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12rpx;
   margin-bottom: 12rpx;
 }
@@ -1100,26 +1171,24 @@ function startRecommendedPractice(item) {
   flex: 0 0 auto;
   padding: 6rpx 14rpx;
   border-radius: 999rpx;
-  background: #EAF5FF;
-  color: #2F7FD6;
+  background: var(--ui-soft, #edf3ff);
+  color: var(--ui-link, #285bc7);
   font-size: 21rpx;
   font-weight: 800;
 }
 
 .recommendation-item__reason {
   min-width: 0;
-  overflow: hidden;
   color: #64748B;
   font-size: 22rpx;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.5;
 }
 
 .recommendation-item__stem {
   display: -webkit-box;
   overflow: hidden;
-  color: #1f2b3d;
-  font-size: 25rpx;
+  color: var(--ui-text, #203047);
+  font-size: 16px;
   font-weight: 650;
   line-height: 1.55;
   -webkit-box-orient: vertical;
@@ -1132,7 +1201,7 @@ function startRecommendedPractice(item) {
   justify-content: space-between;
   gap: 16rpx;
   margin-top: 14rpx;
-  color: #8a5a00;
+  color: var(--ui-muted, #596a80);
   font-size: 22rpx;
   font-weight: 700;
 }
@@ -1143,117 +1212,37 @@ function startRecommendedPractice(item) {
   font-size: 23rpx;
 }
 
-.jiangsu-entry {
-  padding: 26rpx;
-}
-
-.jiangsu-entry__kicker,
-.jiangsu-entry__title,
-.jiangsu-entry__desc {
-  display: block;
-}
-
-.jiangsu-entry__kicker {
-  color: #2F7FD6;
-  font-size: 23rpx;
-  font-weight: 700;
-}
-
-.jiangsu-entry__title {
-  margin-top: 8rpx;
-  color: #172033;
-  font-size: 34rpx;
-  font-weight: 900;
+.learner-page.learner-home .jiangsu-entry {
+  padding: 0 16px 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--ui-border, #dbe3ee);
+  border-radius: 12px;
 }
 
 .jiangsu-entry__desc {
-  margin-top: 8rpx;
-  color: #64748B;
-  font-size: 24rpx;
-}
-
-.jiangsu-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 14rpx;
-  margin-top: 22rpx;
-}
-
-.jiangsu-feature {
-  display: grid;
-  grid-template-columns: 104rpx minmax(0, 1fr);
-  gap: 16rpx;
-  align-items: center;
-  margin-top: 20rpx;
-  padding: 18rpx;
-  border: 1rpx solid #DCEAF7;
-  border-radius: 14rpx;
-  background: #f5f9fe;
-}
-
-.jiangsu-feature__label,
-.jiangsu-feature__title,
-.jiangsu-feature__desc {
   display: block;
-}
-
-.jiangsu-feature__label {
-  padding: 8rpx 12rpx;
-  border-radius: 999rpx;
-  background: #2F7FD6;
-  color: #ffffff;
-  font-size: 22rpx;
-  font-weight: 800;
-  text-align: center;
-}
-
-.jiangsu-feature__copy {
-  min-width: 0;
-}
-
-.jiangsu-feature__title {
-  color: #172033;
-  font-size: 27rpx;
-  font-weight: 900;
-}
-
-.jiangsu-feature__desc {
-  margin-top: 6rpx;
-  color: #5f6f83;
-  font-size: 23rpx;
+  margin-top: 8px;
+  color: var(--ui-muted, #596a80);
+  font-size: 14px;
   line-height: 1.5;
 }
 
-.jiangsu-card {
+.jiangsu-grid { margin-top: 8px; }
+
+.learner-page.learner-home .jiangsu-card {
   display: grid;
-  grid-template-columns: 54rpx minmax(0, 1fr) 28rpx;
-  gap: 16rpx;
+  grid-template-columns: minmax(0, 1fr) 20px;
+  gap: 8px;
   align-items: center;
-  min-height: 100rpx;
-  padding: 18rpx;
-  border: 1rpx solid #DCEAF7;
-  border-radius: 14rpx;
-  background: #ffffff;
-  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
-}
-
-.jiangsu-card:active {
-  border-color: #b9d7f3;
-  box-shadow: 0 8rpx 22rpx rgba(47, 127, 214, 0.10);
-  transform: translateY(-2rpx) scale(0.99);
-}
-
-.jiangsu-card__rank {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 54rpx;
-  height: 54rpx;
-  border-radius: 999rpx;
-  background: #EAF5FF;
-  color: #2F7FD6;
-  font-size: 25rpx;
-  font-weight: 900;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 0;
+  border: 0;
+  border-top: 1px solid var(--ui-border, #dbe3ee);
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+  box-shadow: none;
 }
 
 .jiangsu-card__title,
@@ -1262,33 +1251,34 @@ function startRecommendedPractice(item) {
 }
 
 .jiangsu-card__title {
-  overflow: hidden;
-  color: #172033;
-  font-size: 28rpx;
-  font-weight: 800;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: var(--ui-text, #203047);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
 }
 
 .jiangsu-card__desc {
-  margin-top: 6rpx;
-  overflow: hidden;
-  color: #64748B;
-  font-size: 23rpx;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  margin-top: 4px;
+  color: var(--ui-muted, #596a80);
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .jiangsu-card__arrow {
-  color: #8c8c8c;
-  font-size: 44rpx;
+  color: var(--ui-muted, #596a80);
+  font-size: 24px;
   line-height: 1;
 }
 
-.record-card {
+.learner-home .record-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
+  min-height: 44px;
+  margin-bottom: 8px;
+  padding: 16px;
+  text-align: left;
 }
 
 .record-card__main {
@@ -1299,8 +1289,8 @@ function startRecommendedPractice(item) {
 .record-card__title {
   display: -webkit-box;
   overflow: hidden;
-  color: #1f2b3d;
-  font-size: 29rpx;
+  color: var(--ui-text, #203047);
+  font-size: 16px;
   font-weight: 600;
   line-height: 1.5;
   -webkit-box-orient: vertical;
@@ -1309,10 +1299,48 @@ function startRecommendedPractice(item) {
 
 .record-card__meta {
   display: block;
-  margin-top: 10rpx;
-  color: #64748B;
-  font-size: 23rpx;
+  margin-top: 8px;
+  color: var(--ui-muted, #596a80);
+  font-size: 14px;
 }
+
+.record-card__action { display: block; margin-top: 8px; color: var(--ui-link, #285bc7); font-size: 14px; }
+
+.learner-home .muted,
+.preference-setup__kicker,
+.preference-setup__desc,
+.preference-picker,
+.preference-chip,
+.trend-chart__score,
+.trend-chart__label,
+.weakness-item__head,
+.weakness-item__tip,
+.recommendation-status,
+.recommendation-item__tag,
+.recommendation-item__reason,
+.recommendation-item__footer {
+  font-size: 14px;
+}
+
+.learner-home .muted,
+.preference-setup__desc,
+.recommendation-status,
+.recommendation-item__reason,
+.trend-chart__label {
+  color: var(--ui-muted, #596a80);
+}
+
+.learner-home .primary-button,
+.learner-home .secondary-button,
+.preference-picker,
+.preference-chip {
+  min-height: 44px;
+}
+
+.preference-picker, .preference-chip { display: flex; align-items: center; }
+.learner-home .recommendation-item__button { min-width: 96px; font-size: 14px; }
+.learner-page.learner-home .primary-button { background: var(--ui-primary, #326be5); color: #ffffff; font-size: 16px; }
+.learner-page.learner-home .secondary-button { color: var(--ui-link, #285bc7); border-color: var(--ui-border, #dbe3ee); }
 
 @keyframes trend-column-in {
   from {

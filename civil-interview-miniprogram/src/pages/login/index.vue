@@ -13,66 +13,17 @@
     <view class="login-card">
       <view class="login-brand">
         <text class="login-brand__title">公考面试AI测评</text>
-        <text class="login-brand__subtitle">智能评分 / 精准诊断 / 高效提分</text>
+        <text class="login-brand__subtitle">登录后保存练习记录，随时回来复盘。</text>
       </view>
-
-      <view class="login-tabs">
-        <view
-          class="login-tabs__item"
-          :class="{ 'login-tabs__item--active': mode === 'login' }"
-          @tap="mode = 'login'"
-        >
-          登录
-        </view>
-        <view
-          class="login-tabs__item"
-          :class="{ 'login-tabs__item--active': mode === 'register' }"
-          @tap="mode = 'register'"
-        >
-          注册
-        </view>
-      </view>
-
-      <view class="form-label">用户名</view>
-      <input v-model="form.username" class="field" placeholder="请输入用户名" />
-      <text v-if="mode === 'register'" class="page-desc">用户名为 3–32 位字母、数字、下划线或短横线；已有电脑账号请直接登录。</text>
-
-      <view class="form-label">密码</view>
-      <view class="password-field">
-        <input v-model="form.password" class="field password-field__input" :password="mode === 'login' ? !passwordVisibility.login : !passwordVisibility.register" placeholder="请输入密码" />
-        <button
-          class="password-field__toggle"
-          :aria-label="`${mode === 'login' ? (passwordVisibility.login ? '隐藏' : '显示') : (passwordVisibility.register ? '隐藏' : '显示')}密码`"
-          @tap="togglePasswordVisibility(mode === 'login' ? 'login' : 'register')"
-        >
-          <text class="password-field__eye" :class="{ 'password-field__eye--open': mode === 'login' ? passwordVisibility.login : passwordVisibility.register }"></text>
-        </button>
-      </view>
-
-      <template v-if="mode === 'register'">
-        <view class="form-label">确认密码</view>
-        <view class="password-field">
-          <input v-model="form.confirmPassword" class="field password-field__input" :password="!passwordVisibility.confirm" placeholder="请再次输入密码" />
-          <button
-            class="password-field__toggle"
-            :aria-label="`${passwordVisibility.confirm ? '隐藏' : '显示'}确认密码`"
-            @tap="togglePasswordVisibility('confirm')"
-          >
-            <text class="password-field__eye" :class="{ 'password-field__eye--open': passwordVisibility.confirm }"></text>
-          </button>
-        </view>
-        <view class="form-label">邀请码（选填）</view>
-        <input v-model="form.inviteCode" class="field" placeholder="请输入邀请码" />
-      </template>
 
       <view class="agreement-box">
-        <checkbox :checked="form.agreedTerms" @tap="toggleAgreement" />
+        <checkbox class="agreement-box__checkbox" :checked="form.agreedTerms" aria-label="同意用户协议与隐私政策" @tap="toggleAgreement" />
         <view class="agreement-box__content">
           <text class="agreement-box__text">
             我已阅读并同意
             <text class="agreement-box__link" @tap.stop="goLegalDocuments">《用户协议》与《隐私政策》</text>
           </text>
-          <text class="agreement-box__hint">未勾选前无法登录、注册或发起微信快捷登录。</text>
+          <text class="agreement-box__hint">请主动勾选后登录；先浏览无需勾选。</text>
         </view>
       </view>
 
@@ -89,29 +40,60 @@
         </button>
       </view>
 
-      <button class="primary-button login-submit" :loading="loading" @tap="submit">
-        {{ mode === 'login' ? '登录' : '注册' }}
-      </button>
-
-      <template v-if="mode === 'login'">
-        <view class="form-label">邀请码（选填）</view>
-        <input v-model="form.inviteCode" class="field" placeholder="请输入邀请码" />
-      </template>
-
-      <button v-if="mode === 'login'" class="secondary-button wechat-login-button" :loading="wechatLoading" @tap="loginByWechat">
+      <button class="primary-button wechat-login-button" :loading="wechatLoading" @tap="loginByWechat">
         微信快捷登录
       </button>
 
       <button class="link-button browse-button" @tap="browseWithoutLogin">
-        暂且跳过登录，先浏览功能
+        先浏览，暂不登录
       </button>
 
-      <button v-if="mode === 'login'" class="link-button forgot-button" @tap="openResetPanel">
-        忘记密码
+      <button class="link-button invite-toggle" :aria-expanded="inviteExpanded" @tap="inviteExpanded = !inviteExpanded">
+        {{ form.inviteCode ? '已填写邀请码（选填）' : '有邀请码？选填' }} · {{ inviteExpanded ? '收起' : '展开' }}
       </button>
+      <MotionCollapse :open="inviteExpanded">
+        <view class="invite-fields">
+          <view class="form-label">邀请码（选填）</view>
+          <input v-model="form.inviteCode" class="field" aria-label="邀请码，选填" placeholder="请输入邀请码" />
+          <text class="login-helper">没有邀请码也可以登录或注册。</text>
+        </view>
+      </MotionCollapse>
 
+      <MotionCollapse class="password-login-section" title="已有 PC 账号？账号密码登录" :open="passwordLoginExpanded" :revision="mode" @toggle="passwordLoginExpanded = !passwordLoginExpanded">
+        <view class="password-login-fields">
+          <text class="login-helper">与电脑端共用账号。已有账号请直接登录，避免重复注册。</text>
+          <view class="login-tabs">
+            <button class="login-tabs__item" :class="{ 'login-tabs__item--active': mode === 'login' }" @tap="mode = 'login'">账号登录</button>
+            <button class="login-tabs__item" :class="{ 'login-tabs__item--active': mode === 'register' }" @tap="mode = 'register'">注册账号</button>
+          </view>
+          <view class="form-label">用户名</view>
+          <input v-model="form.username" class="field" aria-label="用户名" placeholder="请输入用户名" />
+          <text v-if="mode === 'register'" class="login-helper">用户名为 3–32 位字母、数字、下划线或短横线。</text>
 
-
+          <view class="form-label">密码</view>
+          <view class="password-field">
+            <input v-model="form.password" class="field password-field__input" :password="mode === 'login' ? !passwordVisibility.login : !passwordVisibility.register" aria-label="密码" placeholder="请输入密码" />
+            <button
+              class="password-field__toggle"
+              :aria-label="`${mode === 'login' ? (passwordVisibility.login ? '隐藏' : '显示') : (passwordVisibility.register ? '隐藏' : '显示')}密码`"
+              @tap="togglePasswordVisibility(mode === 'login' ? 'login' : 'register')"
+            >
+              <text class="password-field__eye" :class="{ 'password-field__eye--open': mode === 'login' ? passwordVisibility.login : passwordVisibility.register }"></text>
+            </button>
+          </view>
+          <template v-if="mode === 'register'">
+            <view class="form-label">确认密码</view>
+            <view class="password-field">
+              <input v-model="form.confirmPassword" class="field password-field__input" :password="!passwordVisibility.confirm" aria-label="确认密码" placeholder="请再次输入密码" />
+              <button class="password-field__toggle" :aria-label="`${passwordVisibility.confirm ? '隐藏' : '显示'}确认密码`" @tap="togglePasswordVisibility('confirm')">
+                <text class="password-field__eye" :class="{ 'password-field__eye--open': passwordVisibility.confirm }"></text>
+              </button>
+            </view>
+          </template>
+          <button class="secondary-button login-submit" :loading="loading" @tap="submit">{{ mode === 'login' ? '使用账号密码登录' : '注册账号' }}</button>
+          <button v-if="mode === 'login'" class="link-button forgot-button" @tap="openResetPanel">忘记密码</button>
+        </view>
+      </MotionCollapse>
       <view v-if="userStore.isAuthenticated" class="session-tools">
         <button class="secondary-button session-tools__button" @tap="goHomeWithCachedSession">进入已登录首页</button>
         <button class="secondary-button danger-button session-tools__button" @tap="clearLocalSession">清除本地登录态</button>
@@ -130,12 +112,17 @@
         <input v-model="accountSetupForm.password" class="field" password placeholder="至少 6 位" />
         <view class="form-label">确认密码</view>
         <input v-model="accountSetupForm.confirmPassword" class="field" password placeholder="请再次输入密码" />
-        <view class="form-label">邀请码（选填）</view>
-        <input v-model="accountSetupForm.inviteCode" class="field" placeholder="请输入邀请码" />
+        <button class="link-button invite-toggle" :aria-expanded="accountInviteExpanded" @tap="accountInviteExpanded = !accountInviteExpanded">
+          邀请码（选填） · {{ accountInviteExpanded ? '收起' : '展开' }}
+        </button>
+        <MotionCollapse :open="accountInviteExpanded">
+          <view class="form-label">邀请码（选填）</view>
+          <input v-model="accountSetupForm.inviteCode" class="field" aria-label="账号补全邀请码，选填" placeholder="请输入邀请码" />
+        </MotionCollapse>
         <button class="primary-button account-setup-panel__button" :loading="accountSetupLoading" @tap="submitAccountSetup">
           创建账号并进入
         </button>
-        <button class="link-button" @tap="accountSetupVisible = false; mode = 'login'">已有电脑账号？使用账号密码登录</button>
+        <button class="link-button" @tap="accountSetupVisible = false; mode = 'login'; passwordLoginExpanded = true">已有电脑账号？使用账号密码登录</button>
         <button class="link-button account-setup-panel__skip" @tap="skipAccountSetup">
           暂时跳过
         </button>
@@ -148,6 +135,7 @@
 </template>
 
 <script setup>
+import MotionCollapse from '../../components/MotionCollapse.vue'
 import { usePageMotion } from '../../motion/useMotion'
 const { motionClass, motionStyle } = usePageMotion()
 import { reactive, ref } from 'vue'
@@ -158,6 +146,9 @@ import { getWechatLoginCode } from '../../utils/wechatLogin'
 
 const userStore = useUserStore()
 const mode = ref('login')
+const passwordLoginExpanded = ref(false)
+const inviteExpanded = ref(false)
+const accountInviteExpanded = ref(false)
 const loading = ref(false)
 const wechatLoading = ref(false)
 const accountSetupVisible = ref(false)
@@ -487,69 +478,98 @@ function goLegalDocuments() {
 <style scoped>
 .login-page {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   min-height: 100vh;
-  padding: 44rpx 30rpx;
-  background: linear-gradient(180deg, #EAF5FF 0%, #F6FAFE 42%, #F6FAFE 100%);
+  padding: 24px 16px;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  background: var(--ui-bg, #f7f9fd);
+  color: var(--ui-text, #203047);
 }
 
 .login-card {
   width: 100%;
-  padding: 52rpx 34rpx 36rpx;
-  border-radius: 20rpx;
+  max-width: 480px;
+  padding: 24px 16px;
+  border: 1px solid var(--ui-border, #dbe3ee);
+  border-radius: 12px;
   background: #ffffff;
-  box-shadow: 0 24rpx 60rpx rgba(47, 127, 214, 0.10);
 }
 
 .login-brand {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   flex-direction: column;
-  margin-bottom: 36rpx;
-  text-align: center;
+  margin-bottom: 24px;
+  text-align: left;
 }
 
 .login-brand__title {
-  color: #2F7FD6;
-  font-size: 42rpx;
-  font-weight: 800;
+  color: var(--ui-text, #203047);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.4;
 }
 
 .login-brand__subtitle {
-  margin-top: 10rpx;
-  color: #64748B;
-  font-size: 25rpx;
+  margin-top: 8px;
+  color: var(--ui-muted, #596a80);
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 .login-tabs {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 8rpx;
-  margin-bottom: 24rpx;
-  padding: 8rpx;
-  border-radius: 14rpx;
-  background: #F6FAFE;
+  margin: 16px 0;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--ui-bg, #f7f9fd);
 }
 
 .login-tabs__item {
-  padding: 18rpx 0;
-  border-radius: 10rpx;
-  color: #64748B;
-  font-size: 28rpx;
+  min-height: 44px;
+  padding: 8px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ui-muted, #596a80);
+  font-size: 14px;
   font-weight: 600;
   text-align: center;
 }
 
 .login-tabs__item--active {
-  background: #ffffff;
-  color: #2F7FD6;
-  box-shadow: 0 4rpx 12rpx rgba(47, 127, 214, 0.07);
+  background: var(--ui-soft, #edf3ff);
+  color: var(--ui-link, #285bc7);
 }
 
 .login-submit {
-  margin-top: 34rpx;
+  margin-top: 24px;
 }
+
+.login-page .field {
+  width: 100%;
+  height: 44px;
+  min-height: 44px;
+  border-color: var(--ui-border, #dbe3ee);
+  background: var(--ui-bg, #f7f9fd);
+  color: var(--ui-text, #203047);
+  font-size: 16px;
+}
+
+.login-page .form-label { margin-top: 16px; color: var(--ui-text, #203047); font-size: 14px; }
+.login-page .field::placeholder { color: var(--ui-muted, #596a80); }
+.login-page button { min-height: 44px; font-size: 14px; }
+.login-page .primary-button { background: var(--ui-primary, #326be5); border-color: var(--ui-primary, #326be5); color: #ffffff; box-shadow: none; }
+.login-page .secondary-button { background: #ffffff; border-color: var(--ui-border, #dbe3ee); color: var(--ui-link, #285bc7); box-shadow: none; }
+.login-page .danger-button { color: #a94b2b; }
+.login-page button:focus-visible, .login-page input:focus-visible { outline: 2px solid var(--ui-link, #285bc7); outline-offset: 2px; }
+
+.login-helper { display: block; margin-top: 8px; color: var(--ui-muted, #596a80); font-size: 14px; line-height: 1.6; }
+.password-login-section { border-top: 1px solid var(--ui-border, #dbe3ee); }
+.password-login-fields { padding-bottom: 8px; }
+.invite-fields { padding-bottom: 16px; }
 
 .password-field {
   display: flex;
@@ -563,13 +583,13 @@ function goLegalDocuments() {
 }
 
 .password-field__toggle {
-  flex: 0 0 88rpx;
-  min-height: 88rpx;
+  flex: 0 0 44px;
+  min-height: 44px;
   padding: 0;
-  border: 1rpx solid #DCEAF7;
+  border: 1px solid var(--ui-border, #dbe3ee);
   border-radius: 14rpx;
-  background: #F6FAFE;
-  color: #2F7FD6;
+  background: var(--ui-bg, #f7f9fd);
+  color: var(--ui-link, #285bc7);
 }
 
 .password-field__eye {
@@ -610,21 +630,25 @@ function goLegalDocuments() {
 }
 
 .wechat-login-button {
-  margin-top: 18rpx;
+  margin-top: 16px;
 }
 
+.login-page .wechat-login-button { font-size: 16px; }
+
 .browse-button {
-  margin-top: 18rpx;
-  color: #2F7FD6;
-  font-size: 27rpx;
+  margin-top: 8px;
+  color: var(--ui-link, #285bc7);
+  font-size: 14px;
 }
 
 .agreement-box {
   display: flex;
   align-items: flex-start;
-  gap: 12rpx;
-  margin-top: 18rpx;
+  gap: 8px;
+  margin-top: 16px;
 }
+
+.agreement-box__checkbox { display: flex; align-items: center; justify-content: center; flex: 0 0 44px; min-height: 44px; }
 
 .agreement-box__content {
   flex: 1;
@@ -634,49 +658,53 @@ function goLegalDocuments() {
 .agreement-box__text,
 .agreement-tip {
   display: block;
-  color: #64748B;
-  font-size: 24rpx;
+  color: var(--ui-muted, #596a80);
+  font-size: 14px;
   line-height: 1.7;
 }
 
 .agreement-box__hint {
   display: block;
   margin-top: 4rpx;
-  color: #9aa6b5;
-  font-size: 22rpx;
+  color: var(--ui-muted, #596a80);
+  font-size: 14px;
   line-height: 1.55;
 }
 
 .agreement-box__link {
-  color: #2F7FD6;
+  display: inline-block;
+  min-height: 44px;
+  padding: 8px 0;
+  color: var(--ui-link, #285bc7);
 }
 
 .privacy-auth-panel {
   margin-top: 16rpx;
   padding: 18rpx;
-  border: 1rpx solid #d9e8f7;
+  border: 1px solid var(--ui-border, #dbe3ee);
   border-radius: 14rpx;
-  background: #f4f9fe;
+  background: var(--ui-soft, #edf3ff);
 }
 
 .privacy-auth-panel__text {
   display: block;
-  color: #526579;
-  font-size: 23rpx;
+  color: var(--ui-muted, #596a80);
+  font-size: 14px;
   line-height: 1.6;
 }
 
 .privacy-auth-panel__button {
   margin-top: 14rpx;
-  min-height: 72rpx;
-  font-size: 24rpx;
+  min-height: 44px;
+  font-size: 14px;
 }
 
 .link-button {
-  min-height: 64rpx;
+  min-height: 44px;
+  padding: 8px;
   background: transparent;
-  color: #2F7FD6;
-  font-size: 25rpx;
+  color: var(--ui-link, #285bc7);
+  font-size: 14px;
 }
 
 .reset-panel {
@@ -721,13 +749,16 @@ function goLegalDocuments() {
 }
 
 .session-tools__button {
-  min-height: 76rpx;
-  font-size: 25rpx;
+  min-height: 44px;
+  font-size: 14px;
 }
 
 .account-setup-mask {
   position: fixed;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 20;
   display: flex;
   align-items: center;
@@ -738,6 +769,9 @@ function goLegalDocuments() {
 
 .account-setup-panel {
   width: 100%;
+  max-width: 480px;
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
   padding: 36rpx 30rpx;
   border-radius: 20rpx;
   background: #ffffff;
@@ -746,17 +780,17 @@ function goLegalDocuments() {
 
 .account-setup-panel__title {
   display: block;
-  color: #172033;
-  font-size: 34rpx;
-  font-weight: 800;
+  color: var(--ui-text, #203047);
+  font-size: 20px;
+  font-weight: 700;
 }
 
 .account-setup-panel__desc,
 .account-setup-panel__tip {
   display: block;
   margin-top: 14rpx;
-  color: #5f6f84;
-  font-size: 24rpx;
+  color: var(--ui-muted, #596a80);
+  font-size: 14px;
   line-height: 1.65;
 }
 
