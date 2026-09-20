@@ -17,6 +17,8 @@
 
 后续微信开发者工具中发现的主题丢失、SVG 不显示和组件样式隔离问题，见 [微信原生界面修复与验收](wechat-design-runtime-2026-09-19.md)。微信生产构建现在同时校验实际 WXSS、图标与操作栏布局；不能只凭 PC 预览或编译成功判定小程序 UI 正确。
 
+首页底部折叠突跳、定向分析状态与原位加载修复，见 [2026-09-20 交互修复](miniprogram-interaction-20260920.md)。该记录包含真实几何测量、受权接口结果，以及明确区分的慢网/故障注入验收。
+
 ```bash
 # 后端单元测试
 cd /home/quyu/kaogong_ai/civil-interview-backend
@@ -38,7 +40,7 @@ npm run build:mp-weixin:prod
 客户端回归从仓库根目录运行：
 
 ```bash
-node --experimental-vm-modules --test civil-interview-frontend/tests/*.test.mjs civil-interview-miniprogram/tests/*.test.mjs
+node --experimental-vm-modules --test civil-interview-frontend/tests/*.test.mjs civil-interview-miniprogram/tests/*.test.mjs civil-interview-miniprogram/tests/*.test.cjs
 ```
 
 本机视觉检查：启动 PC Vite 开发服务，打开 `/tests/visual/learner.html`；窄屏检查打开 `/tests/visual/responsive.html`。这些页面使用明确标注的演示数据与请求适配器，不创建真实账号、考试、订单或收费模型调用，也不作为生产入口打包。
