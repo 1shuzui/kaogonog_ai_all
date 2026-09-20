@@ -599,6 +599,28 @@ export function normalizeTargetPayload(target = {}) {
   return payload
 }
 
+// Route and request payloads share the same fields so login/deep-link redirects
+// cannot silently widen a city filter or discard an exam's timing rules.
+export function buildTargetFocusUrl(target = {}) {
+  const query = Object.entries(normalizeTargetPayload(target))
+    .filter(([, value]) => value !== '')
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+    .join('&')
+  return `/pages/targeted/focus${query ? `?${query}` : ''}`
+}
+
+export function decodeTargetRoute(options = {}) {
+  const payload = {}
+  TARGET_FIELDS.forEach(key => {
+    const raw = String(options[key] ?? '').trim()
+    if (!raw) return
+    let value = raw
+    try { if (raw.includes('%')) value = decodeURIComponent(raw) } catch {}
+    payload[key] = value
+  })
+  return payload
+}
+
 export function mergeTargetPayload(category = {}, region = {}, direction = {}) {
   return normalizeTargetPayload({
     ...category,

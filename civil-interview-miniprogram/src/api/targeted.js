@@ -10,7 +10,26 @@
  */
 import { request } from './request'
 
+export const FOCUS_TIMEOUT_MS = 30000
+export const FOCUS_SLOW_MS = 10000
+
 function normalizeFocusAnalysis(response = {}) {
+  if (typeof response === 'string') {
+    try { response = JSON.parse(response) } catch {
+      throw Object.assign(new Error('分析结果格式异常，请重试'), { code: 'PARSE_ERROR' })
+    }
+  }
+  if (response?.success === false) {
+    throw Object.assign(new Error(response.message || response.detail || '本次分析未完成，请重试'), { code: 'BUSINESS_ERROR' })
+  }
+  if (!response || typeof response !== 'object' || Array.isArray(response)
+    || response.questionCount == null || response.questionCount === ''
+    || !Number.isFinite(Number(response.questionCount)) || Number(response.questionCount) < 0
+    || ['coreFocus', 'focusAreas', 'highFreqTypes', 'hotTopics', 'strategy'].some(key => response[key] != null && !Array.isArray(response[key]))
+    || ['coreFocus', 'focusAreas', 'highFreqTypes'].some(key => response[key]?.some(item => !item || typeof item !== 'object' || Array.isArray(item)))
+    || ['hotTopics', 'strategy'].some(key => response[key]?.some(item => typeof item !== 'string'))) {
+    throw Object.assign(new Error('分析结果不完整，请重试'), { code: 'PARSE_ERROR' })
+  }
   const focusAreas = Array.isArray(response?.focusAreas) ? response.focusAreas : []
   if (!focusAreas.length || response?.coreFocus) return response
 
@@ -39,11 +58,14 @@ function normalizeFocusAnalysis(response = {}) {
   }
 }
 
-export async function getFocusAnalysis(data) {
+export async function getFocusAnalysis(data, options = {}) {
   const response = await request({
     url: '/targeted/focus',
     method: 'POST',
-    data
+    data,
+    timeout: FOCUS_TIMEOUT_MS,
+    skipErrorHandler: true,
+    signal: options.signal
   })
   return normalizeFocusAnalysis(response)
 }
