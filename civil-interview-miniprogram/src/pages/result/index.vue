@@ -12,13 +12,15 @@
   <view class="motion-page page learner-page learner-result" :class="motionClass" :style="motionStyle">
     <MotionSummary class="result-motion-summary" :compact="compact && !!result" :title="currentQuestionLabel" :detail="result ? `${result.totalScore} / ${result.maxScore} 分` : ''" />
     <view class="learner-kicker"><LearnerIcon name="solution" :size="20" /><text>练习复盘</text></view>
-    <text class="learner-title">看看这次，哪里更好了。</text>
+    <text class="learner-title">这次作答，下一步怎么练。</text>
     <BackgroundAnswers @layout-change="calibrate" />
-    <view v-if="!result && answerList.length > 1" class="card answer-tabs">
-      <scroll-view scroll-x class="answer-tabs__scroll">
-        <view class="answer-tabs__row">
+    <view v-if="answerList.length > 1" class="card answer-tabs">
+      <text class="answer-tabs__summary">已答 {{ completedAnswerCount }} 题，未答 {{ unansweredCount }} 题</text>
+      <scroll-view scroll-x class="answer-tabs__scroll" :scroll-into-view="`result-answer-${activeAnswerIndex}`">
+        <view class="answer-tabs__row" role="tablist" aria-label="选择查看的题目">
           <button v-for="(item, index) in answerList" :key="item.questionId || index"
-            class="answer-tab" :class="{ 'answer-tab--active': index === activeAnswerIndex }"
+            :id="`result-answer-${index}`" role="tab" :aria-selected="index === activeAnswerIndex"
+            class="answer-tab" :class="{ 'answer-tab--active': index === activeAnswerIndex, 'answer-tab--empty': item.isPlaceholder }"
             @tap="selectAnswer(index)">
             第 {{ index + 1 }} 题 {{ formatAnswerScore(item) }}
           </button>
@@ -28,33 +30,44 @@
     <template v-if="result">
       <view class="result-hero card">
         <view class="result-hero__copy">
-          <text class="result-hero__kicker">模型评测结果 · {{ currentQuestionLabel }}</text>
+          <text class="result-hero__kicker">{{ currentAnswer?.isPlaceholder ? '未作答记录' : '模型评测结果' }} · {{ currentQuestionLabel }}</text>
           <text class="result-hero__score">{{ result.totalScore }}/{{ result.maxScore }} 分</text>
-          <text class="result-hero__grade" :style="{ color: grade.color }">{{ grade.label }}</text>
+          <text class="result-hero__grade">{{ grade.label }}</text>
         </view>
-        <ScoreRing :score="result.totalScore" :max-score="result.maxScore" size="medium" :color="grade.color" />
+        <ScoreRing :score="result.totalScore" :max-score="result.maxScore" size="medium" :color="grade.color" label="" />
       </view>
 
-      <view v-if="answerList.length > 1" class="card answer-tabs">
-        <text class="answer-tabs__summary">已答 {{ completedAnswerCount }} 题，未答 {{ unansweredCount }} 题</text>
-        <scroll-view scroll-x class="answer-tabs__scroll">
-          <view class="answer-tabs__row">
-            <button
-              v-for="(item, index) in answerList"
-              :key="`${item.questionId || index}-${index}`"
-              class="answer-tab"
-              :class="{ 'answer-tab--active': index === activeAnswerIndex, 'answer-tab--empty': item.isPlaceholder }"
-              @tap="selectAnswer(index)"
-            >
-              第 {{ index + 1 }} 题 {{ formatAnswerScore(item) }}
-            </button>
+      <view class="card review-priorities">
+        <view class="section-head"><LearnerIcon name="aim" /><text class="section-title">本题改进重点</text></view>
+        <text v-if="reviewPriorities.length" class="ai-generated-note">摘自本题已有模型建议，最多展示 3 项，仅供训练参考。</text>
+        <view v-for="(item, index) in reviewPriorities" :key="`${index}-${item.title}`" class="review-priority">
+          <text class="review-priority__number">{{ index + 1 }}</text>
+          <view class="review-priority__copy">
+            <text v-if="item.title" class="review-priority__title">{{ item.title }}</text>
+            <text v-if="item.text" class="plain-text">{{ item.text }}</text>
           </view>
-        </scroll-view>
+        </view>
+        <text v-if="!reviewPriorities.length" class="plain-text">本次结果未提供可直接执行的具体建议。可展开原文与完整点评复盘，不根据分数推测短板。</text>
       </view>
 
+      <view class="card review-next-action">
+        <text class="section-title">下一步</text>
+        <text class="review-next-action__hint">{{ reviewPriorities.length ? '先对照原文复盘，再带着本题已有建议继续练习。' : '可展开完整作答记录复盘，或继续练习。' }}</text>
+        <view class="result-actions">
+          <button class="primary-button" @tap="again">继续练习</button>
+          <button class="secondary-button" @tap="home">返回首页</button>
+        </view>
+      </view>
+
+      <button class="review-toggle" :aria-expanded="detailsOpen" aria-controls="result-review-details" @tap="detailsOpen = !detailsOpen">
+        <text class="review-toggle__title">原文、题目与完整点评</text>
+        <text>{{ detailsOpen ? '收起' : '展开' }}</text>
+        <view class="review-toggle__arrow" :class="{ 'review-toggle__arrow--open': detailsOpen }"><LearnerIcon name="arrow-right" :size="18" /></view>
+      </button>
+      <MotionCollapse id="result-review-details" :open="detailsOpen" :revision="reviewRevision" @settled="calibrate">
       <view v-if="displayTranscript" class="card learner-transcript">
         <view class="section-head"><LearnerIcon name="file-text" /><text class="section-title">我的作答原文</text></view>
-        <text class="plain-text">{{ displayTranscript }}</text>
+        <text class="plain-text" selectable>{{ displayTranscript }}</text>
       </view>
       <view v-else-if="noContentReason" class="card transcript-status-card">
         <text class="section-title">我的作答原文</text>
@@ -66,7 +79,7 @@
         <text class="section-title">评分口径</text>
         <text class="plain-text">依据本题采分点、题库参考答案与实际作答评估；能力条采用内容百分制权重，不与题目赋分直接相加。历史总评换算为百分制，整套仪态分仅计一次。</text>
         <text v-if="result.contentScore != null" class="plain-text">内容 {{ result.contentScore }} / {{ result.contentMaxScore || (result.maxScore - result.appearanceScoreMax) }}；仪态 {{ result.appearanceScore }} / {{ result.appearanceScoreMax }}。{{ result.scoreCalculationNote }}</text>
-        <text class="plain-text">等级按得分率：A ＞85%，B ≥75%，C ≥60%，其余为 D。AI 结果仅供训练参考，不代表官方考试成绩。</text>
+        <text class="plain-text">等级按得分率：A ≥85%，B ≥75%，C ≥60%，其余为 D。AI 结果仅供训练参考，不代表官方考试成绩。</text>
       </view>
 
       <view class="card local-fit-card">
@@ -91,7 +104,7 @@
 
       <view v-if="answerVideoUrl" class="card">
         <text class="section-title">作答录像回放</text>
-        <video :src="answerVideoUrl" controls style="width: 100%;" />
+        <video v-if="visible" :key="activeQuestionId" :src="answerVideoUrl" controls class="answer-video" @loadedmetadata="mediaRevision += 1" />
       </view>
 
       <view v-if="answerTimingView" class="card timing-card">
@@ -121,12 +134,12 @@
         <text class="improvement-card__summary">{{ improvementSuggestion.summary }}</text>
 
         <view v-if="improvementSuggestion.teacherComment" class="teacher-note">
-          <text class="teacher-note__label">老师批注</text>
+          <text class="teacher-note__label">补充评语</text>
           <text class="teacher-note__text">{{ improvementSuggestion.teacherComment }}</text>
         </view>
 
         <view v-if="improvementSuggestion.diagnosisItems.length" class="suggestion-block">
-          <text class="suggestion-block__title">主要影响得分的地方</text>
+          <text class="suggestion-block__title">{{ improvementSuggestion.source === 'model' ? '主要影响得分的地方' : '通用复盘检查项' }}</text>
           <text
             v-for="(item, index) in improvementSuggestion.diagnosisItems"
             :key="`${index}-${item}`"
@@ -182,7 +195,7 @@
         </view>
 
         <view v-if="improvementSuggestion.sampleAnswer" class="suggestion-block">
-          <text class="suggestion-block__title">老师示范改写</text>
+          <text class="suggestion-block__title">建议示范改写（非我的作答）</text>
           <text class="sample-answer">{{ improvementSuggestion.sampleAnswer }}</text>
         </view>
 
@@ -198,6 +211,7 @@
         </view>
         <DimensionBars :dimensions="result.dimensions" />
       </view>
+      </MotionCollapse>
 
       <view class="utility-actions card">
         <button class="secondary-button" @tap="toggleStarred">
@@ -206,12 +220,7 @@
         <button class="secondary-button" @tap="openShareCard">分享成绩卡</button>
       </view>
 
-      <view class="result-actions">
-        <button class="primary-button" @tap="again">再练一题</button>
-        <button class="secondary-button" @tap="home">返回首页</button>
-      </view>
-
-      <view v-if="shareVisible" class="share-mask" @tap="closeShareCard">
+      <view v-if="shareVisible && visible" class="share-mask" @tap="closeShareCard">
         <view class="share-panel" @tap.stop>
           <view class="share-card">
             <view class="share-card__header">
@@ -220,7 +229,7 @@
             </view>
             <view class="share-card__score">{{ result.totalScore }}</view>
             <text class="share-card__label">综合得分 / {{ result.maxScore }} 分</text>
-            <text class="share-card__grade" :style="{ color: grade.color }">{{ grade.label }}</text>
+            <text class="share-card__grade">{{ grade.label }}</text>
             <view class="share-card__dims">
               <view v-for="dim in shareDimensions" :key="dim.name" class="share-card__dim">
                 <text>{{ dim.name }}</text>
@@ -237,12 +246,25 @@
     <view v-else-if="currentAnswer && !currentAnswer.isPlaceholder" class="card">
       <view class="section-head"><text class="section-title">{{ currentAnswer.processingStatus === 'failed' ? '处理未完成，可重试' : '作答已收到 · 待点评' }}</text></view>
       <text v-if="!displayTranscript" class="plain-text">{{ currentAnswer.processingStatus === 'failed' ? '文字稿尚未生成，请重试录音处理。' : '录音正在处理，文字稿和点评完成后会自动显示。请保持小程序打开。' }}</text>
-      <text class="plain-text">{{ displayTranscript }}</text>
+      <text class="plain-text" selectable>{{ displayTranscript }}</text>
       <text v-if="currentAnswer.processingError" class="plain-text">{{ currentAnswer.processingError }}</text>
-      <video v-if="answerVideoUrl" :src="answerVideoUrl" controls style="width: 100%" />
+      <video v-if="answerVideoUrl && visible" :key="activeQuestionId" :src="answerVideoUrl" controls class="answer-video" />
       <button v-if="canRetryCurrentAnswer" class="primary-button" :loading="retryingScoring" :disabled="retryingScoring" @tap="retryScoring">
         {{ retryingScoring ? '正在处理' : '重试处理' }}
       </button>
+      <button v-if="retryingScoring" class="secondary-button" @tap="cancelScoringRetry">停止等待</button>
+      <text v-if="retryNotice" class="review-notice" role="status">{{ retryNotice }}</text>
+      <text v-if="retryingScoring" class="review-notice">停止等待不会撤回已提交的后台处理；原文和录音保留。</text>
+      <button class="secondary-button" @tap="home">返回首页</button>
+    </view>
+    <view v-else-if="loadingResult" class="card" role="status" aria-busy="true">
+      <text class="section-title">正在读取本次结果</text>
+      <text class="plain-text">读取已保存的作答和点评，不会重新评分。</text>
+    </view>
+    <view v-else-if="loadError" class="card">
+      <text class="section-title">结果暂未读到</text>
+      <text class="plain-text">{{ loadError }}</text>
+      <button class="primary-button" @tap="loadResult(lastQuery)">重新加载</button>
       <button class="secondary-button" @tap="home">返回首页</button>
     </view>
     <view v-else class="card">
@@ -253,30 +275,30 @@
 
 <script setup>
 import MotionSummary from '../../components/MotionSummary.vue'
+import MotionCollapse from '../../components/MotionCollapse.vue'
 import { useScrollSummary } from '../../motion/useScrollSummary'
 import { onPageScroll } from '@dcloudio/uni-app'
 import { usePageMotion } from '../../motion/useMotion'
-const { motionClass, motionStyle } = usePageMotion()
+const { motionClass, motionStyle, visible } = usePageMotion()
 import LearnerIcon from '../../components/LearnerIcon.vue'
 import { computed, ref, watch } from 'vue'
-import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
+import { onLoad, onUnload, onShareAppMessage } from '@dcloudio/uni-app'
 import DimensionBars from '../../components/DimensionBars.vue'
 import EmptyState from '../../components/EmptyState.vue'
 import ScoreRing from '../../components/ScoreRing.vue'
 import BackgroundAnswers from '../../components/BackgroundAnswers.vue'
-import { getHistoryDetail } from '../../api/history'
-import { API_BASE } from '../../api/request'
-import { evaluateAnswer, getScoringResult } from '../../api/scoring'
-import { getQuestionById } from '../../api/questionBank'
+import { API_BASE, request } from '../../api/request'
 import { useExamStore } from '../../stores/exam'
 import { useFavoritesStore } from '../../stores/favorites'
 import { useTrainingStore } from '../../stores/training'
 import { getGrade, getProvinceName } from '../../utils/constants'
-import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
+import { requireLogin, toast } from '../../utils/navigation'
 import { canUseLocalAnswers } from '../../utils/resultAnswerSource'
 import { hasFinalScore } from '../../utils/answerStatus'
 import { getQuestionScorePair } from '../../utils/scorePresentation'
-import { normalizeImprovementSuggestion, normalizeResult } from '../../utils/scoring'
+import { normalizeResult } from '../../utils/scoring'
+import { createCancellation } from '../../utils/cancellation.mjs'
+import { readReviewSuggestion, getReviewPriorities, getReviewTranscript } from '../../utils/resultReview.mjs'
 
 const examStore = useExamStore()
 const favoritesStore = useFavoritesStore()
@@ -296,6 +318,15 @@ const activeExamId = ref('')
 const activeQuestionId = ref('')
 const shareVisible = ref(false)
 const retryingScoring = ref(false)
+const loadingResult = ref(false)
+const loadError = ref('')
+const retryNotice = ref('')
+const detailsOpen = ref(false)
+const mediaRevision = ref(0)
+let loadRequest = null
+let retryRequest = null
+let disposed = false
+let lastQuery = {}
 
 const grade = computed(() => getGrade(result.value?.totalScore || 0, result.value?.maxScore || 100))
 const localFitProvinceName = computed(() => getProvinceName(questionProvince.value || 'national'))
@@ -318,19 +349,14 @@ const currentQuestionLabel = computed(() => (
 const completedAnswerCount = computed(() => answerList.value.filter((answer) => !answer?.isPlaceholder).length)
 const unansweredCount = computed(() => answerList.value.filter((answer) => answer?.isPlaceholder).length)
 const improvementSuggestion = computed(() => {
-  if (currentAnswer.value?.isPlaceholder || isNoContentTranscript(transcript.value, result.value)) return buildNoContentImprovementSuggestion()
-  return normalizeImprovementSuggestion(
-    result.value?.answerImprovementSuggestion,
-    result.value?.totalScore || 0,
-    result.value?.maxScore || 100
-  )
+  if (currentAnswer.value?.isPlaceholder || isNoContentTranscript(transcript.value, result.value)) return null
+  return readReviewSuggestion(result.value?.answerImprovementSuggestion)
 })
+const reviewPriorities = computed(() => getReviewPriorities(improvementSuggestion.value))
 const suggestionSourceLabel = computed(() => (
-  improvementSuggestion.value?.source === 'model' ? '模型建议' : '基础建议'
+  improvementSuggestion.value?.source === 'model' ? '模型建议' : '通用参考，非本题诊断'
 ))
-const displayTranscript = computed(() => (
-  isNoContentTranscript(transcript.value, result.value) ? '' : String(transcript.value || '').trim()
-))
+const displayTranscript = computed(() => getReviewTranscript(transcript.value))
 const noContentReason = computed(() => resolveNoContentReason(transcript.value, result.value))
 const answerTimingView = computed(() => normalizeAnswerTiming(
   answerTiming.value
@@ -349,20 +375,57 @@ const sharePath = computed(() => {
   if (activeQuestionId.value) params.push(`questionId=${encodeURIComponent(activeQuestionId.value)}`)
   return `/pages/result/index${params.length ? `?${params.join('&')}` : ''}`
 })
+const reviewRevision = computed(() => [activeQuestionId.value, result.value, displayTranscript.value, questionStem.value, questionProvince.value, answerTimingView.value, answerVideoUrl.value, mediaRevision.value])
+
+function isCurrentLoad(task) {
+  return !disposed && loadRequest === task && !task.signal.aborted
+}
+
+function cancelResultLoad() {
+  const task = loadRequest
+  loadRequest = null
+  task?.cancel()
+  loadingResult.value = false
+}
+
+function cancelScoringRetry() {
+  const task = retryRequest
+  retryRequest = null
+  task?.cancel()
+  retryingScoring.value = false
+  if (task) retryNotice.value = '已停止本页等待，原文和录音保留；已提交的后台处理可能仍会完成。'
+}
+
+// Store-owned media processing remains alive across pages; only this page's wait ends.
+async function waitForPageTask(promise, task) {
+  let unsubscribe
+  try {
+    return await Promise.race([promise, new Promise(resolve => {
+      unsubscribe = task.signal.subscribe(() => resolve(null))
+    })])
+  } finally {
+    unsubscribe?.()
+  }
+}
+
+watch(visible, shown => {
+  if (shown) { syncLocalAnswers(); calibrate(); return }
+  if (loadingResult.value) loadError.value = '加载已暂停，请重新加载结果。'
+  cancelResultLoad()
+  cancelScoringRetry()
+  shareVisible.value = false
+}, { flush: 'sync' })
+onUnload(() => { disposed = true; cancelResultLoad(); cancelScoringRetry() })
 
 onShareAppMessage(() => ({
-  title: `我的面试测评得分 ${result.value?.totalScore || 0}/${result.value?.maxScore || 100}`,
+  title: result.value ? `我的面试测评得分 ${result.value.totalScore}/${result.value.maxScore}` : '面试练习复盘 · 待点评',
   path: sharePath.value
 }))
 
 function isNoContentTranscript(value, scoring = {}) {
   const text = String(value || '').trim()
   const mode = String(scoring?.scoringMode || '').trim()
-  return text === '未作答'
-    || ['screened_zero', 'empty_zero'].includes(mode)
-    || text.includes('未能识别出有效语音')
-    || text.includes('未配置真实语音转写服务')
-    || text.includes('无法生成可靠文字稿')
+  return text ? !getReviewTranscript(value) : ['screened_zero', 'empty_zero'].includes(mode)
 }
 
 function normalizeAnswerTiming(raw) {
@@ -422,22 +485,6 @@ function resolveNoContentReason(value, scoring = {}) {
   }
 }
 
-function buildNoContentImprovementSuggestion() {
-  const reason = noContentReason.value
-  return {
-    source: 'fallback',
-    summary: reason?.desc || '本次没有可分析的有效作答内容，请先完成一段录音或录像作答后再查看细化建议。',
-    teacherComment: '',
-    diagnosisItems: ['未形成可用于复盘的有效作答文本'],
-    focusPoints: [],
-    missingKeywords: [],
-    expressionUpgrades: [],
-    sampleAnswer: '',
-    rewriteOpening: '',
-    rewriteClosing: ''
-  }
-}
-
 function getQuestionAssignedScore(question = {}) {
   const points = Array.isArray(question?.scoringPoints) ? question.scoringPoints : []
   return points.reduce((sum, item) => sum + (Number(item?.score || 0) || 0), 0)
@@ -448,6 +495,8 @@ function normalizeDisplayResult(value = {}, question = {}) {
   const questionMaxScore = Number(normalized.questionMaxScore || getQuestionAssignedScore(question) || normalized.maxScore || 100) || 100
   return {
     ...normalized,
+    // Keep supplied feedback only; score normalization must not manufacture review advice.
+    answerImprovementSuggestion: value?.answerImprovementSuggestion || null,
     questionScore: Number(normalized.questionScore ?? normalized.totalScore ?? 0) || 0,
     questionMaxScore: questionMaxScore || 100
   }
@@ -508,18 +557,19 @@ function buildDisplayAnswers(answers = [], questionIds = [], examId = '') {
   })
 }
 
-async function hydrateMissingQuestionInfo(items = []) {
+async function hydrateMissingQuestionInfo(items = [], task = loadRequest) {
   await Promise.all(items.map(async (answer) => {
-    if (!answer?.questionId || answer.questionStem) return
+    if (!isCurrentLoad(task) || !answer?.questionId || answer.questionStem) return
     try {
-      const question = await getQuestionById(answer.questionId)
-      if (!question?.id) return
+      const question = await request({ url: `/questions/${answer.questionId}`, signal: task.signal, skipErrorHandler: true })
+      if (!isCurrentLoad(task) || !question?.id) return
       answer.questionStem = question.stem || ''
       answer.province = question.province || answer.province || 'national'
       answer.scoringResult = answer.scoringResult
         ? (hasFinalScore(answer.scoringResult) ? normalizeDisplayResult(answer.scoringResult, question) : null)
         : (answer.isPlaceholder ? buildEmptyResult(question) : null)
     } catch {
+      if (!isCurrentLoad(task)) return
       answer.scoringResult = answer.scoringResult
         ? (hasFinalScore(answer.scoringResult) ? normalizeDisplayResult(answer.scoringResult) : null)
         : (answer.isPlaceholder ? buildEmptyResult() : null)
@@ -539,6 +589,11 @@ function applyAnswer(answer = {}) {
 
 function selectAnswer(index) {
   const nextIndex = Math.max(0, Math.min(Number(index) || 0, Math.max(answerList.value.length - 1, 0)))
+  cancelResultLoad()
+  cancelScoringRetry()
+  retryNotice.value = ''
+  if (nextIndex !== activeAnswerIndex.value) detailsOpen.value = false
+  shareVisible.value = false
   activeAnswerIndex.value = nextIndex
   applyAnswer(answerList.value[nextIndex])
   finalizeLoadedResult()
@@ -557,16 +612,54 @@ onLoad(async (query) => {
   await loadResult(query || {})
 })
 
-watch(() => examStore.getAnswersForExam(activeExamId.value).map((answer) => [answer.processingStatus, answer.transcript, answer.scoringResult]), () => {
+watch(() => examStore.getAnswersForExam(activeExamId.value).map((answer) => [answer.questionId, answer.questionIndex, answer.processingStatus, answer.processingError, answer.transcript, answer.scoringResult]), syncLocalAnswers)
+
+function syncLocalAnswers() {
+  if (disposed || !visible.value) return
   const localAnswers = examStore.getAnswersForExam(activeExamId.value)
   if (!canUseLocalAnswers(activeExamId.value, activeExamId.value, localAnswers)) return
-  const questionIds = activeExamId.value === examStore.examId ? examStore.questions.map((item) => item.id) : localAnswers.map((item) => item.questionId)
-  answerList.value = buildDisplayAnswers(localAnswers, questionIds, activeExamId.value)
+  const selectedId = activeQuestionId.value
+  const previous = answerList.value
+  const localById = new Map(localAnswers.map(answer => [answer.questionId, answer]))
+  const merged = previous.map(answer => {
+    const local = localById.get(answer.questionId)
+    return local ? { ...answer, ...local, isPlaceholder: !!local.isPlaceholder } : answer
+  })
+  for (const answer of localAnswers) {
+    if (!previous.some(item => item.questionId === answer.questionId)) merged.push(answer)
+  }
+  const questionIds = activeExamId.value === examStore.examId && examStore.questions.length
+    ? examStore.questions.map(item => item.id) : merged.map(item => item.questionId)
+  cancelResultLoad()
+  answerList.value = buildDisplayAnswers(merged, questionIds, activeExamId.value).map(answer => {
+    const old = previous.find(item => item.questionId === answer.questionId)
+    const question = examStore.questions.find(item => item.id === answer.questionId)
+    return { ...answer, questionStem: answer.questionStem || old?.questionStem || question?.stem || '', province: answer.province || old?.province || question?.province }
+  })
+  const selectedIndex = answerList.value.findIndex(answer => answer.questionId === selectedId)
+  activeAnswerIndex.value = selectedIndex >= 0 ? selectedIndex : Math.min(activeAnswerIndex.value, Math.max(0, answerList.value.length - 1))
   applyAnswer(answerList.value[activeAnswerIndex.value])
   finalizeLoadedResult()
-})
+}
 
 async function loadResult(query) {
+  if (disposed) return
+  cancelResultLoad()
+  cancelScoringRetry()
+  lastQuery = { ...query }
+  const task = createCancellation()
+  loadRequest = task
+  loadingResult.value = true
+  loadError.value = ''
+  retryNotice.value = ''
+  detailsOpen.value = false
+  shareVisible.value = false
+  result.value = null
+  transcript.value = ''
+  questionStem.value = ''
+  answerTiming.value = null
+  answerList.value = []
+  activeAnswerIndex.value = 0
   const examId = String(query.examId || examStore.examId || '').trim()
   const localAnswers = examStore.getAnswersForExam(examId)
   const canUseLocalExamAnswers = canUseLocalAnswers(examId, examId, localAnswers)
@@ -578,28 +671,28 @@ async function loadResult(query) {
   activeExamId.value = String(examId || answer?.examId || '')
   activeQuestionId.value = String(questionId || answer?.questionId || '')
 
-  if (canUseLocalExamAnswers) {
-    const questionIds = examId === examStore.examId ? examStore.questions.map((item) => item.id) : localAnswers.map((item) => item.questionId)
-    const displayAnswers = buildDisplayAnswers(localAnswers, questionIds, activeExamId.value).map((item) => {
-      const question = examStore.questions.find((entry) => entry.id === item.questionId)
-      return { ...item, questionStem: item.questionStem || question?.stem || '', province: item.province || question?.province }
-    })
-    answerList.value = displayAnswers
-    const selectedIndex = Math.max(0, displayAnswers.findIndex((item) => item.questionId === activeQuestionId.value))
-    activeAnswerIndex.value = selectedIndex
-    applyAnswer(displayAnswers[selectedIndex])
-    finalizeLoadedResult()
-    return
-  }
-
-  showLoading('加载结果')
   try {
+    if (canUseLocalExamAnswers) {
+      const questionIds = examId === examStore.examId ? examStore.questions.map((item) => item.id) : localAnswers.map((item) => item.questionId)
+      const displayAnswers = buildDisplayAnswers(localAnswers, questionIds, activeExamId.value).map((item) => {
+        const question = examStore.questions.find((entry) => entry.id === item.questionId)
+        return { ...item, questionStem: item.questionStem || question?.stem || '', province: item.province || question?.province }
+      })
+      answerList.value = displayAnswers
+      const selectedIndex = Math.max(0, displayAnswers.findIndex((item) => item.questionId === activeQuestionId.value))
+      activeAnswerIndex.value = selectedIndex
+      applyAnswer(displayAnswers[selectedIndex])
+      finalizeLoadedResult()
+      return
+    }
     if (examId) {
-      const detail = await getHistoryDetail(examId)
+      const detail = await request({ url: `/history/${examId}`, signal: task.signal, skipErrorHandler: true })
+      if (!isCurrentLoad(task)) return
       const answers = Array.isArray(detail?.answers) ? detail.answers : []
       const questionIds = Array.isArray(detail?.questionIds) ? detail.questionIds : []
       const displayAnswers = buildDisplayAnswers(answers, questionIds, examId)
-      await hydrateMissingQuestionInfo(displayAnswers)
+      await hydrateMissingQuestionInfo(displayAnswers, task)
+      if (!isCurrentLoad(task)) return
       answerList.value = displayAnswers
       activeExamId.value = String(detail?.examId || examId || '')
       questionProvince.value = detail?.province || questionProvince.value || 'national'
@@ -615,7 +708,7 @@ async function loadResult(query) {
         return
       }
 
-      result.value = detail?.scoringStatus === 'pending' ? null : normalizeResult(detail)
+      result.value = detail?.scoringStatus !== 'pending' && hasFinalScore(detail) ? normalizeDisplayResult(detail) : null
       questionStem.value = detail?.questionSummary || ''
       finalizeLoadedResult()
       return
@@ -628,12 +721,16 @@ async function loadResult(query) {
       finalizeLoadedResult()
     }
   } catch (error) {
+    if (!isCurrentLoad(task)) return
     if (examId && requestedQuestionId) {
       try {
-        const savedResult = await getScoringResult(examId, requestedQuestionId)
-        result.value = hasFinalScore(savedResult) ? normalizeResult(savedResult) : null
-        await hydrateResultContext(examId, requestedQuestionId)
+        const savedResult = await request({ url: `/scoring/result/${examId}/${requestedQuestionId}`, signal: task.signal, skipErrorHandler: true })
+        if (!isCurrentLoad(task)) return
+        const context = await hydrateResultContext(examId, requestedQuestionId, task)
+        if (!isCurrentLoad(task)) return
+        result.value = hasFinalScore(savedResult) ? normalizeDisplayResult(savedResult) : null
         answerList.value = [{
+          ...context,
           examId,
           questionId: requestedQuestionId,
           questionStem: questionStem.value,
@@ -648,37 +745,47 @@ async function loadResult(query) {
         // Fall through to the user-facing load failure below.
       }
     }
-    toast(error?.message || '结果加载失败')
+    if (!isCurrentLoad(task)) return
+    loadError.value = error?.message || '结果加载失败，请重试。'
   } finally {
-    hideLoading()
+    if (loadRequest === task) {
+      loadingResult.value = false
+      loadRequest = null
+    }
   }
 }
 
-async function hydrateResultContext(examId, questionId) {
+async function hydrateResultContext(examId, questionId, task = loadRequest) {
   try {
-    const detail = await getHistoryDetail(examId)
-    applyHistoryDetailContext(detail, questionId)
+    const detail = await request({ url: `/history/${examId}`, signal: task.signal, skipErrorHandler: true })
+    if (!isCurrentLoad(task)) return null
+    return applyHistoryDetailContext(detail, questionId)
   } catch {
     // Scoring results can exist briefly before history detail is ready.
   }
 }
 
 async function retryScoring() {
-  if (retryingScoring.value || !canRetryCurrentAnswer.value || !activeExamId.value || !activeQuestionId.value) return
+  if (disposed || !visible.value || retryingScoring.value || !canRetryCurrentAnswer.value || !activeExamId.value || !activeQuestionId.value) return
   const answer = currentAnswer.value
+  const examId = activeExamId.value
+  const questionId = activeQuestionId.value
+  const task = createCancellation()
+  retryRequest = task
+  const isCurrent = () => !disposed && retryRequest === task && !task.signal.aborted && activeExamId.value === examId && activeQuestionId.value === questionId
   retryingScoring.value = true
+  retryNotice.value = ''
   try {
-    const local = examStore.getAnswersForExam(activeExamId.value).find((item) => item.questionId === activeQuestionId.value)
+    const local = examStore.getAnswersForExam(examId).find((item) => item.questionId === questionId)
     if (local) {
-      await examStore.retryAnswer(local)
+      await waitForPageTask(examStore.retryAnswer(local), task)
       return
     }
-    const scored = await evaluateAnswer({
-      examId: activeExamId.value,
-      questionId: activeQuestionId.value,
-      transcript: displayTranscript.value,
-      answerMeta: answerTiming.value ? { answerTiming: answerTiming.value } : {}
-    })
+    const scored = await waitForPageTask(request({
+      url: '/scoring/evaluate', method: 'POST', timeout: 90000, signal: task.signal, skipErrorHandler: true,
+      data: { examId, questionId, transcript: displayTranscript.value, answerMeta: answerTiming.value ? { answerTiming: answerTiming.value } : {} }
+    }), task)
+    if (!isCurrent()) return
     if (!hasFinalScore(scored)) throw new Error('点评尚未完成，请稍后重试')
     if (answer) {
       answer.scoringResult = scored
@@ -689,9 +796,13 @@ async function retryScoring() {
     }
     finalizeLoadedResult()
   } catch (error) {
+    if (!isCurrent() || error?.code === 'CANCELLED') return
     toast(error?.message || '点评暂未完成，答案已保存')
   } finally {
-    retryingScoring.value = false
+    if (retryRequest === task) {
+      retryingScoring.value = false
+      retryRequest = null
+    }
   }
 }
 
@@ -699,7 +810,7 @@ function applyHistoryDetailContext(detail = {}, questionId = '') {
   activeExamId.value = String(detail?.examId || activeExamId.value || '')
   questionProvince.value = detail?.province || questionProvince.value || 'national'
   const answers = Array.isArray(detail?.answers) ? detail.answers : []
-  const matchedAnswer = answers.find((item) => item.questionId === questionId) || answers[0]
+  const matchedAnswer = questionId ? answers.find((item) => item.questionId === questionId) : answers[0]
   if (!matchedAnswer) return
   activeQuestionId.value = String(matchedAnswer.questionId || activeQuestionId.value || '')
   questionProvince.value = matchedAnswer.province || detail?.province || questionProvince.value || 'national'
@@ -708,6 +819,7 @@ function applyHistoryDetailContext(detail = {}, questionId = '') {
   if (!answerTiming.value) {
     answerTiming.value = matchedAnswer.answerTiming || matchedAnswer.scoringResult?.answerTiming || null
   }
+  return matchedAnswer
 }
 
 function finalizeLoadedResult() {
@@ -793,175 +905,110 @@ function home() {
 </script>
 
 <style scoped>
-.result-hero {
+.learner-result {
+  color: var(--ui-text, #203047);
+  background: var(--ui-bg, #f7f9fd);
+}
+.learner-result .learner-kicker { font-size: 14px; color: var(--ui-success, #147d74); }
+.learner-result .learner-title { font-size: 24px; line-height: 1.5; color: var(--ui-text, #203047); }
+.learner-result .card {
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--ui-border, #dbe3ee);
+  border-radius: 12px;
+  background: var(--ui-surface, #fdfefe);
+  box-shadow: none;
+}
+.learner-result .section-head { justify-content: flex-start; flex-wrap: wrap; gap: 8px; }
+.learner-result .section-title { display: block; color: var(--ui-text, #203047); font-size: 18px; line-height: 1.5; }
+.learner-result button { min-height: 44px; box-sizing: border-box; }
+.learner-result button:focus-visible { outline: 2px solid var(--ui-primary, #326be5); outline-offset: 3px; }
+.learner-result .primary-button,
+.learner-result .secondary-button { padding: 12px; font-size: 16px; line-height: 1.5; }
+.learner-result .primary-button { color: #fff; background: var(--ui-primary, #326be5); }
+.learner-result .secondary-button { color: var(--ui-link, #285bc7); background: var(--ui-surface, #fdfefe); border-color: var(--ui-border, #dbe3ee); }
+.learner-result .card > button { margin-top: 12px; }
+.learner-result .result-hero {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #ffffff;
+  gap: 12px;
+  background: var(--ui-soft, #edf3ff);
 }
-
-.result-hero__copy {
-  min-width: 0;
-}
-
+.result-hero__copy { min-width: 0; }
 .result-hero__kicker,
 .result-hero__score,
 .result-hero__grade,
-.plain-text {
-  display: block;
-}
-
-.result-hero__kicker {
-  color: #64748B;
-  font-size: 24rpx;
-}
-
-.result-hero__score {
-  margin-top: 8rpx;
-  color: #172033;
-  font-size: 52rpx;
-  font-weight: 900;
-}
-
-.result-hero__grade {
-  margin-top: 4rpx;
-  font-size: 28rpx;
-  font-weight: 800;
-}
-
-.answer-tabs {
-  padding: 22rpx 24rpx;
-}
-
-.answer-tabs__summary {
-  display: block;
-  margin-bottom: 14rpx;
-  color: #64748B;
-  font-size: 24rpx;
-  font-weight: 700;
-}
-
-.answer-tabs__scroll {
-  width: 100%;
-  white-space: nowrap;
-}
-
-.answer-tabs__row {
-  display: flex;
-  gap: 12rpx;
-}
-
-.answer-tab {
+.plain-text { display: block; }
+.learner-result .result-hero__kicker { color: var(--ui-muted, #596a80); font-size: 14px; line-height: 1.5; }
+.learner-result .result-hero__score { margin-top: 8px; color: var(--ui-link, #285bc7); font-size: 28px; font-weight: 700; overflow-wrap: anywhere; }
+.result-hero__grade { margin-top: 4px; color: var(--ui-text, #203047); font-size: 16px; font-weight: 600; }
+.answer-tabs__summary { display: block; margin-bottom: 12px; color: var(--ui-muted, #596a80); font-size: 14px; line-height: 1.5; }
+.answer-tabs__scroll { width: 100%; white-space: nowrap; }
+.answer-tabs__row { display: flex; gap: 8px; padding: 4px; }
+.learner-result .answer-tab {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  min-width: 172rpx;
-  height: 64rpx;
+  min-width: 120px;
+  min-height: 44px;
   margin: 0;
-  padding: 0 18rpx;
-  border: 2rpx solid #D7E4F2;
-  border-radius: 8rpx;
-  background: #FFFFFF;
-  color: #2A3648;
-  font-size: 24rpx;
-  font-weight: 800;
-  line-height: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--ui-border, #dbe3ee);
+  border-radius: 12px;
+  color: var(--ui-text, #203047);
+  background: var(--ui-surface, #fdfefe);
+  font-size: 14px;
+  line-height: 1.5;
   white-space: nowrap;
 }
-
-.answer-tab--active {
-  border-color: #2F7FD6;
-  background: #EAF5FF;
-  color: #1B5FAA;
-}
-
-.answer-tab--empty {
-  border-color: #E2E8F0;
-  background: #F8FAFC;
-  color: #8A97A8;
-}
-
-.plain-text {
-  color: #2a3648;
-  font-size: 27rpx;
-  line-height: 1.75;
+.learner-result .answer-tab--empty { color: var(--ui-muted, #596a80); background: var(--ui-bg, #f7f9fd); }
+/* Selection wins even for an unanswered question. */
+.learner-result .answer-tab--active { color: #fff; background: var(--ui-primary, #326be5); border-color: var(--ui-primary, #326be5); font-weight: 700; }
+.learner-result .plain-text {
+  color: var(--ui-text, #203047);
+  font-size: 16px;
+  line-height: 1.8;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
-
-.local-fit-card__tags {
+.learner-result .plain-text + .plain-text { margin-top: 12px; }
+.review-priority { display: flex; align-items: flex-start; gap: 12px; margin-top: 16px; }
+.review-priority__number { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; color: var(--ui-link, #285bc7); background: var(--ui-soft, #edf3ff); font-size: 14px; font-weight: 700; }
+.review-priority__copy { min-width: 0; }
+.review-priority__title { display: block; color: var(--ui-text, #203047); font-size: 16px; line-height: 1.6; font-weight: 700; }
+.review-next-action__hint,
+.review-notice { display: block; margin: 8px 0 16px; color: var(--ui-muted, #596a80); font-size: 14px; line-height: 1.7; }
+.review-toggle {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12rpx;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 0;
+  margin-bottom: 12px;
+  text-align: left;
+  color: var(--ui-link, #285bc7);
+  background: transparent;
+  font-size: 14px;
+  line-height: 1.6;
 }
-
-.local-fit-card__tag {
-  display: block;
-  padding: 8rpx 14rpx;
-  border-radius: 999rpx;
-  background: #EAF5FF;
-  color: #2F7FD6;
-  font-size: 23rpx;
-  font-weight: 800;
-}
-
-.local-fit-card__desc {
-  display: block;
-  margin-top: 14rpx;
-  color: #2a3648;
-  font-size: 26rpx;
-  line-height: 1.7;
-}
-
+.review-toggle__title { flex: 1; min-width: 0; color: var(--ui-text, #203047); font-size: 16px; font-weight: 700; }
+.review-toggle__arrow { display: flex; transform: rotate(90deg); transition: transform var(--motion-arrow) var(--motion-ease); }
+.review-toggle__arrow--open { transform: rotate(-90deg); }
+.answer-video { display: block; width: 100%; height: 200px; margin-top: 12px; }
+.local-fit-card__tags,
+.keyword-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.local-fit-card__tag,
+.keyword-chip,
+.improvement-card__source { padding: 4px 8px; border-radius: 999px; background: var(--ui-soft, #edf3ff); color: var(--ui-link, #285bc7); font-size: 14px; line-height: 1.6; }
+.local-fit-card__desc,
+.transcript-status-card__desc { display: block; margin-top: 8px; color: var(--ui-muted, #596a80); font-size: 14px; line-height: 1.8; }
 .timing-card__main,
-.timing-card__overtime,
-.transcript-status-card__title,
-.transcript-status-card__desc {
-  display: block;
-}
-
-.timing-card__main {
-  color: #172033;
-  font-size: 28rpx;
-  font-weight: 800;
-}
-
-.timing-card__overtime {
-  margin-top: 10rpx;
-  color: #d4380d;
-  font-size: 25rpx;
-  font-weight: 800;
-}
-
-.transcript-status-card__title {
-  color: #172033;
-  font-size: 28rpx;
-  font-weight: 900;
-}
-
-.transcript-status-card__desc {
-  margin-top: 10rpx;
-  color: #64748B;
-  font-size: 25rpx;
-  line-height: 1.65;
-}
-
-.ai-generated-note {
-  display: block;
-  margin: -2rpx 0 14rpx;
-  color: #8a97a8;
-  font-size: 22rpx;
-  line-height: 1.45;
-}
-
-.improvement-card__source {
-  padding: 6rpx 12rpx;
-  border-radius: 999rpx;
-  background: #EAF5FF;
-  color: #2F7FD6;
-  font-size: 22rpx;
-  font-weight: 800;
-}
-
+.transcript-status-card__title { display: block; color: var(--ui-text, #203047); font-size: 16px; line-height: 1.6; font-weight: 600; }
+.timing-card__overtime { display: block; margin-top: 8px; color: var(--ui-error, #a52c38); font-size: 14px; line-height: 1.6; }
+.ai-generated-note { display: block; margin: 8px 0 12px; color: var(--ui-muted, #596a80); font-size: 14px; line-height: 1.6; }
 .improvement-card__summary,
 .teacher-note__label,
 .teacher-note__text,
@@ -972,249 +1019,46 @@ function home() {
 .focus-item__title,
 .focus-item__hint,
 .upgrade-item__before,
-.upgrade-item__after {
-  display: block;
-}
-
-.improvement-card__summary {
-  color: #1f2b3d;
-  font-size: 28rpx;
-  font-weight: 800;
-  line-height: 1.6;
-}
-
-.teacher-note {
-  margin-top: 18rpx;
-  padding: 18rpx;
-  border-left: 6rpx solid #2F7FD6;
-  border-radius: 12rpx;
-  background: #f4f8fd;
-}
-
-.teacher-note__label {
-  color: #2F7FD6;
-  font-size: 23rpx;
-  font-weight: 800;
-}
-
-.teacher-note__text {
-  margin-top: 8rpx;
-  color: #2a3648;
-  font-size: 26rpx;
-  line-height: 1.7;
-}
-
-.suggestion-block {
-  margin-top: 22rpx;
-}
-
-.suggestion-block__title {
-  margin-bottom: 12rpx;
-  color: #172033;
-  font-size: 27rpx;
-  font-weight: 900;
-}
-
-.suggestion-line {
-  margin-top: 10rpx;
-  padding: 14rpx 16rpx;
-  border-radius: 12rpx;
-  background: #f7f9fc;
-  color: #2a3648;
-  font-size: 25rpx;
-  line-height: 1.6;
-}
-
-.focus-item {
-  display: flex;
-  gap: 14rpx;
-  margin-top: 12rpx;
-  padding: 16rpx;
-  border: 1rpx solid #e7eef7;
-  border-radius: 12rpx;
-}
-
-.focus-item__order {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44rpx;
-  height: 44rpx;
-  border-radius: 50%;
-  background: #2F7FD6;
-  color: #ffffff;
-  font-size: 23rpx;
-  font-weight: 900;
-}
-
-.focus-item__copy {
-  flex: 1;
-  min-width: 0;
-}
-
-.focus-item__title {
-  color: #172033;
-  font-size: 26rpx;
-  font-weight: 800;
-}
-
-.focus-item__hint {
-  margin-top: 6rpx;
-  color: #5f6f83;
-  font-size: 24rpx;
-  line-height: 1.6;
-}
-
+.upgrade-item__after { display: block; color: var(--ui-text, #203047); font-size: 16px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+.improvement-card__summary,
+.suggestion-block__title,
+.focus-item__title { font-weight: 600; }
+.teacher-note { margin-top: 16px; padding: 12px; border-left: 3px solid var(--ui-primary, #326be5); background: var(--ui-soft, #edf3ff); border-radius: 8px; }
+.teacher-note__label { color: var(--ui-link, #285bc7); font-size: 14px; font-weight: 600; }
+.teacher-note__text { margin-top: 8px; }
+.suggestion-block { margin-top: 16px; }
+.suggestion-block__title { margin-bottom: 8px; }
+.suggestion-line,
+.upgrade-item,
 .rewrite-line,
-.sample-answer {
-  padding: 16rpx;
-  border-radius: 12rpx;
-  background: #fffaf0;
-  color: #3f2b12;
-  font-size: 25rpx;
-  line-height: 1.7;
-}
-
-.keyword-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10rpx;
-}
-
-.keyword-chip {
-  padding: 7rpx 14rpx;
-  border-radius: 999rpx;
-  background: #fff2e8;
-  color: #8a4d17;
-  font-size: 23rpx;
-  font-weight: 800;
-}
-
-.upgrade-item {
-  display: grid;
-  gap: 10rpx;
-  margin-top: 12rpx;
-  padding: 16rpx;
-  border-radius: 12rpx;
-  background: #f7f9fc;
-}
-
-.upgrade-item__before {
-  color: #8a97a8;
-  font-size: 24rpx;
-  line-height: 1.6;
-}
-
-.upgrade-item__after {
-  color: #1f2b3d;
-  font-size: 25rpx;
-  font-weight: 800;
-  line-height: 1.6;
-}
-
-.utility-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16rpx;
-}
-
-.result-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16rpx;
-}
-
-.share-mask {
-  position: fixed;
-  z-index: 900;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 42rpx;
-  background: rgba(9, 24, 42, 0.54);
-}
-
-.share-panel {
-  width: 100%;
-  max-width: 640rpx;
-  padding: 24rpx;
-  border-radius: 18rpx;
-  background: #ffffff;
-}
-
-.share-card {
-  overflow: hidden;
-  padding: 28rpx;
-  border: 1rpx solid #DCEAF7;
-  border-radius: 18rpx;
-  background: linear-gradient(135deg, #ffffff 0%, #EAF5FF 58%, #DFF0FF 100%);
-  color: #172033;
-}
-
+.sample-answer { margin-top: 8px; padding: 12px; border-radius: 8px; background: var(--ui-bg, #f7f9fd); }
+.focus-item { display: flex; gap: 12px; margin-top: 12px; padding: 12px; border: 1px solid var(--ui-border, #dbe3ee); border-radius: 8px; }
+.focus-item__order { display: flex; flex-shrink: 0; align-items: center; justify-content: center; min-width: 24px; height: 24px; border-radius: 50%; background: var(--ui-soft, #edf3ff); color: var(--ui-link, #285bc7); font-size: 14px; }
+.focus-item__copy { flex: 1; min-width: 0; }
+.focus-item__hint,
+.upgrade-item__before { margin-top: 4px; color: var(--ui-muted, #596a80); font-size: 14px; }
+.upgrade-item { display: grid; gap: 8px; }
+.utility-actions,
+.result-actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.learner-result .utility-actions > button { margin-top: 0; }
+.share-mask { position: fixed; z-index: var(--ui-layer-sheet, 2200); inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(32, 48, 71, .54); }
+.share-panel { width: 100%; max-width: 400px; max-height: calc(100vh - 48px); overflow: auto; padding: 16px; border-radius: 12px; background: var(--ui-surface, #fdfefe); }
+.share-card { padding: 16px; border: 1px solid var(--ui-border, #dbe3ee); border-radius: 12px; background: var(--ui-soft, #edf3ff); color: var(--ui-text, #203047); }
 .share-card__header,
-.share-card__dim {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.share-card__header {
-  opacity: 0.86;
-  font-size: 23rpx;
-}
-
-.share-card__score {
-  margin-top: 30rpx;
-  text-align: center;
-  font-size: 86rpx;
-  font-weight: 900;
-  line-height: 1;
-}
-
+.share-card__dim { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 14px; line-height: 1.6; }
+.share-card__header { color: var(--ui-muted, #596a80); }
+.share-card__score { margin-top: 16px; text-align: center; font-size: 40px; font-weight: 700; }
 .share-card__label,
 .share-card__grade,
-.share-card__slogan {
-  display: block;
-  text-align: center;
-}
-
-.share-card__label {
-  margin-top: 8rpx;
-  opacity: 0.82;
-  font-size: 24rpx;
-}
-
-.share-card__grade {
-  margin-top: 8rpx;
-  font-size: 30rpx;
-  font-weight: 900;
-}
-
-.share-card__dims {
-  display: grid;
-  gap: 10rpx;
-  margin-top: 28rpx;
-}
-
-.share-card__dim {
-  padding: 12rpx 14rpx;
-  border-radius: 12rpx;
-  background: rgba(47, 127, 214, 0.08);
-  font-size: 23rpx;
-}
-
-.share-card__slogan {
-  margin-top: 24rpx;
-  opacity: 0.82;
-  font-size: 23rpx;
-}
-
-.share-panel .primary-button {
-  margin-top: 22rpx;
-}
-
-.share-panel__close {
-  margin-top: 12rpx;
+.share-card__slogan { display: block; margin-top: 8px; text-align: center; font-size: 14px; line-height: 1.6; color: var(--ui-muted, #596a80); }
+.share-card__grade { color: var(--ui-text, #203047); font-size: 16px; font-weight: 700; }
+.share-card__dims { display: grid; gap: 8px; margin-top: 16px; }
+.share-card__dim { padding: 8px; background: var(--ui-surface, #fdfefe); border-radius: 8px; }
+.share-panel .primary-button,
+.share-panel__close { margin-top: 12px; }
+@media (max-width: 360px) {
+  .learner-result.page { padding-left: 16px; padding-right: 16px; }
+  .learner-result .result-hero__score { font-size: 24px; }
+  .utility-actions, .result-actions { gap: 8px; }
 }
 </style>
