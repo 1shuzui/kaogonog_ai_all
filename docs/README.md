@@ -49,6 +49,7 @@
 | [2026-09-19 验收修复记录](testing/acceptance-20260919.md) | 登录会话、账号隔离、筛选、成绩口径、服务器检查及文字入口停用说明。 |
 | [2026-09-20 微信轻量动效](testing/miniprogram-motion-20260920.md) | 真实工程与组件版本、胶囊导航、分段/摘要/装饰动效、验收边界和发布说明。 |
 | [2026-09-20 折叠与定向分析修复](testing/miniprogram-interaction-20260920.md) | 底部高度突跳证据、原位分析任务与加载、失败恢复、微信录屏及真机限制。 |
+| [2026-09-21 微信 UI/UX 修复与验收](testing/miniprogram-uiux-20260921.md) | 根层选择弹窗、原生底栏隔离、真实年份/分类、核心页面层级、回归与发布边界。 |
 | [整理决策 ADR](decisions/ADR-001-local-project-organization.md) | 记录本次项目整理的核心取舍。 |
 | [题库源文档外置 ADR](decisions/ADR-002-externalize-question-source-assets.md) | 记录为什么源 Word/抽取文本不再放 Git。 |
 | [敏感配置外置 ADR](decisions/ADR-003-externalize-secrets.md) | 记录为什么真实密钥迁出仓库。 |
