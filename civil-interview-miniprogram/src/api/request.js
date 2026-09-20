@@ -203,7 +203,8 @@ export function request(options = {}) {
     header = {},
     timeout = 30000,
     skipErrorHandler = false,
-    authRequest = false
+    authRequest = false,
+    signal
   } = options
   const requestId = header['X-Request-ID'] || header['x-request-id'] || createRequestId()
   const requestUrl = joinUrl(url)
@@ -213,68 +214,94 @@ export function request(options = {}) {
   logRequestStarted({ requestId, method: requestMethod, url: requestUrl })
 
   return new Promise((resolve, reject) => {
-    uni.request({
-      url: requestUrl,
-      method,
-      data,
-      timeout,
-      header: {
-        ...getAuthHeader(),
-        'X-Request-ID': requestId,
-        ...header
-      },
-      success(res) {
-        if (!authRequest && sessionToken !== uni.getStorageSync(TOKEN_STORAGE_KEY)) {
-          reject(Object.assign(new Error('账号已切换，请刷新当前页面'), { code: 'STALE_SESSION' }))
-          return
-        }
-        const status = Number(res.statusCode || 0)
-        const durationMs = nowMs() - startedAt
-        if (status >= 200 && status < 300) {
-          logRequestCompleted({
+    let settled = false
+    let task
+    let unsubscribe
+    const finish = (callback, value) => {
+      if (settled) return
+      settled = true
+      unsubscribe?.()
+      callback(value)
+    }
+    const resolveOnce = value => finish(resolve, value)
+    const rejectOnce = error => finish(reject, error)
+    const cancelled = () => {
+      if (settled) return
+      rejectOnce(Object.assign(new Error('已停止等待'), { code: 'CANCELLED', requestId }))
+      task?.abort?.()
+    }
+    if (signal?.aborted) { cancelled(); return }
+    unsubscribe = signal?.subscribe(cancelled)
+    try {
+      task = uni.request({
+        url: requestUrl,
+        method,
+        data,
+        timeout,
+        header: {
+          ...getAuthHeader(),
+          'X-Request-ID': requestId,
+          ...header
+        },
+        success(res) {
+          if (settled) return
+          if (!authRequest && sessionToken !== uni.getStorageSync(TOKEN_STORAGE_KEY)) {
+            rejectOnce(Object.assign(new Error('账号已切换，请刷新当前页面'), { code: 'STALE_SESSION' }))
+            return
+          }
+          const status = Number(res.statusCode || 0)
+          const durationMs = nowMs() - startedAt
+          if (status >= 200 && status < 300) {
+            logRequestCompleted({
+              requestId,
+              method: requestMethod,
+              url: requestUrl,
+              statusCode: status,
+              durationMs
+            })
+            resolveOnce(res.data)
+            return
+          }
+
+          const message = normalizeErrorMessage(res.data, status >= 500 ? '服务暂时不可用' : '请求失败')
+          const error = new Error(message)
+          error.statusCode = status
+          error.data = res.data
+          logRequestFailed({
             requestId,
             method: requestMethod,
             url: requestUrl,
             statusCode: status,
-            durationMs
+            durationMs,
+            error
           })
-          resolve(res.data)
-          return
-        }
 
-        const message = normalizeErrorMessage(res.data, status >= 500 ? '服务暂时不可用' : '请求失败')
-        const error = new Error(message)
-        error.statusCode = status
-        error.data = res.data
-        logRequestFailed({
-          requestId,
-          method: requestMethod,
-          url: requestUrl,
-          statusCode: status,
-          durationMs,
-          error
-        })
-
-        if (status === 401 && !authRequest) {
-          handleUnauthorized(message)
-        } else if (!skipErrorHandler) {
-          toast(message)
+          if (status === 401 && !authRequest) {
+            handleUnauthorized(message)
+          } else if (!skipErrorHandler) {
+            toast(message)
+          }
+          rejectOnce(error)
+        },
+        fail(err) {
+          if (settled) return
+          const error = new Error(normalizeNetworkError(err))
+          error.code = /timeout/i.test(String(err?.errMsg || err?.message || '')) ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR'
+          logRequestFailed({
+            requestId,
+            method: requestMethod,
+            url: requestUrl,
+            durationMs: nowMs() - startedAt,
+            error
+          })
+          if (!skipErrorHandler) toast(error.message)
+          rejectOnce(error)
         }
-        reject(error)
-      },
-      fail(err) {
-        const error = new Error(normalizeNetworkError(err))
-        logRequestFailed({
-          requestId,
-          method: requestMethod,
-          url: requestUrl,
-          durationMs: nowMs() - startedAt,
-          error
-        })
-        if (!skipErrorHandler) toast(error.message)
-        reject(error)
-      }
-    })
+      })
+      // A synchronous adapter callback can settle before the request task exists.
+      if (signal?.aborted) task?.abort?.()
+      if (settled) unsubscribe?.()
+    } catch (error) { rejectOnce(error) }
   })
 }
 
