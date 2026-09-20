@@ -12,11 +12,53 @@ import { defineStore } from 'pinia'
 import { deleteQuestion, getQuestionById, getQuestions, getRandomQuestions } from '../api/questionBank'
 import { normalizeListResponse } from '../utils/format'
 
+// Outside resettable state: a pre-reset request must never match a new request (ABA).
+let nextListRequestId = 0
+
+async function fetchList(store, params, append = false) {
+  const requestId = ++nextListRequestId
+  store._listRequestId = requestId
+  const previous = append ? [...store.questions] : []
+  const requestedPage = Number(params.current || params.page || store.pagination.current || 1)
+  store.loading = true
+  store.error = ''
+  try {
+    const response = await getQuestions({
+      pageSize: store.pagination.pageSize,
+      ...store.filters,
+      ...params,
+      current: requestedPage,
+      page: requestedPage
+    })
+    if (store._listRequestId !== requestId) return
+    const normalized = normalizeListResponse(response)
+    const seen = new Set()
+    store.questions = append ? [...previous, ...normalized.list].filter((item) => {
+      const key = item.id || item.stem
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    }) : normalized.list
+    store.pagination.total = normalized.total
+    store.pagination.current = requestedPage
+    return true
+  } catch (cause) {
+    if (store._listRequestId !== requestId) return
+    store.error = cause?.message || '题目暂时无法加载，请重试'
+    throw cause
+  } finally {
+    if (store._listRequestId === requestId) store.loading = false
+  }
+}
+
 export const useQuestionBankStore = defineStore('questionBank', {
   state: () => ({
     questions: [],
     currentQuestion: null,
     loading: false,
+    error: '',
+    _listRequestId: 0,
+    filtersInitialized: false,
     filters: {
       keyword: '',
       dimension: '',
@@ -36,35 +78,11 @@ export const useQuestionBankStore = defineStore('questionBank', {
 
   actions: {
     async fetchQuestions(params = {}) {
-      this.loading = true
-      try {
-        const requestedPage = Number(params.current || params.page || this.pagination.current || 1)
-        const response = await getQuestions({
-          current: requestedPage,
-          page: requestedPage,
-          pageSize: this.pagination.pageSize,
-          ...this.filters,
-          ...params
-        })
-        const normalized = normalizeListResponse(response)
-        this.questions = normalized.list
-        this.pagination.total = normalized.total
-        this.pagination.current = requestedPage
-      } finally {
-        this.loading = false
-      }
+      return fetchList(this, params)
     },
 
     async fetchMore(params = {}) {
-      const previous = [...this.questions]
-      await this.fetchQuestions(params)
-      const seen = new Set()
-      this.questions = [...previous, ...this.questions].filter((item) => {
-        const key = item.id || item.stem
-        if (seen.has(key)) return false
-        seen.add(key)
-        return true
-      })
+      return fetchList(this, params, true)
     },
 
     async fetchQuestion(id) {
@@ -78,6 +96,10 @@ export const useQuestionBankStore = defineStore('questionBank', {
     },
 
     setFilters(filters = {}) {
+      this.filtersInitialized = true
+      this._listRequestId = ++nextListRequestId
+      this.loading = false
+      this.error = ''
       this.filters = {
         ...this.filters,
         ...filters

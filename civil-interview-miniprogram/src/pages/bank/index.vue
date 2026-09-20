@@ -17,7 +17,12 @@
         <button class="primary-button" @tap="goAdd">新增题目</button>
       </view>
     </view>
-    <text class="page-desc">按省份和题型筛选真题，快速进入单题练习。</text>
+    <text class="page-desc">选考试、地区和题型，找到真题后开始练习。</text>
+
+    <view v-if="pageError" class="inline-status inline-status--error" role="alert">
+      <text>{{ pageError }}</text>
+      <button class="text-button" @tap="refreshPage">重新加载</button>
+    </view>
 
     <view v-if="readonlyMode" class="card access-card">
       <view class="section-head">
@@ -31,60 +36,91 @@
     </view>
 
     <view class="card filter-card">
-        <picker :range="examCategoryNames" :value="examCategoryIndex" @change="onExamCategoryChange">
-          <view class="filter-row">
+        <LightSelector title="考试类型" :options="examCategoryOptions" :value="examCategoryIndex" @change="onExamCategoryChange">
+          <button class="filter-row" :aria-label="'考试类型：' + selectedExamCategoryName">
             <text>考试类型</text>
             <text class="filter-row__value">{{ selectedExamCategoryName }}</text>
-          </view>
-        </picker>
-        <picker :range="provinceNames" :value="provinceIndex" @change="onProvinceChange">
-          <view class="filter-row">
+          </button>
+        </LightSelector>
+        <LightSelector title="地区（全国题源不含各省）" :options="provinceOptions" :value="provinceIndex" @change="onProvinceChange">
+          <button class="filter-row" :aria-label="'地区：' + selectedProvinceName">
             <text>地区</text>
             <text class="filter-row__value">{{ selectedProvinceName }}</text>
-          </view>
-        </picker>
-        <view class="filter-row filter-row--input">
-          <text>三级分类</text>
-          <input v-model="subcategoryFilter" class="field filter-input" :placeholder="subcategoryPlaceholder" />
-        </view>
-        <view class="filter-row filter-row--input">
-          <text>四级分类</text>
-          <input v-model="subcategory2Filter" class="field filter-input" placeholder="四级分类" />
-        </view>
-        <view class="filter-row filter-row--year" @tap="showYearPicker = true">
-          <text>年份</text>
-          <text class="filter-row__value">{{ yearLabel }}</text>
-        </view>
-        <picker :range="dimensionNames" :value="dimensionIndex" @change="onDimensionChange">
-          <view class="filter-row">
-            <text>题目分类</text>
+          </button>
+        </LightSelector>
+        <LightSelector title="题型" :options="dimensionOptions" :value="dimensionIndex" @change="onDimensionChange">
+          <button class="filter-row" :aria-label="'题型：' + selectedDimensionName">
+            <text>题型</text>
             <text class="filter-row__value">{{ selectedDimensionName }}</text>
-          </view>
-        </picker>
-        <picker v-if="isAdmin" :range="categoryReviewNames" :value="categoryReviewIndex" @change="onCategoryReviewChange">
-          <view class="filter-row">
-            <text>分类复核</text>
-            <text class="filter-row__value">{{ selectedCategoryReviewName }}</text>
-          </view>
-        </picker>
-        <view v-if="showPositionFilter" class="filter-row--picker">
-          <picker :range="positionNames" :value="positionIndex" @change="onPositionChange">
-            <view class="filter-row">
-              <text>岗位系统</text>
-              <text class="filter-row__value">{{ selectedPositionName }}</text>
-            </view>
-          </picker>
-        </view>
+          </button>
+        </LightSelector>
         <view class="search-row">
-          <input v-model="keyword" class="field search-row__input" placeholder="搜索题干关键词" confirm-type="search" @confirm="onFilterChange" />
+          <input v-model="keyword" class="field search-row__input" aria-label="搜索题干关键词" placeholder="搜索题干关键词" placeholder-class="search-placeholder" confirm-type="search" @confirm="onFilterChange" />
           <button class="secondary-button search-row__button" @tap="onFilterChange">搜索</button>
         </view>
-        <view class="quick-actions">
-          <button class="secondary-button quick-actions__btn" @tap="startRandomPractice">随机练习</button>
+        <text v-if="keyword.trim() !== (bankStore.filters.keyword || '')" class="filter-help">关键词尚未应用，点击搜索更新题目。</text>
+        <MotionCollapse title="更多筛选" :open="showAdvancedFilters" :revision="[filtersLoading, filtersError, filterOptions, subcategoryFilter, subcategory2Filter, selectedProvince, examCategoryFilter]" @toggle="showAdvancedFilters = !showAdvancedFilters">
+          <view v-if="readonlyMode" class="filter-help">开通题库后可查看实际分类和年份选项。</view>
+          <view v-else-if="filtersLoading" class="filter-help" role="status">正在加载可用筛选项…</view>
+          <view v-else-if="filtersError" class="inline-status inline-status--error" role="alert">
+            <text>{{ filtersError }}，已选条件保留。</text>
+            <button class="text-button" @tap="retryFilterOptions">重试选项</button>
+          </view>
+          <LightSelector v-if="showPositionFilter" title="岗位系统" :options="positionOptions" :value="positionIndex" @change="onPositionChange">
+            <button class="filter-row" :aria-label="'岗位系统：' + selectedPositionName">
+              <text>岗位系统</text>
+              <text class="filter-row__value">{{ selectedPositionName }}</text>
+            </button>
+          </LightSelector>
+          <LightSelector :title="subcategoryLabel" :options="subcategoryOptions" :value="subcategoryIndex" :disabled="!metadataReady || !filterOptions.subcategory.length || unavailableSubcategory" @change="onSubcategoryChange">
+            <button class="filter-row" :disabled="!metadataReady || !filterOptions.subcategory.length || unavailableSubcategory" :aria-label="subcategoryLabel + '：' + (subcategoryFilter || '不限')">
+              <text>{{ subcategoryLabel }}</text>
+              <text class="filter-row__value">{{ subcategoryFilter || (metadataReady && !filterOptions.subcategory.length ? '暂无可选' : '不限') }}</text>
+            </button>
+          </LightSelector>
+          <view v-if="subcategoryFilter" class="filter-help filter-help--action">
+            <text>{{ unavailableSubcategory ? '已选值在当前条件下不可用，清除后可重新选择。' : '已保留分类条件。' }}</text>
+            <button class="text-button" @tap="subcategoryFilter = ''; onFilterChange()">清除</button>
+          </view>
+          <LightSelector title="细分方向" :options="subcategory2Options" :value="subcategory2Index" :disabled="!metadataReady || !filterOptions.subcategory2.length || unavailableSubcategory2" @change="onSubcategory2Change">
+            <button class="filter-row" :disabled="!metadataReady || !filterOptions.subcategory2.length || unavailableSubcategory2" :aria-label="'细分方向：' + (subcategory2Filter || '不限')">
+              <text>细分方向</text>
+              <text class="filter-row__value">{{ subcategory2Filter || (metadataReady && !filterOptions.subcategory2.length ? '暂无可选' : '不限') }}</text>
+            </button>
+          </LightSelector>
+          <view v-if="subcategory2Filter" class="filter-help filter-help--action">
+            <text>{{ unavailableSubcategory2 ? '已选值在当前条件下不可用，清除后可重新选择。' : '已保留细分方向。' }}</text>
+            <button class="text-button" @tap="subcategory2Filter = ''; onFilterChange()">清除</button>
+          </view>
+          <button class="filter-row" :disabled="readonlyMode" :aria-label="'年份：' + yearLabel" @tap="openYearPicker">
+            <text>年份</text>
+            <text class="filter-row__value">{{ yearLabel }}</text>
+          </button>
+          <text v-if="metadataReady && !filterOptions.year.length" class="filter-help">{{ questionCount ? '当前题目没有可筛选年份，选择不限年份可包含它们。' : '当前条件下暂无可用年份，可放宽筛选。' }}</text>
+          <LightSelector v-if="isAdmin" title="分类复核" :options="categoryReviewOptions" :value="categoryReviewIndex" @change="onCategoryReviewChange">
+            <button class="filter-row">
+              <text>分类复核</text>
+              <text class="filter-row__value">{{ selectedCategoryReviewName }}</text>
+            </button>
+          </LightSelector>
+        </MotionCollapse>
+        <view class="filter-summary">
+          <text class="filter-summary__text">{{ filterSummary }}</text>
+          <button class="text-button" @tap="resetFilters">重置</button>
         </view>
+        <text v-if="filtersError && !showAdvancedFilters" class="filter-help">筛选选项加载失败，展开“更多筛选”可重试。</text>
     </view>
 
     <template v-if="!readonlyMode">
+      <view class="results-head">
+        <text class="results-head__count">{{ bankStore.loading || pageLoading ? '正在加载题目…' : bankStore.error ? '题目未能更新' : `共 ${bankStore.pagination.total} 道题` }}</text>
+        <button class="text-button" @tap="startRandomPractice">随机练习</button>
+      </view>
+      <view v-if="bankStore.error" class="inline-status inline-status--error" role="alert">
+        <text>{{ bankStore.error }}</text>
+        <button class="text-button" @tap="retryQuestions">重试题目</button>
+      </view>
+      <text v-if="bankStore.questions.length && (bankStore.loading || bankStore.error || pageLoading)" class="filter-help">以下保留上次成功加载的题目，更新成功后替换。</text>
       <view v-if="bankStore.questions.length">
         <view v-for="q in bankStore.questions" :key="q.id" class="card bank-item" @tap="openDetail(q)">
           <view class="bank-item__header">
@@ -106,38 +142,40 @@
           </view>
         </view>
       </view>
-      <view v-else class="card">
-        <EmptyState title="暂无题目" desc="换个省份或题型再试试。" />
+      <view v-else-if="!bankStore.loading && !bankStore.error && !pageLoading" class="card">
+        <EmptyState title="当前筛选暂无题目" desc="可调整地区、题型，或重置全部筛选。" />
+        <button class="secondary-button" @tap="resetFilters">重置筛选</button>
       </view>
 
-      <view v-if="totalPages > 1" class="pagination">
-        <button class="secondary-button pagination__btn" :disabled="bankStore.pagination.current <= 1" @tap="goPage(bankStore.pagination.current - 1)">上一页</button>
+      <view v-if="totalPages > 1 && !bankStore.error" class="pagination">
+        <button class="secondary-button pagination__btn" :disabled="bankStore.loading || pageLoading || bankStore.pagination.current <= 1" @tap="goPage(bankStore.pagination.current - 1)">上一页</button>
         <text class="pagination__info">{{ bankStore.pagination.current }} / {{ totalPages }}</text>
-        <button class="secondary-button pagination__btn" :disabled="bankStore.pagination.current >= totalPages" @tap="goPage(bankStore.pagination.current + 1)">下一页</button>
+        <button class="secondary-button pagination__btn" :disabled="bankStore.loading || pageLoading || bankStore.pagination.current >= totalPages" @tap="goPage(bankStore.pagination.current + 1)">下一页</button>
       </view>
     </template>
 
-    <view v-if="showYearPicker" class="year-overlay" @tap="showYearPicker = false">
-      <view class="year-modal card" @tap.stop>
-        <view class="section-head">
-          <text class="section-title">选择年份</text>
-          <text class="muted" @tap="showYearPicker = false">完成</text>
+    <LearnerSheet class="bank-year-sheet" :show="showYearPicker" title="选择年份" close-label="完成" :body-height="yearOptions.length * 56 + unavailableYears.length * 56 + 240" @close="applyYearDraft">
+        <text class="filter-help">可多选。点击完成或空白处关闭后应用；清空即不限年份。</text>
+        <button class="text-button year-clear" @tap="yearDraft = []">不限年份（清空已选）</button>
+        <text v-if="filtersLoading" class="filter-help" role="status">正在加载可用年份…</text>
+        <view v-else-if="filtersError" class="inline-status inline-status--error" role="alert">
+          <text>{{ filtersError }}，已选年份保留。</text>
+          <button class="text-button" @tap="retryFilterOptions">重试选项</button>
         </view>
-        <checkbox-group @change="onYearChange">
+        <text v-else-if="!yearOptions.length" class="filter-help">{{ questionCount ? '当前题目没有可筛选年份，选择不限年份可包含它们。' : '当前条件下暂无可用年份。' }}</text>
+        <view v-for="year in unavailableYears" :key="year" class="filter-help filter-help--action">
+          <text>{{ year }}：已选，当前不可用</text>
+          <button class="text-button" :aria-label="'移除已选年份' + year" @tap="yearDraft = yearDraft.filter(value => value !== year)">移除</button>
+        </view>
+        <checkbox-group v-if="metadataReady" @change="onYearChange">
           <label v-for="opt in yearOptions" :key="opt.value" class="year-checkbox">
             <checkbox :value="opt.value" :checked="opt.checked" />
-            <text>{{ opt.value }}</text>
+            <text>{{ opt.value }} 年</text>
           </label>
         </checkbox-group>
-      </view>
-    </view>
+    </LearnerSheet>
 
-    <view v-if="showDocxModal" class="year-overlay" @tap="showDocxModal = false">
-      <view class="year-modal card" @tap.stop>
-        <view class="section-head">
-          <text class="section-title">docx 题库导入</text>
-          <text class="muted" @tap="showDocxModal = false">取消</text>
-        </view>
+    <LearnerSheet :show="showDocxModal && isAdmin" title="docx 题库导入" close-label="取消" :body-height="440" @close="showDocxModal = false">
         <view class="docx-form">
           <text class="docx-form__label">选择省份</text>
           <picker :range="docxProvinceNames" :value="docxProvinceIndex" @change="onDocxProvinceChange">
@@ -154,8 +192,7 @@
             <text v-if="docxResult.suites && docxResult.suites.length">套题：{{ docxResult.suites.join('、') }}</text>
           </view>
         </view>
-      </view>
-    </view>
+    </LearnerSheet>
   </view>
 </template>
 
@@ -163,17 +200,21 @@
 import LearnerIcon from '../../components/LearnerIcon.vue'
 import { usePageMotion } from '../../motion/useMotion'
 const { motionClass, motionStyle } = usePageMotion()
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import EmptyState from '../../components/EmptyState.vue'
 import QuestionCard from '../../components/QuestionCard.vue'
+import LearnerSheet from '../../components/LearnerSheet.vue'
+import LightSelector from '../../components/LightSelector.vue'
+import MotionCollapse from '../../components/MotionCollapse.vue'
 import { importDocx } from '../../api/questionBank'
 import { useBillingStore } from '../../stores/billing'
 import { useQuestionBankStore } from '../../stores/questionBank'
 import { useSubscriptionStore } from '../../stores/subscription'
 import { useUserStore } from '../../stores/user'
 import { hasPremiumAccess } from '../../utils/access'
-import { EXAM_CATEGORIES, PROVINCES, QUESTION_CATEGORIES, SUBCATEGORY_LABELS, YEAR_OPTIONS } from '../../utils/constants'
+import { EXAM_CATEGORIES, PROVINCES, QUESTION_CATEGORIES, SUBCATEGORY_LABELS } from '../../utils/constants'
+import { useQuestionFilters } from '../../utils/useQuestionFilters'
 import { JIANGSU_TARGETED_POSITIONS } from '../../utils/jiangsuJobs'
 import { hideLoading, hasToken, promptLoginForAction, showLoading, toast } from '../../utils/navigation'
 
@@ -183,15 +224,23 @@ const subscriptionStore = useSubscriptionStore()
 const userStore = useUserStore()
 const isAdmin = computed(() => userStore.isAdmin)
 const keyword = ref(bankStore.filters.keyword || '')
-const selectedProvince = ref(userStore.selectedProvince || 'national')
-const examCategoryFilter = ref('')
-const selectedDimension = ref('')
-const subcategoryFilter = ref('')
-const subcategory2Filter = ref('')
-const yearFilter = ref([])
-const categoryReviewFilter = ref('')
-const selectedPosition = ref('')
+const selectedProvince = ref(bankStore.filtersInitialized ? bankStore.filters.province : userStore.selectedProvince || 'national')
+const examCategoryFilter = ref(bankStore.filters.examCategory || '')
+const selectedDimension = ref(bankStore.filters.dimension || '')
+const subcategoryFilter = ref(bankStore.filters.subcategory || '')
+const subcategory2Filter = ref(bankStore.filters.subcategory2 || '')
+const yearFilter = ref(String(bankStore.filters.year || '').split(',').filter(Boolean))
+const categoryReviewFilter = ref(bankStore.filters.categoryReview || '')
+const selectedPosition = ref(bankStore.filters.position || '')
 const showYearPicker = ref(false)
+const yearDraft = ref([])
+const showAdvancedFilters = ref(false)
+const pageLoading = ref(false)
+const pageError = ref('')
+const requestedPage = ref(1)
+let showRequest = 0
+let filterRevision = 0
+const { options: filterOptions, loading: filtersLoading, error: filtersError, questionCount, refresh: refreshFilterOptions } = useQuestionFilters()
 const showDocxModal = ref(false)
 const docxImporting = ref(false)
 const docxFileName = ref('')
@@ -199,33 +248,37 @@ const docxFilePath = ref('')
 const docxProvince = ref('national')
 const docxResult = ref(null)
 
-const provinceOptions = computed(() => userStore.provinces.length ? userStore.provinces : PROVINCES)
-const provinceNames = computed(() => provinceOptions.value.map((item) => item.name))
+const provinceOptions = computed(() => [
+  { code: '', name: '全部地区' },
+  ...(userStore.provinces.length ? userStore.provinces : PROVINCES)
+    .filter((item) => item.code && item.code !== 'all')
+    .map((item) => ({ ...item, name: item.code === 'national' ? '全国题源' : item.name }))
+])
 const provinceIndex = computed(() => Math.max(0, provinceOptions.value.findIndex((item) => item.code === selectedProvince.value)))
-const selectedProvinceName = computed(() => provinceOptions.value[provinceIndex.value]?.name || '国考')
+const selectedProvinceName = computed(() => provinceOptions.value.find((item) => item.code === selectedProvince.value)?.name || selectedProvince.value || '全部地区')
 
-const examCategoryOptions = computed(() => [{ code: '', name: '全部考试类型' }, ...EXAM_CATEGORIES])
-const examCategoryNames = computed(() => examCategoryOptions.value.map((item) => item.name))
+const examCategoryOptions = computed(() => [{ code: '', name: '全部考试类型' }, ...EXAM_CATEGORIES.filter((item) => item.code)])
 const examCategoryIndex = computed(() => Math.max(0, examCategoryOptions.value.findIndex((item) => item.code === examCategoryFilter.value)))
-const selectedExamCategoryName = computed(() => examCategoryOptions.value[examCategoryIndex.value]?.name || '全部考试类型')
+const selectedExamCategoryName = computed(() => examCategoryOptions.value.find((item) => item.code === examCategoryFilter.value)?.name || examCategoryFilter.value || '全部考试类型')
 
-const subcategoryPlaceholder = computed(() => {
-  if (!examCategoryFilter.value) return '三级分类'
-  return SUBCATEGORY_LABELS[examCategoryFilter.value] || '三级分类'
-})
+const subcategoryLabel = computed(() => SUBCATEGORY_LABELS[examCategoryFilter.value] || '分类方向')
+const subcategoryOptions = computed(() => [{ value: '', label: `不限${subcategoryLabel.value}` }, ...filterOptions.value.subcategory.map(value => ({ value, label: value }))])
+const subcategory2Options = computed(() => [{ value: '', label: '不限细分方向' }, ...filterOptions.value.subcategory2.map(value => ({ value, label: value }))])
+const subcategoryIndex = computed(() => subcategoryOptions.value.findIndex(item => item.value === subcategoryFilter.value))
+const subcategory2Index = computed(() => subcategory2Options.value.findIndex(item => item.value === subcategory2Filter.value))
+const metadataReady = computed(() => !readonlyMode.value && !filtersLoading.value && !filtersError.value)
+const unavailableSubcategory = computed(() => metadataReady.value && !!subcategoryFilter.value && subcategoryIndex.value < 0)
+const unavailableSubcategory2 = computed(() => metadataReady.value && !!subcategory2Filter.value && subcategory2Index.value < 0)
 
-const categoryNames = computed(() => QUESTION_CATEGORIES.map((item) => item.name))
-const dimensionOptions = computed(() => [{ key: '', name: '全部分类' }, ...QUESTION_CATEGORIES])
-const dimensionNames = computed(() => dimensionOptions.value.map((item) => item.name))
+const dimensionOptions = computed(() => [{ key: '', name: '全部题型' }, ...QUESTION_CATEGORIES.filter((item) => item.key)])
 const dimensionIndex = computed(() => Math.max(0, dimensionOptions.value.findIndex((item) => item.key === selectedDimension.value)))
-const selectedDimensionName = computed(() => dimensionOptions.value[dimensionIndex.value]?.name || '全部分类')
+const selectedDimensionName = computed(() => dimensionOptions.value.find((item) => item.key === selectedDimension.value)?.name || selectedDimension.value || '全部题型')
 
 const categoryReviewOptions = computed(() => [
   { value: '', label: '全部复核状态' },
   { value: 'needs_review', label: '分类待确认' },
   { value: 'confirmed', label: '分类已确认' }
 ])
-const categoryReviewNames = computed(() => categoryReviewOptions.value.map((item) => item.label))
 const categoryReviewIndex = computed(() => Math.max(0, categoryReviewOptions.value.findIndex((item) => item.value === categoryReviewFilter.value)))
 const selectedCategoryReviewName = computed(() => categoryReviewOptions.value[categoryReviewIndex.value]?.label || '全部复核状态')
 
@@ -234,15 +287,19 @@ const positionOptions = computed(() => [
   { code: '', name: '全部岗位系统' },
   ...JIANGSU_TARGETED_POSITIONS
 ])
-const positionNames = computed(() => positionOptions.value.map((item) => item.name))
 const positionIndex = computed(() => Math.max(0, positionOptions.value.findIndex((item) => item.code === selectedPosition.value)))
 const selectedPositionName = computed(() => positionOptions.value[positionIndex.value]?.name || '全部岗位系统')
 
-const yearOptions = computed(() => YEAR_OPTIONS.map((y) => ({ value: y, checked: yearFilter.value.includes(y) })))
+const yearOptions = computed(() => filterOptions.value.year.map(value => ({ value, checked: yearDraft.value.includes(value) })))
+const unavailableYears = computed(() => metadataReady.value ? yearDraft.value.filter(value => !filterOptions.value.year.includes(value)) : [])
 const yearLabel = computed(() => yearFilter.value.length ? yearFilter.value.join('、') : '不限年份（可多选）')
-
-const categoryIndex = computed(() => Math.max(0, QUESTION_CATEGORIES.findIndex((item) => item.key === selectedDimension.value)))
-const selectedCategoryName = computed(() => QUESTION_CATEGORIES[categoryIndex.value]?.name || '全部题型')
+const filterSummary = computed(() => [
+  selectedExamCategoryName.value, selectedProvinceName.value, selectedDimensionName.value,
+  showPositionFilter.value && selectedPosition.value ? selectedPositionName.value : '',
+  subcategoryFilter.value, subcategory2Filter.value, yearFilter.value.join('、'),
+  bankStore.filters.keyword ? `关键词：${bankStore.filters.keyword}` : '',
+  isAdmin.value && categoryReviewFilter.value ? selectedCategoryReviewName.value : ''
+].filter(Boolean).join(' · '))
 
 const hasFullAccess = computed(() => hasPremiumAccess(userStore, billingStore, subscriptionStore))
 const readonlyMode = computed(() => !hasFullAccess.value)
@@ -264,31 +321,65 @@ const docxProvinceNames = computed(() => DOCX_PROVINCES.map((item) => item.name)
 const docxProvinceIndex = computed(() => Math.max(0, DOCX_PROVINCES.findIndex((item) => item.code === docxProvince.value)))
 const docxProvinceLabel = computed(() => DOCX_PROVINCES[docxProvinceIndex.value]?.name || '全国通用')
 
-onShow(async () => {
-  if (!hasToken()) {
-    bankStore.questions = []
-    bankStore.pagination.total = 0
-    return
-  }
-  await Promise.allSettled([
-    userStore.loadProvinces(),
-    userStore.loadUserInfo(),
-    subscriptionStore.refresh({ skipErrorHandler: true })
-  ])
-  selectedProvince.value = userStore.selectedProvince || 'national'
-  if (readonlyMode.value) {
-    bankStore.questions = []
-    bankStore.pagination.total = 0
-    return
-  }
-  if (!bankStore.questions.length) {
-    bankStore.setFilters({ province: '', dimension: '', examCategory: '', subcategory: '', subcategory2: '', year: '', position: '', keyword: '' })
-    fetchFirstPage()
-  }
-})
+onShow(refreshPage)
 
-function fetchFirstPage() {
-  bankStore.fetchQuestions({ page: 1, current: 1 })
+watch(() => [userStore.token, hasFullAccess.value], ([token, access], [oldToken]) => {
+  if (token === oldToken && token && access) return
+  // Cancel metadata before clearing account-scoped content, even on a cached tab.
+  refreshFilterOptions({}, false)
+  showRequest += 1
+  bankStore.$reset()
+  pageLoading.value = false
+  pageError.value = ''
+  showYearPicker.value = false
+  showDocxModal.value = false
+  if (token !== oldToken) resetFilterValues(userStore.selectedProvince || 'national')
+}, { flush: 'sync' })
+
+async function refreshPage() {
+  const request = ++showRequest
+  const account = userStore.token
+  pageError.value = ''
+  if (!hasToken()) {
+    await refreshFilterOptions({}, false)
+    bankStore.$reset()
+    return
+  }
+  pageLoading.value = true
+  try {
+    const results = await Promise.allSettled([
+      userStore.loadProvinces(),
+      userStore.loadUserInfo(),
+      subscriptionStore.refresh({ skipErrorHandler: true })
+    ])
+    if (request !== showRequest || account !== userStore.token || !hasToken()) return
+    if (results.some(result => result.status === 'rejected')) pageError.value = '账号或地区信息未能完整刷新，请重试。'
+    if (!bankStore.filtersInitialized && filterRevision === 0) selectedProvince.value = userStore.selectedProvince || 'national'
+    if (readonlyMode.value) {
+      await refreshFilterOptions({}, false)
+      bankStore.$reset()
+      return
+    }
+    const snapshot = buildFilters()
+    bankStore.setFilters(snapshot)
+    // Initialization is done. The store/hook own request loading, including supersession.
+    pageLoading.value = false
+    await Promise.all([refreshFilterOptions(metadataParams(snapshot), true), fetchFirstPage()])
+  } catch (cause) {
+    if (request === showRequest) pageError.value = cause?.message || '题库暂时无法加载，请重试。'
+  } finally {
+    if (request === showRequest) pageLoading.value = false
+  }
+}
+
+async function fetchFirstPage() {
+  requestedPage.value = 1
+  try { await bankStore.fetchQuestions({ page: 1, current: 1 }) } catch { /* store owns the current inline error */ }
+}
+
+function metadataParams(snapshot) {
+  const { year, categoryReview, ...params } = snapshot
+  return { ...params, year: '' }
 }
 
 function buildFilters() {
@@ -307,7 +398,7 @@ function buildFilters() {
 
 function onProvinceChange(event) {
   const selected = provinceOptions.value[Number(event.detail.value)]
-  selectedProvince.value = selected?.code || 'national'
+  selectedProvince.value = selected?.code || ''
   if (selectedProvince.value !== 'jiangsu') selectedPosition.value = ''
   if (!hasToken()) return
   onFilterChange()
@@ -316,8 +407,6 @@ function onProvinceChange(event) {
 function onExamCategoryChange(event) {
   const selected = examCategoryOptions.value[Number(event.detail.value)]
   examCategoryFilter.value = selected?.code || ''
-  subcategoryFilter.value = ''
-  subcategory2Filter.value = ''
   if (!hasToken()) return
   onFilterChange()
 }
@@ -351,21 +440,80 @@ function onCategoryReviewChange(event) {
 }
 
 function onYearChange(event) {
-  yearFilter.value = event.detail.value || []
-  onFilterChange()
+  // Unavailable retained years are not checkboxes; only an explicit clear removes them.
+  yearDraft.value = [...new Set([
+    ...yearDraft.value.filter(value => !filterOptions.value.year.includes(value)),
+    ...(event.detail.value || []).filter(value => filterOptions.value.year.includes(value))
+  ])]
 }
 
-function onFilterChange() {
-  if (!promptLoginForAction('检索题库', '/pages/bank/index')) return
+function openYearPicker() {
   if (readonlyMode.value) return
-  bankStore.setFilters(buildFilters())
-  fetchFirstPage()
+  yearDraft.value = [...yearFilter.value]
+  showYearPicker.value = true
 }
 
-function goPage(page) {
+async function applyYearDraft() {
+  if (!showYearPicker.value) return
+  showYearPicker.value = false
+  if (yearDraft.value.length === yearFilter.value.length && yearDraft.value.every(value => yearFilter.value.includes(value))) return
+  yearFilter.value = [...yearDraft.value]
+  await onFilterChange()
+}
+
+function onSubcategoryChange(event) {
+  subcategoryFilter.value = subcategoryOptions.value[Number(event.detail.value)]?.value || ''
+  return onFilterChange()
+}
+
+function onSubcategory2Change(event) {
+  subcategory2Filter.value = subcategory2Options.value[Number(event.detail.value)]?.value || ''
+  return onFilterChange()
+}
+
+function resetFilterValues(province = '') {
+  selectedProvince.value = province
+  selectedDimension.value = ''
+  examCategoryFilter.value = ''
+  subcategoryFilter.value = ''
+  subcategory2Filter.value = ''
+  yearFilter.value = []
+  yearDraft.value = []
+  selectedPosition.value = ''
+  categoryReviewFilter.value = ''
+  keyword.value = ''
+}
+
+function resetFilters() {
+  resetFilterValues()
+  return onFilterChange()
+}
+
+function retryFilterOptions() {
+  const snapshot = { ...buildFilters(), keyword: bankStore.filters.keyword || '' }
+  return refreshFilterOptions(metadataParams(snapshot), hasToken() && !readonlyMode.value)
+}
+
+async function onFilterChange() {
+  filterRevision += 1
+  if (!promptLoginForAction('检索题库', '/pages/bank/index')) return
+  const snapshot = buildFilters()
+  bankStore.setFilters(snapshot)
+  await Promise.all([
+    refreshFilterOptions(metadataParams(snapshot), !readonlyMode.value),
+    readonlyMode.value ? Promise.resolve() : fetchFirstPage()
+  ])
+}
+
+async function goPage(page) {
   if (!promptLoginForAction('浏览题库列表', '/pages/bank/index')) return
   if (readonlyMode.value) return
-  bankStore.fetchQuestions({ current: page, pageSize: bankStore.pagination.pageSize })
+  requestedPage.value = page
+  try { await bankStore.fetchQuestions({ current: page, pageSize: bankStore.pagination.pageSize }) } catch { /* keep the last usable list visible */ }
+}
+
+function retryQuestions() {
+  return goPage(requestedPage.value)
 }
 
 function openDetail(question) {
@@ -474,231 +622,100 @@ async function handleDocxImport() {
 </script>
 
 <style scoped>
-.bank-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12rpx;
-}
-
-.bank-header__actions {
-  display: flex;
-  gap: 10rpx;
-}
-
+.page { color: var(--ui-text); }
+.page-desc { display: block; margin: 8px 0 16px; color: var(--ui-muted); font-size: 14px; line-height: 1.6; }
+.bank-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.bank-header__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.primary-button,
+.secondary-button { min-height: 44px; min-width: 44px; font-size: 14px; }
 .bank-header__actions .primary-button,
-.bank-header__actions .secondary-button {
-  padding: 12rpx 20rpx;
-  font-size: 24rpx;
-}
+.bank-header__actions .secondary-button { padding: 8px 12px; }
 
-.filter-card {
-  padding-bottom: 18rpx;
-}
-
-.access-card {
-  border-color: #bfd7ef;
-  background: #f4f9fe;
-}
-
-.access-card__desc {
-  display: block;
-  color: #5f6f83;
-  font-size: 24rpx;
-  line-height: 1.6;
-}
-
-.access-card__actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16rpx;
-  margin-top: 22rpx;
-}
-
+.filter-card { padding-top: 8px; padding-bottom: 8px; }
 .filter-row {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
-  padding: 20rpx 0;
-  border-bottom: 1rpx solid #eef2f6;
-  color: #2a3648;
-  font-size: 27rpx;
-}
-
-.filter-row--input {
-  gap: 16rpx;
-}
-
-.filter-row__value {
-  color: #2F7FD6;
-  font-weight: 600;
-  text-align: right;
-  max-width: 440rpx;
-}
-
-.filter-input {
-  flex: 1;
-  text-align: right;
-  color: #2F7FD6;
-  font-size: 27rpx;
-}
-
-.search-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 150rpx;
-  gap: 14rpx;
-  margin-top: 18rpx;
-}
-
-.search-row__button {
-  min-height: 88rpx;
-}
-
-.load-more {
-  margin-top: 12rpx;
-}
-
-.quick-actions {
-  margin-top: 18rpx;
-}
-
-.quick-actions__btn {
+  gap: 16px;
   width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 0;
+  box-sizing: border-box;
+  border-radius: 0;
+  border-bottom: 1px solid var(--ui-border);
+  background: transparent;
+  color: var(--ui-text);
+  font-size: 15px;
+  line-height: 1.5;
+  text-align: left;
 }
+.filter-row::after,
+.text-button::after { border: 0; }
+.filter-row > text:first-child { flex-shrink: 0; }
+.filter-row__value { min-width: 0; max-width: 70%; color: var(--ui-link); text-align: right; font-weight: 600; overflow-wrap: anywhere; }
+.filter-row[disabled],
+.filter-row[disabled] .filter-row__value { color: var(--ui-muted); background: transparent; opacity: 1; }
+.search-row { display: grid; grid-template-columns: minmax(0, 1fr) 72px; gap: 8px; margin-top: 12px; }
+.search-row__input { min-width: 0; min-height: 44px; box-sizing: border-box; font-size: 15px; }
+.search-placeholder { color: var(--ui-muted); font-size: 14px; }
+.search-row__button { margin: 0; padding: 8px; }
 
-.bank-item {
-  margin-bottom: 16rpx;
-}
-
-.bank-item__header {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-  margin-bottom: 8rpx;
-}
-
-.bank-item__points {
-  color: #64748B;
-  font-size: 22rpx;
-  margin-left: auto;
-}
-
-.review-tag {
-  padding: 6rpx 14rpx;
-  border-radius: 999rpx;
-  font-size: 22rpx;
-}
-
-.review-tag--pending {
-  background: rgba(250, 140, 22, 0.1);
-  color: #d48806;
-}
-
-.review-tag--confirmed {
-  background: rgba(82, 196, 26, 0.1);
-  color: #389e0d;
-}
-
-.bank-item__stem {
-  min-width: 0;
-}
-
-.bank-item__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12rpx;
-  margin-top: 12rpx;
-}
-
-.secondary-button--danger {
-  color: #cf1322;
-  border-color: #ffa39e;
-}
-
-.pagination {
+.text-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16rpx;
-  margin-top: 24rpx;
-  padding: 16rpx 0;
+  flex-shrink: 0;
+  min-width: 44px;
+  min-height: 44px;
+  margin: 0;
+  padding: 8px 12px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ui-link);
+  font-size: 14px;
+  line-height: 1.5;
 }
+.filter-row:focus-visible,
+.text-button:focus-visible,
+.secondary-button:focus-visible,
+.primary-button:focus-visible { outline: 2px solid var(--ui-primary); outline-offset: 2px; }
+.filter-help { display: block; margin: 8px 0; color: var(--ui-muted); font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.filter-help--action,
+.filter-summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.filter-help--action > text,
+.filter-summary__text { flex: 1; min-width: 0; }
+.filter-summary { border-top: 1px solid var(--ui-border); margin-top: 8px; padding-top: 4px; }
+.filter-summary__text { color: var(--ui-muted); font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
 
-.pagination__btn {
-  min-width: 140rpx;
-}
+.inline-status { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; margin: 8px 0; border: 1px solid var(--ui-border); border-radius: 8px; background: var(--ui-surface); font-size: 14px; line-height: 1.6; }
+.inline-status > text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.inline-status--error { color: var(--ui-error); }
+.results-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.results-head__count { color: var(--ui-muted); font-size: 14px; line-height: 1.6; }
 
-.pagination__info {
-  color: #64748B;
-  font-size: 26rpx;
-}
+.access-card { border-color: var(--ui-border); background: var(--ui-soft); }
+.access-card__desc { display: block; color: var(--ui-muted); font-size: 14px; line-height: 1.6; }
+.access-card__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+.bank-item { margin-bottom: 16rpx; }
+.bank-item__header { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.bank-item__points { margin-left: auto; color: var(--ui-muted); font-size: 14px; line-height: 1.5; }
+.review-tag { padding: 4px 8px; border-radius: 8px; font-size: 14px; line-height: 1.5; background: var(--ui-soft); }
+.review-tag--pending { color: var(--ui-error); }
+.review-tag--confirmed { color: var(--ui-success); }
+.bank-item__stem { min-width: 0; }
+.bank-item__actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.secondary-button--danger { color: var(--ui-error); border-color: var(--ui-error); }
+.pagination { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 16px; padding: 12px 0; }
+.pagination__btn { min-width: 72px; }
+.pagination__info { color: var(--ui-muted); font-size: 14px; }
 
-.year-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
-  z-index: 1000;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.year-modal {
-  width: 100%;
-  max-height: 60vh;
-  border-radius: 24rpx 24rpx 0 0;
-  overflow-y: auto;
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-.year-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-  padding: 22rpx 0;
-  border-bottom: 1rpx solid #eef2f6;
-  font-size: 27rpx;
-  color: #2a3648;
-}
-
-.filter-row--year {
-  cursor: pointer;
-}
-
-.docx-form {
-  padding: 10rpx 0;
-}
-
-.docx-form__label {
-  display: block;
-  color: #2a3648;
-  font-size: 27rpx;
-  font-weight: 600;
-  margin-bottom: 8rpx;
-}
-
-.docx-file-name {
-  display: block;
-  margin-top: 10rpx;
-  padding: 10rpx 16rpx;
-  border-radius: 8rpx;
-  background: #EAF5FF;
-  color: #2F7FD6;
-  font-size: 24rpx;
-}
-
-.docx-result {
-  margin-top: 20rpx;
-  padding: 18rpx;
-  border-radius: 12rpx;
-  background: #f6ffed;
-  border: 1rpx solid #b7eb8f;
-  color: #389e0d;
-  font-size: 26rpx;
-  line-height: 1.6;
-}
+.year-clear { background: var(--ui-soft); margin: 8px 0; }
+.year-checkbox { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 8px 0; box-sizing: border-box; border-bottom: 1px solid var(--ui-border); color: var(--ui-text); font-size: 15px; line-height: 1.6; }
+.docx-form { padding: 8px 0; }
+.docx-form__label { display: block; margin-bottom: 8px; color: var(--ui-text); font-size: 15px; line-height: 1.5; font-weight: 600; }
+.docx-file-name { display: block; margin-top: 8px; padding: 8px 12px; border-radius: 8px; background: var(--ui-soft); color: var(--ui-link); font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.docx-result { margin-top: 16px; padding: 12px; border-radius: 8px; border: 1px solid var(--ui-border); color: var(--ui-success); font-size: 14px; line-height: 1.6; }
+.docx-result text { display: block; }
 </style>
