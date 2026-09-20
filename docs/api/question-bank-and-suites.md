@@ -153,3 +153,41 @@ POST /questions、PUT /questions/{questionId}、DELETE /questions/{questionId}�
 | jiangsu_medical | JS-MED-SET001-01 形式 | 是 |
 
 后端同步对带稳定来源 ID 的资产不再按题干合并。相同题干但不同来源、不同题号或不同套题键是不同资产，必须共存。
+
+## 真实筛选选项
+
+### GET /questions/filter-options
+
+与 GET /questions 使用相同的登录依赖和 ensure_paid_access 权益检查，不对匿名或未开通用户公开库存元数据。静态路径注册在 /questions/{questionId} 之前。
+
+接受 keyword、dimension、province、position、examCategory、subcategory、subcategory2、year，均为可选字符串，默认空值。year 为兼容筛选参数快照而接受，**不参与任何选项或计数的筛选**。不支持分页、portalTag、positionTags 或 examSubcategory，也不采用定向接口的宽松分类匹配。
+
+公共范围为 keyword、dimension、province、position、examCategory 的共同约束：keyword 只检索题干，dimension 精确匹配；province 为空或 all 表示不限，national 只表示全国题源，不自动包含各省；岗位复用题库现有匹配，examCategory、subcategory、subcategory2 均保持精确匹配。
+
+| 响应字段 | 统计范围与含义 |
+| --- | --- |
+| options.subcategory | 公共范围内非空分类值，忽略两个细分类及 year。 |
+| options.subcategory2 | 公共范围 + subcategory，忽略 subcategory2 及 year。 |
+| options.year | 公共范围 + subcategory + subcategory2 内可解析年份，去重、降序。 |
+| questionCount | 与 options.year 相同范围的题目数，含未知年份题，不按已选 year 收窄，也不是各年份计数相加。 |
+| unclassifiedYearCount | 上述范围内无法按现有题库规则解析年份的题目数。 |
+
+响应固定为以下结构；数值仅为契约示例，不代表线上库存：
+
+~~~json
+{
+  "options": {
+    "year": ["2026", "2016"],
+    "subcategory": ["盐城市"],
+    "subcategory2": ["东台", "盐都"]
+  },
+  "unclassifiedYearCount": 1,
+  "questionCount": 3
+}
+~~~
+
+分类选项去重、按字符串顺序排序；排除缺失、非字符串和纯空白值，但不改写有效原值，以便原样传回精确查询。年份复用 _question_years_from_meta：examDate 优先于显式 year，再按套题/来源标题、来源题号、来源文档/原文件名兜底，不从题干或配置树造年份。无匹配时对应选项为空数组、计数为 0；未知年份只计数，不新增 year=unknown 查询语义。选择父级后客户端应清空失效的子级选择；清空所有细分类恢复公共范围。
+
+此接口仅返回上述白名单字段，不序列化题目，不返回题干、参考答案、完整 _meta、源文件路径或用户信息。聚合服务仅查询元数据及岗位匹配必要列，不执行数据库写入、AI 生成、题库同步，不增加缓存或隐式样本上限。既有 get_current_user 的节流活跃时间更新行为保持不变，因此“只读”指新增题库聚合逻辑，不改变统一鉴权的既有副作用。
+
+前端不得用全量 GET /questions、当前页样本或 GET /positions 配置树生成这些选项。接口失败时保留同参数的有效结果或展示可重试状态，不回退到固定年份表；该接口只说明题库列表语义下的可用选项，不代表某个定向入口的可用年份。

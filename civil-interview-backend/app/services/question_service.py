@@ -22,7 +22,7 @@ from typing import Optional, List
 
 from fastapi import HTTPException
 from sqlalchemy import String, or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, load_only
 
 from app.core.config import settings
 from app.models.entities import Question
@@ -1444,6 +1444,57 @@ def _filter_bank_rows(rows, *, position="", subcategory="", subcategory2="", exa
         years = set(_normalize_year_values(year))
         rows = [q for q in rows if years & set(_question_years_from_meta(_question_meta_from_keywords(q.keywords)))]
     return rows
+
+
+def get_question_filter_options(
+    db: Session,
+    keyword: str = "",
+    dimension: str = "",
+    province: str = "",
+    position: str = "",
+    examCategory: str = "",
+    subcategory: str = "",
+    subcategory2: str = "",
+    year: str = "",
+) -> dict:
+    """按题库原有语义聚合级联选项；接受 year，但不让已选年份限制选项或计数。"""
+    columns = [Question.keywords]
+    if position:
+        columns.append(Question.stem)
+    query = db.query(Question).options(load_only(*columns, raiseload=True))
+    if keyword:
+        query = query.filter(Question.stem.contains(keyword))
+    if dimension:
+        query = query.filter(Question.dimension == dimension)
+    if province and province != "all":
+        query = query.filter(Question.province == province)
+    with db.no_autoflush:
+        rows = _position_prefilter_query(query, position).all()
+    base_rows = _filter_bank_rows(rows, position=position, examCategory=examCategory)
+    parent_rows = _filter_bank_rows(base_rows, subcategory=subcategory)
+    year_rows = _filter_bank_rows(parent_rows, subcategory2=subcategory2)
+
+    def category_values(candidates, key: str) -> list[str]:
+        values = (_question_meta_from_keywords(q.keywords).get(key) for q in candidates)
+        # 保留原始查询值；只排除非字符串和纯空白值。
+        return sorted({value for value in values if isinstance(value, str) and value.strip()})
+
+    years: set[str] = set()
+    unclassified_year_count = 0
+    for question in year_rows:
+        question_years = _question_years_from_meta(_question_meta_from_keywords(question.keywords))
+        years.update(question_years)
+        if not question_years:
+            unclassified_year_count += 1
+    return {
+        "options": {
+            "year": sorted(years, reverse=True),
+            "subcategory": category_values(base_rows, "subcategory"),
+            "subcategory2": category_values(parent_rows, "subcategory2"),
+        },
+        "unclassifiedYearCount": unclassified_year_count,
+        "questionCount": len(year_rows),
+    }
 
 
 def list_questions(

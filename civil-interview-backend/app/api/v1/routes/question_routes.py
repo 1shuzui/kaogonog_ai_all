@@ -20,8 +20,10 @@ from app.core.access import (
 from app.core.security import get_current_user
 from app.db.session import get_db
 from app.schemas.common import AuthUser, QuestionCreate, QuestionUpdate
+from app.schemas.question_filters import QuestionFilterOptionsResponse
 from app.services.question_service import (
     list_questions, get_random_questions, get_question,
+    get_question_filter_options,
     create_question, update_question, delete_question,
     import_questions, import_from_docx, generate_training_questions,
 )
@@ -92,6 +94,21 @@ def random_qs(
     ensure_random_question_access(current_user, count)
     return get_random_questions(db, province=province, count=count, dimension=dimension, position=position,
                                 keyword=keyword, subcategory=subcategory, subcategory2=subcategory2, examCategory=examCategory, year=year)
+
+
+@router.get("/filter-options", response_model=QuestionFilterOptionsResponse)
+def question_filter_options(
+    keyword: str = "", dimension: str = "", province: str = "", position: str = "",
+    examCategory: str = "", subcategory: str = "", subcategory2: str = "", year: str = "",
+    db: Session = Depends(get_db),
+    current_user: AuthUser = Depends(get_current_user),
+) -> dict:
+    """返回受当前题库权益保护的真实年份与级联分类选项。"""
+    ensure_paid_access(current_user, detail="开通后可查看推荐题目与扩展题目")
+    return get_question_filter_options(
+        db, keyword=keyword, dimension=dimension, province=province, position=position,
+        examCategory=examCategory, subcategory=subcategory, subcategory2=subcategory2, year=year,
+    )
 
 
 @router.get("/{question_id}")
