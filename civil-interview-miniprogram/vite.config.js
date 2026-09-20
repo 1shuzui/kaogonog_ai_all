@@ -7,9 +7,10 @@
  */
 import { defineConfig } from 'vite'
 import uniModule from '@dcloudio/vite-plugin-uni'
+import { nativeTabBar } from './scripts/native-tab-bar.mjs'
 
 const uni = uniModule.default || uniModule
 
 export default defineConfig({
-  plugins: [uni()]
+  plugins: [uni(), nativeTabBar()]
 })

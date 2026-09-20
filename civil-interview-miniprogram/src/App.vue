@@ -144,6 +144,7 @@ export default {
 <style>
 /* Use a CSS import: uni-app's mini compiler drops external SFC <style src>. */
 @import "./styles/learner.css";
+@import "./styles/motion.css";
 
 page {
   min-height: 100%;

@@ -1,0 +1,34 @@
+/* Opt-in learner pages only. Admin layouts keep their existing styles. */
+.motion-page {
+  color:#203047; background:#f7f9fd; font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;
+  animation:none;
+}
+.motion-page.page--tab { padding-bottom:var(--motion-nav-inset); }
+.motion-page.page,.motion-page.exam-room,.motion-page.login-page { animation:none; }
+.motion-page .page-title { color:#203047; font-size:42rpx; line-height:1.4; letter-spacing:-.4px; }
+.motion-page .page-desc { color:#66758b; line-height:1.7; margin-bottom:28rpx; }
+.motion-page .card { border-color:#e3e9f2; border-radius:24rpx; box-shadow:0 3px 12px rgba(32,48,71,.025); animation:none; }
+.motion-page button { transition:transform var(--motion-press) ease-out,opacity var(--motion-press) ease-out,background-color var(--motion-press) ease-out; }
+.motion-page .primary-button { background:#326be5; border-radius:18rpx; }
+.motion-page .secondary-button { color:#326be5; border-color:#dbe3ee; border-radius:18rpx; }
+.motion-page button:active, .motion-page .chip:active { transform:scale(var(--motion-scale)); }
+.motion-page .primary-button[disabled], .motion-page .secondary-button[disabled] { transform:none; }
+.motion-page .field,.motion-page .textarea-field { border-color:#dbe3ee; border-radius:18rpx; }
+.motion-page .chip { transition:transform var(--motion-press) ease-out,background-color var(--motion-press) ease-out; }
+.motion-page--hidden .recording-pulse,.motion-page--hidden .motion-shimmer::after { animation-play-state:paused; }
+.motion-page--off view,.motion-page--off text,.motion-page--off button,
+.motion-page--reduced view,.motion-page--reduced text { animation:none !important; transition-duration:0ms !important; }
+.motion-page--off button:active,.motion-page--reduced button:active { transform:none !important; }
+.motion-page--off .motion-shimmer::after,.motion-page--reduced .motion-shimmer::after { animation:none; display:none; }
+.motion-page--hidden .home-hero,.motion-page--hidden .card { animation-play-state:paused; }
+.motion-page--hidden .record-panel__status--active text:first-child { animation-play-state:paused; }
+.motion-page .motion-local-enter { animation:learner-local-enter var(--motion-enter) var(--motion-ease) both; }
+@keyframes learner-local-enter { from { opacity:0; transform:translateY(var(--motion-offset)); } to { opacity:1; transform:translateY(0); } }
+.motion-page .menu-item { min-height:100rpx; gap:20rpx; box-shadow:none; }
+.motion-page .menu-item > text:first-of-type { flex:1; }
+.motion-page .profile-card { border-radius:28rpx; background:#edf3ff; color:#203047; }
+.motion-page .training-card__icon { border-radius:26rpx; }
+.motion-page .access-card { background:#fdfefe; }
+.motion-page-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:4px; }
+.motion-eyebrow { display:block; color:#66758b; font-size:22rpx; margin:4px 0 8px; letter-spacing:1px; }
+.motion-heading-icon { flex:none; display:flex; align-items:center; justify-content:center; width:60px; height:60px; background:#edf3ff; border:1px solid #dbe3ee; border-radius:22px; }
