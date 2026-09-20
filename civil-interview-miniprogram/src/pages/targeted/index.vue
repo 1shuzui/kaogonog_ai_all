@@ -59,11 +59,14 @@
     </view>
 
     <view v-if="!readonlyMode" class="targeted-actions">
-      <button class="primary-button" :disabled="!canProceed" @tap="goFocus">分析面试重点</button>
+      <button class="primary-button analysis-submit" :disabled="targetedStore.focusLoading" @tap="goFocus">{{ targetedStore.focusLoading ? '正在分析…' : '分析面试重点' }}</button>
       <button class="secondary-button" :disabled="!canProceed" :loading="targetedStore.generateLoading" @tap="generate">
         生成题目
       </button>
     </view>
+
+    <text v-if="selectionError" class="selection-error">{{ selectionError }}</text>
+    <FocusAnalysisCard class="targeted-analysis" :status="targetedStore.focusStatus" :data="targetedStore.focusData" :error="targetedStore.focusError" :slow="targetedStore.focusSlow" :target-label="analysisTargetLabel" @retry="goFocus" @cancel="targetedStore.cancelFocusAnalysis()" />
 
     <view v-if="!readonlyMode && targetedStore.generatedQuestions.length">
       <view class="generated-start card">
@@ -110,7 +113,8 @@ import LearnerIcon from '../../components/LearnerIcon.vue'
 import { usePageMotion } from '../../motion/useMotion'
 const { motionClass, motionStyle } = usePageMotion()
 import { computed, ref, watch } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onHide, onUnload } from '@dcloudio/uni-app'
+import FocusAnalysisCard from '../../components/FocusAnalysisCard.vue'
 import LightSelector from '../../components/LightSelector.vue'
 import QuestionCard from '../../components/QuestionCard.vue'
 import { useBillingStore } from '../../stores/billing'
@@ -119,7 +123,7 @@ import { useSubscriptionStore } from '../../stores/subscription'
 import { useTargetedStore } from '../../stores/targeted'
 import { useUserStore } from '../../stores/user'
 import { hasPremiumAccess } from '../../utils/access'
-import { mergeTargetPayload } from '../../utils/targetedOptions'
+import { buildTargetFocusUrl, mergeTargetPayload } from '../../utils/targetedOptions'
 import { YEAR_OPTIONS } from '../../utils/constants'
 import { isQuestionScoringSupported, getScoringUnavailableMessage } from '../../utils/questionPresentation'
 import { promptLoginForAction, showLoading, toast, hideLoading } from '../../utils/navigation'
@@ -134,6 +138,7 @@ const selectedRegionId = ref('')
 const selectedTargetCode = ref('')
 const selectedYears = ref([])
 const showYearPicker = ref(false)
+const selectionError = ref('')
 const positionTree = computed(() => targetedStore.positionTree || [])
 const selectedCategory = computed(() => positionTree.value.find((item) => item.id === selectedCategoryId.value) || positionTree.value[0] || null)
 const levelLabels = computed(() => selectedCategory.value?.levelLabels || {})
@@ -191,6 +196,14 @@ const yearLabel = computed(() => selectedYears.value.length ? selectedYears.valu
 const canProceed = computed(() => !!activeTarget.value?.targetCode)
 const hasFullAccess = computed(() => hasPremiumAccess(userStore, billingStore, subscriptionStore))
 const readonlyMode = computed(() => !hasFullAccess.value)
+const analysisTargetLabel = computed(() => {
+  const payload = targetedStore.focusParams || {}
+  return [payload.examCategory, payload.examSubcategory, payload.targetName, payload.year?.length ? String(payload.year) : ''].filter(Boolean).join(' / ')
+})
+watch(activeTarget, target => {
+  selectionError.value = ''
+  if (target) targetedStore.setTarget(target)
+}, { deep: true })
 
 function findSelectionLocation(targetCode) {
   for (const category of positionTree.value) {
@@ -246,6 +259,8 @@ function onYearChange(event) {
 }
 
 function initializeSelection() {
+  const existing = positionTree.value.find(item => item.id === selectedCategoryId.value)
+  if (existing?.children?.some(item => item.id === selectedRegionId.value)) return
   const code = targetedStore.selectedTarget?.targetCode
   const location = findSelectionLocation(code) || findSelectionLocation(selectedTargetCode.value)
   if (location) {
@@ -258,9 +273,11 @@ function initializeSelection() {
 watch(positionTree, initializeSelection, { immediate: true })
 
 onShow(() => {
-  targetedStore.fetchPositionTree().then(initializeSelection).catch(initializeSelection)
+  if (!targetedStore.positionsLoaded) targetedStore.fetchPositionTree().then(initializeSelection).catch(initializeSelection)
   refreshAccessState().catch(() => null)
 })
+onHide(() => { showYearPicker.value = false; targetedStore.cancelFocusAnalysis() })
+onUnload(() => targetedStore.cancelFocusAnalysis())
 
 async function refreshAccessState() {
   if (!userStore.isAuthenticated) return
@@ -275,15 +292,13 @@ function syncSelection() {
 }
 
 function buildFocusUrl() {
-  const query = Object.entries(activeTarget.value || {})
-    .filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== '')
-    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-    .join('&')
-  return `/pages/targeted/focus${query ? `?${query}` : ''}`
+  return buildTargetFocusUrl(activeTarget.value || {})
 }
 
 function goFocus() {
-  if (!canProceed.value) return
+  if (targetedStore.focusLoading) return
+  selectionError.value = ''
+  if (!canProceed.value) { selectionError.value = '请先选择考试体系与地区 / 来源'; return }
   const url = buildFocusUrl()
   if (!promptLoginForAction('分析面试重点', url)) return
   if (readonlyMode.value) {
@@ -291,7 +306,7 @@ function goFocus() {
     return
   }
   syncSelection()
-  uni.navigateTo({ url })
+  targetedStore.fetchFocusAnalysis().catch(() => null) // visible error state belongs to the task/card
 }
 
 async function generate() {
@@ -306,7 +321,6 @@ async function generate() {
     return
   }
   syncSelection()
-  showLoading('生成题目')
   try {
     const questions = await targetedStore.fetchGeneratedQuestions(5)
     if (!questions.length) {
@@ -315,8 +329,6 @@ async function generate() {
     }
   } catch (error) {
     toast(error?.message || '生成失败')
-  } finally {
-    hideLoading()
   }
 }
 
@@ -364,6 +376,7 @@ function startTrial() {
 </script>
 
 <style scoped>
+.selection-error { display:block; margin:-12px 0 16px; color:#a94438; font-size:25rpx; }
 .access-card {
   border-color: #bfd7ef;
   background: #f4f9fe;
