@@ -1,4 +1,4 @@
-<view wx:if="{{ready}}" class="capsule" style="{{layout}}" aria-role="tablist">
+<view wx:if="{{ready && !sheetOpen}}" class="capsule" style="{{layout}}" aria-role="tablist">
   <view class="capsule__track">
     <view class="capsule__selected {{moving ? 'capsule__selected--moving' : ''}}" style="transform:translateX({{visual * 100}}%)"></view>
     <button wx:for="{{tabs}}" wx:key="pagePath" data-index="{{index}}" bindtap="select" hover-class="capsule__pressed" hover-stay-time="80" class="capsule__item {{selected === index ? 'capsule__item--selected' : ''}}" aria-role="tab" aria-label="{{item.text}}" aria-selected="{{selected === index}}">

@@ -19,7 +19,7 @@ const navigator = createNavigator({
 })
 
 Component({
-  data: { tabs, ready: false, selected: -1, visual: -1, moving: false, motion: 'full', layout: '' },
+  data: { tabs, ready: false, sheetOpen: false, selected: -1, visual: -1, moving: false, motion: 'full', layout: '' },
   lifetimes: {
     attached() { this.visible = false },
     ready() { this.visible = true; this.syncRoute() },
@@ -31,7 +31,11 @@ Component({
     resize() { this.syncRoute() }
   },
   methods: {
+    setSheetOpen(open) {
+      if (this.data.sheetOpen !== Boolean(open)) this.setData({ sheetOpen: Boolean(open) })
+    },
     syncRoute() {
+      this.setSheetOpen((currentPage()?.__learnerSheetCount || 0) > 0)
       let info = {}
       try { info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync() } catch {}
       const inset = info.safeAreaInsets?.bottom ?? (info.safeArea ? info.screenHeight - info.safeArea.bottom : 0)
@@ -54,6 +58,7 @@ Component({
       this.setData({ selected, visual, ready: true, moving })
     },
     select(event) {
+      if (this.data.sheetOpen) return
       const tab = tabs[Number(event.currentTarget.dataset.index)]
       if (tab) navigator.request(tab.pagePath)
     }

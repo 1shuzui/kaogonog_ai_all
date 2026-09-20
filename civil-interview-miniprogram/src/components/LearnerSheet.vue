@@ -33,6 +33,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import MotionPresence from './MotionPresence.vue'
 import { useMotion } from '../motion/useMotion'
 import { motionStyle } from '../motion/policy.mjs'
+import { holdSheetNavigation } from '../utils/sheetNavigation.mjs'
 
 const props = defineProps({
   show: Boolean,
@@ -45,6 +46,17 @@ const { mode, visible } = useMotion()
 const windowHeight = ref(640)
 const theme = computed(() => motionStyle(mode.value))
 const scrollStyle = computed(() => ({ height: `${Math.min(Math.max(88, props.bodyHeight), windowHeight.value * .58)}px` }))
+let releaseNavigation = null
+watch(() => props.show && visible.value, active => {
+  releaseNavigation?.()
+  releaseNavigation = null
+  // #ifdef MP-WEIXIN
+  if (active) {
+    const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : []
+    releaseNavigation = holdSheetNavigation(pages[pages.length - 1])
+  }
+  // #endif
+}, { immediate: true })
 function resize() {
   try { windowHeight.value = (uni.getWindowInfo ? uni.getWindowInfo() : uni.getSystemInfoSync()).windowHeight || 640 } catch {}
 }
@@ -54,7 +66,7 @@ function noop() {}
 watch(visible, active => { if (!active && props.show) close() })
 watch(() => props.show, value => { if (value) { resize(); uni.hideKeyboard?.() } })
 onMounted(() => { resize(); uni.onWindowResize?.(resize) })
-onBeforeUnmount(() => uni.offWindowResize?.(resize))
+onBeforeUnmount(() => { releaseNavigation?.(); releaseNavigation = null; uni.offWindowResize?.(resize) })
 </script>
 
 <style scoped>
