@@ -10,7 +10,7 @@
     <view @tap="open">
       <slot />
     </view>
-    <view v-if="visible" class="selector-overlay" @tap="close">
+    <MotionPresence :show="visible" layer><view class="selector-overlay" @tap="close">
       <view class="selector-panel" @tap.stop>
         <view class="selector-head">
           <text class="selector-title">{{ title }}</text>
@@ -29,11 +29,12 @@
           </view>
         </scroll-view>
       </view>
-    </view>
+    </view></MotionPresence>
   </view>
 </template>
 
 <script setup>
+import MotionPresence from './MotionPresence.vue'
 import { computed, ref } from 'vue'
 
 const props = defineProps({
@@ -85,7 +86,6 @@ function choose(index) {
   align-items: flex-end;
   justify-content: center;
   background: rgba(15, 23, 42, 0.42);
-  animation: selector-mask-in 180ms ease-out both;
 }
 
 .selector-panel {
@@ -96,7 +96,6 @@ function choose(index) {
   background: #ffffff;
   color: #172033;
   box-shadow: 0 -12rpx 36rpx rgba(47, 127, 214, 0.10);
-  animation: selector-sheet-up 220ms ease-out both;
 }
 
 .selector-head {

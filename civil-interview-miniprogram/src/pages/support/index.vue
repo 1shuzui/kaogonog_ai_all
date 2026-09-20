@@ -7,7 +7,7 @@
 @raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
 -->
 <template>
-  <view class="page">
+  <view class="motion-page page" :class="motionClass" :style="motionStyle">
     <button class="support-back-button" @tap="goBack">返回</button>
 
     <view class="card hero-card">
@@ -154,6 +154,8 @@
 </template>
 
 <script setup>
+import { usePageMotion } from '../../motion/useMotion'
+const { motionClass, motionStyle } = usePageMotion()
 import { computed, reactive, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import EmptyState from '../../components/EmptyState.vue'

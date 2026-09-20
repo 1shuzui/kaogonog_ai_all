@@ -7,9 +7,10 @@
 @raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
 -->
 <template>
-  <view class="page page--tab">
+  <view class="motion-page page page--tab" :class="motionClass" :style="motionStyle">
     <view class="bank-header">
       <text class="page-title">{{ isAdmin ? '题库管理' : '题库' }}</text>
+      <view v-if="!isAdmin" class="motion-heading-icon"><LearnerIcon name="read" :size="32" /></view>
       <view v-if="isAdmin" class="bank-header__actions">
         <button class="secondary-button" @tap="goImport">批量导入</button>
         <button class="secondary-button" @tap="showDocxModal = true">docx导入</button>
@@ -159,6 +160,9 @@
 </template>
 
 <script setup>
+import LearnerIcon from '../../components/LearnerIcon.vue'
+import { usePageMotion } from '../../motion/useMotion'
+const { motionClass, motionStyle } = usePageMotion()
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import EmptyState from '../../components/EmptyState.vue'

@@ -9,10 +9,11 @@
 @raises: 不主动抛业务异常；结果缺失、接口失败或分享失败由页面提示承接。
 -->
 <template>
-  <view class="page learner-page learner-result">
+  <view class="motion-page page learner-page learner-result" :class="motionClass" :style="motionStyle">
+    <MotionSummary class="result-motion-summary" :compact="compact && !!result" :title="currentQuestionLabel" :detail="result ? `${result.totalScore} / ${result.maxScore} 分` : ''" />
     <view class="learner-kicker"><LearnerIcon name="solution" :size="20" /><text>练习复盘</text></view>
     <text class="learner-title">看看这次，哪里更好了。</text>
-    <BackgroundAnswers />
+    <BackgroundAnswers @layout-change="calibrate" />
     <view v-if="!result && answerList.length > 1" class="card answer-tabs">
       <scroll-view scroll-x class="answer-tabs__scroll">
         <view class="answer-tabs__row">
@@ -251,6 +252,11 @@
 </template>
 
 <script setup>
+import MotionSummary from '../../components/MotionSummary.vue'
+import { useScrollSummary } from '../../motion/useScrollSummary'
+import { onPageScroll } from '@dcloudio/uni-app'
+import { usePageMotion } from '../../motion/useMotion'
+const { motionClass, motionStyle } = usePageMotion()
 import LearnerIcon from '../../components/LearnerIcon.vue'
 import { computed, ref, watch } from 'vue'
 import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
@@ -276,6 +282,8 @@ const examStore = useExamStore()
 const favoritesStore = useFavoritesStore()
 const trainingStore = useTrainingStore()
 const result = ref(null)
+const { compact, calibrate, onSummaryScroll } = useScrollSummary('.result-hero', () => result.value)
+onPageScroll(onSummaryScroll)
 const transcript = ref('')
 const questionStem = ref('')
 const questionProvince = ref('national')

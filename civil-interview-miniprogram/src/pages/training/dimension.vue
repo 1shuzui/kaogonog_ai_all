@@ -7,7 +7,7 @@
 @raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
 -->
 <template>
-  <view class="page">
+  <view class="motion-page page" :class="motionClass" :style="motionStyle">
     <view v-if="readonlyMode" class="card access-card">
       <view class="section-head">
         <text class="section-title">专项训练未开通</text>
@@ -80,6 +80,8 @@
 </template>
 
 <script setup>
+import { usePageMotion } from '../../motion/useMotion'
+const { motionClass, motionStyle } = usePageMotion()
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import LightSelector from '../../components/LightSelector.vue'

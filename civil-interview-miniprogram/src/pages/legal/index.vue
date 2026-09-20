@@ -7,7 +7,7 @@
 @raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
 -->
 <template>
-  <view class="page">
+  <view class="motion-page page" :class="motionClass" :style="motionStyle">
     <view class="card page-head">
       <view>
         <text class="page-title">用户协议与隐私协议</text>
@@ -71,6 +71,8 @@
 </template>
 
 <script setup>
+import { usePageMotion } from '../../motion/useMotion'
+const { motionClass, motionStyle } = usePageMotion()
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import EmptyState from '../../components/EmptyState.vue'

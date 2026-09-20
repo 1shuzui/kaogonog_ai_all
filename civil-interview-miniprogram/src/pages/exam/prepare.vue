@@ -9,7 +9,7 @@
 @raises: 不主动抛业务异常；无权益、抽题失败或媒体权限异常由页面提示承接。
 -->
 <template>
-  <view class="page learner-page learner-prepare">
+  <view class="motion-page page learner-page learner-prepare" :class="motionClass" :style="motionStyle">
     <BackgroundAnswers />
     <view class="learner-kicker"><LearnerIcon name="audio" :size="24" /><text>{{ pageTitle }}</text></view>
     <text class="page-title">准备好，就开口。</text>
@@ -147,16 +147,8 @@
 
     <view class="card learner-media-card">
       <view class="section-head"><text class="section-title">录制方式</text></view>
-      <view class="mode-grid">
-        <view class="mode-card" :class="{ 'mode-card--active': mediaMode === 'audio' }" @tap.stop="selectAudioMode">
-          <LearnerIcon name="audio" /><text class="mode-card__title">仅录音</text>
-          <text class="mode-card__desc">只关注声音和表达</text>
-        </view>
-        <view class="mode-card" :class="{ 'mode-card--active': mediaMode === 'video' }" @tap.stop="selectVideoMode">
-          <LearnerIcon name="video-camera" /><text class="mode-card__title">录像+录音</text>
-          <text class="mode-card__desc">同步记录声音和画面</text>
-        </view>
-      </view>
+      <MotionSegmented class="prepare-media-options" :model-value="mediaMode" :options="mediaOptions" @change="value => value === 'audio' ? selectAudioMode() : selectVideoMode()" />
+      <view class="learner-kicker"><LearnerIcon :name="mediaMode === 'audio' ? 'audio' : 'video-camera'" :size="22" /><text>{{ mediaMode === 'audio' ? '只关注声音和表达' : '同步记录声音和画面' }}</text></view>
     </view>
 
     <view class="card tips-card">
@@ -180,10 +172,14 @@
 </template>
 
 <script setup>
+import MotionSegmented from '../../components/MotionSegmented.vue'
+const mediaOptions = [{ value: 'audio', label: '仅录音' }, { value: 'video', label: '录像＋录音' }]
+import { usePageMotion } from '../../motion/useMotion'
+const { motionClass, motionStyle } = usePageMotion()
 import LearnerIcon from '../../components/LearnerIcon.vue'
 import BackgroundAnswers from '../../components/BackgroundAnswers.vue'
 import { computed, ref, watch } from 'vue'
-import { onLoad, onShow } from '@dcloudio/uni-app'
+import { onLoad, onShow, onUnload } from '@dcloudio/uni-app'
 import LightSelector from '../../components/LightSelector.vue'
 import { useExamStore } from '../../stores/exam'
 import { useBillingStore } from '../../stores/billing'
@@ -236,6 +232,8 @@ const targetFilterTouched = ref(false)
 const showYearPicker = ref(false)
 const selectedFullExamSuiteId = ref('')
 const fullExamSuites = ref([])
+let fullExamSuitesRequest = 0
+onUnload(() => { fullExamSuitesRequest += 1 })
 const fullExamSuitesLoading = ref(false)
 const loading = ref(false)
 const accessLoading = ref(false)
@@ -522,9 +520,11 @@ function applyFullExamTimingMode(questions = []) {
 }
 
 async function refreshFullExamSuites() {
+  const request = ++fullExamSuitesRequest
   if (!hasFullAccess.value) {
     fullExamSuites.value = []
     selectedFullExamSuiteId.value = ''
+    fullExamSuitesLoading.value = false
     return
   }
   fullExamSuitesLoading.value = true
@@ -538,12 +538,13 @@ async function refreshFullExamSuites() {
         getFullExamSuites: requestFullExamSuites
       }
     )
-    fullExamSuites.value = suites
+    if (request === fullExamSuitesRequest) fullExamSuites.value = suites
   } catch (error) {
+    if (request !== fullExamSuitesRequest) return
     fullExamSuites.value = []
     toast(error?.message || '真题套卷加载失败，请稍后重试')
   } finally {
-    fullExamSuitesLoading.value = false
+    if (request === fullExamSuitesRequest) fullExamSuitesLoading.value = false
   }
 }
 

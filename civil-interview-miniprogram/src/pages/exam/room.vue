@@ -10,8 +10,9 @@
 -->
 <template>
   <view
-    class="exam-room learner-page learner-room"
-    :class="{ 'exam-room--full-exam': isFullExamSource, 'exam-room--practice': !isFullExamSource }"
+    class="motion-page exam-room learner-page learner-room"
+    :class="[motionClass, { 'exam-room--full-exam': isFullExamSource, 'exam-room--practice': !isFullExamSource }]"
+    :style="motionStyle"
   >
     <view v-if="question" class="exam-room__body">
       <template v-if="isFullExamSource">
@@ -284,6 +285,8 @@
 </template>
 
 <script setup>
+import { usePageMotion } from '../../motion/useMotion'
+const { motionClass, motionStyle } = usePageMotion()
 import LearnerIcon from '../../components/LearnerIcon.vue'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { onHide, onLoad, onReady } from '@dcloudio/uni-app'

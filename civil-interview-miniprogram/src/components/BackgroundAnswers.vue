@@ -18,11 +18,14 @@
   </view>
 </template>
 <script setup>
-import { computed } from 'vue'
+import { computed, onUpdated } from 'vue'
 import { useExamStore } from '../stores/exam'
 import LearnerIcon from './LearnerIcon.vue'
 import { submissionProgress } from '../utils/submissionProgress'
 const examStore = useExamStore()
+const emit = defineEmits(['layout-change'])
+// Progress changes can add/remove rows above a page's stable summary anchor.
+onUpdated(() => emit('layout-change'))
 const stageIcons = ['cloud-upload', 'file-text', 'solution']
 const labels = { queued: '本机暂存', uploading: '上传中', transcribing: '转写中', scoring: '点评中', failed: '处理未完成' }
 const pending = computed(() => examStore.pendingAnswers)

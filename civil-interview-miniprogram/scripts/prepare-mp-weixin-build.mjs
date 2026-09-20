@@ -17,6 +17,7 @@ import {
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { validateLearnerAssets } from './validate-learner-assets.mjs'
+import { validateMotionAssets } from './validate-motion-assets.mjs'
 
 const scriptDir = dirname(fileURLToPath(import.meta.url))
 const rootDir = dirname(scriptDir)
@@ -107,6 +108,7 @@ function validate({ prod = false } = {}) {
   }
 
   failures.push(...validateLearnerAssets(outputDir))
+  failures.push(...validateMotionAssets(outputDir))
 
   if (failures.length) {
     console.error('[mini-build] validation failed')

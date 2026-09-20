@@ -9,8 +9,9 @@
 @raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面空态承接。
 -->
 <template>
-  <view class="page page--tab learner-page learner-home">
-    <BackgroundAnswers />
+  <view class="motion-page page page--tab learner-page learner-home" :class="motionClass" :style="motionStyle">
+    <BackgroundAnswers @layout-change="calibrate" />
+    <MotionSummary class="home-motion-summary" :compact="compact" title="面试练习" :detail="userStore.selectedProvinceName" />
     <view class="home-hero">
       <view>
         <text class="home-hero__kicker">{{ userStore.selectedProvinceName }} · 面试练习工作台</text>
@@ -18,7 +19,7 @@
         <text class="home-hero__desc">开口练习，留住思路。</text>
         <button class="primary-button learner-home__start" @tap="goPractice('free')">开始练习 →</button>
       </view>
-      <view class="learner-home__sound"><LearnerIcon name="audio" :size="44" /></view>
+      <view class="learner-home__sound"><MotionAccent class="home-motion-accent"><LearnerIcon name="audio" :size="44" /></MotionAccent></view>
     </view>
 
     <view v-if="!isLoggedIn" class="guest-tip card">
@@ -145,26 +146,16 @@
       <text class="section-title">能力概览</text>
       <text class="section-toggle__arrow">{{ sectionArrow('ability') }}</text>
     </view>
-    <view v-if="sectionOpen.ability && historyStore.stats?.dimensionAverages?.length" class="card">
-      <DimensionBars :dimensions="historyStore.stats.dimensionAverages" />
-    </view>
+    <MotionPresence :show="sectionOpen.ability && !!historyStore.stats?.dimensionAverages?.length"><view class="card">
+      <DimensionBars :dimensions="historyStore.stats?.dimensionAverages || []" />
+    </view></MotionPresence>
 
     <view class="section-toggle" @tap="toggleSection('trend')">
       <text class="section-title">成绩趋势</text>
       <text class="section-toggle__arrow">{{ sectionArrow('trend') }}</text>
     </view>
-    <view v-if="sectionOpen.trend" class="card trend-card">
-      <view class="trend-tabs">
-        <view
-          v-for="item in trendOptions"
-          :key="item.label"
-          class="trend-tab"
-          :class="{ 'trend-tab--active': trendLimit === item.value }"
-          @tap="setTrendLimit(item.value)"
-        >
-          <text>{{ item.label }}</text>
-        </view>
-      </view>
+    <MotionPresence :show="sectionOpen.trend"><view class="card trend-card">
+      <MotionSegmented class="home-trend-segment" :model-value="trendLimit" :options="trendOptions" @change="setTrendLimit" />
       <scroll-view v-if="trendDisplayData.length" class="trend-chart-scroll" scroll-x>
         <view class="trend-chart" :style="trendChartContentStyle">
           <view class="trend-chart__plot">
@@ -200,13 +191,13 @@
         </view>
       </scroll-view>
       <EmptyState v-else :title="isLoggedIn ? '暂无趋势数据' : '登录后查看成绩趋势'" :desc="isLoggedIn ? '完成几次练习后，这里会显示成绩变化。' : '浏览功能无需登录，开始试用或练习后会保存成绩趋势。'" mark="-" />
-    </view>
+    </view></MotionPresence>
 
     <view class="section-toggle" @tap="toggleSection('weakness')">
       <text class="section-title">薄弱维度分析</text>
       <text class="section-toggle__arrow">{{ sectionArrow('weakness') }}</text>
     </view>
-    <view v-if="sectionOpen.weakness" class="card weakness-card">
+    <MotionPresence :show="sectionOpen.weakness"><view class="card weakness-card">
       <view v-if="weaknessDimensions.length" class="weakness-list">
         <view v-for="item in weaknessDimensions" :key="item.name" class="weakness-item">
           <view class="weakness-item__head">
@@ -224,7 +215,7 @@
         </view>
       </view>
       <EmptyState v-else :title="isLoggedIn ? '暂无维度数据' : '登录后查看薄弱维度'" :desc="isLoggedIn ? '完成评分后会生成薄弱维度建议。' : '答题评分后会在这里呈现维度短板。'" mark="-" />
-    </view>
+    </view></MotionPresence>
 
     <view class="section-toggle" @tap="toggleSection('recommendation')">
       <text class="section-title">智能推荐练习</text>
@@ -233,7 +224,7 @@
         <text class="section-toggle__arrow">{{ sectionArrow('recommendation') }}</text>
       </view>
     </view>
-    <view v-if="sectionOpen.recommendation" class="card recommendation-card">
+    <MotionPresence :show="sectionOpen.recommendation"><view class="card recommendation-card">
       <view v-if="recommendationLoading" class="recommendation-status">正在匹配真实题库...</view>
       <view v-else-if="recommendations.length" class="recommendation-list">
         <view v-for="item in recommendations" :key="item.id" class="recommendation-item">
@@ -251,15 +242,24 @@
       <view v-else class="recommendation-status">
         <text>{{ recommendationEmptyText }}</text>
       </view>
-    </view>
+    </view></MotionPresence>
   </view>
 </template>
 
 <script setup>
+import MotionSegmented from '../../components/MotionSegmented.vue'
+import MotionPresence from '../../components/MotionPresence.vue'
+import MotionAccent from '../../components/MotionAccent.vue'
+import MotionSummary from '../../components/MotionSummary.vue'
+import { useScrollSummary } from '../../motion/useScrollSummary'
+const { compact, calibrate, onSummaryScroll } = useScrollSummary('.home-hero')
+onPageScroll(onSummaryScroll)
+import { usePageMotion } from '../../motion/useMotion'
+const { motionClass, motionStyle } = usePageMotion()
 import LearnerIcon from '../../components/LearnerIcon.vue'
 import BackgroundAnswers from '../../components/BackgroundAnswers.vue'
 import { computed, ref } from 'vue'
-import { onPullDownRefresh, onShow } from '@dcloudio/uni-app'
+import { onPullDownRefresh, onShow, onPageScroll } from '@dcloudio/uni-app'
 import DimensionBars from '../../components/DimensionBars.vue'
 import EmptyState from '../../components/EmptyState.vue'
 import ScoreRing from '../../components/ScoreRing.vue'

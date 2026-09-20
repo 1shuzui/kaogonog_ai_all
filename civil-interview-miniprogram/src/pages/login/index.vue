@@ -9,7 +9,7 @@
 @raises: 不主动抛业务异常；微信授权失败、接口失败或协议未确认由页面提示承接。
 -->
 <template>
-  <view class="login-page">
+  <view class="motion-page login-page" :class="motionClass" :style="motionStyle">
     <view class="login-card">
       <view class="login-brand">
         <text class="login-brand__title">公考面试AI测评</text>
@@ -148,6 +148,8 @@
 </template>
 
 <script setup>
+import { usePageMotion } from '../../motion/useMotion'
+const { motionClass, motionStyle } = usePageMotion()
 import { reactive, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { useUserStore } from '../../stores/user'

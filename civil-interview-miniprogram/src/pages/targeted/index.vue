@@ -9,8 +9,8 @@
 @raises: 不主动抛业务异常；接口失败、未登录和权益不足由请求层、登录拦截或页面空态承接。
 -->
 <template>
-  <view class="page page--tab">
-    <text class="page-title">定向备面</text>
+  <view class="motion-page page page--tab" :class="motionClass" :style="motionStyle">
+    <view class="motion-page-heading"><view><text class="motion-eyebrow">选好方向 · 贴近岗位</text><text class="page-title">定向备面</text></view><view class="motion-heading-icon"><LearnerIcon name="environment" :size="32" /></view></view>
     <text class="page-desc">按真实考试体系、地区来源和岗位方向选择，生成更贴近报考方向的训练题。</text>
 
     <view v-if="readonlyMode" class="card access-card">
@@ -106,6 +106,9 @@
 </template>
 
 <script setup>
+import LearnerIcon from '../../components/LearnerIcon.vue'
+import { usePageMotion } from '../../motion/useMotion'
+const { motionClass, motionStyle } = usePageMotion()
 import { computed, ref, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import LightSelector from '../../components/LightSelector.vue'

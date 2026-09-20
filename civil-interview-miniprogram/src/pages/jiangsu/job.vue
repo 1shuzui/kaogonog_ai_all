@@ -7,7 +7,7 @@
 @raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
 -->
 <template>
-  <view class="page">
+  <view class="motion-page page" :class="motionClass" :style="motionStyle">
     <view class="job-hero card">
       <text class="job-hero__eyebrow">2026 江苏事业单位统考</text>
       <text class="job-hero__title">{{ category.title }}</text>
@@ -93,6 +93,8 @@
 </template>
 
 <script setup>
+import { usePageMotion } from '../../motion/useMotion'
+const { motionClass, motionStyle } = usePageMotion()
 import { computed, reactive, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import EmptyState from '../../components/EmptyState.vue'

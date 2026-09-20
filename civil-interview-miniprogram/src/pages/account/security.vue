@@ -7,7 +7,7 @@
 @raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
 -->
 <template>
-  <view class="page">
+  <view class="motion-page page" :class="motionClass" :style="motionStyle">
     <text class="page-title">账号安全</text>
     <text class="page-desc">密码、协议状态和设备风险与后端安全接口同步。</text>
     <view class="card">
@@ -123,6 +123,8 @@
 </template>
 
 <script setup>
+import { usePageMotion } from '../../motion/useMotion'
+const { motionClass, motionStyle } = usePageMotion()
 import { computed, reactive, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { agreeTerms, getDeviceRisk, getTermsStatus, updatePassword } from '../../api/user'

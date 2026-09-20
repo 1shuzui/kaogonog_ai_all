@@ -1,5 +1,5 @@
 <template>
-  <view class="page">
+  <view class="motion-page page" :class="motionClass" :style="motionStyle">
     <text class="page-title">找回密码</text>
     <view class="card">
       <text class="page-desc">管理员核验后发送验证码。此处不会自动发送短信或邮件；请填写可联系的方式，等待管理员联系。</text>
@@ -16,6 +16,8 @@
   </view>
 </template>
 <script setup>
+import { usePageMotion } from '../../motion/useMotion'
+const { motionClass, motionStyle } = usePageMotion()
 import { reactive, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { requestPasswordReset, confirmPasswordReset } from '../../api/auth'

@@ -9,7 +9,7 @@
 @raises: 不主动抛业务异常；接口失败或未登录由页面空态和登录拦截承接。
 -->
 <template>
-  <view class="page page--tab">
+  <view class="motion-page page page--tab" :class="motionClass" :style="motionStyle">
     <view class="profile-card">
       <view class="profile-card__avatar">{{ initial }}</view>
       <view class="profile-card__copy">
@@ -95,38 +95,51 @@
         <slider :value="preferences.defaultAnswerTime" min="60" max="600" step="10" activeColor="#2F7FD6" @change="onAnswerChange" />
       </view>
       <button class="primary-button" @tap="savePreferences">保存设置</button>
+      <view class="setting-block">
+        <text class="form-label">界面动效</text>
+        <MotionSegmented class="profile-motion-options" :model-value="motionMode" :options="motionOptions" @change="setMotionMode" />
+        <text class="setting-hint">仅保存在本机；减弱或关闭不影响录音、计时和评分。</text>
+      </view>
     </view>
 
     <view class="menu-list">
       <view class="menu-item card" @tap="goHistory">
+        <LearnerIcon name="history" :size="22" />
         <text>历史记录</text>
         <text class="menu-item__arrow">›</text>
       </view>
       <view class="menu-item card" @tap="goFavorites">
+        <LearnerIcon name="read" :size="22" />
         <text>错题本 / 收藏夹</text>
         <text class="menu-item__arrow">›</text>
       </view>
       <view class="menu-item card" @tap="goPricing">
+        <LearnerIcon name="wallet" :size="22" />
         <text>套餐中心</text>
         <text class="menu-item__arrow">›</text>
       </view>
       <view class="menu-item card" @tap="goSubscription">
+        <LearnerIcon name="check-circle" :size="22" />
         <text>订阅权益</text>
         <text class="menu-item__arrow">›</text>
       </view>
       <view class="menu-item card" @tap="goOrders">
+        <LearnerIcon name="file-text" :size="22" />
         <text>订单记录</text>
         <text class="menu-item__arrow">›</text>
       </view>
       <view class="menu-item card" @tap="goSecurity">
+        <LearnerIcon name="solution" :size="22" />
         <text>个人资料 / 账号安全</text>
         <text class="menu-item__arrow">›</text>
       </view>
       <view class="menu-item card" @tap="contactSupport">
+        <LearnerIcon name="sound" :size="22" />
         <text>客服反馈中心</text>
         <text class="menu-item__arrow">›</text>
       </view>
       <view class="menu-item card" @tap="goLegalDocuments">
+        <LearnerIcon name="read" :size="22" />
         <text>用户协议与隐私协议</text>
         <text class="menu-item__arrow">›</text>
       </view>
@@ -148,6 +161,12 @@
 </template>
 
 <script setup>
+import LearnerIcon from '../../components/LearnerIcon.vue'
+import MotionSegmented from '../../components/MotionSegmented.vue'
+import { motionMode, setMotionMode } from '../../motion/useMotion'
+const motionOptions = [{ value: 'full', label: '标准' }, { value: 'reduced', label: '减弱' }, { value: 'off', label: '关闭' }]
+import { usePageMotion } from '../../motion/useMotion'
+const { motionClass, motionStyle } = usePageMotion()
 import { computed, reactive, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useBillingStore } from '../../stores/billing'

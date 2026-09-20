@@ -7,8 +7,8 @@
 @raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
 -->
 <template>
-  <view class="page page--tab">
-    <text class="page-title">专项训练</text>
+  <view class="motion-page page page--tab" :class="motionClass" :style="motionStyle">
+    <view class="motion-page-heading"><view><text class="motion-eyebrow">集中练习 · 逐项提升</text><text class="page-title">专项训练</text></view><view class="motion-heading-icon"><MotionAccent><LearnerIcon name="aim" :size="32" /></MotionAccent></view></view>
     <text class="page-desc">按题型集中训练，逐个突破短板。</text>
 
     <view class="training-list">
@@ -31,6 +31,10 @@
 </template>
 
 <script setup>
+import LearnerIcon from '../../components/LearnerIcon.vue'
+import MotionAccent from '../../components/MotionAccent.vue'
+import { usePageMotion } from '../../motion/useMotion'
+const { motionClass, motionStyle } = usePageMotion()
 import { useTrainingStore } from '../../stores/training'
 import { TRAINING_CATEGORIES } from '../../utils/constants'
 

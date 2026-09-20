@@ -7,21 +7,11 @@
 @raises: 不主动抛业务异常；接口失败、未登录和权限不足由请求层或页面提示承接。
 -->
 <template>
-  <view class="page">
+  <view class="motion-page page" :class="motionClass" :style="motionStyle">
     <text class="page-title">错题本 / 收藏夹</text>
     <text class="page-desc">低分题自动进入错题，手动收藏单独记录。</text>
 
-    <view class="tabs card">
-      <view
-        v-for="tab in tabs"
-        :key="tab.key"
-        class="tab-item"
-        :class="{ 'tab-item--active': activeTab === tab.key }"
-        @tap="activeTab = tab.key"
-      >
-        {{ tab.label }} {{ tab.count }}
-      </view>
-    </view>
+    <MotionSegmented v-model="activeTab" :options="tabs.map(tab => ({ value: tab.key, label: tab.label, count: tab.count }))" />
 
     <view v-if="visibleItems.length" class="favorite-list">
       <view v-for="item in visibleItems" :key="item.id" class="favorite-card card">
@@ -52,6 +42,9 @@
 </template>
 
 <script setup>
+import MotionSegmented from '../../components/MotionSegmented.vue'
+import { usePageMotion } from '../../motion/useMotion'
+const { motionClass, motionStyle } = usePageMotion()
 import { computed, ref } from 'vue'
 import EmptyState from '../../components/EmptyState.vue'
 import { useFavoritesStore } from '../../stores/favorites'
