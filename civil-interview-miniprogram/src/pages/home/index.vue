@@ -22,6 +22,11 @@
       <view class="learner-home__sound"><MotionAccent class="home-motion-accent"><LearnerIcon name="audio" :size="28" /></MotionAccent></view>
     </view>
 
+    <view class="quick-grid">
+      <button class="secondary-button quick-grid__button" @tap="goPractice('fullExam')"><LearnerIcon name="read" />全真练习</button>
+      <button class="secondary-button quick-grid__button" @tap="goPricing"><LearnerIcon name="wallet" />套餐中心</button>
+    </view>
+
     <MotionCollapse v-if="isLoggedIn" class="home-section-recent" title="近期练习" :open="sectionOpen.recent" :revision="[recentRecords, historyStore.stats]" @toggle="toggleSection('recent')">
       <template #actions><button class="home-text-button" @tap.stop="goHistory">查看全部</button></template>
       <view v-if="recentRecords.length">
@@ -115,11 +120,6 @@
         <text class="practice-route__arrow">›</text>
       </navigator>
     </view>
-    <view class="quick-grid">
-      <button class="secondary-button quick-grid__button" @tap="goPractice('fullExam')"><LearnerIcon name="read" />全真练习</button>
-      <button class="secondary-button quick-grid__button" @tap="goPricing"><LearnerIcon name="wallet" />套餐中心</button>
-    </view>
-
     <view v-if="showJiangsuEntry" class="jiangsu-entry card">
       <MotionCollapse class="home-section-jiangsu" title="2026 江苏事业单位统考" :open="jiangsuExpanded" @toggle="jiangsuExpanded = !jiangsuExpanded">
       <view class="jiangsu-grid">

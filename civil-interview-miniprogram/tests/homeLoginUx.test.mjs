@@ -124,6 +124,19 @@ test('returning learners see recent review before training routes and Jiangsu', 
   assert.match(html, /查看复盘/)
 })
 
+test('full-exam and pricing shortcuts precede recent practice and browsing sections for every login state', async () => {
+  for (const loggedIn of [false, true]) {
+    const page = await pageFixture('home', { loggedIn, records: loggedIn ? [{ examId: 'recent', questionSummary: '最近一次练习', totalScore: 80 }] : [] })
+    const html = await page.html()
+    const shortcuts = html.indexOf('class="quick-grid"')
+    assert.ok(shortcuts > html.indexOf('learner-home__start'))
+    assert.ok(shortcuts < html.indexOf(loggedIn ? 'home-section-recent' : 'guest-tip'), 'Main shortcuts must stay above variable personal/browsing content')
+    assert.ok(shortcuts < html.indexOf('practice-routes'))
+    assert.equal((html.match(/>全真练习<\/button>/g) || []).length, 1)
+    assert.equal((html.match(/>套餐中心<\/button>/g) || []).length, 1)
+  }
+})
+
 test('home keeps multi-open persisted sections, the native scroll hook and default practice routing', async () => {
   const page = await pageFixture('home', { loggedIn: true, storedSections: { trend: false } })
   assert.equal(page.state.sectionOpen.value.trend, false)
