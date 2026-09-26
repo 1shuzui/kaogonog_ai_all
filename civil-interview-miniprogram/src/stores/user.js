@@ -29,6 +29,14 @@ import {
   USERNAME_STORAGE_KEY
 } from '../utils/constants'
 import { logger } from '../utils/logger'
+let authenticationAttempt = 0
+
+function captureSession(store) {
+  const token = store.token, attempt = authenticationAttempt
+  return () => {
+    if (store.token !== token || authenticationAttempt !== attempt) throw Object.assign(new Error('账号已切换，请重新打开当前页面'), { code: 'STALE_SESSION' })
+  }
+}
 
 function scopedPreferenceKey(key) {
   if (![PREFERENCES_STORAGE_KEY, PROVINCE_STORAGE_KEY].includes(key)) return key
@@ -97,6 +105,7 @@ export const useUserStore = defineStore('user', {
   state: () => ({
     token: readStorage(TOKEN_STORAGE_KEY, ''),
     username: readStorage(USERNAME_STORAGE_KEY, ''),
+    userId: readStorage('civil_user_id', ''),
     userInfo: {
       id: '',
       name: '',
@@ -159,27 +168,37 @@ export const useUserStore = defineStore('user', {
       this.preferences = normalizePreferences(readJsonStorage(PREFERENCES_STORAGE_KEY, DEFAULT_PREFERENCES))
     },
     async login(username, password) {
+      const attempt = ++authenticationAttempt
       const response = await loginApi(username, password)
+      if (attempt !== authenticationAttempt) throw Object.assign(new Error('登录操作已失效，请重新登录'), { code: 'STALE_SESSION' })
       this.logout()
       username = response.username || username.trim()
       this.token = response.access_token
+      this.userId = String(response.userId || '')
+      safeSetStorage('civil_user_id', this.userId)
       this.username = username
       uni.setStorageSync(TOKEN_STORAGE_KEY, response.access_token)
       uni.setStorageSync(USERNAME_STORAGE_KEY, username)
       this.resetAccountData()
       await this.loadUserInfo()
+      if (this.token !== response.access_token) throw Object.assign(new Error('登录操作已失效，请重新登录'), { code: 'STALE_SESSION' })
       return response
     },
 
     async loginWithWechat(code, agreedTermsVersion, inviteCode = '') {
+      const attempt = ++authenticationAttempt
       const response = await loginWithWechatApi(code, agreedTermsVersion, inviteCode)
+      if (attempt !== authenticationAttempt) throw Object.assign(new Error('登录操作已失效，请重新登录'), { code: 'STALE_SESSION' })
       this.logout()
       this.token = response.access_token
+      this.userId = String(response.userId || '')
+      safeSetStorage('civil_user_id', this.userId)
       this.username = response.username || ''
       uni.setStorageSync(TOKEN_STORAGE_KEY, response.access_token)
       if (response.username) uni.setStorageSync(USERNAME_STORAGE_KEY, response.username)
       this.resetAccountData()
       await this.loadUserInfo()
+      if (this.token !== response.access_token) throw Object.assign(new Error('登录操作已失效，请重新登录'), { code: 'STALE_SESSION' })
       return response
     },
 
@@ -192,7 +211,10 @@ export const useUserStore = defineStore('user', {
     },
 
     logout() {
+      authenticationAttempt++
       this.token = ''
+      this.userId = ''
+      uni.removeStorageSync('civil_user_id')
       this.username = ''
       this.userInfo = {
         id: '',
@@ -226,9 +248,13 @@ export const useUserStore = defineStore('user', {
     },
 
     async loadUserInfo() {
+      const assertCurrent = captureSession(this)
       const billingStore = useBillingStore()
       const info = await getUserInfo({ skipErrorHandler: true })
+      assertCurrent()
       const username = info?.id || this.username
+      this.userId = String(info?.userId || '')
+      safeSetStorage('civil_user_id', this.userId)
       const isAdmin = !!info?.isAdmin
       const permissions = {
         canManageQuestionBank: isAdmin || !!info?.permissions?.canManageQuestionBank,
@@ -249,7 +275,8 @@ export const useUserStore = defineStore('user', {
       }
       this.username = username
       if (username) safeSetStorage(USERNAME_STORAGE_KEY, username)
-      useFavoritesStore().reloadForCurrentUser()
+      const reviews = useFavoritesStore()
+      if (reviews.ownerId !== this.userId || reviews.ownerToken !== this.token) reviews.reloadForCurrentUser()
 
       this.userInfo = {
         id: username,
@@ -300,13 +327,18 @@ export const useUserStore = defineStore('user', {
     },
 
     async bindWechat(code) {
+      const assertCurrent = captureSession(this)
       const response = await bindWechatMiniProgram(code)
+      assertCurrent()
       await this.loadUserInfo().catch(() => null)
+      assertCurrent()
       return response
     },
 
     async setupWechatPcAccount(data) {
+      const assertCurrent = captureSession(this)
       const response = await setupWechatMiniProgramAccount(data)
+      assertCurrent()
       if (response?.access_token) {
         this.token = response.access_token
         safeSetStorage(TOKEN_STORAGE_KEY, response.access_token)
@@ -316,7 +348,11 @@ export const useUserStore = defineStore('user', {
         safeSetStorage(USERNAME_STORAGE_KEY, response.username)
         useFavoritesStore().reloadForCurrentUser()
       }
+      this.userId = String(response?.userId || this.userId || '')
+      safeSetStorage('civil_user_id', this.userId)
+      const assertUpdated = captureSession(this)
       await this.loadUserInfo().catch(() => null)
+      assertUpdated()
       return response
     },
 
@@ -342,12 +378,16 @@ export const useUserStore = defineStore('user', {
     },
 
     async savePreferences(preferences) {
+      const assertCurrent = captureSession(this)
       this.preferences = normalizePreferences(preferences)
       safeSetStorage(PREFERENCES_STORAGE_KEY, JSON.stringify(this.preferences))
       try {
         await updatePreferences(this.preferences)
+        assertCurrent()
         await updateUserProfile({ province: this.selectedProvince || 'national' })
+        assertCurrent()
       } catch {
+        assertCurrent()
         return this.preferences
       }
       return this.preferences

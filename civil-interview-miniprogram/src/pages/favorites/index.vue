@@ -10,6 +10,11 @@
   <view class="motion-page page" :class="motionClass" :style="motionStyle">
     <text class="page-title">错题本 / 收藏夹</text>
     <text class="page-desc">低分题自动进入错题，手动收藏单独记录。</text>
+    <view v-if="favoritesStore.error" class="card" role="alert">
+      <text>{{ favoritesStore.error }}</text><button class="secondary-button" @tap="favoritesStore.load()">重新同步</button>
+    </view>
+    <text v-if="favoritesStore.loading" class="page-desc">正在同步复习记录…</text>
+    <text v-if="favoritesStore.migrationNotice" class="page-desc">{{ favoritesStore.migrationNotice }}</text>
 
     <MotionSegmented v-model="activeTab" :options="tabs.map(tab => ({ value: tab.key, label: tab.label, count: tab.count }))" />
 
@@ -26,16 +31,16 @@
           <text>{{ formatDate(item.date || item.addedAt) }}</text>
         </view>
         <view class="favorite-card__actions">
-          <button class="secondary-button" @tap="practice(item)">再练一次</button>
-          <button class="secondary-button danger-button" @tap="remove(item)">移除</button>
+          <button class="secondary-button" :disabled="!item.canPractice" @tap="practice(item)">再练一次</button>
+          <button class="secondary-button danger-button" :disabled="favoritesStore.saving" @tap="remove(item)">移除</button>
         </view>
       </view>
     </view>
-    <view v-else class="card">
+    <view v-else-if="!favoritesStore.loading && !favoritesStore.error" class="card">
       <EmptyState :title="emptyTitle" desc="完成测评或手动收藏后会出现在这里。" />
     </view>
 
-    <button v-if="favoritesStore.count" class="secondary-button danger-button clear-button" @tap="confirmClear">
+    <button v-if="favoritesStore.count" class="secondary-button danger-button clear-button" :disabled="favoritesStore.saving" @tap="confirmClear">
       清空错题与收藏
     </button>
   </view>
@@ -46,12 +51,14 @@ import MotionSegmented from '../../components/MotionSegmented.vue'
 import { usePageMotion } from '../../motion/useMotion'
 const { motionClass, motionStyle } = usePageMotion()
 import { computed, ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import EmptyState from '../../components/EmptyState.vue'
 import { useFavoritesStore } from '../../stores/favorites'
 import { formatDate } from '../../utils/format'
 
 const favoritesStore = useFavoritesStore()
 const activeTab = ref('all')
+onShow(() => favoritesStore.load())
 
 const tabs = computed(() => [
   { key: 'all', label: '全部', count: favoritesStore.count },
@@ -84,7 +91,7 @@ function remove(item) {
 function confirmClear() {
   uni.showModal({
     title: '确认清空？',
-    content: '将清除本机错题与收藏记录，不会删除服务器历史测评。',
+    content: '将清空当前账号在 PC 和小程序的错题与收藏，历史测评仍可查看。',
     confirmText: '确认清空',
     confirmColor: '#cf1322',
     success(res) {

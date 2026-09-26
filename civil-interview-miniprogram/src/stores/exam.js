@@ -371,7 +371,7 @@ export const useExamStore = defineStore('exam', {
 
         checkSession()
         if (!answer.mediaUploaded) {
-          await uploadRecording(answer.examId, answer.questionId, uploadMedia.filePath, {
+          const uploaded = await uploadRecording(answer.examId, answer.questionId, uploadMedia.filePath, {
           mediaType,
           source: uploadMedia.compressed
             ? `miniapp_${mediaType}_recording_compressed`
@@ -379,6 +379,8 @@ export const useExamStore = defineStore('exam', {
           })
           checkSession()
           answer.mediaUploaded = true
+          answer.mediaUrl = uploaded?.fileUrl || ''
+          answer.mediaMimeType = uploaded?.mediaType || ''
         }
         checkSession()
         if (!transcript) {

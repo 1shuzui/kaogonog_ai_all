@@ -8,6 +8,7 @@ import { QUESTION_CATEGORIES } from '../src/utils/constants.js'
 import { DEFAULT_TARGETED_POSITION_TREE } from '../src/utils/targetedOptions.js'
 import { normalizeProvinceCode } from '../src/utils/fullExamSuites.js'
 import { createCancellation } from '../src/utils/cancellation.mjs'
+import { readPracticeSelection, loadSelectedQuestions, practiceModeFor, practiceFilterSummary } from '../../shared/practiceSelection.mjs'
 
 const pageSource = readFileSync(new URL('../src/pages/exam/prepare.vue', import.meta.url), 'utf8')
 const { descriptor } = parse(pageSource)
@@ -35,8 +36,8 @@ function matchingRows(params) {
 
 // Execute the real page setup, Vue watchers and metadata hook. Substitute only
 // platform/store/API boundaries; never launch an SDK, write build output or hit a server.
-async function fixture(t) {
-  const metadataRequests = [], questionRequests = [], notices = [], disposals = []
+async function fixture(t, options = {}) {
+  const metadataRequests = [], questionRequests = [], notices = [], disposals = [], loads = [], starts = []
   const scope = Vue.effectScope()
   t.after(() => { disposals.forEach(dispose => dispose()); scope.stop() })
   const userStore = Vue.reactive({
@@ -46,13 +47,16 @@ async function fixture(t) {
   const context = vm.createContext({
     ...Vue, console, setTimeout, clearTimeout, createCancellation,
     onBeforeUnmount: dispose => disposals.push(dispose),
-    onLoad() {}, onShow() {}, onUnload: dispose => disposals.push(dispose),
+    onLoad: callback => loads.push(callback), onShow() {}, onUnload: dispose => disposals.push(dispose),
     uni: { setNavigationBarTitle() {}, navigateTo() {} },
     usePageMotion: () => ({ motionClass: '', motionStyle: '' }),
     useUserStore: () => userStore,
+    useTargetedStore: () => ({ generatedQuestions: options.cached || [] }),
+    readPracticeSelection, loadSelectedQuestions, practiceModeFor, practiceFilterSummary,
     useBillingStore: () => ({}),
     useSubscriptionStore: () => ({ status: { canUse: true, remainingDailyMinutes: 10 }, refresh: async () => {} }),
-    useExamStore: () => ({ setMediaMode() {}, startFromQuestions: async () => {} }),
+    useExamStore: () => ({ setMediaMode() {}, startFromQuestions: async (questions, mode) => starts.push({ questions: copy(questions), mode }) }),
+    getQuestionById: options.getQuestionById || (async id => ({ id, stem: id })),
     useQuestionBankStore: () => ({ fetchRandom: async params => {
       questionRequests.push(copy(params))
       return matchingRows(params)
@@ -74,10 +78,11 @@ async function fixture(t) {
   })
   const page = scope.run(() => vm.runInContext(`${metadataSource}\n${setupSource}\n({
     count, yearOptions, filterMetadata, toggleQuestionType, onRegionFilterChange,
-    onYearFilterChange, regionOptions, startPractice
+    onYearFilterChange, regionOptions, startPractice, selection, entryError
   })`, context))
   const settle = async () => { await Vue.nextTick(); await Vue.nextTick() }
   await settle()
+  if (options.query) { loads.forEach(callback => callback(options.query)); await settle() }
   const start = async () => {
     const previous = questionRequests.length
     await page.startPractice()
@@ -85,7 +90,7 @@ async function fixture(t) {
     assert.equal(questionRequests.length, previous + 1, `Random query must run; notices: ${notices.join('; ')}`)
     return questionRequests.at(-1)
   }
-  return { page, metadataRequests, questionRequests, notices, settle, start }
+  return { page, metadataRequests, questionRequests, notices, settle, start, starts }
 }
 
 test('changing question type refreshes metadata for the same scope as the actual random query', async t => {
@@ -145,4 +150,29 @@ test('multiple types retain the joined exact-match value and honestly show empty
   assert.equal(f.page.filterMetadata.error.value, '')
   assert.deepEqual(copy(f.page.yearOptions.value), [], 'No fallback or unrelated years for an empty exact match')
   assert.ok(f.notices.includes('当前筛选条件暂无题目'))
+})
+
+test('explicit single question wins over a targeted group cached in the store', async t => {
+  const f = await fixture(t, { query: { source: 'targeted', questionId: 'chosen' }, cached: [{ id: 'old-1' }, { id: 'old-2' }] })
+  await f.page.startPractice()
+  assert.deepEqual(f.starts.map(start => start.questions.map(q => q.id)), [['chosen']])
+  assert.equal(f.starts[0].mode, 'targeted')
+  assert.equal(f.questionRequests.length, 0)
+})
+
+test('ordered group is retained after a failed fetch and retry does not sample random questions', async t => {
+  let fail = true
+  const f = await fixture(t, {
+    query: { source: 'targeted', questionIds: 'q3,q1,q5,q2,q4', filterSnapshot: JSON.stringify({ province: 'jiangsu', year: '2026' }) },
+    getQuestionById: async id => { if (fail && id === 'q5') throw new Error('题目读取失败'); return { id, stem: id } }
+  })
+  await f.page.startPractice()
+  assert.equal(f.starts.length, 0)
+  assert.match(f.page.entryError.value, /选择已保留.*重试/)
+  assert.deepEqual(copy(f.page.selection.value.ids), ['q3', 'q1', 'q5', 'q2', 'q4'])
+  fail = false
+  await f.page.startPractice()
+  assert.deepEqual(f.starts[0].questions.map(q => q.id), ['q3', 'q1', 'q5', 'q2', 'q4'])
+  assert.equal(f.starts[0].mode, 'targeted')
+  assert.equal(f.questionRequests.length, 0)
 })

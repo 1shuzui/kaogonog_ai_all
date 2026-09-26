@@ -8,6 +8,7 @@ import { parse, compileScript, compileTemplate } from '@vue/compiler-sfc'
 import * as constants from '../src/utils/constants.js'
 import { JIANGSU_TARGETED_POSITIONS } from '../src/utils/jiangsuJobs.js'
 import { normalizeListResponse } from '../src/utils/format.js'
+import * as practiceSelection from '../../shared/practiceSelection.mjs'
 
 const source = readFileSync(new URL('../src/pages/bank/index.vue', import.meta.url), 'utf8')
 const { descriptor } = parse(source)
@@ -43,6 +44,7 @@ async function page({ paid = true, token = 'account-a', failList = false, filter
     $reset() { this.questions = []; this.pagination.total = 0; this.loading = false; this.error = '' }
   })
   const mocks = {
+    '../../../../shared/practiceSelection.mjs': practiceSelection,
     vue: { computed, ref, watch: (...args) => { const stop = watch(...args); stops.push(stop); return stop } },
     '@dcloudio/uni-app': { onShow: fn => { onShow = fn } },
     '../../motion/useMotion': { usePageMotion: () => ({ motionClass: '', motionStyle: {} }) },
@@ -345,7 +347,10 @@ test('admin navigation and random practice keep their handlers and exact paramet
   await p.startRandomPractice()
   assert.equal(p.requests.at(-1).keyword, '校园')
   assert.equal(p.requests.at(-1).count, 1)
-  assert.equal(p.navigations.at(-1), '/pages/exam/prepare?source=bank&questionId=q%261')
+  const query = Object.fromEntries(new URL(`https://local${p.navigations.at(-1)}`).searchParams)
+  assert.deepEqual(practiceSelection.readPracticeSelection(query).ids, ['q&1'])
+  assert.equal(practiceSelection.readPracticeSelection(query).filters.keyword, '校园')
+  assert.equal(practiceSelection.readPracticeSelection(query).filters.province, 'jiangsu')
 })
 
 test('bank template compiles with compact common filters, shared sheets, and native-size controls', () => {

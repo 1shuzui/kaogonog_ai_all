@@ -20,6 +20,7 @@
           <a-tag v-if="userStore.isAdmin" color="gold">管理员</a-tag>
         </div>
         <p v-if="userStore.email">{{ userStore.email }}</p>
+        <a-button type="link" @click="$router.push('/profile/account')">编辑个人资料</a-button>
         <p v-if="userStore.isAdmin" class="profile-user__role-tip">已启用管理员权限与完整功能访问</p>
       </div>
     </div>
@@ -31,13 +32,30 @@
         <div class="profile-stat-item__label">练习次数</div>
       </div>
       <div class="card profile-stat-item">
-        <div class="profile-stat-item__value">{{ historyStore.bestScore }}</div>
+        <div class="profile-stat-item__value">{{ (historyStore.stats.scoredExams ?? historyStore.stats.totalExams) > 0 ? historyStore.bestScore : '—' }}</div>
         <div class="profile-stat-item__label">最高分</div>
       </div>
       <div class="card profile-stat-item">
-        <div class="profile-stat-item__value">{{ favoritesStore.items.length }}</div>
+        <div class="profile-stat-item__value">{{ favoritesStore.starredItems.length }}</div>
         <div class="profile-stat-item__label">收藏题目</div>
       </div>
+    </div>
+
+    <div class="card profile-section">
+      <h3>个人练习总结</h3>
+      <p v-if="historyStore.statsLoading">正在读取服务端练习统计…</p>
+      <a-alert v-else-if="historyStore.statsError" type="error" :message="historyStore.statsError"><template #action><a-button @click="refreshStats">重试</a-button></template></a-alert>
+      <template v-else-if="historyStore.stats">
+        <p v-if="!historyStore.stats.totalExams">暂无已完成练习，完成练习后将在这里汇总。</p>
+        <template v-else>
+          <p>已完成 {{ historyStore.stats.totalExams }} 次练习，已点评 {{ historyStore.stats.scoredExams ?? historyStore.stats.totalExams }} 次。</p>
+          <p v-if="(historyStore.stats.scoredExams ?? historyStore.stats.totalExams) > 0">平均分 {{ historyStore.stats.avgScore }} / 100。均分按各次已点评练习的有效得分率换算，套题仪态分仅计一次。</p>
+          <p v-else>暂无已完成点评；答案已保存时，可从历史记录继续点评。</p>
+          <div v-if="(historyStore.stats.scoredExams ?? historyStore.stats.totalExams) > 0">
+            <p v-for="item in historyStore.stats.dimensionAverages || []" :key="item.name">{{ item.name }}：{{ item.avg }} / {{ item.maxScore }}</p>
+          </div>
+        </template>
+      </template>
     </div>
 
     <div class="card balance-card">
@@ -83,7 +101,7 @@
       </div>
       <div class="card menu-item" @click="$router.push('/profile/account')">
         <SettingOutlined class="menu-item__icon" />
-        <span class="menu-item__label">账号管理</span>
+        <span class="menu-item__label">个人资料 / 账号安全</span>
         <RightOutlined class="menu-item__arrow" />
       </div>
     </div>
@@ -174,6 +192,7 @@ const userStore = useUserStore()
 const historyStore = useHistoryStore()
 const favoritesStore = useFavoritesStore()
 const billingStore = useBillingStore()
+function refreshStats() { return historyStore.fetchStats().catch(() => null) }
 
 const preferences = reactive({
   defaultPrepTime: 90,
@@ -223,6 +242,7 @@ onMounted(async () => {
   try {
     await historyStore.fetchStats()
   } catch {}
+  void favoritesStore.load()
   Object.assign(preferences, userStore.preferences)
 })
 

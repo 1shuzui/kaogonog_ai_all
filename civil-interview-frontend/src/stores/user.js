@@ -25,6 +25,14 @@ const PROVINCE_CONFIRMED_STORAGE_KEY = 'civil_selected_province_confirmed'
 const TOKEN_STORAGE_KEY = 'token'
 const USERNAME_STORAGE_KEY = 'username'
 const GUEST_STORAGE_SCOPE = 'guest'
+let authenticationAttempt = 0
+
+function captureSession(store) {
+  const token = store.token, attempt = authenticationAttempt
+  return () => {
+    if (store.token !== token || authenticationAttempt !== attempt) throw Object.assign(new Error('账号已切换，请重新打开当前页面'), { code: 'STALE_SESSION' })
+  }
+}
 
 const DEFAULT_PREFERENCES = {
   defaultPrepTime: 90,
@@ -163,6 +171,7 @@ function isExplicitProvince(code = '') {
 export const useUserStore = defineStore('user', {
   state: () => ({
     token: localStorage.getItem(TOKEN_STORAGE_KEY) || '',
+    userId: localStorage.getItem('civil_user_id') || '',
     username: localStorage.getItem(USERNAME_STORAGE_KEY) || '',
     email: '',
     userInfo: {
@@ -234,10 +243,14 @@ export const useUserStore = defineStore('user', {
       useFavoritesStore().reloadForCurrentUser()
     },
     async login(username, password) {
+      const attempt = ++authenticationAttempt
       const res = await loginApi(username, password)
+      if (attempt !== authenticationAttempt) throw Object.assign(new Error('登录操作已失效，请重新登录'), { code: 'STALE_SESSION' })
       this.logout()
       username = res.username || username.trim()
       this.token = res.access_token
+      this.userId = String(res.userId || '')
+      localStorage.setItem('civil_user_id', this.userId)
       this.username = username
       localStorage.setItem(TOKEN_STORAGE_KEY, res.access_token)
       localStorage.setItem(USERNAME_STORAGE_KEY, username)
@@ -248,8 +261,9 @@ export const useUserStore = defineStore('user', {
 
       try {
         await this.loadUserInfo()
+        if (this.token !== res.access_token) throw Object.assign(new Error('登录操作已失效，请重新登录'), { code: 'STALE_SESSION' })
       } catch (error) {
-        if (error?.response?.status === 401) {
+        if (error?.response?.status === 401 && this.token === res.access_token) {
           this.logout()
         }
         throw error
@@ -259,8 +273,11 @@ export const useUserStore = defineStore('user', {
     },
 
     logout() {
+      authenticationAttempt++
       const billingStore = useBillingStore()
       this.token = ''
+      this.userId = ''
+      localStorage.removeItem('civil_user_id')
       this.username = ''
       this.email = ''
       this.userInfo = {
@@ -309,16 +326,22 @@ export const useUserStore = defineStore('user', {
     },
 
     async loadUserInfo() {
+      const assertCurrent = captureSession(this)
       const billingStore = useBillingStore()
       const info = await getUserInfo()
+      assertCurrent()
       const activeUsername = info?.id || this.username
+      this.userId = String(info?.userId || '')
+      localStorage.setItem('civil_user_id', this.userId)
       const isAdmin = !!info?.isAdmin
 
       if (activeUsername && activeUsername !== this.username) {
         this.username = activeUsername
         localStorage.setItem(USERNAME_STORAGE_KEY, activeUsername)
-        useFavoritesStore().reloadForCurrentUser()
       }
+
+      const reviews = useFavoritesStore()
+      if (reviews.ownerId !== this.userId || reviews.ownerToken !== this.token) reviews.reloadForCurrentUser()
 
       this.userInfo = {
         id: activeUsername,
@@ -389,19 +412,24 @@ export const useUserStore = defineStore('user', {
     },
 
     async persistProvince(code) {
+      const assertCurrent = captureSession(this)
       const previous = this.selectedProvince
       this.setProvince(code)
       if (!this.isAuthenticated) return { success: true }
 
       try {
-        return await updateUserProfile({ province: this.selectedProvince })
+        const response = await updateUserProfile({ province: this.selectedProvince })
+        assertCurrent()
+        return response
       } catch (error) {
+        assertCurrent()
         this.setProvince(previous)
         return { success: false, error }
       }
     },
 
     async confirmProvinceSelection(code) {
+      const assertCurrent = captureSession(this)
       const previousProvince = this.selectedProvince
       const previousConfirmed = this.provinceConfirmed
 
@@ -415,12 +443,14 @@ export const useUserStore = defineStore('user', {
 
       try {
         await updateUserProfile({ province: this.selectedProvince })
+        assertCurrent()
         this.userInfo = {
           ...this.userInfo,
           province: this.selectedProvince
         }
         return { success: true }
       } catch (error) {
+        assertCurrent()
         this.setProvince(previousProvince)
         this.provinceConfirmed = previousConfirmed
         saveProvinceConfirmedToStorage(previousConfirmed, this.username)
@@ -438,6 +468,7 @@ export const useUserStore = defineStore('user', {
     },
 
     async savePreferences(prefs) {
+      const assertCurrent = captureSession(this)
       this.preferences = normalizePreferences({
         ...this.preferences,
         ...(prefs || {})
@@ -446,7 +477,9 @@ export const useUserStore = defineStore('user', {
       saveProvinceToStorage(this.selectedProvince, this.username)
 
       await updatePreferences(this.preferences)
+      assertCurrent()
       await updateUserProfile({ province: this.selectedProvince || 'national' })
+      assertCurrent()
 
       this.userInfo = {
         ...this.userInfo,

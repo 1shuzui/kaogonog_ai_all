@@ -9,6 +9,16 @@ function loadFunction(source, name, context) {
   return vm.runInNewContext(`(${declaration})`, context)
 }
 
+test('history replay keeps all five questions and two unanswered placeholders after early exit', async () => {
+  const source = await readFile(new URL('../src/views/Result/ResultPage.vue', import.meta.url), 'utf8')
+  const ids = ['q3', 'q1', 'q5', 'q2', 'q4']
+  const answered = ids.slice(0, 3).map(questionId => ({ questionId, transcript: '真实作答', scoringResult: { totalScore: 70 } }))
+  const rows = loadFunction(source, 'buildDisplayAnswerList', {})(answered, ids, 'exam')
+  assert.deepEqual(Array.from(rows, row => row.questionId), ids)
+  assert.equal(rows.filter(row => row.isPlaceholder).length, 2)
+  assert.equal(rows[2].scoringResult.totalScore, 70)
+})
+
 test('full exam records and submits media even with a legacy text-mode state', async () => {
   const source = await readFile(new URL('../src/components/exam/FullExamRoom.vue', import.meta.url), 'utf8')
   const calls = []

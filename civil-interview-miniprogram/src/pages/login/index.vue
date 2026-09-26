@@ -40,7 +40,8 @@
         </button>
       </view>
 
-      <button class="primary-button wechat-login-button" :loading="wechatLoading" @tap="loginByWechat">
+      <text v-if="loginError" class="page-desc" role="alert">{{ loginError }}</text>
+      <button class="primary-button wechat-login-button" :loading="wechatLoading" :disabled="loading || wechatLoading" @tap="loginByWechat">
         微信快捷登录
       </button>
 
@@ -68,7 +69,7 @@
           </view>
           <view class="form-label">用户名</view>
           <input v-model="form.username" class="field" aria-label="用户名" placeholder="请输入用户名" />
-          <text v-if="mode === 'register'" class="login-helper">用户名为 3–32 位字母、数字、下划线或短横线。</text>
+          <text v-if="mode === 'register'" class="login-helper">用户名为 3–32 位英文字母、数字、下划线或短横线，不能以 wxmp_ 开头。</text>
 
           <view class="form-label">密码</view>
           <view class="password-field">
@@ -90,7 +91,8 @@
               </button>
             </view>
           </template>
-          <button class="secondary-button login-submit" :loading="loading" @tap="submit">{{ mode === 'login' ? '使用账号密码登录' : '注册账号' }}</button>
+          <text v-if="loginError" class="login-helper" role="alert">{{ loginError }}</text>
+          <button class="secondary-button login-submit" :loading="loading" :disabled="loading || wechatLoading" @tap="submit">{{ mode === 'login' ? '使用账号密码登录' : '注册账号' }}</button>
           <button v-if="mode === 'login'" class="link-button forgot-button" @tap="openResetPanel">忘记密码</button>
         </view>
       </MotionCollapse>
@@ -107,7 +109,9 @@
           微信快捷登录已完成。请设置一个自己记得住的账号和密码，之后 PC 端用这个账号密码登录，就能同步小程序里的练习记录、收藏错题和订单权益。
         </text>
         <view class="form-label">PC 登录账号</view>
-        <input v-model="accountSetupForm.username" class="field" placeholder="3-32 位字母/数字/下划线" />
+        <input v-model="accountSetupForm.username" class="field" maxlength="32" placeholder="设置新的登录用户名" />
+        <text class="login-helper">3–32 位英文字母、数字、下划线或短横线，不能以 wxmp_ 开头。此处创建新登录名；已有 PC 账号请使用下方账号密码登录入口。</text>
+        <text v-if="accountSetupError" class="login-helper" role="alert">{{ accountSetupError }}</text>
         <view class="form-label">PC 登录密码</view>
         <input v-model="accountSetupForm.password" class="field" password placeholder="至少 6 位" />
         <view class="form-label">确认密码</view>
@@ -147,6 +151,8 @@ import { getWechatLoginCode } from '../../utils/wechatLogin'
 const userStore = useUserStore()
 const mode = ref('login')
 const passwordLoginExpanded = ref(false)
+const loginError = ref('')
+const accountSetupError = ref('')
 const inviteExpanded = ref(false)
 const accountInviteExpanded = ref(false)
 const loading = ref(false)
@@ -293,8 +299,8 @@ function validate() {
     return false
   }
   if (mode.value === 'register') {
-    if (!/^[A-Za-z0-9_-]{3,32}$/.test(form.username.trim())) {
-      toast('用户名需为 3–32 位字母、数字、下划线或短横线')
+    if (!/^(?!wxmp_)[A-Za-z0-9_-]{3,32}$/i.test(form.username.trim())) {
+      toast('用户名需为 3–32 位英文字母、数字、下划线或短横线，不能以 wxmp_ 开头')
       return false
     }
     if (form.password.length < 6) {
@@ -324,7 +330,8 @@ function validateInviteCode(value) {
 }
 
 async function submit() {
-  if (loading.value) return
+  if (loading.value || wechatLoading.value) return
+  loginError.value = ''
   if (!validate()) return
   if (!await ensurePrivacyReadyForLogin()) return
   loading.value = true
@@ -349,14 +356,15 @@ async function submit() {
     form.inviteCode = ''
     form.agreedTerms = false
   } catch (error) {
-    toast(error?.message || '操作失败')
+    loginError.value = error?.message || '操作失败，请重试'
   } finally {
     loading.value = false
   }
 }
 
 async function loginByWechat() {
-  if (wechatLoading.value) return
+  if (wechatLoading.value || loading.value) return
+  loginError.value = ''
   if (!await ensurePrivacyReadyForLogin()) return
   if (!validateInviteCode(form.inviteCode)) return
   wechatLoading.value = true
@@ -365,6 +373,7 @@ async function loginByWechat() {
     const result = await userStore.loginWithWechat(code, '2026-05-12', form.inviteCode.trim().toUpperCase())
     if (result?.requiresPcAccountSetup) {
       accountSetupVisible.value = true
+      accountSetupError.value = ''
       wechatInviteSessionToken.value = result?.inviteSessionToken || ''
       accountSetupForm.username = result?.accountLogin?.pcLoginUsername || ''
       accountSetupForm.password = ''
@@ -376,7 +385,7 @@ async function loginByWechat() {
     toast('登录成功', 'success')
     goAfterLogin()
   } catch (error) {
-    toast(error?.message || '微信登录失败')
+    loginError.value = error?.message || '微信登录失败，请重试'
   } finally {
     wechatLoading.value = false
   }
@@ -388,8 +397,8 @@ function validateAccountSetup() {
     toast('账号需为 3-32 位字母、数字、下划线或短横线')
     return false
   }
-  if (username.startsWith('wx_')) {
-    toast('账号不能使用 wx_ 开头')
+  if (username.toLowerCase().startsWith('wxmp_')) {
+    toast('账号不能使用 wxmp_ 开头')
     return false
   }
   if (accountSetupForm.password.length < 6) {
@@ -412,6 +421,7 @@ async function submitAccountSetup() {
   if (accountSetupLoading.value) return
   if (!validateAccountSetup()) return
   accountSetupLoading.value = true
+  accountSetupError.value = ''
   try {
     await userStore.setupWechatPcAccount({
       username: accountSetupForm.username.trim(),
@@ -424,7 +434,7 @@ async function submitAccountSetup() {
     toast('PC 登录账号已创建', 'success')
     goAfterLogin()
   } catch (error) {
-    toast(error?.message || '账号创建失败')
+    accountSetupError.value = error?.message || '账号创建失败，请重试'
   } finally {
     accountSetupLoading.value = false
   }

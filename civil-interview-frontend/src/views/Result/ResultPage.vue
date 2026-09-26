@@ -217,7 +217,8 @@ PC 评分结果页，负责展示总分、能力维度、扣分分析、文字�
             <div>
               <h4 class="result-page__secondary-title">维度表现</h4>
               <p class="result-page__secondary-hint">能力条采用内容百分制权重；本题按题目赋分展示，仪态分单列，整套汇总仅计一次。</p>
-              <p class="result-page__secondary-hint">评分依据：题目采分点、题库参考答案与实际作答。等级按得分率：A ＞85%，B ≥75%，C ≥60%，其余为 D。AI 结果仅供训练参考，不代表官方考试成绩。</p>
+              <p v-for="note in scoringExplanation(result)" :key="note" class="result-page__secondary-hint">{{ note }}</p>
+              <p class="result-page__secondary-hint">本页等级按得分率：A ≥85%，B ≥75%，C ≥60%，其余为 D。</p>
             </div>
           </div>
           <RadarChart :dimensions="result.dimensions" size="small" />
@@ -250,11 +251,15 @@ PC 评分结果页，负责展示总分、能力维度、扣分分析、文字�
           </a-button>
         </div>
         <video
+          :key="`${currentAnswerIdx}:${playbackAttempt}`"
           :src="currentVideoUrl"
           controls
           class="result-page__video"
           @play="openFloatingVideo"
+          @error="playbackError = '录像暂时无法播放，请检查网络后重新加载。'"
+          @loadedmetadata="playbackError = ''"
         ></video>
+        <a-alert v-if="playbackError" type="warning" :message="playbackError"><template #action><a-button @click="playbackAttempt += 1; playbackError = ''">重新加载录像</a-button></template></a-alert>
       </div>
 
       <div
@@ -278,11 +283,14 @@ PC 评分结果页，负责展示总分、能力维度、扣分分析、文字�
         </button>
       </div>
 
+      <a-alert v-if="favoritesStore.error" type="error" :message="favoritesStore.error" show-icon>
+        <template #action><a-button size="small" @click="favoritesStore.load()">重新同步收藏</a-button></template>
+      </a-alert>
       <div class="result-page__actions" data-html2canvas-ignore>
         <a-button type="primary" size="large" @click="$router.push('/exam/prepare')">
           再练一题
         </a-button>
-        <a-button size="large" @click="toggleFavorite">
+        <a-button size="large" :loading="favoritesStore.saving" @click="toggleFavorite">
           <StarFilled v-if="isStarred" style="color: #faad14" />
           <StarOutlined v-else />
           {{ isStarred ? '已收藏' : '收藏' }}
@@ -323,6 +331,8 @@ PC 评分结果页，负责展示总分、能力维度、扣分分析、文字�
 </template>
 
 <script setup>
+import { resolveMediaUrl, resolveAnswerMedia } from '../../../../shared/answerMedia.mjs'
+import { scoringExplanation } from '../../../../shared/scoringExplanation.mjs'
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import {
@@ -683,21 +693,22 @@ function normalizeMediaUrl(url) {
     const separator = value.includes('?') ? '&' : '?'
     return `${value}${separator}access_token=${encodeURIComponent(token)}`
   }
-  if (value.startsWith('blob:') || value.startsWith('http://') || value.startsWith('https://') || value.startsWith('/')) {
-    return value
-  }
-  return `/${value}`
+  return resolveMediaUrl(value, import.meta.env.VITE_API_BASE || 'https://xzqianmianyuzhoukeji.com/api')
 }
+
+const playbackError = ref('')
+const playbackAttempt = ref(0)
+watch(currentAnswerIdx, () => { playbackError.value = ''; playbackAttempt.value = 0 })
 
 const currentMediaUrl = computed(() => {
   const blobUrl = blobUrls.value[currentAnswerIdx.value]
   if (blobUrl) return blobUrl
-  return normalizeMediaUrl(currentAnswer.value?.mediaUrl)
+  return normalizeMediaUrl(resolveAnswerMedia(currentAnswer.value || {}, result.value).url)
 })
 
 const currentMediaType = computed(() => {
   const answer = currentAnswer.value
-  return String(answer?.recordingBlob?.type || answer?.mediaType || '')
+  return String(answer?.recordingBlob?.type || resolveAnswerMedia(answer || {}, result.value).kind)
 })
 
 const currentRecordingUrl = computed(() => {
@@ -914,7 +925,6 @@ function toggleFavorite() {
   const answer = currentAnswer.value
   if (!answer || answer.isPlaceholder || !answer.questionId || !result.value || !activeExamId.value) return
 
-  const question = examStore.questionList?.find((item) => item.id === answer.questionId)
   if (isStarred.value) {
     const item = favoritesStore.items.find((entry) => (
       entry.examId === activeExamId.value && entry.questionId === answer.questionId
@@ -926,35 +936,12 @@ function toggleFavorite() {
   favoritesStore.addItem({
     examId: activeExamId.value,
     questionId: answer.questionId,
-    questionStem: question?.stem || answer.questionStem || '',
-    dimension: question?.dimension || answer.dimension || '',
-    score: result.value.totalScore,
-    maxScore: result.value.maxScore,
-    grade: gradeInfo.value.label,
     type: 'starred'
   })
 }
 
 function autoAddWeakAll() {
-  if (!activeExamId.value) return
-
-  for (const answer of answerList.value) {
-    if (answer?.isPlaceholder || !answer?.scoringResult || !answer?.questionId) continue
-    const ratio = answer.scoringResult.totalScore / answer.scoringResult.maxScore
-    if (ratio >= 0.6) continue
-
-    const question = examStore.questionList?.find((item) => item.id === answer.questionId)
-    favoritesStore.addItem({
-      examId: activeExamId.value,
-      questionId: answer.questionId,
-      questionStem: question?.stem || answer.questionStem || '',
-      dimension: question?.dimension || answer.dimension || '',
-      score: answer.scoringResult.totalScore,
-      maxScore: answer.scoringResult.maxScore,
-      grade: getGrade(answer.scoringResult.totalScore, answer.scoringResult.maxScore).label,
-      type: 'weak'
-    })
-  }
+  if (activeExamId.value) void favoritesStore.load()
 }
 
 function recordTrainingProgress() {
