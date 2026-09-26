@@ -29,6 +29,7 @@ Content-Type: application/json
 | 服务探活 | GET /health、GET / | main.py 中的基础状态与文档入口 |
 | 认证 | POST /token、/register、/auth/wechat/miniprogram*、/password-reset/* | 登录、注册、微信；密码重置见[管理员核验与验证码通道](../ops/password-reset-delivery.md) |
 | 用户 | GET /user/info、/user/provinces、/user/terms-status；PUT /user/profile、/password、/preferences；POST /user/agree-terms | 用户资料、偏好、条款与风控 |
+| 复习 | GET/PUT /user/review-items、POST /user/review-items/clear、/user/review-items/import | [复习归属、账号和媒体兼容契约](review-and-acceptance.md) |
 | 题库 | GET/POST /questions、GET /questions/random、GET/PUT/DELETE /questions/{id}、POST /questions/import、/questions/import/docx | [题库与套题接口](question-bank-and-suites.md) |
 | 考试 | GET /exam/full-suites、GET /exam/full-suites/{id}/questions、POST /exam/start、/{examId}/upload、/{examId}/complete | [题库与套题接口](question-bank-and-suites.md) |
 | 评分与转写 | POST /scoring/transcribe、/scoring/evaluate；GET /scoring/asr-status、/scoring/result/{examId}/{questionId} | [评分接口与分值契约](scoring.md) |

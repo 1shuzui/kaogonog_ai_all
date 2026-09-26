@@ -24,6 +24,7 @@ from app.api.v1.routes.dashboard_routes import router as dashboard_router
 from app.api.v1.routes.scoring_routes import router as scoring_router
 from app.api.v1.routes.support_routes import router as support_router
 from app.api.v1.routes.legal_routes import router as legal_router
+from app.api.v1.routes.review_routes import router as review_router
 
 api_router = APIRouter()
 api_router.include_router(auth_router)
@@ -41,3 +42,4 @@ api_router.include_router(dashboard_router)
 api_router.include_router(scoring_router)
 api_router.include_router(support_router)
 api_router.include_router(legal_router)
+api_router.include_router(review_router)

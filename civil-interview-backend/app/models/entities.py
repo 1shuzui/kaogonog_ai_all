@@ -425,6 +425,18 @@ class ExamAnswer(Base):
     exam = relationship("Exam", back_populates="answers")
 
 
+class UserReviewState(Base):
+    """User actions on a saved answer. Keep tombstones so old clients cannot resurrect removals."""
+    __tablename__ = "user_review_states"
+    user_id = Column(MYSQL_BIGINT, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    exam_id = Column(String(32), primary_key=True)
+    question_id = Column(String(128), primary_key=True)
+    is_starred = Column(Boolean, nullable=False, default=False)
+    hide_weak = Column(Boolean, nullable=False, default=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+
 class HistoryRecord(Base):
     """
     考试完成后的摘要快照，支撑历史列表、成绩趋势、薄弱分析和复盘入口。
