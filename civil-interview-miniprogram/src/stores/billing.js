@@ -60,7 +60,7 @@ function normalizeState(raw = {}) {
   }
   const planType = String(state.planType || 'trial')
   state.planType = PLANS[planType] ? planType : 'trial'
-  state.isPaid = state.isPaid === true || isPaidPlanType(state.planType)
+  state.isPaid = typeof source.isPaid === 'boolean' ? source.isPaid : isPaidPlanType(state.planType)
   state.activatedAt = Number(state.activatedAt || 0)
   state.remainingSeconds = Math.max(0, Number(state.remainingSeconds || 0))
   state.remainingMinutes = Math.max(0, Number(state.remainingMinutes || 0))
