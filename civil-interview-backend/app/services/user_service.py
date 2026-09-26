@@ -129,6 +129,7 @@ def get_user_info(db: Session, current_user: AuthUser) -> dict:
     terms = get_terms_status(db, user.username)
     return {
         "id": user.username,
+        "userId": str(user.id),
         "name": user.full_name or user.username,
         "avatar": user.avatar or "",
         "province": user.province or "national",

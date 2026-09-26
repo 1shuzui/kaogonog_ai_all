@@ -20,6 +20,7 @@ from typing import Optional
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
+from app.services.answer_media import answer_media_record
 
 from app.core.ai import build_asr_context_phrases, call_llm_api_async, transcribe_audio_file, transcribe_audio_file_with_meta
 from app.core.config import settings
@@ -182,34 +183,35 @@ def persist_transcript_to_answer(
     return True
 
 
-def attach_asr_meta_to_media_record(db: Session, audio_sha256: str, asr_meta: dict) -> bool:
+def attach_asr_meta_to_media_record(db: Session, audio_sha256: str, asr_meta: dict, *, exam_id=None, question_id=None) -> bool:
     """
-    把一次转写的 ASR 元数据补写到最近的媒体答题记录。
+    把一次转写的 ASR 元数据补写到已通过归属校验的指定答题记录。
 
-    转写接口和评分接口可能分两次调用，媒体记录通常已经随考试答案保存；用音频 SHA256 关联，
-    可以把 FunASR 模型、VAD、耗时和重试状态补进历史结果，方便后续排查转写质量而不重新跑模型。
+    转写接口和评分接口可能分两次调用。以考试及题目定位记录，避免跨账号相同音频互相覆盖；
+    视频分离出的音轨与原录像指纹不同，音频指纹只作为转写来源，不作为记录归属依据。
 
     @param db: 当前请求复用的数据库会话。
     @param audio_sha256: 音频内容指纹。
     @param asr_meta: 转写服务返回的模型、分段、耗时和质量元数据。
+    @param exam_id: 调用方已经验证当前用户归属的考试 ID。
+    @param question_id: 同一考试内的题目 ID。
     @return: 找到并更新媒体记录时返回 True，否则返回 False。
     @raises: 不主动包装数据库异常，提交失败会沿调用栈上抛。
     """
-    if not audio_sha256 or not isinstance(asr_meta, dict):
+    if not exam_id or not question_id or not audio_sha256 or not isinstance(asr_meta, dict):
         return False
     answers = (
         db.query(ExamAnswer)
-        .filter(ExamAnswer.score_result.isnot(None))
-        .order_by(ExamAnswer.id.desc())
-        .limit(50)
+        .filter(ExamAnswer.exam_id == exam_id, ExamAnswer.question_id == question_id)
         .all()
     )
     for answer in answers:
         score_result = answer.score_result if isinstance(answer.score_result, dict) else {}
-        media_record = score_result.get("mediaRecord") if isinstance(score_result.get("mediaRecord"), dict) else {}
-        if media_record.get("contentSha256") != audio_sha256:
+        media_record = answer_media_record(answer)
+        if not media_record:
             continue
         media_record = {**media_record, "asrMeta": asr_meta}
+        answer.media_record = media_record
         answer.score_result = {**score_result, "mediaRecord": media_record}
         db.commit()
         return True
@@ -264,7 +266,7 @@ async def transcribe(
     ) if db is not None else False
     linked = False
     if db is not None and asr_meta.get("audioSha256"):
-        linked = attach_asr_meta_to_media_record(db, asr_meta["audioSha256"], asr_meta)
+        linked = attach_asr_meta_to_media_record(db, asr_meta["audioSha256"], asr_meta, exam_id=exam_id, question_id=normalized_question_id)
     return {
         "transcript": transcript,
         "duration": round(len(transcript) / 10, 1),
@@ -678,10 +680,7 @@ def _media_record_for_exam(db: Session, exam_id: Optional[str], question_id: str
         ExamAnswer.exam_id == exam_id,
         ExamAnswer.question_id == question_id,
     ).first()
-    if not answer or not isinstance(answer.score_result, dict):
-        return {}
-    media_record = answer.score_result.get("mediaRecord")
-    return media_record if isinstance(media_record, dict) else {}
+    return answer_media_record(answer)
 
 
 def _media_cache_fingerprint(media_record: dict) -> str:
@@ -1455,8 +1454,9 @@ def _persist_result(db: Session, exam_id: Optional[str], question_id: str, trans
         ans = ExamAnswer(exam_id=exam_id, question_id=question_id)
         db.add(ans)
     existing_result = ans.score_result if isinstance(ans.score_result, dict) else {}
-    media_record = existing_result.get("mediaRecord") if isinstance(existing_result, dict) else None
-    if media_record and "mediaRecord" not in result:
+    media_record = answer_media_record(ans)
+    if media_record:
+        ans.media_record = media_record
         result = {**result, "mediaRecord": media_record}
     visual_observation = existing_result.get("visualObservation") if isinstance(existing_result, dict) else None
     if visual_observation and "visualObservation" not in result:
@@ -1494,4 +1494,7 @@ def get_scoring_result(db: Session, exam_id: str, question_id: str) -> dict:
         raise HTTPException(status_code=404, detail="评分结果未找到")
     from app.services.score_summary import normalized_dimensions
     result = _normalize_result_dimensions(ans.score_result)
+    media_record = answer_media_record(ans)
+    if media_record:
+        result = {**result, "mediaRecord": media_record}
     return {**result, "dimensions": normalized_dimensions(result)}

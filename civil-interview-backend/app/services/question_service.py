@@ -2042,7 +2042,10 @@ def import_questions(db: Session, content: bytes, filename: str) -> dict:
 
     try:
         if fname.endswith(".json"):
-            data = json.loads(content.decode("utf-8-sig"))
+            try:
+                data = json.loads(content.decode("utf-8-sig"))
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                raise HTTPException(status_code=400, detail="JSON 文件无法解析，请检查 UTF-8 编码和 JSON 格式。") from None
             normalized_items = _normalize_json_payload(
                 data,
                 source_kind="imported_file",
@@ -2052,18 +2055,25 @@ def import_questions(db: Session, content: bytes, filename: str) -> dict:
                 raise HTTPException(status_code=400, detail="JSON 未解析到有效题目，请检查字段格式")
             for item in normalized_items:
                 try:
-                    _upsert_normalized_question(db, item)
+                    with db.begin_nested():
+                        _upsert_normalized_question(db, item)
+                        db.flush()
                     imported += 1
                 except Exception:
                     failed += 1
             db.commit()
 
-        elif fname.endswith((".xlsx", ".xls")):
+        elif fname.endswith(".xlsx"):
             import io
             import openpyxl
-            wb = openpyxl.load_workbook(io.BytesIO(content), read_only=True)
-            ws = wb.active
-            rows = list(ws.iter_rows(values_only=True))
+            try:
+                wb = openpyxl.load_workbook(io.BytesIO(content), read_only=True)
+                try:
+                    rows = list(wb.active.iter_rows(values_only=True))
+                finally:
+                    wb.close()
+            except Exception:
+                raise HTTPException(status_code=400, detail="Excel 文件无法解析，请上传未加密且完整的 .xlsx 文件。") from None
             if not rows:
                 raise HTTPException(status_code=400, detail="Excel 文件为空")
             headers = [str(h).strip().lower() if h else "" for h in rows[0]]
@@ -2248,19 +2258,26 @@ def import_questions(db: Session, content: bytes, filename: str) -> dict:
                             if parsed:
                                 imported_item["prepTime"] = parsed[0]
                                 imported_item["answerTime"] = parsed[1]
-                    _upsert_normalized_question(db, imported_item)
+                    with db.begin_nested():
+                        _upsert_normalized_question(db, imported_item)
+                        db.flush()
                     imported += 1
                 except Exception:
                     failed += 1
             db.commit()
-            wb.close()
+        elif fname.endswith(".xls"):
+            raise HTTPException(status_code=400, detail="暂不支持旧版 .xls，请在 Excel 中另存为 .xlsx 后导入。")
         else:
             raise HTTPException(status_code=400, detail="不支持的文件格式，请上传 .json 或 .xlsx")
     except HTTPException:
+        db.rollback()
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"导入失败: {e}")
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="导入保存失败，未提交本次数据，请稍后重试或联系管理员。") from None
 
+    _question_pick_cache.clear()
+    _full_exam_suite_cache.clear()
     return {"imported": imported, "failed": failed}
 
 

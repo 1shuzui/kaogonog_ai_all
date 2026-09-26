@@ -12,6 +12,7 @@ PC 和小程序共享同一个用户表，但授权来源不同：PC 主要走�
 from datetime import datetime, timedelta, timezone
 import hashlib
 import secrets
+import re
 
 from fastapi import HTTPException, status
 import requests
@@ -20,7 +21,7 @@ from sqlalchemy.orm import Session
 
 from app.core.access import ensure_admin_access
 from app.core.config import settings
-from app.core.security import verify_password, get_password_hash, create_access_token, create_login_token
+from app.core.security import verify_password, get_password_hash, create_access_token, create_login_token, revoke_login_sessions
 from app.models.entities import (
     Exam,
     HistoryRecord,
@@ -57,6 +58,15 @@ PASSWORD_RESET_TTL_SECONDS = 15 * 60
 PASSWORD_RESET_MAX_ATTEMPTS = 8
 
 
+def _validated_username(value: str) -> str:
+    username = str(value or "").strip()
+    if not re.fullmatch(r"[A-Za-z0-9_-]{3,32}", username):
+        raise HTTPException(status_code=400, detail="用户名需为 3-32 位英文字母、数字、下划线或短横线")
+    if username.lower().startswith(WECHAT_ACCOUNT_PREFIX):
+        raise HTTPException(status_code=400, detail="用户名不能以 wxmp_ 开头，请使用其他登录名")
+    return username
+
+
 def _make_token(db: Session, user: User, client_type: str = "web") -> str:
     return create_login_token(db, user, client_type)
 
@@ -66,6 +76,7 @@ def _auth_response(db: Session, user: User, extra: dict | None = None, client_ty
         "access_token": _make_token(db, user, client_type),
         "token_type": "bearer",
         "username": user.username,
+        "userId": str(user.id),
     }
     if extra:
         response.update(extra)
@@ -218,10 +229,7 @@ def register_user(db: Session, data: RegisterRequest) -> dict:
     @return: 创建成功提示；注册后仍需要走登录接口获取 token。
     @raises HTTPException: 用户名已存在时抛出 400，数据库写入失败时抛出 500。
     """
-    import re
-    data.username = data.username.strip()
-    if not re.fullmatch(r"[A-Za-z0-9_-]{3,32}", data.username):
-        raise HTTPException(status_code=400, detail="用户名需为 3-32 位字母、数字、下划线或短横线")
+    data.username = _validated_username(data.username)
     existing = db.query(User).filter(User.username == data.username).first()
     if existing:
         raise HTTPException(status_code=400, detail="用户名已被注册，请直接登录或更换用户名")
@@ -353,11 +361,9 @@ def setup_wechat_miniprogram_account(db: Session, current_user, data: WechatMini
         _mark_login_success(db, user)
         return _auth_response(db, user, {"message": "当前账号已可用于 PC 登录", "requiresPcAccountSetup": False}, client_type="wechat")
 
-    target_username = str(data.username or "").strip()
-    if len(target_username) < 3 or len(target_username) > 32:
-        raise HTTPException(status_code=400, detail="账号需为 3-32 位")
+    target_username = _validated_username(data.username)
     if db.query(User).filter(User.username == target_username).first():
-        raise HTTPException(status_code=400, detail="用户名已被占用")
+        raise HTTPException(status_code=409, detail="用户名已被占用。已有 PC 账号请返回账号密码登录；创建新账号请更换用户名。账号数据和权益不会自动合并。")
 
     old_username = user.username
     _migrate_username_references(db, old_username, target_username)
@@ -365,6 +371,11 @@ def setup_wechat_miniprogram_account(db: Session, current_user, data: WechatMini
     user.hashed_password = get_password_hash(data.password)
     if not user.full_name or user.full_name == "微信用户":
         user.full_name = target_username
+    try:
+        db.flush()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="用户名已被占用，请更换用户名或返回账号密码登录。") from None
     if data.inviteCode:
         bind_wechat_account_setup_invite(db, user, data.inviteCode, data.inviteSessionToken)
     _mark_login_success(db, user)
@@ -580,6 +591,7 @@ def confirm_password_reset(db: Session, data: PasswordResetConfirmRequest) -> di
         raise HTTPException(status_code=400, detail="验证码错误或已失效")
     reset_case = _load_valid_password_reset(db, user, data.code)
     user.hashed_password = get_password_hash(data.newPassword)
+    revoke_login_sessions(db, user)
     prefs = _preferences(user)
     prefs.pop("passwordReset", None)
     _save_preferences(user, prefs)
