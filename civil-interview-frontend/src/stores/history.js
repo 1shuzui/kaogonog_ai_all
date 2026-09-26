@@ -19,7 +19,10 @@ export const useHistoryStore = defineStore('history', {
     loading: false,
     pagination: { current: 1, pageSize: 10, total: 0 },
     trendData: [],
-    stats: null
+    stats: null,
+    statsLoading: false,
+    statsError: '',
+    statsRequest: 0
   }),
 
   getters: {
@@ -56,7 +59,19 @@ export const useHistoryStore = defineStore('history', {
     },
 
     async fetchStats() {
-      this.stats = await getHistoryStats()
+      const request = ++this.statsRequest
+      const token = localStorage.getItem('token')
+      this.statsLoading = true
+      this.statsError = ''
+      const current = () => request === this.statsRequest && token === localStorage.getItem('token')
+      try {
+        const stats = await getHistoryStats()
+        if (current()) this.stats = stats
+        return stats
+      } catch (error) {
+        if (current()) this.statsError = error.normalizedMessage || error.message || '练习统计读取失败，请重试'
+        throw error
+      } finally { if (current()) this.statsLoading = false }
     }
   }
 })

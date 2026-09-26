@@ -24,6 +24,7 @@ PC 登录页，承接账号密码登录和注册入口；管理员与普通用�
             layout="vertical"
             @finish="handleLogin"
           >
+            <a-alert v-if="loginError" type="error" :message="loginError" show-icon style="margin-bottom: 16px" />
             <a-form-item name="username" label="用户名">
               <a-input
                 v-model:value="loginForm.username"
@@ -71,7 +72,8 @@ PC 登录页，承接账号密码登录和注册入口；管理员与普通用�
             layout="vertical"
             @finish="handleRegister"
           >
-            <a-form-item name="username" label="用户名">
+            <a-alert v-if="registerError" type="error" :message="registerError" show-icon style="margin-bottom: 16px" />
+            <a-form-item name="username" label="用户名" extra="3–32 位英文字母、数字、下划线或短横线；不能以 wxmp_ 开头。">
               <a-input
                 v-model:value="registerForm.username"
                 :maxlength="32"
@@ -143,6 +145,8 @@ const userStore = useUserStore()
 
 const activeTab = ref('login')
 const loading = ref(false)
+const loginError = ref('')
+const registerError = ref('')
 const loginFormRef = ref(null)
 const registerFormRef = ref(null)
 const AGREED_TERMS_STORAGE_KEY = 'civil_agreed_terms_version'
@@ -170,7 +174,7 @@ const loginRules = {
 const registerRules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
-    { pattern: /^[A-Za-z0-9_-]{3,32}$/, message: '用户名需为 3–32 位字母、数字、下划线或短横线', trigger: 'blur' }
+    { pattern: /^(?!wxmp_)[A-Za-z0-9_-]{3,32}$/i, message: '用户名需为 3–32 位英文字母、数字、下划线或短横线，不能以 wxmp_ 开头', trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
@@ -257,7 +261,9 @@ function normalizeRedirectTarget(value) {
 }
 
 async function handleLogin() {
+  if (loading.value) return
   loading.value = true
+  loginError.value = ''
   try {
     await userStore.login(loginForm.username, loginForm.password)
     message.success('登录成功')
@@ -265,14 +271,16 @@ async function handleLogin() {
     window.location.replace(redirect)
   } catch (e) {
     const msg = e.normalizedMessage || e.response?.data?.detail || '登录失败'
-    message.error(msg)
+    loginError.value = msg
   } finally {
     loading.value = false
   }
 }
 
 async function handleRegister() {
+  if (loading.value) return
   loading.value = true
+  registerError.value = ''
   try {
     await userStore.register({
       username: registerForm.username,
@@ -286,7 +294,7 @@ async function handleRegister() {
     loginForm.password = ''
   } catch (e) {
     const msg = e.normalizedMessage || e.response?.data?.detail || '注册失败'
-    message.error(msg)
+    registerError.value = msg
   } finally {
     loading.value = false
   }

@@ -77,8 +77,7 @@
 
       <view class="card">
         <text class="section-title">评分口径</text>
-        <text class="plain-text">依据本题采分点、题库参考答案与实际作答评估；能力条采用内容百分制权重，不与题目赋分直接相加。历史总评换算为百分制，整套仪态分仅计一次。</text>
-        <text v-if="result.contentScore != null" class="plain-text">内容 {{ result.contentScore }} / {{ result.contentMaxScore || (result.maxScore - result.appearanceScoreMax) }}；仪态 {{ result.appearanceScore }} / {{ result.appearanceScoreMax }}。{{ result.scoreCalculationNote }}</text>
+        <text v-for="note in scoringExplanation(result)" :key="note" class="plain-text">{{ note }}</text>
         <text class="plain-text">等级按得分率：A ≥85%，B ≥75%，C ≥60%，其余为 D。AI 结果仅供训练参考，不代表官方考试成绩。</text>
       </view>
 
@@ -104,7 +103,9 @@
 
       <view v-if="answerVideoUrl" class="card">
         <text class="section-title">作答录像回放</text>
-        <video v-if="visible" :key="activeQuestionId" :src="answerVideoUrl" controls class="answer-video" @loadedmetadata="mediaRevision += 1" />
+        <video v-if="visible" :key="`${activeQuestionId}:${playbackAttempt}`" :src="answerVideoUrl" controls class="answer-video" @loadedmetadata="mediaRevision += 1; playbackError = ''" @error="playbackError = '录像暂时无法播放，请检查网络后重新加载。'" />
+        <text v-if="!currentMedia.persisted" class="page-desc">当前为本机临时录像，上传成功后可从历史记录回放。</text>
+        <view v-if="playbackError"><text class="page-desc">{{ playbackError }}</text><button class="secondary-button" @tap="playbackAttempt += 1; playbackError = ''">重新加载录像</button></view>
       </view>
 
       <view v-if="answerTimingView" class="card timing-card">
@@ -213,8 +214,12 @@
       </view>
       </MotionCollapse>
 
+      <view v-if="favoritesStore.error" class="card">
+        <text class="page-desc">{{ favoritesStore.error }}</text>
+        <button class="secondary-button" @tap="favoritesStore.load()">重新同步收藏</button>
+      </view>
       <view class="utility-actions card">
-        <button class="secondary-button" @tap="toggleStarred">
+        <button class="secondary-button" :disabled="favoritesStore.saving" :loading="favoritesStore.saving" @tap="toggleStarred">
           {{ isStarred ? '已收藏' : '收藏本题' }}
         </button>
         <button class="secondary-button" @tap="openShareCard">分享成绩卡</button>
@@ -248,7 +253,8 @@
       <text v-if="!displayTranscript" class="plain-text">{{ currentAnswer.processingStatus === 'failed' ? '文字稿尚未生成，请重试录音处理。' : '录音正在处理，文字稿和点评完成后会自动显示。请保持小程序打开。' }}</text>
       <text class="plain-text" selectable>{{ displayTranscript }}</text>
       <text v-if="currentAnswer.processingError" class="plain-text">{{ currentAnswer.processingError }}</text>
-      <video v-if="answerVideoUrl && visible" :key="activeQuestionId" :src="answerVideoUrl" controls class="answer-video" />
+      <video v-if="answerVideoUrl && visible" :key="`${activeQuestionId}:${playbackAttempt}`" :src="answerVideoUrl" controls class="answer-video" @error="playbackError = '录像暂时无法播放，请检查网络后重新加载。'" />
+      <view v-if="playbackError"><text class="page-desc">{{ playbackError }}</text><button class="secondary-button" @tap="playbackAttempt += 1; playbackError = ''">重新加载录像</button></view>
       <button v-if="canRetryCurrentAnswer" class="primary-button" :loading="retryingScoring" :disabled="retryingScoring" @tap="retryScoring">
         {{ retryingScoring ? '正在处理' : '重试处理' }}
       </button>
@@ -274,6 +280,8 @@
 </template>
 
 <script setup>
+import { resolveAnswerMedia } from '../../../../shared/answerMedia.mjs'
+import { scoringExplanation } from '../../../../shared/scoringExplanation.mjs'
 import MotionSummary from '../../components/MotionSummary.vue'
 import MotionCollapse from '../../components/MotionCollapse.vue'
 import { useScrollSummary } from '../../motion/useScrollSummary'
@@ -333,14 +341,11 @@ const localFitProvinceName = computed(() => getProvinceName(questionProvince.val
 const currentAnswer = computed(() => answerList.value[activeAnswerIndex.value] || null)
 const canRetryCurrentAnswer = computed(() => currentAnswer.value?.processingStatus === 'failed'
   || (!currentAnswer.value?.processingStatus && !!displayTranscript.value && !result.value))
-const answerVideoUrl = computed(() => {
-  const answer = currentAnswer.value || {}
-  const media = result.value?.mediaRecord || answer.scoringResult?.mediaRecord || {}
-  const type = String(media.mediaType || answer.mediaType || '')
-  if (!type.includes('video')) return ''
-  const url = media.fileUrl || answer.mediaUrl || answer.filePath || ''
-  return url.startsWith('/uploads/') ? `${API_BASE}${url}` : url
-})
+const playbackError = ref('')
+const playbackAttempt = ref(0)
+const currentMedia = computed(() => resolveAnswerMedia(currentAnswer.value || {}, result.value, API_BASE))
+const answerVideoUrl = computed(() => currentMedia.value.kind === 'video' ? currentMedia.value.url : '')
+watch(activeQuestionId, () => { playbackError.value = ''; playbackAttempt.value = 0 })
 const currentQuestionLabel = computed(() => (
   answerList.value.length > 1
     ? `第 ${activeAnswerIndex.value + 1} 题${currentAnswer.value?.isPlaceholder ? ' · 未作答' : ''}`
@@ -839,24 +844,11 @@ function recordWeakFavorite() {
   if (currentAnswer.value?.isPlaceholder) return
   if (!result.value || !activeExamId.value || !activeQuestionId.value) return
   if (weakRecordedQuestionIds.value.has(activeQuestionId.value)) return
-  const score = Number(result.value.totalScore || 0)
-  const maxScore = Number(result.value.maxScore || 100)
-  if (!Number.isFinite(score) || !Number.isFinite(maxScore) || maxScore <= 0 || score / maxScore >= 0.6) return
   weakRecordedQuestionIds.value.add(activeQuestionId.value)
-  favoritesStore.addItem({
-    examId: activeExamId.value,
-    questionId: activeQuestionId.value,
-    questionStem: questionStem.value || '题目内容暂缺',
-    dimension: result.value.dimensions?.[0]?.name || '',
-    score,
-    maxScore,
-    grade: grade.value.label,
-    date: new Date().toISOString(),
-    type: 'weak'
-  })
+  void favoritesStore.load()
 }
 
-function toggleStarred() {
+async function toggleStarred() {
   if (currentAnswer.value?.isPlaceholder) {
     toast('未作答题目暂时无法收藏')
     return
@@ -869,22 +861,17 @@ function toggleStarred() {
     entry.examId === activeExamId.value && entry.questionId === activeQuestionId.value
   ))
   if (isStarred.value && item) {
-    favoritesStore.removeItem(item.id, 'starred')
-    toast('已取消收藏')
+    if (await favoritesStore.removeItem(item.id, 'starred')) toast('已取消收藏')
+    else if (favoritesStore.error) toast(favoritesStore.error)
     return
   }
-  favoritesStore.addItem({
+  const saved = await favoritesStore.addItem({
     examId: activeExamId.value,
     questionId: activeQuestionId.value,
-    questionStem: questionStem.value || '题目内容暂缺',
-    dimension: result.value.dimensions?.[0]?.name || '',
-    score: result.value.totalScore,
-    maxScore: result.value.maxScore,
-    grade: grade.value.label,
-    date: new Date().toISOString(),
     type: 'starred'
   })
-  toast('已收藏', 'success')
+  if (saved) toast('已收藏', 'success')
+  else if (favoritesStore.error) toast(favoritesStore.error)
 }
 
 function openShareCard() {

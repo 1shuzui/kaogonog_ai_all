@@ -15,6 +15,8 @@ export const useQuestionBankStore = defineStore('questionBank', {
   state: () => ({
     questions: [],
     loading: false,
+    error: '',
+    requestSequence: 0,
     pagination: { current: 1, pageSize: 10, total: 0 },
     filters: { keyword: '', dimension: '', province: 'national', position: '', subcategory: '', subcategory2: '', examCategory: '', year: '', categoryReview: '' }
   }),
@@ -27,7 +29,9 @@ export const useQuestionBankStore = defineStore('questionBank', {
 
   actions: {
     async fetchQuestions(params = {}) {
+      const request = ++this.requestSequence
       this.loading = true
+      this.error = ''
       try {
         const nextCurrent = Number(params.current || params.page || this.pagination.current || 1)
         const nextPageSize = Number(params.pageSize || this.pagination.pageSize || 10)
@@ -40,10 +44,15 @@ export const useQuestionBankStore = defineStore('questionBank', {
           pageSize: nextPageSize
         }
         const res = await getQuestions(mergedParams)
+        if (request !== this.requestSequence) return false
         this.questions = Array.isArray(res?.list) ? res.list : []
         this.pagination.total = Number(res?.total ?? this.questions.length)
+        return true
+      } catch (error) {
+        if (request === this.requestSequence && error?.code !== 'STALE_SESSION') this.error = error.normalizedMessage || error.message || '查询失败，请重试'
+        return false
       } finally {
-        this.loading = false
+        if (request === this.requestSequence) this.loading = false
       }
     },
 

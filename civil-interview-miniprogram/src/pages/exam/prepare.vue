@@ -14,6 +14,8 @@
     <view class="learner-kicker"><LearnerIcon name="audio" :size="24" /><text>{{ pageTitle }}</text></view>
     <text class="page-title">这次，怎么练？</text>
     <text class="page-desc">{{ practiceSummary }} · 提交后可继续下一题</text>
+    <view v-if="selection.ids.length" class="card"><text class="section-title">已选 {{ selection.ids.length }} 道题，将按原顺序作答</text><text class="page-desc">{{ inheritedSummary }}</text></view>
+    <view v-if="entryError" class="card"><text class="page-desc">{{ entryError }}。原选择已保留，可再次点击进入考场重试。</text></view>
 
     <view v-if="readonlyMode" class="card access-card">
       <text class="access-card__title">未开通正式训练</text>
@@ -58,7 +60,7 @@
         </view>
       </view>
 
-      <MotionCollapse class="prepare-advanced" :open="advancedOpen" title="题目范围与题型" :revision="[mode, fullExamSuites, hasDirectionOptions]" @toggle="advancedOpen = !advancedOpen">
+      <MotionCollapse v-if="!fixedPracticeEntry" class="prepare-advanced" :open="advancedOpen" title="题目范围与题型" :revision="[mode, fullExamSuites, hasDirectionOptions]" @toggle="advancedOpen = !advancedOpen">
       <text class="ui-helper">{{ mode === 'fullExam' ? '全真模拟按完整真题套卷练习，保留套卷时间规则。' : '可选，不修改也能直接开始。' }}</text>
       <LightSelector title="考试大类" :options="examCategoryNames" :value="examCategoryIndex" @change="onExamCategoryFilterChange">
         <view class="config-row">
@@ -98,7 +100,8 @@
           </view>
         </picker>
         <text v-if="selectedFullExamSuite" class="suite-panel__summary">{{ selectedFullExamSuiteSummary }}</text>
-        <text v-else class="suite-panel__summary">{{ fullExamSuitesLoading ? '正在加载真题套卷...' : '当前省份暂无整套真题套卷，请切换江苏、安徽或湖南。' }}</text>
+        <text v-else class="suite-panel__summary">{{ fullExamSuitesLoading ? '正在加载真题套卷...' : '当前筛选范围暂无完整真题套卷，请调整地区或分类。' }}</text>
+        <text v-if="fullExamSuiteOptions.length === 1" class="page-desc">当前筛选范围收录 1 套完整真题套卷，可调整地区或分类查看其他题源。</text>
       </view>
 
       <view v-if="mode !== 'fullExam'" class="config-row config-row--year" @tap="showYearPicker = true">
@@ -188,6 +191,8 @@ import { useBillingStore } from '../../stores/billing'
 import { useQuestionBankStore } from '../../stores/questionBank'
 import { useSubscriptionStore } from '../../stores/subscription'
 import { useUserStore } from '../../stores/user'
+import { useTargetedStore } from '../../stores/targeted'
+import { readPracticeSelection, loadSelectedQuestions, practiceModeFor, practiceFilterSummary } from '../../../../shared/practiceSelection.mjs'
 import { getQuestionById, getQuestions } from '../../api/questionBank'
 import {
   getFullExamSuiteQuestions as requestFullExamSuiteQuestions,
@@ -213,6 +218,10 @@ const questionBankStore = useQuestionBankStore()
 const filterMetadata = useQuestionFilters()
 const subscriptionStore = useSubscriptionStore()
 const userStore = useUserStore()
+const targetedStore = useTargetedStore()
+const selection = ref({ ids: [], filters: {} })
+const entryError = ref('')
+const selectionError = ref('')
 const DEFAULT_EXAM_QUESTION_COUNT = 5
 const JIANGSU_FULL_EXAM_TIMING_MODE = 'jiangsu_5_15'
 const MAX_FREE_QUESTION_COUNT = 10
@@ -265,8 +274,9 @@ const questionCategoryOptions = [
   { key: RANDOM_DIMENSION_KEY, name: '随机题型' },
   ...QUESTION_CATEGORIES.filter((item) => item.key)
 ]
-const fixedPracticeSources = new Set(['targeted', 'training', 'jiangsu', 'bank'])
-const fixedPracticeEntry = computed(() => fixedPracticeSources.has(source.value))
+const fixedPracticeSources = new Set(['targeted', 'training', 'jiangsu', 'bank', 'favorites'])
+const fixedPracticeEntry = computed(() => fixedPracticeSources.has(source.value) || selection.value.ids.length > 0)
+const inheritedSummary = computed(() => practiceFilterSummary(selection.value.filters, userStore.provinces, QUESTION_CATEGORIES))
 const showPracticeConfig = computed(() => mode.value === 'free' && !fixedPracticeEntry.value)
 const selectedSpecificDimensions = computed(() => selectedDimensions.value.filter((item) => item && item !== RANDOM_DIMENSION_KEY))
 const selectedDimensionParam = computed(() => selectedSpecificDimensions.value.join(','))
@@ -285,7 +295,7 @@ const selectedFullExamSuiteLabel = computed(() => selectedFullExamSuite.value?.t
 const selectedFullExamSuiteSummary = computed(() => getFullExamSuiteSummary(selectedFullExamSuite.value))
 const practiceSummary = computed(() => trial.value ? '1 道试用题' : mode.value === 'fullExam'
   ? `全真模拟 · ${selectedFullExamSuite.value?.questionCount || '待选'} 题`
-  : `${recommendedQuestionId.value || fixedPracticeEntry.value ? 1 : count.value} 道题 · ${selectedCategoryName.value}`)
+  : `${selection.value.ids.length || count.value} 道题 · ${selectedCategoryName.value}`)
 const pageTitle = computed(() => (mode.value === 'fullExam' ? '全真模拟准备' : '专项练习准备'))
 const pageDesc = computed(() => (
   mode.value === 'fullExam'
@@ -428,6 +438,7 @@ const yearLabel = computed(() =>
 
 // Build target filter params for API calls
 const targetFilterParams = computed(() => {
+  if (fixedPracticeEntry.value) return selection.value.filters
   const params = {}
   const cat = selectedCategoryNode.value
   const region = selectedRegionNode.value
@@ -573,6 +584,8 @@ async function refreshFullExamSuites() {
 
 onLoad((query) => {
   source.value = String(query?.source || '')
+  try { selection.value = readPracticeSelection(query, source.value === 'targeted' ? targetedStore.generatedQuestions : []) }
+  catch (error) { selectionError.value = entryError.value = error.message }
   recommendedQuestionId.value = String(query?.questionId || '').trim()
   if (fixedPracticeEntry.value) {
     mode.value = 'free'
@@ -777,7 +790,9 @@ async function startPractice() {
   enteringExam.value = true
   loading.value = true
   showLoading('检查考场')
+  entryError.value = ''
   try {
+    if (selectionError.value) throw new Error(selectionError.value)
     const accessFresh = isFresh(accessRefreshedAt, ENTRY_STATE_REFRESH_TIMEOUT_MS)
     const asrFresh = isFresh(asrStatusRefreshedAt, ENTRY_ASR_STATUS_TIMEOUT_MS)
     await Promise.allSettled([
@@ -822,12 +837,14 @@ async function startPractice() {
         }
       }
       questions = await withTimeout(
-        mode.value === 'fullExam'
+        selection.value.ids.length
+          ? loadSelectedQuestions(selection.value.ids, getQuestionById)
+          : mode.value === 'fullExam'
           ? loadFullExamSuiteQuestions(selectedFullExamSuite.value, getQuestionById, {
             getFullExamSuiteQuestions: requestFullExamSuiteQuestions
           })
-          : recommendedQuestionId.value
-            ? getQuestionById(recommendedQuestionId.value).then((question) => (question?.id ? [question] : []))
+          : fixedPracticeEntry.value
+            ? Promise.reject(new Error('未找到所选题目，请返回选题页重新确认'))
             : questionBankStore.fetchRandom({
               province: targetFilterParams.value.province || userStore.selectedProvince,
               count: count.value,
@@ -840,6 +857,7 @@ async function startPractice() {
     }
 
     if (!questions.length) {
+      if (selection.value.ids.length) throw new Error('所选题目读取超时或暂不可用，选择已保留，请重试')
       toast(trial.value ? '试用题暂不可用，请稍后重试' : mode.value === 'fullExam' ? '当前省份暂无整套真题套卷' : '当前筛选条件暂无题目')
       return
     }
@@ -848,13 +866,14 @@ async function startPractice() {
       toast('当前套题题目加载不完整，请切换其他套卷后重试')
       return
     }
-    const targetCount = trial.value || recommendedQuestionId.value ? 1 : mode.value === 'fullExam' ? questions.length : count.value
+    if (selection.value.ids.length && questions.length !== selection.value.ids.length) throw new Error('指定题目尚未完整读取，请重试')
+    const targetCount = trial.value ? 1 : selection.value.ids.length || (mode.value === 'fullExam' ? questions.length : count.value)
     const preparedQuestions = applyFullExamTimingMode(applyUserPracticePreferencesToQuestions(questions.slice(0, targetCount)))
     examStore.setMediaMode(mediaMode.value)
-    await examStore.startFromQuestions(preparedQuestions, trial.value ? 'trial' : mode.value)
+    await examStore.startFromQuestions(preparedQuestions, practiceModeFor(source.value, mode.value, trial.value))
     uni.navigateTo({ url: '/pages/exam/room' })
   } catch (error) {
-    toast(error?.message || '进入考场失败')
+    entryError.value = error?.message || '进入考场失败'
   } finally {
     loading.value = false
     enteringExam.value = false

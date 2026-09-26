@@ -124,6 +124,7 @@ import { useUserStore } from '../../stores/user'
 import { hasPremiumAccess } from '../../utils/access'
 import { buildTargetFocusUrl, mergeTargetPayload } from '../../utils/targetedOptions'
 import { useQuestionFilters } from '../../utils/useQuestionFilters'
+import { miniPracticeUrl } from '../../../../shared/practiceSelection.mjs'
 import { isQuestionScoringSupported, getScoringUnavailableMessage } from '../../utils/questionPresentation'
 import { promptLoginForAction, showLoading, toast, hideLoading } from '../../utils/navigation'
 
@@ -363,7 +364,8 @@ async function startQuestion(question) {
 function startGeneratedPractice() {
   if (!promptLoginForAction('开始定向练习', '/pages/exam/prepare?source=targeted')) return
   if (readonlyMode.value) return
-  uni.navigateTo({ url: '/pages/exam/prepare?source=targeted' })
+  if (!targetedStore.generatedQuestions.length) return toast('请先生成练习题目')
+  uni.navigateTo({ url: miniPracticeUrl({ source: 'targeted', questionIds: targetedStore.generatedQuestions.map(question => question.id), filters: targetedStore.selectionPayload }) })
 }
 
 function goPricing() {

@@ -58,7 +58,9 @@
         <text class="warning-text">
           当前微信快捷账号尚未设置 PC 登录账号。设置后，PC 端才能用账号密码进入同一账号并同步练习记录、收藏错题和订单权益。
         </text>
-        <input v-model="pcAccountForm.username" class="field field--mt" placeholder="PC 登录账号，3-32 位字母/数字/下划线" />
+        <input v-model="pcAccountForm.username" class="field field--mt" maxlength="32" placeholder="设置新的 PC 登录用户名" />
+        <text class="warning-text warning-text--normal">3–32 位英文字母、数字、下划线或短横线，不能以 wxmp_ 开头。已有 PC 账号请退出后使用账号密码登录。</text>
+        <text v-if="pcAccountError" class="warning-text" role="alert">{{ pcAccountError }}</text>
         <input v-model="pcAccountForm.password" class="field field--mt" password placeholder="PC 登录密码，至少 6 位" />
         <input v-model="pcAccountForm.confirmPassword" class="field field--mt" password placeholder="确认密码" />
         <button class="primary-button form-button" :loading="pcAccountLoading" @tap="submitPcAccount">创建 PC 登录账号</button>
@@ -160,6 +162,7 @@ const termsLoading = ref(false)
 const deviceLoading = ref(false)
 const wechatBindLoading = ref(false)
 const pcAccountLoading = ref(false)
+const pcAccountError = ref('')
 const passwordForm = reactive({
   oldPassword: '',
   newPassword: '',
@@ -224,8 +227,8 @@ function validatePcAccountForm() {
     toast('账号需为 3-32 位字母、数字、下划线或短横线')
     return false
   }
-  if (username.startsWith('wx_')) {
-    toast('账号不能使用 wx_ 开头')
+  if (username.toLowerCase().startsWith('wxmp_')) {
+    toast('账号不能使用 wxmp_ 开头')
     return false
   }
   if (pcAccountForm.password.length < 6) {
@@ -243,6 +246,7 @@ async function submitPcAccount() {
   if (pcAccountLoading.value) return
   if (!validatePcAccountForm()) return
   pcAccountLoading.value = true
+  pcAccountError.value = ''
   try {
     await userStore.setupWechatPcAccount({
       username: pcAccountForm.username.trim(),
@@ -252,7 +256,7 @@ async function submitPcAccount() {
     pcAccountForm.confirmPassword = ''
     toast('PC 登录账号已创建', 'success')
   } catch (error) {
-    toast(error?.message || 'PC 登录账号创建失败')
+    pcAccountError.value = error?.message || 'PC 登录账号创建失败'
   } finally {
     pcAccountLoading.value = false
   }

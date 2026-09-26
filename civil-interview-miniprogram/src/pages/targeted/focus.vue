@@ -16,6 +16,7 @@
   </view>
 </template>
 <script setup>
+import { miniPracticeUrl } from '../../../../shared/practiceSelection.mjs'
 import { computed, ref } from 'vue'
 import { onLoad, onHide, onUnload } from '@dcloudio/uni-app'
 import FocusAnalysisCard from '../../components/FocusAnalysisCard.vue'
@@ -78,7 +79,7 @@ function goBack() {
 }
 function startGeneratedPractice() {
   if (!targetedStore.generatedQuestions.length) { toast('请先生成针对性题目'); return }
-  uni.navigateTo({ url: '/pages/exam/prepare?source=targeted' })
+  uni.navigateTo({ url: miniPracticeUrl({ source: 'targeted', questionIds: targetedStore.generatedQuestions.map(question => question.id), filters: targetedStore.selectionPayload }) })
 }
 async function generateQuestions() {
   if (readonlyMode.value || generateLoading.value) return

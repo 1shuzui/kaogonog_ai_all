@@ -8,6 +8,8 @@ import { hasFinalScore } from '../src/utils/answerStatus.js'
 import { canUseLocalAnswers } from '../src/utils/resultAnswerSource.js'
 import { getQuestionScorePair } from '../src/utils/scorePresentation.js'
 import { createCancellation } from '../src/utils/cancellation.mjs'
+import { resolveAnswerMedia } from '../../shared/answerMedia.mjs'
+import { scoringExplanation } from '../../shared/scoringExplanation.mjs'
 
 const source = readFileSync(new URL('../src/pages/result/index.vue', import.meta.url), 'utf8')
 const script = source.match(/<script setup>([^]*?)<\/script>/)[1].replace(/^import .*$/gm, '')
@@ -45,7 +47,8 @@ function page(t, api = {}, local = []) {
     usePageMotion: () => ({ motionClass: [], motionStyle: {}, visible }),
     useScrollSummary: () => ({ compact: ref(false), calibrate() {}, onSummaryScroll() {} }),
     useExamStore: () => store, useTrainingStore: () => ({ recordResult() {} }),
-    useFavoritesStore: () => ({ items: [], isFavorited: () => false, addItem() {}, removeItem() {} }),
+    useFavoritesStore: () => ({ items: [], isFavorited: () => false, load: async () => true, addItem() {}, removeItem() {} }),
+    resolveAnswerMedia, scoringExplanation,
     onLoad() {}, onPageScroll() {}, onShareAppMessage: callback => shares.push(callback), onUnload: callback => unload.push(callback),
     requireLogin: () => true, showLoading() {}, hideLoading() {}, toast: message => errors.push(message), uni: {}
   })
@@ -73,6 +76,16 @@ test('an older history response cannot replace a newer route or clear its loadin
   latest.resolve({ examId: 'exam-b', answers: [{ ...answer('q2', 83), examId: 'exam-b' }] }); await second
   assert.equal(f.result.value.totalScore, 83)
   assert.equal(f.requests[0].signal?.aborted, true)
+})
+
+test('reopening a five-question attempt with three answers retains ordered unanswered placeholders', async t => {
+  const ids = ['q3', 'q1', 'q5', 'q2', 'q4']
+  const f = page(t, { history: async () => ({ examId: 'exam-a', questionIds: ids, answers: ids.slice(0, 3).map(id => answer(id, 70)) }) })
+  await f.loadResult({ examId: 'exam-a', questionId: 'q5' })
+  assert.deepEqual(Array.from(f.answerList.value, a => a.questionId), ids)
+  assert.equal(f.answerList.value.filter(a => a.isPlaceholder).length, 2)
+  assert.equal(f.activeQuestionId.value, 'q5')
+  assert.equal(f.result.value.totalScore, 70)
 })
 
 test('background completion and late insertion retain the selected question and full text', async t => {
