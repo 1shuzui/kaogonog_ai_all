@@ -46,14 +46,16 @@ def _owned_answer(db, user, exam_id, question_id):
 
 
 def _rows(db, user):
-    return db.query(ExamAnswer, Exam, Question, UserReviewState).join(
+    answers = db.query(ExamAnswer, Exam).join(
         Exam, Exam.id == ExamAnswer.exam_id,
-    ).outerjoin(Question, Question.id == ExamAnswer.question_id).outerjoin(
-        UserReviewState,
-        (UserReviewState.user_id == user.id)
-        & (UserReviewState.exam_id == ExamAnswer.exam_id)
-        & (UserReviewState.question_id == ExamAnswer.question_id),
     ).filter(Exam.user_id == user.username).order_by(ExamAnswer.answered_at.desc(), ExamAnswer.id.desc()).all()
+    # Existing deployments have different collations on question/answer/review IDs.
+    # Bind IDs as query values, then associate exact IDs in memory instead of joining
+    # incompatible legacy text columns or changing the whole production schema.
+    question_ids = {answer.question_id for answer, _exam in answers}
+    questions = {q.id: q for q in db.query(Question).filter(Question.id.in_(question_ids)).all()} if question_ids else {}
+    states = {(state.exam_id, state.question_id): state for state in db.query(UserReviewState).filter_by(user_id=user.id).all()}
+    return [(answer, exam, questions.get(answer.question_id), states.get((exam.id, answer.question_id))) for answer, exam in answers]
 
 
 def list_review_items(db: Session, username: str, current=1, page_size=100, kind="all") -> dict:
