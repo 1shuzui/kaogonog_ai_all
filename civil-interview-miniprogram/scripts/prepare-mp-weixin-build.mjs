@@ -16,8 +16,9 @@ import {
 } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { validateLearnerAssets } from './validate-learner-assets.mjs'
+import { learnerIconNames, validateLearnerAssets } from './validate-learner-assets.mjs'
 import { validateMotionAssets } from './validate-motion-assets.mjs'
+import { validateWeChatJavaScript } from './validate-wechat-javascript.mjs'
 
 const scriptDir = dirname(fileURLToPath(import.meta.url))
 const rootDir = dirname(scriptDir)
@@ -107,6 +108,7 @@ function validate({ prod = false } = {}) {
     }
   }
 
+  failures.push(...validateWeChatJavaScript(files, outputDir))
   failures.push(...validateLearnerAssets(outputDir))
   failures.push(...validateMotionAssets(outputDir))
 
@@ -118,7 +120,7 @@ function validate({ prod = false } = {}) {
     process.exit(1)
   }
 
-  console.log(`[mini-build] validated ${jsonFiles.length} JSON files, 4 learner themes and 16 standalone icons in ${outputLabel}`)
+  console.log(`[mini-build] validated ${jsonFiles.length} JSON files, ${files.filter(file => file.endsWith('.js')).length} JavaScript files (ES2018), 4 learner themes and ${learnerIconNames.length} standalone icons in ${outputLabel}`)
 }
 
 const [command, ...flags] = process.argv.slice(2)

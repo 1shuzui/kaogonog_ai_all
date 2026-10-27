@@ -163,7 +163,7 @@ function confirmClear() {
   display: block;
   color: #1f2b3d;
   font-size: 28rpx;
-  font-weight: 800;
+  font-weight: 400;
   line-height: 1.55;
 }
 

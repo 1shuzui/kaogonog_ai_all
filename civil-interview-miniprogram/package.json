@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "@dcloudio/vite-plugin-uni": "3.0.0-alpha-5000820260430001",
+    "acorn": "8.16.0",
     "vite": "5.2.8"
   }
 }
