@@ -28,6 +28,18 @@ test('ordinary clock carries delayed preparation ticks into answering and overti
   assert.deepEqual(f.buildTimingMeta(), { actualSeconds: 7, standardSeconds: 5, overtimeSeconds: 2 })
 })
 
+test('zero preparation is distinct from a missing question time and survives question reset', t => {
+  const f = clock(t, { prepTime: 0, answerTime: 180 })
+  assert.equal(f.prepLeft.value, 0)
+  assert.equal(f.standardQuestionSeconds(), 180)
+  f.startTimer(); f.tick(1250)
+  assert.equal(f.phase.value, 'answering')
+  f.currentQuestion.value = {}
+  f.resetQuestionClock()
+  assert.equal(f.prepLeft.value, 90)
+  assert.equal(f.answerLeft.value, 180)
+})
+
 test('Jiangsu early answering grants the shared fifteen minutes and later ticks keep that deadline', t => {
   const f = clock(t, {}, true)
   f.startTimer(); f.tick(61000)

@@ -6,7 +6,7 @@ export function useExamClock({ question, preferences, isJiangsuFullExamTiming },
   const scheduleInterval = runtime.setInterval || setInterval
   const cancelInterval = runtime.clearInterval || clearInterval
   // Explicit zero belongs to the question; it must not fall back to a saved preference.
-  function questionSeconds(value, preferred, fallback) { return Number(value || preferred || fallback) }
+  function questionSeconds(value, preferred, fallback) { return Number(value === 0 ? 0 : value || preferred || fallback) }
   const phase = ref('preparing')
   const prepLeft = ref(preferences.value.defaultPrepTime)
   const answerLeft = ref(preferences.value.defaultAnswerTime)
