@@ -8,7 +8,7 @@ from types import SimpleNamespace
 from sqlalchemy.orm import load_only
 
 from app.models.entities import Exam, ExamAnswer, Question
-from app.services.question_service import _filter_bank_rows, _normalize_province
+from app.services.question_filters import filter_bank_rows, normalize_province
 from app.services.question_scope import values
 from app.services.scoring_service import _is_placeholder_transcript
 from app.services.targeted_performance_rules import (
@@ -30,7 +30,7 @@ def normalize_target(target):
     result = {key: value for key, value in raw.items() if value not in (None, "", [])}
     for key in ("year", "positionTags"):
         result[key] = sorted(set(values(raw.get(key))))
-    result["province"] = _normalize_province(raw.get("province"))
+    result["province"] = normalize_province(raw.get("province"))
     return result
 
 
@@ -49,10 +49,10 @@ def matches_target(question, target):
     source_question = SimpleNamespace(stem="", keywords={"_meta": meta})
     role_fields = ("positionType", "positionTag", "positionTags")
     filters = {key: target[key] for key in SCOPE_FIELDS if key != "province" and key not in role_fields and target.get(key)}
-    if not _filter_bank_rows([source_question], **filters):
+    if not filter_bank_rows([source_question], **filters):
         return False
     for key in role_fields:
-        if target.get(key) and not _filter_bank_rows([source_question], **{key: target[key]}):
+        if target.get(key) and not filter_bank_rows([source_question], **{key: target[key]}):
             return False
     role = str(target.get("positionType") or "").strip()
     title = str(meta.get("sourceTitleRaw") or meta.get("suiteName") or "")
