@@ -31,6 +31,8 @@
 
 ## 运行维护
 
+最新微信上传与定向功能交付见[2026-10-26兼容修复记录](implementation/wechat-upload-compatibility-20261026.md)。
+
 | 文档 | 用途 |
 | --- | --- |
 | [本地开发与运行](ops/local-development.md) | 后端、PC、小程序本地启动和构建命令。 |

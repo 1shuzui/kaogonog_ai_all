@@ -13,6 +13,8 @@
 | 修改定向备面、门户或岗位筛选 | [定向备面接口](../api/targeted-training.md) | 后端 positions 路由与两端兜底分类树 |
 | 排查部署、题库资料或测试 | [本地开发](../ops/local-development.md) 与 [测试说明](../testing/testing-and-reports.md) | [题库资产索引](../../data/question-bank/README.md) |
 
+微信上传语法、复习题干样式和本次限定推送范围见[兼容修复记录](../implementation/wechat-upload-compatibility-20261026.md)。
+
 ## 不可违反的项目事实
 
 1. 医疗卫生是展示门户和岗位方向，不自动等同于真实考试体系。当前三批医疗卫生资产的真实主分类都是 **事业单位考试**。
