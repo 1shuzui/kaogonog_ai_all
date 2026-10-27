@@ -1,4 +1,5 @@
 import test from 'node:test'
+import * as resultAnswers from '../src/utils/resultAnswers.mjs'
 import assert from 'node:assert/strict'
 import { existsSync, readFileSync } from 'node:fs'
 import vm from 'node:vm'
@@ -38,7 +39,7 @@ function page(t, api = {}, local = []) {
     if (options.url.startsWith('/questions/')) return api.question(options)
     return api.history(options)
   }
-  const context = vm.createContext({ computed, ref, watch, ...constants, ...scoring, ...review,
+  const context = vm.createContext({ computed, ref, watch, ...constants, ...scoring, ...review, ...resultAnswers,
     hasFinalScore, canUseLocalAnswers, getQuestionScorePair, createCancellation, request, API_BASE: 'https://fixture.invalid/api',
     getHistoryDetail: id => request({ url: `/history/${id}` }),
     getScoringResult: (id, q) => request({ url: `/scoring/result/${id}/${q}` }),

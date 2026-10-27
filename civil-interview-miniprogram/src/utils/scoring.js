@@ -7,7 +7,7 @@
  * @return 导出评分支持判断、维度归一、建议归一和结果展示辅助函数。
  * @raises 参数异常通常返回兜底值；需要阻断流程的错误交由调用方处理。
  */
-import { DIMENSION_FALLBACKS } from './constants'
+import { DIMENSION_FALLBACKS } from './constants.js'
 
 const LOCAL_ONLY_QUESTION_ID_PATTERN = /^q(?:_|[0-9])/i
 
