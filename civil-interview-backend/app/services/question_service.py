@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Optional, List
 
 from fastapi import HTTPException
+from app.services.question_scope import matches_scope
 from sqlalchemy import String, or_
 from sqlalchemy.orm import Session, load_only
 
@@ -1433,8 +1434,9 @@ async def _generate_targeted_questions_with_llm(
     return [{**item, "generationSource": "llm"} for item in generated]
 
 
-def _filter_bank_rows(rows, *, position="", subcategory="", subcategory2="", examCategory="", year=""):
+def _filter_bank_rows(rows, *, position="", subcategory="", subcategory2="", examCategory="", year="", **scope):
     """列表与随机练习共用同一套元数据过滤，不能无题时放宽条件。"""
+    rows = [q for q in rows if matches_scope(_question_meta_from_keywords(q.keywords), scope)]
     if position:
         rows = _apply_position_filter(rows, position)
     for key, value in (("subcategory", subcategory), ("subcategory2", subcategory2), ("examCategory", examCategory)):

@@ -8,6 +8,7 @@ import { QUESTION_CATEGORIES } from '../src/utils/constants.js'
 import { DEFAULT_TARGETED_POSITION_TREE } from '../src/utils/targetedOptions.js'
 import { normalizeProvinceCode } from '../src/utils/fullExamSuites.js'
 import { createCancellation } from '../src/utils/cancellation.mjs'
+import { readTargetedContext, performanceScopeSummary } from '../src/utils/targetedPerformance.mjs'
 import { readPracticeSelection, loadSelectedQuestions, practiceModeFor, practiceFilterSummary } from '../../shared/practiceSelection.mjs'
 
 const pageSource = readFileSync(new URL('../src/pages/exam/prepare.vue', import.meta.url), 'utf8')
@@ -37,7 +38,7 @@ function matchingRows(params) {
 // Execute the real page setup, Vue watchers and metadata hook. Substitute only
 // platform/store/API boundaries; never launch an SDK, write build output or hit a server.
 async function fixture(t, options = {}) {
-  const metadataRequests = [], questionRequests = [], notices = [], disposals = [], loads = [], starts = []
+  const metadataRequests = [], questionRequests = [], notices = [], disposals = [], loads = [], starts = [], returns = []
   const scope = Vue.effectScope()
   t.after(() => { disposals.forEach(dispose => dispose()); scope.stop() })
   const userStore = Vue.reactive({
@@ -52,10 +53,11 @@ async function fixture(t, options = {}) {
     usePageMotion: () => ({ motionClass: '', motionStyle: '' }),
     useUserStore: () => userStore,
     useTargetedStore: () => ({ generatedQuestions: options.cached || [] }),
-    readPracticeSelection, loadSelectedQuestions, practiceModeFor, practiceFilterSummary,
+    readPracticeSelection, loadSelectedQuestions, practiceModeFor, practiceFilterSummary, readTargetedContext, performanceScopeSummary,
+    useTargetedPerformanceStore: () => ({ rememberExam: (id, value) => returns.push({ id, value: copy(value) }) }),
     useBillingStore: () => ({}),
     useSubscriptionStore: () => ({ status: { canUse: true, remainingDailyMinutes: 10 }, refresh: async () => {} }),
-    useExamStore: () => ({ setMediaMode() {}, startFromQuestions: async (questions, mode) => starts.push({ questions: copy(questions), mode }) }),
+    useExamStore: () => ({ setMediaMode() {}, startFromQuestions: async (questions, mode, targetedContext) => { starts.push({ questions: copy(questions), mode, targetedContext: copy(targetedContext) }); return { examId: 'created-exam' } } }),
     getQuestionById: options.getQuestionById || (async id => ({ id, stem: id })),
     useQuestionBankStore: () => ({ fetchRandom: async params => {
       questionRequests.push(copy(params))
@@ -78,7 +80,7 @@ async function fixture(t, options = {}) {
   })
   const page = scope.run(() => vm.runInContext(`${metadataSource}\n${setupSource}\n({
     count, yearOptions, filterMetadata, toggleQuestionType, onRegionFilterChange,
-    onYearFilterChange, regionOptions, startPractice, selection, entryError
+    onYearFilterChange, regionOptions, startPractice, selection, entryError, targetedContext, targetedSelecting, applyTargetedSelection
   })`, context))
   const settle = async () => { await Vue.nextTick(); await Vue.nextTick() }
   await settle()
@@ -90,7 +92,7 @@ async function fixture(t, options = {}) {
     assert.equal(questionRequests.length, previous + 1, `Random query must run; notices: ${notices.join('; ')}`)
     return questionRequests.at(-1)
   }
-  return { page, metadataRequests, questionRequests, notices, settle, start, starts }
+  return { page, metadataRequests, questionRequests, notices, settle, start, starts, returns }
 }
 
 test('changing question type refreshes metadata for the same scope as the actual random query', async t => {
@@ -175,4 +177,19 @@ test('ordered group is retained after a failed fetch and retry does not sample r
   assert.deepEqual(f.starts[0].questions.map(q => q.id), ['q3', 'q1', 'q5', 'q2', 'q4'])
   assert.equal(f.starts[0].mode, 'targeted')
   assert.equal(f.questionRequests.length, 0)
+})
+
+test('targeted selection uses actual ordered IDs and forwards full context with zero preparation time', async t => {
+  const context = {version:1,target:{province:'jiangsu',examTrack:'medical',year:['2025','2026'],positionTags:['medical','护理岗'],prepTime:0,answerTime:180},questionType:'应急应变',period:'all',mode:'new',count:3}
+  const f = await fixture(t, {query:{source:'targeted',targetedContext:JSON.stringify(context)},cached:[{id:'obsolete'}]})
+  await f.page.startPractice()
+  assert.equal(f.starts.length, 0, 'Cannot start before selection finishes')
+  f.page.applyTargetedSelection({questionIds:['q2','q1'],targetedContext:context})
+  await f.page.startPractice()
+  assert.equal(f.questionRequests.length, 0)
+  assert.deepEqual(f.starts[0].questions.map(q=>q.id), ['q2','q1'])
+  assert.equal(f.starts[0].questions[0].prepTime, 0)
+  assert.deepEqual(f.starts[0].targetedContext, context)
+  assert.equal(f.starts[0].mode, 'targeted')
+  assert.equal(f.returns[0].id, 'created-exam')
 })

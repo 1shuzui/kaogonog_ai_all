@@ -45,6 +45,9 @@ def start_exam(db: Session, data: ExamStartRequest, username: str) -> dict:
     @return: 新建考试 ID、确认后的题目顺序和开始时间。
     @raises HTTPException: 题目不存在时抛出 404，避免创建无法评分的考试。
     """
+    if data.targetedContext is not None:
+        from app.services.targeted_practice_service import validate_practice
+        validate_practice(db, username, data.questionIds, data.targetedContext)
     question_ids = list(dict.fromkeys(data.questionIds))
     existing_ids = {
         row[0]

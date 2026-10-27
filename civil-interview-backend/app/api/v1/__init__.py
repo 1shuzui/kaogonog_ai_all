@@ -43,3 +43,6 @@ api_router.include_router(scoring_router)
 api_router.include_router(support_router)
 api_router.include_router(legal_router)
 api_router.include_router(review_router)
+
+from app.api.v1.routes.targeted_performance_routes import router as targeted_performance_router
+api_router.include_router(targeted_performance_router)

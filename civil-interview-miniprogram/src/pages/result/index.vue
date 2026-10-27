@@ -14,6 +14,7 @@
     <view class="learner-kicker"><LearnerIcon name="solution" :size="20" /><text>练习复盘</text></view>
     <text class="learner-title">这次作答，下一步怎么练。</text>
     <BackgroundAnswers @layout-change="calibrate" />
+    <TargetedResultActions :exam-id="activeExamId" :pending-count="answerList.filter(answer => !answer.isPlaceholder && !hasFinalScore(answer.scoringResult)).length" />
     <view v-if="answerList.length > 1" class="card answer-tabs">
       <text class="answer-tabs__summary">已答 {{ completedAnswerCount }} 题，未答 {{ unansweredCount }} 题</text>
       <scroll-view scroll-x class="answer-tabs__scroll" :scroll-into-view="`result-answer-${activeAnswerIndex}`">
@@ -291,6 +292,9 @@ const { motionClass, motionStyle, visible } = usePageMotion()
 import LearnerIcon from '../../components/LearnerIcon.vue'
 import { computed, ref, watch } from 'vue'
 import { onLoad, onUnload, onShareAppMessage } from '@dcloudio/uni-app'
+import TargetedResultActions from '../../components/TargetedResultActions.vue'
+import { useTargetedPerformanceStore } from '../../stores/targetedPerformance'
+import { practiceContext, targetedPracticeUrl } from '../../utils/targetedPerformance.mjs'
 import DimensionBars from '../../components/DimensionBars.vue'
 import EmptyState from '../../components/EmptyState.vue'
 import ScoreRing from '../../components/ScoreRing.vue'
@@ -883,7 +887,11 @@ function closeShareCard() {
 }
 
 function again() {
-  uni.redirectTo({ url: '/pages/exam/prepare' })
+  const context = useTargetedPerformanceStore().contextFor(activeExamId.value)
+  const url = context
+    ? targetedPracticeUrl(practiceContext(context.target, context.questionType, context.period))
+    : '/pages/exam/prepare'
+  uni.redirectTo({ url })
 }
 
 function home() {

@@ -1,3 +1,4 @@
+import { useTargetedPerformanceStore } from './targetedPerformance'
 /**
  * 小程序用户状态仓库，保存 token、账号资料、省份偏好、管理员标识、登录跳转和协议状态。
  *
@@ -160,6 +161,7 @@ export const useUserStore = defineStore('user', {
       useHistoryStore().$reset()
       useSubscriptionStore().$reset()
       useTargetedStore().$reset()
+      useTargetedPerformanceStore().clear()
       useQuestionBankStore().$reset()
       useTrainingStore().$reset()
       useBillingStore().$reset()

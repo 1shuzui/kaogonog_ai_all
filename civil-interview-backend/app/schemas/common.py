@@ -445,6 +445,7 @@ class ExamStartRequest(BaseModel):
     @raises: 题目 ID 列表缺失或类型错误时由 Pydantic 校验暴露。
     """
     questionIds: List[str]
+    targetedContext: Optional[dict] = None
     practiceMode: Literal["legacy", "free", "fullExam", "training", "targeted", "trial"] = "legacy"
 
 
@@ -613,6 +614,11 @@ class FocusAnalysisRequest(BaseModel):
     """
     province: str = "national"
     position: str = ""
+    examTrack: Optional[str] = ""
+    city: Optional[str] = ""
+    district: Optional[str] = ""
+    areaLevel: Optional[str] = ""
+    system: Optional[str] = ""
     examCategory: Optional[str] = Field(default="", validation_alias=AliasChoices("examCategory", "exam_category"))
     examSubcategory: Optional[str] = Field(default="", validation_alias=AliasChoices("examSubcategory", "exam_subcategory"))
     subcategory: Optional[str] = ""
@@ -646,6 +652,11 @@ class GenerateQuestionsRequest(BaseModel):
     position: str = ""
     count: int = 5
     sourceMode: str = "local"
+    examTrack: Optional[str] = ""
+    city: Optional[str] = ""
+    district: Optional[str] = ""
+    areaLevel: Optional[str] = ""
+    system: Optional[str] = ""
     examCategory: Optional[str] = Field(default="", validation_alias=AliasChoices("examCategory", "exam_category"))
     examSubcategory: Optional[str] = Field(default="", validation_alias=AliasChoices("examSubcategory", "exam_subcategory"))
     subcategory: Optional[str] = ""

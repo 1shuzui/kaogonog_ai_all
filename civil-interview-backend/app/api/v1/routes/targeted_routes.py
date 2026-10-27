@@ -566,6 +566,38 @@ def _ensure_reserved_province_entries() -> None:
 
 _ensure_reserved_province_entries()
 
+
+def _apply_exam_units():
+    for category in TARGETED_POSITION_TREE:
+        track = {"institution": "institution", "medical_portal": "medical"}.get(category["id"])
+        if not track:
+            continue
+        category["examTrack"] = track
+        if track == "medical":
+            category["name"] = "医疗系统考试"
+            category["portalTag"] = "医疗卫生面试"
+        for region in category.get("children", []):
+            region["examTrack"] = track
+            for direction in region.get("directions", []):
+                direction["examTrack"] = track
+                if direction.get("id", "").startswith("js_sydw_"):
+                    if direction["id"] == "js_sydw_provincial":
+                        direction["areaLevel"] = "provincial"
+                    else:
+                        direction["city"] = direction["name"].split(" / ")[0].removesuffix("市")
+                        if direction.get("subcategory2"):
+                            direction["district"] = direction.pop("subcategory2")
+                    for field in ("position", "positionType", "subcategory"):
+                        direction.pop(field, None)
+                elif direction.get("city"):
+                    for field in ("position", "positionType", "subcategory"):
+                        direction.pop(field, None)
+                if track == "medical":
+                    direction["portalTag"] = "医疗卫生面试"
+
+
+_apply_exam_units()
+
 FOCUS_MIN_QUESTION_COUNT = 1
 ABILITY_DIMENSION_LABELS = {
     "analysis": "综合分析",
@@ -620,7 +652,7 @@ FOCUS_TARGET_FIELDS = (
     "targetCode",
     "province",
     "position",
-    "examCategory",
+    "examCategory", "examTrack", "portalTag", "positionType", "city", "district", "areaLevel", "system",
     "examSubcategory",
     "subcategory",
     "subcategory2",
@@ -721,7 +753,7 @@ def _question_type_label(question: Question, meta: dict) -> str:
 
 def _target_filters_from_request(data: FocusAnalysisRequest | GenerateQuestionsRequest) -> dict:
     filters = {}
-    for key in ("examCategory", "examSubcategory", "subcategory", "subcategory2"):
+    for key in ("examCategory", "examTrack", "examSubcategory", "subcategory", "subcategory2", "city", "district", "areaLevel", "system"):
         value = str(getattr(data, key, "") or "").strip()
         if value:
             filters[key] = value
@@ -734,13 +766,6 @@ def _target_filters_from_request(data: FocusAnalysisRequest | GenerateQuestionsR
         filters["positionTags"] = [str(value).strip() for value in position_tags if str(value).strip()]
     elif isinstance(position_tags, str) and position_tags.strip():
         filters["positionTags"] = position_tags.strip()
-    # 兼容小程序端 city/system → subcategory 映射
-    if not filters.get("subcategory"):
-        for alt in ("system", "city"):
-            value = str(getattr(data, alt, "") or "").strip()
-            if value:
-                filters["subcategory"] = value
-                break
     year = getattr(data, "year", "")
     if year:
         if isinstance(year, list):
@@ -800,6 +825,9 @@ def _focus_target_key(data: FocusAnalysisRequest | dict) -> str:
         payload.get("subcategory", ""),
         payload.get("subcategory2", ""),
     ]
+    # Preserve keys for legacy unscoped configurations; scoped units must never collide.
+    if any(payload.get(field) for field in ("examTrack", "portalTag", "positionType", "city", "district", "areaLevel", "system")):
+        parts += [payload.get(field, "") for field in ("examTrack", "portalTag", "positionType", "city", "district", "areaLevel", "system")]
     return "fields:" + "|".join(str(item).strip() for item in parts)
 
 
@@ -1091,6 +1119,13 @@ async def get_focus_admin_config(
     province: str = "national",
     position: str = "",
     examCategory: str = "",
+    examTrack: str = "",
+    portalTag: str = "",
+    positionType: str = "",
+    city: str = "",
+    district: str = "",
+    areaLevel: str = "",
+    system: str = "",
     examSubcategory: str = "",
     subcategory: str = "",
     subcategory2: str = "",
@@ -1121,6 +1156,13 @@ async def get_focus_admin_config(
         "province": province,
         "position": position,
         "examCategory": examCategory,
+        "examTrack": examTrack,
+        "portalTag": portalTag,
+        "positionType": positionType,
+        "city": city,
+        "district": district,
+        "areaLevel": areaLevel,
+        "system": system,
         "examSubcategory": examSubcategory,
         "subcategory": subcategory,
         "subcategory2": subcategory2,

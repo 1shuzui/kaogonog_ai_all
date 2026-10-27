@@ -13,7 +13,9 @@
     },
     {
       "path": "pages/login/reset",
-      "style": { "navigationBarTitleText": "找回密码" }
+      "style": {
+        "navigationBarTitleText": "找回密码"
+      }
     },
     {
       "path": "pages/login/index",
@@ -139,7 +141,7 @@
     {
       "path": "pages/targeted/focus",
       "style": {
-        "navigationBarTitleText": "重点分析"
+        "navigationBarTitleText": "方向弱点分析"
       }
     },
     {
@@ -164,6 +166,12 @@
       "path": "pages/profile/index",
       "style": {
         "navigationBarTitleText": "我的"
+      }
+    },
+    {
+      "path": "pages/targeted/performance",
+      "style": {
+        "navigationBarTitleText": "题型答题记录"
       }
     }
   ],

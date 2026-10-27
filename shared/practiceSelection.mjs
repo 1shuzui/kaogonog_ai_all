@@ -1,5 +1,6 @@
-const filterFields = ['province', 'year', 'examCategory', 'examSubcategory', 'subcategory', 'subcategory2', 'dimension', 'position', 'portal', 'keyword', 'categoryReview']
+const filterFields = ['province', 'year', 'examCategory', 'examTrack', 'positionType', 'positionTag', 'positionTags', 'portalTag', 'displayPortal', 'city', 'district', 'areaLevel', 'system', 'examSubcategory', 'subcategory', 'subcategory2', 'dimension', 'position', 'portal', 'keyword', 'categoryReview', 'targetCode', 'targetName', 'prepTime', 'answerTime', 'timingMode', 'interviewFormat']
 const scalar = value => String(Array.isArray(value) ? value[0] || '' : value || '').trim()
+const filterValue = value => Array.isArray(value) ? value.map(item => String(item ?? '').trim()).filter(Boolean) : String(value ?? '').trim()
 
 export function readPracticeSelection(query = {}, cachedQuestions = []) {
   const single = scalar(query.questionId)
@@ -19,7 +20,7 @@ export function readPracticeSelection(query = {}, cachedQuestions = []) {
     }
     if (!snapshot || Array.isArray(snapshot) || typeof snapshot !== 'object') throw new Error('筛选条件读取失败，请返回题库重试')
   }
-  const filters = Object.fromEntries(filterFields.filter(key => snapshot[key] != null).map(key => [key, scalar(snapshot[key])]))
+  const filters = Object.fromEntries(filterFields.filter(key => snapshot[key] != null).map(key => [key, filterValue(snapshot[key])]))
   return { ids, filters }
 }
 
@@ -43,7 +44,7 @@ export function practiceQuery({ source = 'bank', questionId = '', questionIds = 
   return {
     source,
     ...(questionId ? { questionId } : questionIds.length ? { questionIds: questionIds.join(',') } : {}),
-    filterSnapshot: JSON.stringify(Object.fromEntries(filterFields.filter(key => filters[key] != null).map(key => [key, scalar(filters[key])]))),
+    filterSnapshot: JSON.stringify(Object.fromEntries(filterFields.filter(key => filters[key] != null).map(key => [key, filterValue(filters[key])]))),
   }
 }
 
@@ -55,5 +56,5 @@ export function miniPracticeUrl(options) {
 export function practiceFilterSummary(filters, provinces = [], dimensions = []) {
   const province = provinces.find(item => item.code === filters.province)?.name || filters.province
   const dimension = dimensions.find(item => item.key === filters.dimension)?.name || filters.dimension
-  return [filters.examCategory, province, filters.year ? `${filters.year.split(',').join('、')} 年` : '', filters.examSubcategory, filters.subcategory, filters.subcategory2, dimension, filters.position].filter(Boolean).join(' · ')
+  return [filters.examCategory, province, filters.year?.length ? `${String(filters.year).split(',').join('、')} 年` : '', filters.examSubcategory, filters.city || filters.subcategory, filters.district || filters.subcategory2, dimension, filters.positionType || filters.position, filters.targetName].filter(Boolean).join(' · ')
 }

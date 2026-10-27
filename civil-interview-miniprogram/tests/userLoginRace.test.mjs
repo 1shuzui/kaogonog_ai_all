@@ -21,7 +21,7 @@ async function userFixture(platform, loadProfile = false) {
     else if(name.endsWith('/utils/logger')) values = {logger:{warn(){},error(){}}}
     else {
       const id = name.split('/').at(-1)
-      values = {[`use${id[0].toUpperCase()}${id.slice(1)}Store`]:()=>({$reset(){},reset(){},reloadForCurrentUser(){},resetToTrial(){}})}
+      values = {[`use${id[0].toUpperCase()}${id.slice(1)}Store`]:()=>({$reset(){},reset(){},clear(){},reloadForCurrentUser(){},resetToTrial(){}})}
     }
     return new vm.SyntheticModule(Object.keys(values),function(){ for(const [key,value] of Object.entries(values)) this.setExport(key,value) },{context})
   })

@@ -11,6 +11,7 @@
 <template>
   <view class="motion-page page learner-page learner-prepare" :class="motionClass" :style="motionStyle">
     <BackgroundAnswers />
+    <TargetedPracticePicker v-if="targetedContext" :context="targetedContext" :fixed-ids="fixedTargetedIds" :disabled="loading || enteringExam" @loading="targetedSelecting = $event" @selected="applyTargetedSelection" />
     <view class="learner-kicker"><LearnerIcon name="audio" :size="24" /><text>{{ pageTitle }}</text></view>
     <text class="page-title">这次，怎么练？</text>
     <text class="page-desc">{{ practiceSummary }} · 提交后可继续下一题</text>
@@ -37,7 +38,8 @@
       </view>
       <view v-if="fixedPracticeEntry" class="fixed-practice-mode">
         <text class="fixed-practice-mode__title">专项练习</text>
-        <text class="fixed-practice-mode__desc">已使用当前生成题目进入练习</text>
+        <text class="fixed-practice-mode__desc">{{ targetedContext ? '按当前方向、题型和练法选题' : '已使用当前生成题目进入练习' }}</text>
+        <text v-if="targetedContext" class="fixed-practice-mode__desc">{{ targetedTimingSummary }}</text>
       </view>
 
       <view v-else class="mode-grid">
@@ -164,11 +166,11 @@
       v-if="!readonlyMode"
       class="primary-button"
       :class="{ 'motion-shimmer': loading || accessLoading || enteringExam }"
-      :disabled="loading || accessLoading || enteringExam || asrUnavailable"
+      :disabled="loading || accessLoading || enteringExam || asrUnavailable || targetedSelecting || (!!targetedContext && !selection.ids.length)"
       :loading="loading"
       @tap="startPractice"
     >
-      {{ asrUnavailable ? '语音服务未就绪' : loading || enteringExam ? '正在准备考场…' : '进入考场' }}
+      {{ asrUnavailable ? '语音服务未就绪' : loading || enteringExam ? '正在准备考场…' : targetedContext ? `开始 ${selection.ids.length} 题练习` : '进入考场' }}
     </button>
     </view>
   </view>
@@ -192,6 +194,9 @@ import { useQuestionBankStore } from '../../stores/questionBank'
 import { useSubscriptionStore } from '../../stores/subscription'
 import { useUserStore } from '../../stores/user'
 import { useTargetedStore } from '../../stores/targeted'
+import TargetedPracticePicker from '../../components/TargetedPracticePicker.vue'
+import { useTargetedPerformanceStore } from '../../stores/targetedPerformance'
+import { readTargetedContext, performanceScopeSummary } from '../../utils/targetedPerformance.mjs'
 import { readPracticeSelection, loadSelectedQuestions, practiceModeFor, practiceFilterSummary } from '../../../../shared/practiceSelection.mjs'
 import { getQuestionById, getQuestions } from '../../api/questionBank'
 import {
@@ -220,6 +225,21 @@ const subscriptionStore = useSubscriptionStore()
 const userStore = useUserStore()
 const targetedStore = useTargetedStore()
 const selection = ref({ ids: [], filters: {} })
+const performanceStore = useTargetedPerformanceStore()
+const targetedContext = ref(null)
+const targetedTimingSummary = computed(() => {
+  const target = targetedContext.value?.target || {}
+  const prep = target.prepTime != null && target.prepTime !== '' ? `${target.prepTime} 秒` : '沿用题目与个人设置'
+  const answer = target.answerTime != null && target.answerTime !== '' ? `${target.answerTime} 秒` : '沿用题目与个人设置'
+  return `准备：${prep}；作答：${answer}。`
+})
+const targetedSelecting = ref(false)
+const fixedTargetedIds = ref([])
+function applyTargetedSelection(value) {
+  selection.value = { ids: value.questionIds, filters: value.targetedContext.target }
+  targetedContext.value = value.targetedContext
+  entryError.value = ''
+}
 const entryError = ref('')
 const selectionError = ref('')
 const DEFAULT_EXAM_QUESTION_COUNT = 5
@@ -276,7 +296,9 @@ const questionCategoryOptions = [
 ]
 const fixedPracticeSources = new Set(['targeted', 'training', 'jiangsu', 'bank', 'favorites'])
 const fixedPracticeEntry = computed(() => fixedPracticeSources.has(source.value) || selection.value.ids.length > 0)
-const inheritedSummary = computed(() => practiceFilterSummary(selection.value.filters, userStore.provinces, QUESTION_CATEGORIES))
+const inheritedSummary = computed(() => targetedContext.value
+  ? performanceScopeSummary(selection.value.filters, userStore.provinces)
+  : practiceFilterSummary(selection.value.filters, userStore.provinces, QUESTION_CATEGORIES))
 const showPracticeConfig = computed(() => mode.value === 'free' && !fixedPracticeEntry.value)
 const selectedSpecificDimensions = computed(() => selectedDimensions.value.filter((item) => item && item !== RANDOM_DIMENSION_KEY))
 const selectedDimensionParam = computed(() => selectedSpecificDimensions.value.join(','))
@@ -295,6 +317,7 @@ const selectedFullExamSuiteLabel = computed(() => selectedFullExamSuite.value?.t
 const selectedFullExamSuiteSummary = computed(() => getFullExamSuiteSummary(selectedFullExamSuite.value))
 const practiceSummary = computed(() => trial.value ? '1 道试用题' : mode.value === 'fullExam'
   ? `全真模拟 · ${selectedFullExamSuite.value?.questionCount || '待选'} 题`
+  : targetedContext.value ? `${selection.value.ids.length} 道题 · ${targetedContext.value.questionType}`
   : `${selection.value.ids.length || count.value} 道题 · ${selectedCategoryName.value}`)
 const pageTitle = computed(() => (mode.value === 'fullExam' ? '全真模拟准备' : '专项练习准备'))
 const pageDesc = computed(() => (
@@ -584,7 +607,15 @@ async function refreshFullExamSuites() {
 
 onLoad((query) => {
   source.value = String(query?.source || '')
-  try { selection.value = readPracticeSelection(query, source.value === 'targeted' ? targetedStore.generatedQuestions : []) }
+  try {
+    targetedContext.value = readTargetedContext(query?.targetedContext)
+    selection.value = readPracticeSelection(query, !targetedContext.value && source.value === 'targeted' ? targetedStore.generatedQuestions : [])
+    if (targetedContext.value) {
+      source.value = 'targeted'
+      fixedTargetedIds.value = [...selection.value.ids]
+      selection.value.filters = targetedContext.value.target
+    }
+  }
   catch (error) { selectionError.value = entryError.value = error.message }
   recommendedQuestionId.value = String(query?.questionId || '').trim()
   if (fixedPracticeEntry.value) {
@@ -786,7 +817,7 @@ function toggleQuestionType(key) {
 
 async function startPractice() {
   if (!requireLogin()) return
-  if (loading.value || enteringExam.value) return
+  if (loading.value || enteringExam.value || targetedSelecting.value || (targetedContext.value && !selection.value.ids.length)) return
   enteringExam.value = true
   loading.value = true
   showLoading('检查考场')
@@ -870,7 +901,15 @@ async function startPractice() {
     const targetCount = trial.value ? 1 : selection.value.ids.length || (mode.value === 'fullExam' ? questions.length : count.value)
     const preparedQuestions = applyFullExamTimingMode(applyUserPracticePreferencesToQuestions(questions.slice(0, targetCount)))
     examStore.setMediaMode(mediaMode.value)
-    await examStore.startFromQuestions(preparedQuestions, practiceModeFor(source.value, mode.value, trial.value))
+    if (targetedContext.value) {
+      const target = targetedContext.value.target
+      for (const question of preparedQuestions) {
+        if (target.prepTime != null && target.prepTime !== '') question.prepTime = Number(target.prepTime)
+        if (target.answerTime != null && target.answerTime !== '') question.answerTime = Number(target.answerTime)
+      }
+    }
+    const started = await examStore.startFromQuestions(preparedQuestions, practiceModeFor(source.value, mode.value, trial.value), targetedContext.value)
+    if (targetedContext.value) performanceStore.rememberExam(started.examId, targetedContext.value)
     uni.navigateTo({ url: '/pages/exam/room' })
   } catch (error) {
     entryError.value = error?.message || '进入考场失败'
