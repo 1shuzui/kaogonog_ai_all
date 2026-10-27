@@ -3,6 +3,8 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import vm from 'node:vm'
 import * as Vue from 'vue'
+import { usePracticeFilters, RANDOM_DIMENSION_KEY } from '../src/composables/usePracticeFilters.mjs'
+import { useFullExamSelection } from '../src/composables/useFullExamSelection.mjs'
 import { parse, compileScript } from '@vue/compiler-sfc'
 import { QUESTION_CATEGORIES } from '../src/utils/constants.js'
 import { DEFAULT_TARGETED_POSITION_TREE } from '../src/utils/targetedOptions.js'
@@ -46,7 +48,7 @@ async function fixture(t, options = {}) {
     loadUserInfo: async () => {}
   })
   const context = vm.createContext({
-    ...Vue, console, setTimeout, clearTimeout, createCancellation,
+    ...Vue, usePracticeFilters, RANDOM_DIMENSION_KEY, useFullExamSelection, console, setTimeout, clearTimeout, createCancellation,
     onBeforeUnmount: dispose => disposals.push(dispose),
     onLoad: callback => loads.push(callback), onShow() {}, onUnload: dispose => disposals.push(dispose),
     uni: { setNavigationBarTitle() {}, navigateTo() {} },
