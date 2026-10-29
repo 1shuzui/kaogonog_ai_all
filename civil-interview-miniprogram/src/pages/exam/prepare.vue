@@ -11,9 +11,12 @@
 <template>
   <view class="motion-page page learner-page learner-prepare" :class="motionClass" :style="motionStyle">
     <BackgroundAnswers />
+    <TargetedPracticePicker v-if="targetedContext" :context="targetedContext" :fixed-ids="fixedTargetedIds" :disabled="loading || enteringExam" @loading="targetedSelecting = $event" @selected="applyTargetedSelection" />
     <view class="learner-kicker"><LearnerIcon name="audio" :size="24" /><text>{{ pageTitle }}</text></view>
     <text class="page-title">这次，怎么练？</text>
     <text class="page-desc">{{ practiceSummary }} · 提交后可继续下一题</text>
+    <view v-if="selection.ids.length" class="card"><text class="section-title">已选 {{ selection.ids.length }} 道题，将按原顺序作答</text><text class="page-desc">{{ inheritedSummary }}</text></view>
+    <view v-if="entryError" class="card"><text class="page-desc">{{ entryError }}。原选择已保留，可再次点击进入考场重试。</text></view>
 
     <view v-if="readonlyMode" class="card access-card">
       <text class="access-card__title">未开通正式训练</text>
@@ -35,7 +38,8 @@
       </view>
       <view v-if="fixedPracticeEntry" class="fixed-practice-mode">
         <text class="fixed-practice-mode__title">专项练习</text>
-        <text class="fixed-practice-mode__desc">已使用当前生成题目进入练习</text>
+        <text class="fixed-practice-mode__desc">{{ targetedContext ? '按当前方向、题型和练法选题' : '已使用当前生成题目进入练习' }}</text>
+        <text v-if="targetedContext" class="fixed-practice-mode__desc">{{ targetedTimingSummary }}</text>
       </view>
 
       <view v-else class="mode-grid">
@@ -58,7 +62,7 @@
         </view>
       </view>
 
-      <MotionCollapse class="prepare-advanced" :open="advancedOpen" title="题目范围与题型" :revision="[mode, fullExamSuites, hasDirectionOptions]" @toggle="advancedOpen = !advancedOpen">
+      <MotionCollapse v-if="!fixedPracticeEntry" class="prepare-advanced" :open="advancedOpen" title="题目范围与题型" :revision="[mode, fullExamSuites, hasDirectionOptions]" @toggle="advancedOpen = !advancedOpen">
       <text class="ui-helper">{{ mode === 'fullExam' ? '全真模拟按完整真题套卷练习，保留套卷时间规则。' : '可选，不修改也能直接开始。' }}</text>
       <LightSelector title="考试大类" :options="examCategoryNames" :value="examCategoryIndex" @change="onExamCategoryFilterChange">
         <view class="config-row">
@@ -98,7 +102,8 @@
           </view>
         </picker>
         <text v-if="selectedFullExamSuite" class="suite-panel__summary">{{ selectedFullExamSuiteSummary }}</text>
-        <text v-else class="suite-panel__summary">{{ fullExamSuitesLoading ? '正在加载真题套卷...' : '当前省份暂无整套真题套卷，请切换江苏、安徽或湖南。' }}</text>
+        <text v-else class="suite-panel__summary">{{ fullExamSuitesLoading ? '正在加载真题套卷...' : '当前筛选范围暂无完整真题套卷，请调整地区或分类。' }}</text>
+        <text v-if="fullExamSuiteOptions.length === 1" class="page-desc">当前筛选范围收录 1 套完整真题套卷，可调整地区或分类查看其他题源。</text>
       </view>
 
       <view v-if="mode !== 'fullExam'" class="config-row config-row--year" @tap="showYearPicker = true">
@@ -161,11 +166,11 @@
       v-if="!readonlyMode"
       class="primary-button"
       :class="{ 'motion-shimmer': loading || accessLoading || enteringExam }"
-      :disabled="loading || accessLoading || enteringExam || asrUnavailable"
+      :disabled="loading || accessLoading || enteringExam || asrUnavailable || targetedSelecting || (!!targetedContext && !selection.ids.length)"
       :loading="loading"
       @tap="startPractice"
     >
-      {{ asrUnavailable ? '语音服务未就绪' : loading || enteringExam ? '正在准备考场…' : '进入考场' }}
+      {{ asrUnavailable ? '语音服务未就绪' : loading || enteringExam ? '正在准备考场…' : targetedContext ? `开始 ${selection.ids.length} 题练习` : '进入考场' }}
     </button>
     </view>
   </view>
@@ -188,6 +193,11 @@ import { useBillingStore } from '../../stores/billing'
 import { useQuestionBankStore } from '../../stores/questionBank'
 import { useSubscriptionStore } from '../../stores/subscription'
 import { useUserStore } from '../../stores/user'
+import { useTargetedStore } from '../../stores/targeted'
+import TargetedPracticePicker from '../../components/TargetedPracticePicker.vue'
+import { useTargetedPerformanceStore } from '../../stores/targetedPerformance'
+import { readTargetedContext, performanceScopeSummary } from '../../utils/targetedPerformance.mjs'
+import { readPracticeSelection, loadSelectedQuestions, practiceModeFor, practiceFilterSummary } from '../../../../shared/practiceSelection.mjs'
 import { getQuestionById, getQuestions } from '../../api/questionBank'
 import {
   getFullExamSuiteQuestions as requestFullExamSuiteQuestions,
@@ -201,11 +211,11 @@ import { QUESTION_CATEGORIES } from '../../utils/constants'
 import { useQuestionFilters } from '../../utils/useQuestionFilters'
 import {
   fetchFullExamSuites,
-  getFullExamSuiteSummary,
-  loadFullExamSuiteQuestions,
-  normalizeProvinceCode
+  loadFullExamSuiteQuestions
 } from '../../utils/fullExamSuites'
-import { DEFAULT_TARGETED_POSITION_TREE } from '../../utils/targetedOptions'
+import { useFullExamSelection } from '../../composables/useFullExamSelection.mjs'
+
+import { usePracticeFilters, RANDOM_DIMENSION_KEY } from '../../composables/usePracticeFilters.mjs'
 
 const examStore = useExamStore()
 const billingStore = useBillingStore()
@@ -213,6 +223,25 @@ const questionBankStore = useQuestionBankStore()
 const filterMetadata = useQuestionFilters()
 const subscriptionStore = useSubscriptionStore()
 const userStore = useUserStore()
+const targetedStore = useTargetedStore()
+const selection = ref({ ids: [], filters: {} })
+const performanceStore = useTargetedPerformanceStore()
+const targetedContext = ref(null)
+const targetedTimingSummary = computed(() => {
+  const target = targetedContext.value?.target || {}
+  const prep = target.prepTime != null && target.prepTime !== '' ? `${target.prepTime} 秒` : '沿用题目与个人设置'
+  const answer = target.answerTime != null && target.answerTime !== '' ? `${target.answerTime} 秒` : '沿用题目与个人设置'
+  return `准备：${prep}；作答：${answer}。`
+})
+const targetedSelecting = ref(false)
+const fixedTargetedIds = ref([])
+function applyTargetedSelection(value) {
+  selection.value = { ids: value.questionIds, filters: value.targetedContext.target }
+  targetedContext.value = value.targetedContext
+  entryError.value = ''
+}
+const entryError = ref('')
+const selectionError = ref('')
 const DEFAULT_EXAM_QUESTION_COUNT = 5
 const JIANGSU_FULL_EXAM_TIMING_MODE = 'jiangsu_5_15'
 const MAX_FREE_QUESTION_COUNT = 10
@@ -227,20 +256,12 @@ const advancedOpen = ref(false)
 const mode = ref('free')
 watch(mode, value => { if (value === 'fullExam') advancedOpen.value = true })
 const mediaMode = ref('audio')
-const selectedDimensions = ref(['random'])
-const questionTypeTouched = ref(false)
+
+
 // Targeted filter state
-const selectedExamCategoryId = ref('')
-const selectedRegionId = ref('')
-const selectedDirectionId = ref('')
-const selectedYearsFilter = ref([])
-const targetFilterTouched = ref(false)
+
 const showYearPicker = ref(false)
-const selectedFullExamSuiteId = ref('')
-const fullExamSuites = ref([])
-let fullExamSuitesRequest = 0
-onUnload(() => { fullExamSuitesRequest += 1 })
-const fullExamSuitesLoading = ref(false)
+
 const loading = ref(false)
 const accessLoading = ref(false)
 const enteringExam = ref(false)
@@ -260,45 +281,85 @@ const asrStatusText = computed(() => {
   if (!asrStatus.value) return ''
   return asrStatus.value.message || '请稍后重试，或联系管理员检查后端 Whisper/ffmpeg 配置。'
 })
-const RANDOM_DIMENSION_KEY = 'random'
-const questionCategoryOptions = [
-  { key: RANDOM_DIMENSION_KEY, name: '随机题型' },
-  ...QUESTION_CATEGORIES.filter((item) => item.key)
-]
-const fixedPracticeSources = new Set(['targeted', 'training', 'jiangsu', 'bank'])
-const fixedPracticeEntry = computed(() => fixedPracticeSources.has(source.value))
-const showPracticeConfig = computed(() => mode.value === 'free' && !fixedPracticeEntry.value)
-const selectedSpecificDimensions = computed(() => selectedDimensions.value.filter((item) => item && item !== RANDOM_DIMENSION_KEY))
-const selectedDimensionParam = computed(() => selectedSpecificDimensions.value.join(','))
-const fullExamSuiteOptions = computed(() => fullExamSuites.value)
-const selectedFullExamSuite = computed(() => (
-  fullExamSuiteOptions.value.find((suite) => suite.id === selectedFullExamSuiteId.value)
-  || fullExamSuiteOptions.value[0]
-  || null
-))
-const selectedFullExamSuiteIndex = computed(() => Math.max(0, fullExamSuiteOptions.value.findIndex((suite) => suite.id === selectedFullExamSuite.value?.id)))
-const fullExamPickerOptions = computed(() => fullExamSuiteOptions.value.map((suite) => ({
-  id: suite.id,
-  label: suite.title
-})))
-const selectedFullExamSuiteLabel = computed(() => selectedFullExamSuite.value?.title || '暂无套题')
-const selectedFullExamSuiteSummary = computed(() => getFullExamSuiteSummary(selectedFullExamSuite.value))
+
+
+const fixedPracticeSources = new Set(['targeted', 'training', 'jiangsu', 'bank', 'favorites'])
+const fixedPracticeEntry = computed(() => fixedPracticeSources.has(source.value) || selection.value.ids.length > 0)
+const inheritedSummary = computed(() => targetedContext.value
+  ? performanceScopeSummary(selection.value.filters, userStore.provinces)
+  : practiceFilterSummary(selection.value.filters, userStore.provinces, QUESTION_CATEGORIES))
+const {
+  selectedDimensions,
+  selectedSpecificDimensions,
+  selectedDimensionParam,
+  selectedCategoryName,
+  questionCategoryOptions,
+  showPracticeConfig,
+  examCategoryOptions,
+  examCategoryNames,
+  examCategoryIndex,
+  selectedExamCategoryName,
+  regionOptions,
+  regionNames,
+  regionIndex,
+  selectedRegionNameText,
+  directionOptions,
+  hasDirectionOptions,
+  directionNames,
+  directionIndex,
+  selectedDirectionNameText,
+  selectedYearsFilter,
+  yearOptions,
+  yearLabel,
+  targetFilterParams,
+  refreshFilterMetadata,
+  onExamCategoryFilterChange,
+  onRegionFilterChange,
+  onDirectionFilterChange,
+  onYearFilterChange,
+  applyPreferredQuestionDimensions,
+  isTypeSelected,
+  toggleQuestionType
+} = usePracticeFilters({ userStore, selection, fixedPracticeEntry, mode, hasFullAccess, filterMetadata })
+const {
+  fullExamSuites,
+  fullExamSuitesLoading,
+  fullExamSuitesError,
+  loadedFullExamScope,
+  fullExamSuiteOptions,
+  selectedFullExamSuite,
+  selectedFullExamSuiteIndex,
+  fullExamPickerOptions,
+  selectedFullExamSuiteLabel,
+  selectedFullExamSuiteSummary,
+  refreshFullExamSuites,
+  onFullExamSuiteChange,
+  dispose: disposeFullExamSelection
+} = useFullExamSelection({
+  targetFilterParams,
+  hasFullAccess,
+  onError: toast,
+  loadSuites: filters => fetchFullExamSuites(getQuestions, filters.province || userStore.selectedProvince, {
+    params: filters,
+    getFullExamSuites: requestFullExamSuites
+  })
+})
+onUnload(disposeFullExamSelection)
+watch(() => [userStore.selectedProvince, userStore.preferences?.examCategory], () => {
+  refreshFullExamSuites().catch(() => null)
+}, { immediate: true })
+
 const practiceSummary = computed(() => trial.value ? '1 道试用题' : mode.value === 'fullExam'
   ? `全真模拟 · ${selectedFullExamSuite.value?.questionCount || '待选'} 题`
-  : `${recommendedQuestionId.value || fixedPracticeEntry.value ? 1 : count.value} 道题 · ${selectedCategoryName.value}`)
+  : targetedContext.value ? `${selection.value.ids.length} 道题 · ${targetedContext.value.questionType}`
+  : `${selection.value.ids.length || count.value} 道题 · ${selectedCategoryName.value}`)
 const pageTitle = computed(() => (mode.value === 'fullExam' ? '全真模拟准备' : '专项练习准备'))
 const pageDesc = computed(() => (
   mode.value === 'fullExam'
     ? '按照整套真题连续作答，提交后自动转写并评分。'
     : '按题型进行专项训练，支持录音和录像作答，提交后自动转写并评分。'
 ))
-const selectedCategoryName = computed(() => {
-  if (!selectedSpecificDimensions.value.length) return '随机题型'
-  const names = selectedSpecificDimensions.value
-    .map((key) => questionCategoryOptions.find((item) => item.key === key)?.name)
-    .filter(Boolean)
-  return names.join('、') || '随机题型'
-})
+
 
 watch(pageTitle, (title) => {
   if (typeof uni.setNavigationBarTitle === 'function') {
@@ -306,219 +367,9 @@ watch(pageTitle, (title) => {
   }
 }, { immediate: true })
 
-watch(fullExamSuiteOptions, (suites) => {
-  if (!suites.length) {
-    selectedFullExamSuiteId.value = ''
-    return
-  }
-  if (!suites.some((suite) => suite.id === selectedFullExamSuiteId.value)) {
-    selectedFullExamSuiteId.value = suites[0].id
-  }
-}, { immediate: true })
-
-watch(() => userStore.preferences?.preferredQuestionDimensions, () => {
-  applyPreferredQuestionDimensions()
-}, { immediate: true, deep: true })
-
-// Targeted filter computed properties
-const examCategoryOptions = DEFAULT_TARGETED_POSITION_TREE
-const examCategoryNames = computed(() => ['不限', ...examCategoryOptions.map(c => c.name)])
-const examCategoryIndex = computed(() => {
-  const idx = examCategoryOptions.findIndex(c => String(c.id) === String(selectedExamCategoryId.value))
-  return idx >= 0 ? idx + 1 : 0
-})
-const selectedExamCategoryName = computed(() => {
-  const cat = examCategoryOptions.find(c => String(c.id) === String(selectedExamCategoryId.value))
-  return cat ? cat.name : '不限'
-})
-const selectedCategoryNode = computed(() =>
-  selectedExamCategoryId.value
-    ? examCategoryOptions.find(c => String(c.id) === String(selectedExamCategoryId.value)) || null
-    : null
-)
-function uniqueRegionsFromTree() {
-  const seen = new Set()
-  const regions = []
-  examCategoryOptions.forEach((category) => {
-    ;(category.children || []).forEach((region) => {
-      const province = normalizeProvinceCode(region.province || '')
-      if (!province || province === 'all') return
-      if (seen.has(province)) return
-      seen.add(province)
-      regions.push({
-        id: `region_${province}`,
-        name: region.name || province,
-        province
-      })
-    })
-  })
-  return regions
-}
-const regionOptions = computed(() => uniqueRegionsFromTree())
-const regionNames = computed(() => ['不限', ...regionOptions.value.map(r => r.name)])
-const regionIndex = computed(() => {
-  const idx = regionOptions.value.findIndex(r => String(r.id) === String(selectedRegionId.value))
-  return idx >= 0 ? idx + 1 : 0
-})
-const selectedRegionNameText = computed(() => {
-  const r = regionOptions.value.find(r => String(r.id) === String(selectedRegionId.value))
-  return r ? r.name : '不限'
-})
-const selectedRegionNode = computed(() =>
-  selectedRegionId.value
-    ? regionOptions.value.find(r => String(r.id) === String(selectedRegionId.value)) || null
-    : null
-)
-function findCategoryByPreference(value = '') {
-  const text = String(value || '').trim()
-  if (!text) return null
-  return examCategoryOptions.find((category) => (
-    String(category.id) === text
-    || String(category.name) === text
-    || String(category.examCategory || '') === text
-  )) || null
-}
-function matchingTreeRegions() {
-  const region = selectedRegionNode.value
-  if (!region) return []
-  const categories = selectedCategoryNode.value ? [selectedCategoryNode.value] : examCategoryOptions
-  return categories.flatMap((category) => (
-    (category.children || []).filter((item) => normalizeProvinceCode(item.province || '') === region.province)
-  ))
-}
-const directionOptions = computed(() => {
-  const seen = new Set()
-  const options = []
-  matchingTreeRegions().forEach((region) => {
-    const directions = Array.isArray(region.directions)
-      ? region.directions
-      : Array.isArray(region.children)
-        ? region.children
-        : []
-    directions.forEach((direction) => {
-      const id = String(direction.id || `${region.id}_${direction.name}`)
-      if (seen.has(id)) return
-      seen.add(id)
-      options.push(direction)
-    })
-  })
-  return options
-})
-const hasDirectionOptions = computed(() => directionOptions.value.length > 0)
-const directionNames = computed(() => ['不限', ...directionOptions.value.map(d => d.name)])
-const directionIndex = computed(() => {
-  const idx = directionOptions.value.findIndex(d => String(d.id) === String(selectedDirectionId.value))
-  return idx >= 0 ? idx + 1 : 0
-})
-const selectedDirectionNameText = computed(() => {
-  const d = directionOptions.value.find(d => String(d.id) === String(selectedDirectionId.value))
-  return d ? d.name : '不限'
-})
-const selectedDirectionNode = computed(() =>
-  selectedDirectionId.value
-    ? directionOptions.value.find(d => String(d.id) === String(selectedDirectionId.value)) || null
-    : null
-)
-const yearOptions = computed(() =>
-  filterMetadata.options.value.year.map(y => ({ value: y, checked: selectedYearsFilter.value.includes(y) }))
-)
-const yearLabel = computed(() =>
-  selectedYearsFilter.value.length ? selectedYearsFilter.value.join('、') : '不限年份（可多选）'
-)
-
-// Build target filter params for API calls
-const targetFilterParams = computed(() => {
-  const params = {}
-  const cat = selectedCategoryNode.value
-  const region = selectedRegionNode.value
-  const dir = selectedDirectionNode.value
-  if (cat) params.examCategory = cat.examCategory || cat.name
-  if (region) {
-    if (region.province) params.province = region.province
-  }
-  if (dir) {
-    if (dir.examSubcategory) params.examSubcategory = dir.examSubcategory
-    if (dir.subcategory) params.subcategory = dir.subcategory
-    if (dir.subcategory2) params.subcategory2 = dir.subcategory2
-    if (!dir.subcategory && !dir.subcategory2) params.subcategory2 = dir.name
-    if (dir.position) params.position = dir.position
-    if (dir.province) params.province = dir.province
-  }
-  if (mode.value !== 'fullExam' && selectedYearsFilter.value.length) params.year = selectedYearsFilter.value.join(',')
-  return params
-})
-
-// Use the same effective scope as fetchRandom; keep its province fallback and
-// exact dimension parameter, but exclude the year facet's own selection.
-const metadataFilterParams = computed(() => ({
-  province: targetFilterParams.value.province || userStore.selectedProvince,
-  dimension: selectedDimensionParam.value,
-  ...targetFilterParams.value,
-  year: ''
-}))
-function refreshFilterMetadata() {
-  return filterMetadata.refresh(metadataFilterParams.value, hasFullAccess.value && userStore.isAuthenticated)
-}
-// Do not request on every checkbox change: a facet excludes its own year filter.
-watch(() => JSON.stringify({ ...metadataFilterParams.value, access: hasFullAccess.value && userStore.isAuthenticated }), refreshFilterMetadata, { immediate: true })
-
-function applyDefaultTargetFilters(force = false) {
-  if (targetFilterTouched.value && !force) return
-  const preferredCategory = findCategoryByPreference(userStore.preferences?.examCategory)
-  selectedExamCategoryId.value = preferredCategory?.id || ''
-  const preferredProvince = normalizeProvinceCode(userStore.selectedProvince || '')
-  if (preferredProvince && preferredProvince !== 'all') {
-    selectedRegionId.value = regionOptions.value.find((region) => region.province === preferredProvince)?.id || ''
-  } else {
-    selectedRegionId.value = ''
-  }
-  selectedDirectionId.value = ''
-}
-
 watch(() => [userStore.selectedProvince, userStore.preferences?.examCategory], () => {
-  applyDefaultTargetFilters()
   refreshFullExamSuites().catch(() => null)
 }, { immediate: true })
-
-watch(targetFilterParams, () => {
-  refreshFullExamSuites().catch(() => null)
-}, { deep: true })
-
-function onExamCategoryFilterChange(e) {
-  targetFilterTouched.value = true
-  const idx = Number(e.detail.value)
-  if (idx === 0) {
-    selectedExamCategoryId.value = ''
-  } else {
-    const cat = examCategoryOptions[idx - 1]
-    selectedExamCategoryId.value = cat ? cat.id : ''
-  }
-  selectedDirectionId.value = ''
-}
-function onRegionFilterChange(e) {
-  targetFilterTouched.value = true
-  const idx = Number(e.detail.value)
-  if (idx === 0) {
-    selectedRegionId.value = ''
-  } else {
-    const r = regionOptions.value[idx - 1]
-    selectedRegionId.value = r ? r.id : ''
-  }
-  selectedDirectionId.value = ''
-}
-function onDirectionFilterChange(e) {
-  targetFilterTouched.value = true
-  const idx = Number(e.detail.value)
-  if (idx === 0) {
-    selectedDirectionId.value = ''
-  } else {
-    const d = directionOptions.value[idx - 1]
-    selectedDirectionId.value = d ? d.id : ''
-  }
-}
-function onYearFilterChange(e) {
-  selectedYearsFilter.value = e.detail.value || []
-}
 
 function applyUserPracticePreferencesToQuestions(questions = []) {
   const prefs = userStore.preferences || {}
@@ -542,37 +393,18 @@ function applyFullExamTimingMode(questions = []) {
   }))
 }
 
-async function refreshFullExamSuites() {
-  const request = ++fullExamSuitesRequest
-  if (!hasFullAccess.value) {
-    fullExamSuites.value = []
-    selectedFullExamSuiteId.value = ''
-    fullExamSuitesLoading.value = false
-    return
-  }
-  fullExamSuitesLoading.value = true
-  try {
-    const filters = targetFilterParams.value
-    const suites = await fetchFullExamSuites(
-      getQuestions,
-      filters.province || userStore.selectedProvince,
-      {
-        params: filters,
-        getFullExamSuites: requestFullExamSuites
-      }
-    )
-    if (request === fullExamSuitesRequest) fullExamSuites.value = suites
-  } catch (error) {
-    if (request !== fullExamSuitesRequest) return
-    fullExamSuites.value = []
-    toast(error?.message || '真题套卷加载失败，请稍后重试')
-  } finally {
-    if (request === fullExamSuitesRequest) fullExamSuitesLoading.value = false
-  }
-}
-
 onLoad((query) => {
   source.value = String(query?.source || '')
+  try {
+    targetedContext.value = readTargetedContext(query?.targetedContext)
+    selection.value = readPracticeSelection(query, !targetedContext.value && source.value === 'targeted' ? targetedStore.generatedQuestions : [])
+    if (targetedContext.value) {
+      source.value = 'targeted'
+      fixedTargetedIds.value = [...selection.value.ids]
+      selection.value.filters = targetedContext.value.target
+    }
+  }
+  catch (error) { selectionError.value = entryError.value = error.message }
   recommendedQuestionId.value = String(query?.questionId || '').trim()
   if (fixedPracticeEntry.value) {
     mode.value = 'free'
@@ -715,23 +547,6 @@ function selectFullExamMode() {
   mode.value = 'fullExam'
 }
 
-function applyPreferredQuestionDimensions() {
-  if (questionTypeTouched.value || !showPracticeConfig.value) return
-  const validKeys = new Set(questionCategoryOptions.map((item) => item.key).filter((item) => item && item !== RANDOM_DIMENSION_KEY))
-  const preferred = Array.isArray(userStore.preferences?.preferredQuestionDimensions)
-    ? userStore.preferences.preferredQuestionDimensions
-      .map((item) => String(item || '').trim())
-      .filter((item, index, list) => validKeys.has(item) && list.indexOf(item) === index)
-    : []
-  selectedDimensions.value = preferred.length ? preferred : [RANDOM_DIMENSION_KEY]
-}
-
-function onFullExamSuiteChange(event) {
-  const index = Number(event?.detail?.value || 0)
-  const suite = fullExamSuiteOptions.value[index]
-  if (suite) selectedFullExamSuiteId.value = suite.id
-}
-
 function selectAudioMode() {
   mediaMode.value = 'audio'
 }
@@ -749,35 +564,15 @@ function increaseCount() {
   count.value = Math.min(MAX_FREE_QUESTION_COUNT, count.value + 1)
 }
 
-function isTypeSelected(key) {
-  return selectedDimensions.value.includes(key)
-}
-
-function toggleQuestionType(key) {
-  questionTypeTouched.value = true
-  if (key === RANDOM_DIMENSION_KEY) {
-    if (selectedSpecificDimensions.value.length) return
-    selectedDimensions.value = [RANDOM_DIMENSION_KEY]
-    return
-  }
-
-  const specific = selectedSpecificDimensions.value
-  if (specific.includes(key)) {
-    const next = specific.filter((item) => item !== key)
-    selectedDimensions.value = next.length ? next : [RANDOM_DIMENSION_KEY]
-    return
-  }
-
-  selectedDimensions.value = [...specific, key]
-}
-
 async function startPractice() {
   if (!requireLogin()) return
-  if (loading.value || enteringExam.value) return
+  if (loading.value || enteringExam.value || targetedSelecting.value || (targetedContext.value && !selection.value.ids.length)) return
   enteringExam.value = true
   loading.value = true
   showLoading('检查考场')
+  entryError.value = ''
   try {
+    if (selectionError.value) throw new Error(selectionError.value)
     const accessFresh = isFresh(accessRefreshedAt, ENTRY_STATE_REFRESH_TIMEOUT_MS)
     const asrFresh = isFresh(asrStatusRefreshedAt, ENTRY_ASR_STATUS_TIMEOUT_MS)
     await Promise.allSettled([
@@ -822,12 +617,14 @@ async function startPractice() {
         }
       }
       questions = await withTimeout(
-        mode.value === 'fullExam'
+        selection.value.ids.length
+          ? loadSelectedQuestions(selection.value.ids, getQuestionById)
+          : mode.value === 'fullExam'
           ? loadFullExamSuiteQuestions(selectedFullExamSuite.value, getQuestionById, {
             getFullExamSuiteQuestions: requestFullExamSuiteQuestions
           })
-          : recommendedQuestionId.value
-            ? getQuestionById(recommendedQuestionId.value).then((question) => (question?.id ? [question] : []))
+          : fixedPracticeEntry.value
+            ? Promise.reject(new Error('未找到所选题目，请返回选题页重新确认'))
             : questionBankStore.fetchRandom({
               province: targetFilterParams.value.province || userStore.selectedProvince,
               count: count.value,
@@ -840,6 +637,7 @@ async function startPractice() {
     }
 
     if (!questions.length) {
+      if (selection.value.ids.length) throw new Error('所选题目读取超时或暂不可用，选择已保留，请重试')
       toast(trial.value ? '试用题暂不可用，请稍后重试' : mode.value === 'fullExam' ? '当前省份暂无整套真题套卷' : '当前筛选条件暂无题目')
       return
     }
@@ -848,13 +646,22 @@ async function startPractice() {
       toast('当前套题题目加载不完整，请切换其他套卷后重试')
       return
     }
-    const targetCount = trial.value || recommendedQuestionId.value ? 1 : mode.value === 'fullExam' ? questions.length : count.value
+    if (selection.value.ids.length && questions.length !== selection.value.ids.length) throw new Error('指定题目尚未完整读取，请重试')
+    const targetCount = trial.value ? 1 : selection.value.ids.length || (mode.value === 'fullExam' ? questions.length : count.value)
     const preparedQuestions = applyFullExamTimingMode(applyUserPracticePreferencesToQuestions(questions.slice(0, targetCount)))
     examStore.setMediaMode(mediaMode.value)
-    await examStore.startFromQuestions(preparedQuestions, trial.value ? 'trial' : mode.value)
+    if (targetedContext.value) {
+      const target = targetedContext.value.target
+      for (const question of preparedQuestions) {
+        if (target.prepTime != null && target.prepTime !== '') question.prepTime = Number(target.prepTime)
+        if (target.answerTime != null && target.answerTime !== '') question.answerTime = Number(target.answerTime)
+      }
+    }
+    const started = await examStore.startFromQuestions(preparedQuestions, practiceModeFor(source.value, mode.value, trial.value), targetedContext.value)
+    if (targetedContext.value) performanceStore.rememberExam(started.examId, targetedContext.value)
     uni.navigateTo({ url: '/pages/exam/room' })
   } catch (error) {
-    toast(error?.message || '进入考场失败')
+    entryError.value = error?.message || '进入考场失败'
   } finally {
     loading.value = false
     enteringExam.value = false

@@ -116,6 +116,19 @@ TABLE_STATEMENTS = [
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     """,
     """
+    CREATE TABLE IF NOT EXISTS user_review_states (
+        user_id BIGINT NOT NULL,
+        exam_id VARCHAR(32) NOT NULL,
+        question_id VARCHAR(128) NOT NULL,
+        is_starred BOOLEAN NOT NULL DEFAULT FALSE,
+        hide_weak BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at DATETIME NOT NULL,
+        updated_at DATETIME NOT NULL,
+        PRIMARY KEY (user_id, exam_id, question_id),
+        CONSTRAINT fk_review_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    """,
+    """
     CREATE TABLE IF NOT EXISTS password_reset_cases (
         id BIGINT PRIMARY KEY AUTO_INCREMENT,
         user_id BIGINT NOT NULL UNIQUE,

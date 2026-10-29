@@ -197,6 +197,7 @@
 </template>
 
 <script setup>
+import { miniPracticeUrl } from '../../../../shared/practiceSelection.mjs'
 import LearnerIcon from '../../components/LearnerIcon.vue'
 import { usePageMotion } from '../../motion/useMotion'
 const { motionClass, motionStyle } = usePageMotion()
@@ -519,7 +520,7 @@ function retryQuestions() {
 function openDetail(question) {
   if (!promptLoginForAction('查看题目详情', `/pages/bank/detail?id=${encodeURIComponent(question.id)}`)) return
   if (readonlyMode.value) return
-  uni.navigateTo({ url: `/pages/bank/detail?id=${encodeURIComponent(question.id)}` })
+  uni.navigateTo({ url: `/pages/bank/detail?id=${encodeURIComponent(question.id)}&filterSnapshot=${encodeURIComponent(JSON.stringify(buildFilters()))}` })
 }
 
 async function onDelete(question) {
@@ -564,9 +565,10 @@ async function startRandomPractice() {
   if (!promptLoginForAction('随机练习', '/pages/bank/index')) return
   if (readonlyMode.value) return
   try {
-    const questions = await bankStore.fetchRandom({ ...buildFilters(), count: 1 })
+    const filters = buildFilters()
+    const questions = await bankStore.fetchRandom({ ...filters, count: 1 })
     if (questions && questions.length) {
-      uni.navigateTo({ url: `/pages/exam/prepare?source=bank&questionId=${encodeURIComponent(questions[0].id)}` })
+      uni.navigateTo({ url: miniPracticeUrl({ source: 'bank', questionId: questions[0].id, filters }) })
     } else {
       toast('暂无可用题目')
     }

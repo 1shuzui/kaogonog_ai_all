@@ -13,6 +13,9 @@ const TARGET_FIELDS = [
   'province',
   'position',
   'examCategory',
+  'examTrack',
+  'district',
+  'areaLevel',
   'examSubcategory',
   'subcategory',
   'subcategory2',
@@ -141,6 +144,7 @@ function reservedAdminHint(label) {
 export const DEFAULT_TARGETED_POSITION_TREE = [
   {
     id: 'institution',
+    examTrack: 'institution',
     name: '事业单位考试',
     desc: '按真实事业单位套题、地区和岗位方向统计。',
     children: [
@@ -155,7 +159,6 @@ export const DEFAULT_TARGETED_POSITION_TREE = [
           { id: 'js_sydw_general', name: '综合管理岗', province: 'jiangsu', position: 'general', examCategory: '事业单位考试', examSubcategory: '江苏省', positionType: '综合管理岗' },
           { id: 'js_sydw_grassroots', name: '基层方向', province: 'jiangsu', position: 'township', examCategory: '事业单位考试', examSubcategory: '江苏省', positionType: '基层岗' },
           { id: 'js_sydw_township', name: '乡镇方向', province: 'jiangsu', position: 'township', examCategory: '事业单位考试', examSubcategory: '江苏省', positionType: '乡镇岗' },
-          { id: 'js_sydw_medical', name: '医疗卫生相关岗位', province: 'jiangsu', position: 'medical', examCategory: '事业单位考试', examSubcategory: '江苏省', portalTag: '医疗卫生面试' },
           ...JIANGSU_SIDW_CITY_DIRECTIONS.map(([code, city]) => ({
             id: `js_sydw_city_${code}`,
             name: city,
@@ -355,9 +358,21 @@ export const DEFAULT_TARGETED_POSITION_TREE = [
   },
   {
     id: 'medical_portal',
-    name: '医疗卫生面试',
+    name: '医疗系统考试',
+    examTrack: 'medical',
+    portalTag: '医疗卫生面试',
     desc: '按已确认题源展示，题目真实主分类仍保留原考试体系。',
     children: [
+      {
+        id: 'medical_jiangsu', name: '江苏省', province: 'jiangsu',
+        examCategory: '事业单位考试', examSubcategory: '江苏省',
+        portalTag: '医疗卫生面试',
+        directions: MEDICAL_JOB_DIRECTIONS.map(([code, name]) => ({
+          id: `medical_jiangsu_${code}`, name, province: 'jiangsu',
+          position: 'medical', examCategory: '事业单位考试', examSubcategory: '江苏省',
+          portalTag: '医疗卫生面试', positionType: name
+        }))
+      },
       {
         id: 'medical_shandong',
         name: '山东省',
@@ -592,8 +607,9 @@ export function normalizeTargetPayload(target = {}) {
       payload.answerTime = String(parsed.answerTime)
     }
   }
-  // Map city/system → subcategory for backend matching compatibility
-  if (!payload.subcategory) {
+  // Preserve legacy links while typed scopes use explicit location fields.
+  if (payload.examTrack && payload.city) { payload.subcategory = ''; if (payload.district) payload.subcategory2 = '' }
+  if (!payload.examTrack && !payload.subcategory) {
     payload.subcategory = payload.city || payload.system || ''
   }
   return payload
@@ -660,3 +676,22 @@ export function firstTargetInTree(tree = []) {
 export function getTargetMaintenanceHint(target = {}) {
   return String(target.adminHint || target.emptyHint || '').trim()
 }
+
+
+// Geographic directions describe the suite source, not an inferred job type.
+DEFAULT_TARGETED_POSITION_TREE.forEach(category => {
+  ;(category.children || []).forEach(region => {
+    ;(region.directions || []).forEach(direction => {
+      if (direction.id?.startsWith('js_sydw_')) {
+        if (direction.id === 'js_sydw_provincial') direction.areaLevel = 'provincial'
+        else {
+          direction.city = direction.name.split(' / ')[0].replace(/市$/, '')
+          if (direction.subcategory2) { direction.district = direction.subcategory2; delete direction.subcategory2 }
+        }
+        for (const field of ['position', 'positionType', 'subcategory']) delete direction[field]
+      } else if (direction.city) {
+        for (const field of ['position', 'positionType', 'subcategory']) delete direction[field]
+      }
+    })
+  })
+})

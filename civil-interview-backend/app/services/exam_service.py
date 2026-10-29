@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 
 from app.models.entities import Exam, ExamAnswer, HistoryRecord, Question
 from app.services.score_summary import summarize_answers
+from app.services.answer_media import normalize_media_type
 from app.schemas.common import ExamStartRequest
 
 UPLOAD_DIR = Path(__file__).resolve().parents[2] / "uploads"
@@ -44,6 +45,9 @@ def start_exam(db: Session, data: ExamStartRequest, username: str) -> dict:
     @return: 新建考试 ID、确认后的题目顺序和开始时间。
     @raises HTTPException: 题目不存在时抛出 404，避免创建无法评分的考试。
     """
+    if data.targetedContext is not None:
+        from app.services.targeted_practice_service import validate_practice
+        validate_practice(db, username, data.questionIds, data.targetedContext)
     question_ids = list(dict.fromkeys(data.questionIds))
     existing_ids = {
         row[0]
@@ -118,15 +122,15 @@ def upload_recording(
         "fileUrl": f"/uploads/{stored_name}",
         "storedFilename": stored_name,
         "originalFilename": original_name,
-        "mediaType": media_type or "application/octet-stream",
+        "mediaType": normalize_media_type(media_type, original_name),
         "source": source or "live_recording",
         "contentSha256": hashlib.sha256(content).hexdigest(),
         "contentBytes": len(content),
         "uploadedAt": datetime.now(timezone.utc).isoformat(),
     }
     existing_result = answer.score_result if isinstance(answer.score_result, dict) else {}
-    if "totalScore" not in existing_result:
-        answer.score_result = {**existing_result, "mediaRecord": media_record}
+    answer.media_record = media_record
+    answer.score_result = {**existing_result, "mediaRecord": media_record}
     answer.answered_at = datetime.now(timezone.utc)
     db.commit()
     return {"success": True, **media_record}

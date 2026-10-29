@@ -37,6 +37,8 @@ RELEASE_ID=<release-id> PHASE=web bash scripts/deploy_verified_release.sh
 
 每次发布保留 `/home/ubuntu/civil/releases/<release-id>` 产物与 `/home/ubuntu/civil/backups/<release-id>` 回滚副本，线上 `REVISION` 标明对应 Git 提交。后端激活失败自动恢复旧代码并重启。密钥、`.env`、虚拟环境、录音、数据库和模型缓存沿用服务器现有内容；预检要求 `LOCAL_REFERENCE_SCORING=false`。不自动安装新的依赖版本。
 
+PC 与小程序产物附带 `BUILD_INFO.json`，记录源码提交、构建时间和文件 SHA-256。发布前检查包含两端 `shared/` 共用规则及构建脚本。上传微信时另记录上传版本号、时间、工具回执和体验版选择结果，不能用服务器 `REVISION` 代替微信体验版版本。
+
 小程序产物同步至服务器后，仍需通过微信开发者工具上传并在微信后台发布，手机端才会收到界面更新。后端修复对现有小程序版本立即生效。
 
 ### 修复空证据导致的历史 0 分

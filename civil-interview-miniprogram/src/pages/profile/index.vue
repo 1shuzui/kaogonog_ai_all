@@ -15,6 +15,7 @@
       <view class="profile-card__copy">
         <text class="profile-card__name">{{ safeDisplayName }}</text>
         <text class="profile-card__meta">{{ userStore.selectedProvinceName }} · {{ safePlanTitle }}</text>
+        <button class="link-button" @tap="goSecurity">编辑个人资料</button>
         <text v-if="userStore.isAdmin" class="profile-card__badge">管理员权限</text>
       </view>
     </view>
@@ -36,11 +37,18 @@
 
     <view v-if="userStore.isAuthenticated" class="card">
       <view class="section-head"><text class="section-title">个人练习总结</text></view>
-      <text class="about-text">已完成 {{ historyStore.stats?.totalExams || 0 }} 次练习，平均分 {{ historyStore.stats?.avgScore || 0 }}。</text>
-      <text class="about-text">{{ historyStore.stats?.weakestDimension ? `建议重点训练：${historyStore.stats.weakestDimension}` : '完成点评后将显示能力表现与训练建议。' }}</text>
-      <view v-for="item in historyStore.stats?.dimensionAverages || []" :key="item.name" class="setting-row">
-        <text>{{ item.name }}</text><text>{{ item.avg }} / {{ item.maxScore }}</text>
-      </view>
+      <text v-if="historyStore.statsLoading" class="about-text">正在读取服务端练习统计…</text>
+      <view v-else-if="historyStore.statsError"><text class="about-text">{{ historyStore.statsError }}</text><button class="secondary-button" @tap="refreshProfile">重新读取统计</button></view>
+      <text v-else-if="!historyStore.stats?.totalExams" class="about-text">暂无已完成练习，完成练习后将在这里汇总。</text>
+      <template v-else>
+        <text class="about-text">已完成 {{ historyStore.stats.totalExams }} 次练习，已点评 {{ historyStore.stats.scoredExams ?? historyStore.stats.totalExams }} 次。</text>
+        <template v-if="(historyStore.stats.scoredExams ?? historyStore.stats.totalExams) > 0">
+          <text class="about-text">平均分 {{ historyStore.stats.avgScore }} / 100。按各次已点评练习的有效得分率换算，套题仪态分仅计一次。</text>
+          <text v-if="historyStore.stats.weakestDimension" class="about-text">建议重点训练：{{ historyStore.stats.weakestDimension }}</text>
+          <view v-for="item in historyStore.stats.dimensionAverages || []" :key="item.name" class="setting-row"><text>{{ item.name }}</text><text>{{ item.avg }} / {{ item.maxScore }}</text></view>
+        </template>
+        <text v-else class="about-text">暂无已完成点评；答案已保存时，可从历史记录继续点评。</text>
+      </template>
     </view>
 
     <view class="card balance-card">
@@ -243,8 +251,8 @@ const balanceDescription = computed(() => {
   return billingStore.plan?.status || '开通套餐后可查看剩余额度。'
 })
 const statItems = computed(() => [
-  { label: '练习次数', value: historyStore.stats?.totalExams || 0 },
-  { label: '最高分', value: historyStore.bestScore || 0 },
+  { label: '练习次数', value: historyStore.statsError ? '—' : historyStore.stats?.totalExams ?? '—' },
+  { label: '最高分', value: !historyStore.statsError && (historyStore.stats?.scoredExams ?? historyStore.stats?.totalExams ?? 0) > 0 ? historyStore.bestScore : '—' },
   { label: '错题收藏', value: favoritesStore.count }
 ])
 
@@ -311,7 +319,7 @@ async function refreshProfile() {
   const task = (async () => {
     const results = await settleAll([
       withTimeout(userStore.loadProvinces(), 8000, '省份配置'),
-      withTimeout(userStore.loadUserInfo(), 10000, '账户信息'),
+      withTimeout(userStore.loadUserInfo().then(() => favoritesStore.load()), 10000, '账户信息'),
       withTimeout(historyStore.fetchStats(), 6000, '练习统计')
     ])
     applyPreferencesFromStore()

@@ -33,6 +33,7 @@ test('native tabBar syncs an already-open sheet on ready and blocks only modal n
   vm.runInNewContext(readFileSync(new URL('../src/custom-tab-bar/index.js', import.meta.url), 'utf8'), {
     Component: value => { definition = value },
     getCurrentPages: () => [page],
+    setTimeout, clearTimeout,
     wx: { getWindowInfo: () => ({}), getStorageSync: () => 'off' },
     require: name => name === './navigation.js'
       ? { createNavigator: () => ({ sync: () => ({ confirmed: page.route }), request: () => requests++ }) }

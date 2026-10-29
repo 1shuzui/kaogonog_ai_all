@@ -215,13 +215,13 @@ export const useExamStore = defineStore('exam', {
         .sort((a, b) => a.questionIndex - b.questionIndex)
     },
 
-    async startFromQuestions(questions = [], source = '') {
+    async startFromQuestions(questions = [], source = '', targetedContext = null) {
       this.ensureAnswerSession()
       const scope = this.answerScope
       const list = Array.isArray(questions) ? questions.filter(Boolean) : []
       if (!list.length) throw new Error('暂无可用题目')
       const practiceMode = source.startsWith('training') ? 'training' : ['fullExam', 'targeted', 'trial'].includes(source) ? source : 'free'
-      const response = await startExam(list.map((item) => item.id), practiceMode)
+      const response = await startExam(list.map((item) => item.id), practiceMode, targetedContext)
       assertAnswerScope(this, scope)
       // Archive only after server success; task maps are released by their own finally handlers.
       // Keep completed results until session reset so watched old-exam result pages never lose them.
@@ -371,7 +371,7 @@ export const useExamStore = defineStore('exam', {
 
         checkSession()
         if (!answer.mediaUploaded) {
-          await uploadRecording(answer.examId, answer.questionId, uploadMedia.filePath, {
+          const uploaded = await uploadRecording(answer.examId, answer.questionId, uploadMedia.filePath, {
           mediaType,
           source: uploadMedia.compressed
             ? `miniapp_${mediaType}_recording_compressed`
@@ -379,6 +379,8 @@ export const useExamStore = defineStore('exam', {
           })
           checkSession()
           answer.mediaUploaded = true
+          answer.mediaUrl = uploaded?.fileUrl || ''
+          answer.mediaMimeType = uploaded?.mediaType || ''
         }
         checkSession()
         if (!transcript) {

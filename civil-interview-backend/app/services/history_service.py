@@ -13,6 +13,7 @@ from datetime import datetime, timezone, timedelta
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
+from app.services.answer_media import answer_media_record
 
 from app.models.entities import Exam, ExamAnswer, HistoryRecord, Question
 from app.services.score_summary import DIM_DEFS, normalized_dimensions, summarize_answers
@@ -71,7 +72,9 @@ def _record_to_dict(r: HistoryRecord) -> dict:
         "dimensions": _normalize_dimensions(r.dimensions),
         "completedAt": completed_at,
         "date": completed_at,
-        "questionSummary": f"{question_count}题模拟练习" if question_count else "模拟练习记录",
+        "practiceMode": "legacy",
+        "practiceModeName": "历史练习（未记录类型）",
+        "questionSummary": f"{question_count}题历史练习（未记录类型）" if question_count else "历史练习（未记录类型）",
     }
 
 
@@ -192,7 +195,7 @@ def _build_exam_summary(exam: Exam, answers: list[ExamAnswer], question_lookup: 
     status = exam.status or ("completed" if record else "in_progress")
     scoring_status = "completed" if bool(scored_answers) and len(scored_answers) == len(answered_answers) else "pending"
     practice_mode = getattr(exam, "practice_mode", "legacy") or "legacy"
-    mode_name = {"free": "自由练习", "fullExam": "全真模拟", "training": "专项训练", "targeted": "定向练习", "trial": "试用练习"}.get(practice_mode, "模拟练习")
+    mode_name = {"free": "自由练习", "fullExam": "全真模拟", "training": "专项训练", "targeted": "定向练习", "trial": "试用练习"}.get(practice_mode, "历史练习（未记录类型）")
     if scoring_status == "pending":
         question_summary = f"已提交{question_count}/{total_questions or question_count}题（点评中）"
     elif status == "completed":
@@ -227,7 +230,9 @@ def _answer_to_dict(ans: ExamAnswer, question: Question | None, usage_record=Non
     score_result = dict(ans.score_result or {})
     if "dimensions" in score_result:
         score_result["dimensions"] = normalized_dimensions(score_result)
-    media_record = score_result.get("mediaRecord", {}) if isinstance(score_result, dict) else {}
+    media_record = answer_media_record(ans)
+    if media_record:
+        score_result["mediaRecord"] = media_record
     answer_timing = score_result.get("answerTiming") if isinstance(score_result.get("answerTiming"), dict) else {}
     if not answer_timing and isinstance(media_record.get("answerTiming"), dict):
         answer_timing = media_record.get("answerTiming") or {}
@@ -442,16 +447,17 @@ def get_history_stats(db: Session, username: str) -> dict:
     """
     rows = db.query(HistoryRecord).filter(HistoryRecord.username == username).all()
     empty = {
-        "totalExams": 0, "avgScore": 0, "bestScore": 0,
+        "totalExams": 0, "scoredExams": 0, "avgScore": 0, "bestScore": 0,
         "weakestDimension": "",
         "dimensionAverages": [{"name": d["name"], "avg": 0, "maxScore": d["maxScore"]} for d in DIM_DEFS],
     }
     if not rows:
         return empty
     summaries = _record_summaries(db, rows)
-    scores = [summaries.get(r.exam_id, {}).get('totalScore', float(r.total_score or 0) / float(r.max_score or 100) * 100) for r in rows]
+    scored_rows = [r for r in rows if summaries.get(r.exam_id, {}).get('questionCount', int(r.question_count or 0)) > 0]
+    scores = [summaries.get(r.exam_id, {}).get('totalScore', float(r.total_score or 0) / float(r.max_score or 100) * 100) for r in scored_rows]
     totals = {d["name"]: [] for d in DIM_DEFS}
-    for r in rows:
+    for r in scored_rows:
         for dim in summaries.get(r.exam_id, {}).get('dimensions', r.dimensions or []):
             name = _normalize_dimension_name(dim.get("name"))
             if name in totals:
@@ -468,8 +474,9 @@ def get_history_stats(db: Session, username: str) -> dict:
                 lowest, weakest = pct, a["name"]
     return {
         "totalExams": len(rows),
-        "avgScore": round(sum(scores) / len(scores), 2),
-        "bestScore": max(scores),
+        "scoredExams": len(scores),
+        "avgScore": round(sum(scores) / len(scores), 2) if scores else 0,
+        "bestScore": max(scores) if scores else 0,
         "weakestDimension": weakest,
         "dimensionAverages": avgs,
     }

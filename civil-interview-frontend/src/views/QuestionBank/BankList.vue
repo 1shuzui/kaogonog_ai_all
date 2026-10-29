@@ -53,6 +53,7 @@ PC 题库列表页，负责按考试体系、地区、年份、岗位和题型�
           <ProvinceSelector v-model:value="provinceFilter" @change="onProvinceChange" />
           <a-input
             v-model:value="subcategoryFilter"
+            @change="subcategory2Filter = ''"
             :placeholder="subcategoryPlaceholder"
             allow-clear
             style="width: 130px"
@@ -71,7 +72,7 @@ PC 题库列表页，负责按考试体系、地区、年份、岗位和题型�
             style="width: 180px"
             :max-tag-count="2"
           >
-            <a-select-option v-for="y in YEAR_OPTIONS" :key="y" :value="y">{{ y }}</a-select-option>
+            <a-select-option v-for="y in filterMetadata.options.value.year" :key="y" :value="y">{{ y }}</a-select-option>
           </a-select>
           <a-select
             v-model:value="dimensionFilter"
@@ -102,9 +103,14 @@ PC 题库列表页，负责按考试体系、地区、年份、岗位和题型�
           />
           <a-button type="primary" @click="onFilterChange">搜索</a-button>
         </a-space>
+        <p v-if="filterMetadata.loading.value">正在读取题库筛选选项…</p>
+        <a-alert v-if="filterMetadata.error.value" type="warning" :message="filterMetadata.error.value">
+          <template #action><a-button size="small" @click="refreshFilterMetadata">重试</a-button></template>
+        </a-alert>
       </div>
 
       <!-- 题目列表 -->
+      <a-alert v-if="bankStore.error" type="error" :message="bankStore.error"><template #action><a-button size="small" @click="onFilterChange">重试查询</a-button></template></a-alert>
       <a-spin :spinning="bankStore.loading">
         <div class="bank-list__items" v-if="bankStore.questions.length">
           <div
@@ -127,6 +133,7 @@ PC 题库列表页，负责按考试体系、地区、年份、岗位和题型�
             <div class="bank-list__item-stem">
               <QuestionRichContent :text="q.stem" :collapsed-height="128" />
             </div>
+            <a-button type="primary" @click="practiceQuestion(q)">练这道题</a-button>
             <div v-if="isAdmin" class="bank-list__item-footer">
               <div class="bank-list__item-actions">
                 <a-button type="link" size="small" @click="$router.push(`/bank/edit/${q.id}`)">
@@ -139,7 +146,7 @@ PC 题库列表页，负责按考试体系、地区、年份、岗位和题型�
             </div>
           </div>
         </div>
-        <EmptyState v-else text="暂无题目" />
+        <EmptyState v-else-if="!bankStore.error && !bankStore.loading" text="当前筛选范围暂无题目，请调整条件" />
       </a-spin>
 
       <!-- 分页 -->
@@ -204,7 +211,7 @@ PC 题库列表页，负责按考试体系、地区、年份、岗位和题型�
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { UploadOutlined, PlusOutlined, FileTextOutlined, InboxOutlined } from '@ant-design/icons-vue'
 import { useQuestionBankStore } from '@/stores/questionBank'
@@ -216,7 +223,9 @@ import QuestionRichContent from '@/components/common/QuestionRichContent.vue'
 import { message } from 'ant-design-vue'
 import { useUserStore } from '@/stores/user'
 import { importDocx } from '@/api/questionBank'
-import { EXAM_CATEGORIES, SUBCATEGORY_LABELS, YEAR_OPTIONS } from '@/utils/constants'
+import { EXAM_CATEGORIES, SUBCATEGORY_LABELS } from '@/utils/constants'
+import { useQuestionFilters } from '@/composables/useQuestionFilters'
+import { practiceQuery } from '../../../../shared/practiceSelection.mjs'
 
 const router = useRouter()
 const route = useRoute()
@@ -238,6 +247,16 @@ const yearFilter = ref([])
 const dimensionFilter = ref(undefined)
 const categoryReviewFilter = ref(undefined)
 const keyword = ref('')
+const filterMetadata = useQuestionFilters()
+const metadataParams = computed(() => ({ province: provinceFilter.value === 'all' ? '' : provinceFilter.value, examCategory: examCategoryFilter.value, subcategory: subcategoryFilter.value, subcategory2: subcategory2Filter.value, dimension: dimensionFilter.value, categoryReview: categoryReviewFilter.value }))
+async function refreshFilterMetadata() {
+  const options = await filterMetadata.refresh(metadataParams.value, hasQuestionBankAccess.value)
+  if (options) yearFilter.value = yearFilter.value.filter(year => options.year.includes(year))
+}
+watch(() => [metadataParams.value, hasQuestionBankAccess.value], refreshFilterMetadata, { deep: true })
+function practiceQuestion(question) {
+  router.push({ path: '/exam/prepare', query: practiceQuery({ questionId: question.id, filters: { ...metadataParams.value, year: yearFilter.value.join(','), keyword: keyword.value } }) })
+}
 const subcategoryPlaceholder = computed(() => {
   if (!examCategoryFilter.value) return '三级分类'
   return SUBCATEGORY_LABELS[examCategoryFilter.value] || '三级分类'
@@ -265,6 +284,7 @@ onMounted(async () => {
   keyword.value = q.keyword || ''
 
   if (hasQuestionBankAccess.value) {
+    refreshFilterMetadata()
     bankStore.setFilters({
       province: provinceFilter.value === 'all' ? '' : provinceFilter.value || '',
       dimension: dimensionFilter.value || '',
@@ -281,12 +301,16 @@ onMounted(async () => {
 
 function onProvinceChange(value) {
   provinceFilter.value = value
+  subcategoryFilter.value = subcategory2Filter.value = ''
+  yearFilter.value = []
+  onFilterChange()
 }
 
 function onExamCategoryChange(value) {
   examCategoryFilter.value = value || ''
   subcategoryFilter.value = ''
   subcategory2Filter.value = ''
+  yearFilter.value = []
   onFilterChange()
 }
 

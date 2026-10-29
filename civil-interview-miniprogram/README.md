@@ -48,6 +48,8 @@ dist/build/mp-weixin-prod
 VITE_API_BASE_MP_WEIXIN=https://xzqianmianyuzhoukeji.com/api
 ```
 
+微信构建统一输出ES2018语法，并在构建末尾解析所有JavaScript产物；原生导航文件也经过转换。保持微信 `es6=false`，不通过切换开发者工具转译开关掩盖上传错误。错误复现、修复和预览验证见[本轮交付记录](../docs/implementation/wechat-upload-compatibility-20261026.md)。
+
 ## 微信小程序配置要点
 
 1. 小程序端请求地址必须是完整 URL（不能只写 `/api`）。
@@ -80,6 +82,6 @@ uni.setStorageSync('civil_runtime_api_base', 'http://可访问地址:8050')
 - 题库列表与题目详情
 - 模考准备、录音 / 文本作答、评分结果
 - 历史记录
-- 定向备面与重点分析
+- 定向备面与方向弱点分析，默认新题练习，可切换低分重练
 - 专项训练
 - 套餐演示与个人中心

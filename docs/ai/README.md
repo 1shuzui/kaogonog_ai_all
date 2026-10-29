@@ -2,6 +2,8 @@
 
 本目录是本项目的 AI 与人工协作入口。它不替代源代码、测试或 FastAPI 自动文档；它的作用是先给出稳定的系统边界、术语和查阅顺序，避免在大仓库中把不同考试体系、不同分值口径或不同前后端接口混为一谈。
 
+本轮小程序模块边界、兼容提交范围与验证见[2026-10-27 模块拆分上传记录](../implementation/wechat-modules-git-upload-20261027.md)。
+
 ## 先读什么
 
 | 当前任务 | 首先阅读 | 然后核对 |
@@ -12,6 +14,8 @@
 | 修改评分、仪态分或结果页 | [评分接口与分值契约](../api/scoring.md) | [ADR-005](../decisions/ADR-005-medical-question-bank-and-appearance-score.md) |
 | 修改定向备面、门户或岗位筛选 | [定向备面接口](../api/targeted-training.md) | 后端 positions 路由与两端兜底分类树 |
 | 排查部署、题库资料或测试 | [本地开发](../ops/local-development.md) 与 [测试说明](../testing/testing-and-reports.md) | [题库资产索引](../../data/question-bank/README.md) |
+
+微信上传语法、复习题干样式和本次限定推送范围见[兼容修复记录](../implementation/wechat-upload-compatibility-20261026.md)。
 
 ## 不可违反的项目事实
 

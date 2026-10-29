@@ -1,5 +1,5 @@
 <!--
-小程序定向备面页，负责按考试体系、地区/来源和岗位方向选择目标，并进入重点分析或生成训练题。
+小程序定向备面页，负责按考试体系、地区/来源和岗位方向选择目标，并分析方向弱点或生成训练题。
 
 本页允许未登录浏览分类树，方向可以选“不限”；但点击分析、生成、试用或开通前必须走登录/权益拦截。
 选择器标题由考试体系的 `levelLabels` 决定，例如法检使用“岗位方向 -> 地区/来源”，不能影响其他考试体系的层级名称。
@@ -11,13 +11,13 @@
 <template>
   <view class="motion-page page page--tab" :class="motionClass" :style="motionStyle">
     <view class="motion-page-heading"><view><text class="motion-eyebrow">选好方向 · 贴近岗位</text><text class="page-title">定向备面</text></view><view class="motion-heading-icon"><LearnerIcon name="environment" :size="32" /></view></view>
-    <text class="page-desc">按真实考试体系、地区来源和岗位方向选择，生成更贴近报考方向的训练题。</text>
+    <text class="page-desc">选择考试方向，依据已保存成绩定位薄弱题型、了解擅长项，再开展针对练习。</text>
 
     <view v-if="readonlyMode" class="card access-card">
       <view class="section-head">
         <text class="section-title">定向备面未开通</text>
       </view>
-      <text class="access-card__desc">选择考试方向后，开通套餐即可生成定向训练题并查看面试重点；也可以先体验 1 道试用题。</text>
+      <text class="access-card__desc">选择考试方向后，开通套餐即可生成定向训练题并分析方向弱点；也可以先体验 1 道试用题。</text>
       <view class="access-card__actions">
         <button class="secondary-button" @tap="startTrial">试用 1 题</button>
         <button class="primary-button" @tap="goPricing">开通套餐</button>
@@ -59,14 +59,14 @@
     </view>
 
     <view v-if="!readonlyMode" class="targeted-actions">
-      <button class="primary-button analysis-submit" :disabled="targetedStore.focusLoading" @tap="goFocus">{{ targetedStore.focusLoading ? '正在分析…' : '分析面试重点' }}</button>
+      <button class="primary-button analysis-submit" :disabled="performanceStore.status === 'loading'" @tap="goFocus">{{ performanceStore.status === 'loading' ? '正在分析…' : '分析方向弱点' }}</button>
       <button class="secondary-button" :disabled="!canProceed" :loading="targetedStore.generateLoading" @tap="generate">
         生成题目
       </button>
     </view>
 
     <text v-if="selectionError" class="selection-error">{{ selectionError }}</text>
-    <FocusAnalysisCard class="targeted-analysis" :status="targetedStore.focusStatus" :data="targetedStore.focusData" :error="targetedStore.focusError" :slow="targetedStore.focusSlow" :target-label="analysisTargetLabel" @retry="goFocus" @cancel="targetedStore.cancelFocusAnalysis()" />
+    <TargetedPerformancePanel class="targeted-analysis" />
 
     <view v-if="!readonlyMode && targetedStore.generatedQuestions.length">
       <view class="generated-start card">
@@ -110,9 +110,10 @@
 import LearnerIcon from '../../components/LearnerIcon.vue'
 import { usePageMotion } from '../../motion/useMotion'
 const { motionClass, motionStyle } = usePageMotion()
-import { computed, ref, watch } from 'vue'
-import { onShow, onHide, onUnload } from '@dcloudio/uni-app'
-import FocusAnalysisCard from '../../components/FocusAnalysisCard.vue'
+import { computed, nextTick, ref, watch } from 'vue'
+import { onShow, onHide, onUnload, onPageScroll } from '@dcloudio/uni-app'
+import TargetedPerformancePanel from '../../components/TargetedPerformancePanel.vue'
+import { useTargetedPerformanceStore } from '../../stores/targetedPerformance'
 import LightSelector from '../../components/LightSelector.vue'
 import LearnerSheet from '../../components/LearnerSheet.vue'
 import QuestionCard from '../../components/QuestionCard.vue'
@@ -124,19 +125,21 @@ import { useUserStore } from '../../stores/user'
 import { hasPremiumAccess } from '../../utils/access'
 import { buildTargetFocusUrl, mergeTargetPayload } from '../../utils/targetedOptions'
 import { useQuestionFilters } from '../../utils/useQuestionFilters'
+import { miniPracticeUrl } from '../../../../shared/practiceSelection.mjs'
 import { isQuestionScoringSupported, getScoringUnavailableMessage } from '../../utils/questionPresentation'
 import { promptLoginForAction, showLoading, toast, hideLoading } from '../../utils/navigation'
 
 const billingStore = useBillingStore()
 const subscriptionStore = useSubscriptionStore()
 const targetedStore = useTargetedStore()
+const performanceStore = useTargetedPerformanceStore()
 const examStore = useExamStore()
 const userStore = useUserStore()
 const filterMetadata = useQuestionFilters()
 const selectedCategoryId = ref('')
 const selectedRegionId = ref('')
 const selectedTargetCode = ref('')
-const selectedYears = ref([])
+const selectedYears = ref(String(targetedStore.selectedTarget?.year || '').split(',').filter(Boolean))
 const showYearPicker = ref(false)
 const selectionError = ref('')
 const positionTree = computed(() => targetedStore.positionTree || [])
@@ -198,13 +201,9 @@ const hasFullAccess = computed(() => hasPremiumAccess(userStore, billingStore, s
 const readonlyMode = computed(() => !hasFullAccess.value)
 function refreshFilterMetadata() { return filterMetadata.refresh({}, hasFullAccess.value && userStore.isAuthenticated) }
 watch(() => hasFullAccess.value && userStore.isAuthenticated, refreshFilterMetadata, { immediate: true })
-const analysisTargetLabel = computed(() => {
-  const payload = targetedStore.focusParams || {}
-  return [payload.examCategory, payload.examSubcategory, payload.targetName, payload.year?.length ? String(payload.year) : ''].filter(Boolean).join(' / ')
-})
 watch(activeTarget, target => {
   selectionError.value = ''
-  if (target) targetedStore.setTarget(target)
+  if (target) { targetedStore.setTarget(target); performanceStore.setScope(target) }
 }, { deep: true })
 
 function findSelectionLocation(targetCode) {
@@ -274,12 +273,24 @@ function initializeSelection() {
 
 watch(positionTree, initializeSelection, { immediate: true })
 
-onShow(() => {
+onShow(async () => {
+  if (performanceStore.restorePosition) {
+    const target = performanceStore.target
+    const location = findSelectionLocation(target?.targetCode)
+    if (location) applyLocation(location)
+    selectedYears.value = String(target?.year || '').split(',').filter(Boolean)
+    const scrollTop = performanceStore.scrollTop
+    performanceStore.restorePosition = false
+    await nextTick()
+    uni.pageScrollTo({ scrollTop, duration: 0 })
+  }
   if (!targetedStore.positionsLoaded) targetedStore.fetchPositionTree().then(initializeSelection).catch(initializeSelection)
   refreshAccessState().catch(() => null)
+  if (performanceStore.report && userStore.isAuthenticated) performanceStore.fetch()
 })
-onHide(() => { showYearPicker.value = false; targetedStore.cancelFocusAnalysis() })
-onUnload(() => targetedStore.cancelFocusAnalysis())
+onPageScroll(event => { performanceStore.scrollTop = event.scrollTop })
+onHide(() => { showYearPicker.value = false; performanceStore.cancel() })
+onUnload(() => performanceStore.cancel())
 
 async function refreshAccessState() {
   if (!userStore.isAuthenticated) return
@@ -297,18 +308,20 @@ function buildFocusUrl() {
   return buildTargetFocusUrl(activeTarget.value || {})
 }
 
-function goFocus() {
-  if (targetedStore.focusLoading) return
+async function goFocus() {
+  if (performanceStore.status === 'loading') return
   selectionError.value = ''
   if (!canProceed.value) { selectionError.value = '请先选择考试体系与地区 / 来源'; return }
   const url = buildFocusUrl()
-  if (!promptLoginForAction('分析面试重点', url)) return
+  if (!promptLoginForAction('分析方向弱点', url)) return
   if (readonlyMode.value) {
     toast('请先开通套餐后使用定向备面')
     return
   }
   syncSelection()
-  targetedStore.fetchFocusAnalysis().catch(() => null) // visible error state belongs to the task/card
+  performanceStore.setScope(activeTarget.value)
+  const report = await performanceStore.fetch()
+  if (report) { await nextTick(); uni.pageScrollTo({ selector: '#performance-report', duration: 0 }) }
 }
 
 async function generate() {
@@ -363,7 +376,8 @@ async function startQuestion(question) {
 function startGeneratedPractice() {
   if (!promptLoginForAction('开始定向练习', '/pages/exam/prepare?source=targeted')) return
   if (readonlyMode.value) return
-  uni.navigateTo({ url: '/pages/exam/prepare?source=targeted' })
+  if (!targetedStore.generatedQuestions.length) return toast('请先生成练习题目')
+  uni.navigateTo({ url: miniPracticeUrl({ source: 'targeted', questionIds: targetedStore.generatedQuestions.map(question => question.id), filters: targetedStore.selectionPayload }) })
 }
 
 function goPricing() {

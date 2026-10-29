@@ -301,14 +301,13 @@ import { formatTime } from '../../utils/format'
 import { getCategoryName, getProvinceName } from '../../utils/constants'
 import { toast } from '../../utils/navigation'
 import BackgroundAnswers from '../../components/BackgroundAnswers.vue'
+import { useExamClock } from '../../composables/useExamClock.mjs'
+import { useFloatingCamera } from '../../composables/useFloatingCamera.mjs'
 
 const examStore = useExamStore()
 const subscriptionStore = useSubscriptionStore()
 const userStore = useUserStore()
-const phase = ref('preparing')
-const prepLeft = ref(userStore.preferences.defaultPrepTime)
-const answerLeft = ref(userStore.preferences.defaultAnswerTime)
-const overtimeSeconds = ref(0)
+
 const recording = ref(false)
 const recordedFile = ref('')
 const recorder = ref(null)
@@ -318,10 +317,9 @@ const cameraContext = ref(null)
 const cameraError = ref('')
 const cameraAvailable = ref(false)
 const cameraPlatformSupported = ref(typeof uni !== 'undefined' && typeof uni.createCameraContext === 'function')
-const cameraSize = ref('small')
-const cameraPosition = ref({ left: 0, top: 0 })
+
 const selectedMediaType = ref('')
-const questionStartedAt = ref(Date.now())
+
 const questionBookIndex = ref(0)
 const finishingExam = ref(false)
 const submittingAnswer = ref(false)
@@ -337,17 +335,8 @@ const scoringProgressText = computed(() => {
 })
 const reportedQuestionKeys = new Set()
 const JIANGSU_FULL_EXAM_TIMING_MODE = 'jiangsu_5_15'
-const JIANGSU_READING_SECONDS = 5 * 60
-const JIANGSU_ANSWER_SECONDS = 15 * 60
 const RECORD_AUTH_SCOPE = 'scope.record'
-let timer = null
-let timerPhase = ''
-let timerDeadline = 0
-let timerPausedAt = null
 let pendingRecordStopResolve = null
-let lastCameraTapAt = 0
-let cameraDragState = null
-let suppressCameraTapUntil = 0
 
 const question = computed(() => examStore.currentQuestion)
 const useVideoMode = computed(() => examStore.mediaMode === 'video')
@@ -365,6 +354,10 @@ const roomNavigationTitle = computed(() => (isFullExamSource.value ? '全真考�
 const isJiangsuFullExamTiming = computed(() => isFullExamSource.value && examStore.questions.some((item) => (
   item?.fullExamTimingMode === JIANGSU_FULL_EXAM_TIMING_MODE
 )))
+const { phase, prepLeft, answerLeft, overtimeSeconds, questionStartedAt, startTimer, pauseCaptureClock, resumeCaptureClock, currentUsageSeconds, standardQuestionSeconds, buildTimingMeta, resetQuestionClock, beginJiangsuAnswer, stopTimer } = useExamClock({
+  question, preferences: computed(() => userStore.preferences), isJiangsuFullExamTiming
+})
+const { cameraSizeClass, floatingCameraStyle, cameraSizeText, resetCameraPosition, cycleCameraSize, handleCameraTap, onCameraTouchStart, onCameraTouchMove, onCameraTouchEnd } = useFloatingCamera()
 const isJiangsuReading = computed(() => isJiangsuFullExamTiming.value && phase.value === 'reading')
 const isOvertime = computed(() => phase.value === 'answering' && Number(answerLeft.value || 0) <= 0 && Number(overtimeSeconds.value || 0) > 0)
 const activeTimerLabel = computed(() => {
@@ -426,15 +419,7 @@ const hasCurrentCapture = computed(() => Boolean(captureActive.value || captureR
 const exitActionText = computed(() => (
   hasCurrentCapture.value ? '中断并提交' : '退出'
 ))
-const cameraSizeClass = computed(() => `floating-camera--${cameraSize.value}`)
-const floatingCameraStyle = computed(() => {
-  const position = cameraPosition.value
-  return `left:${position.left}px;top:${position.top}px;`
-})
-const cameraSizeText = computed(() => {
-  const labels = { small: '小窗', medium: '中窗', large: '大窗' }
-  return `${labels[cameraSize.value] || '小窗'} · 可拖动`
-})
+
 const floatingCameraStatus = computed(() => {
   if (!cameraPlatformSupported.value) return '仅录音'
   if (videoRecording.value) return '录像中'
@@ -476,7 +461,7 @@ onHide(() => {
 })
 
 onBeforeUnmount(() => {
-  clearInterval(timer)
+  stopTimer()
   stopActiveCapture({ silent: true })
 })
 
@@ -500,10 +485,6 @@ watch(useVideoMode, async (enabled) => {
   cameraError.value = ''
   recordedVideoFile.value = ''
   if (selectedMediaType.value === 'video') selectedMediaType.value = recordedFile.value ? 'audio' : ''
-})
-
-watch(cameraSize, () => {
-  clampCameraPosition()
 })
 
 function provinceLabel(item = {}) {
@@ -557,111 +538,8 @@ function setupCamera() {
   cameraAvailable.value = true
 }
 
-function startTimer() {
-  clearInterval(timer)
-  timer = setInterval(() => {
-    if (timerPausedAt !== null) return
-    const now = Date.now()
-    if (timerPhase !== phase.value) {
-      timerPhase = phase.value
-      timerDeadline = now + (phase.value === 'answering' ? answerLeft.value : prepLeft.value) * 1000
-    }
-    if (phase.value === 'preparing' || phase.value === 'reading') {
-      prepLeft.value = Math.max(0, Math.ceil((timerDeadline - now) / 1000))
-      if (prepLeft.value > 0) return
-      phase.value = 'answering'
-      timerPhase = 'answering'
-      timerDeadline += answerLeft.value * 1000
-    }
-    answerLeft.value = Math.max(0, Math.ceil((timerDeadline - now) / 1000))
-    overtimeSeconds.value = Math.max(0, Math.floor((now - timerDeadline) / 1000))
-  }, 250)
-}
-
-function pauseCaptureClock() {
-  if (timerPausedAt === null) timerPausedAt = Date.now()
-}
-
-function resumeCaptureClock() {
-  if (timerPausedAt === null) return
-  const pausedMs = Date.now() - timerPausedAt
-  timerDeadline += pausedMs
-  questionStartedAt.value += pausedMs
-  timerPausedAt = null
-}
-
-function getWindowRect() {
-  try {
-    const info = typeof wx !== 'undefined' && typeof wx.getWindowInfo === 'function'
-      ? wx.getWindowInfo()
-      : {}
-    return {
-      width: Number(info.windowWidth || info.screenWidth || 375),
-      height: Number(info.windowHeight || info.screenHeight || 667)
-    }
-  } catch {
-    return { width: 375, height: 667 }
-  }
-}
-
-function rpxToPx(value) {
-  return (Number(value) || 0) * getWindowRect().width / 750
-}
-
-function getCameraPixelSize() {
-  const sizes = {
-    small: { width: 148, height: 198 },
-    medium: { width: 212, height: 284 },
-    large: { width: 284, height: 378 }
-  }
-  const size = sizes[cameraSize.value] || sizes.small
-  return {
-    width: rpxToPx(size.width),
-    height: rpxToPx(size.height)
-  }
-}
-
-function clampCameraPosition(position = cameraPosition.value) {
-  const rect = getWindowRect()
-  const size = getCameraPixelSize()
-  const margin = rpxToPx(18)
-  const maxLeft = Math.max(margin, rect.width - size.width - margin)
-  const maxTop = Math.max(margin, rect.height - size.height - rpxToPx(128))
-  cameraPosition.value = {
-    left: Math.min(Math.max(Number(position.left) || margin, margin), maxLeft),
-    top: Math.min(Math.max(Number(position.top) || margin, margin), maxTop)
-  }
-  return cameraPosition.value
-}
-
-function resetCameraPosition() {
-  const rect = getWindowRect()
-  const size = getCameraPixelSize()
-  cameraPosition.value = clampCameraPosition({
-    left: rect.width - size.width - rpxToPx(24),
-    top: rect.height - size.height - rpxToPx(156)
-  })
-}
-
-function ensureCameraPosition() {
-  if (!cameraPosition.value.left && !cameraPosition.value.top) {
-    resetCameraPosition()
-  }
-  return cameraPosition.value
-}
-
 function resetQuestionState() {
-  phase.value = isJiangsuFullExamTiming.value ? 'reading' : 'preparing'
-  prepLeft.value = isJiangsuFullExamTiming.value
-    ? JIANGSU_READING_SECONDS
-    : Number(question.value?.prepTime || userStore.preferences.defaultPrepTime || 90)
-  answerLeft.value = isJiangsuFullExamTiming.value
-    ? JIANGSU_ANSWER_SECONDS
-    : Number(question.value?.answerTime || userStore.preferences.defaultAnswerTime || 180)
-  overtimeSeconds.value = 0
-  questionStartedAt.value = Date.now()
-  timerPhase = phase.value
-  timerDeadline = questionStartedAt.value + prepLeft.value * 1000
+  resetQuestionClock()
   questionBookIndex.value = Math.max(0, examStore.currentIndex)
   resetAnswerInputState()
 }
@@ -672,29 +550,6 @@ function resetAnswerInputState() {
   videoRecording.value = false
   recordedVideoFile.value = ''
   selectedMediaType.value = ''
-}
-
-function currentUsageSeconds() {
-  const elapsed = Math.ceil(((timerPausedAt ?? Date.now()) - questionStartedAt.value) / 1000)
-  return Math.max(1, elapsed)
-}
-
-function standardQuestionSeconds() {
-  if (isJiangsuFullExamTiming.value) {
-    return JIANGSU_READING_SECONDS + JIANGSU_ANSWER_SECONDS
-  }
-  return Number(question.value?.prepTime || userStore.preferences.defaultPrepTime || 90)
-    + Number(question.value?.answerTime || userStore.preferences.defaultAnswerTime || 180)
-}
-
-function buildTimingMeta() {
-  const actualSeconds = currentUsageSeconds()
-  const standardSeconds = Math.max(0, standardQuestionSeconds())
-  return {
-    actualSeconds,
-    standardSeconds,
-    overtimeSeconds: Math.max(0, actualSeconds - standardSeconds, Number(overtimeSeconds.value || 0))
-  }
 }
 
 function canRecordNow() {
@@ -778,12 +633,7 @@ async function ensureRecordPermission() {
 
 function startJiangsuAnswer() {
   if (!isJiangsuReading.value) return
-  phase.value = 'answering'
-  prepLeft.value = 0
-  answerLeft.value = Math.max(Number(answerLeft.value) || 0, JIANGSU_ANSWER_SECONDS)
-  timerPhase = 'answering'
-  timerDeadline = Date.now() + answerLeft.value * 1000
-  overtimeSeconds.value = 0
+  beginJiangsuAnswer()
   toast('已进入 15 分钟作答阶段', 'success')
 }
 
@@ -858,7 +708,7 @@ async function continueAfterSubmittedAnswer(answer, isFinishing) {
 
   if (isFinishing) {
     const finishedExamId = examStore.examId
-    clearInterval(timer)
+    stopTimer()
     void examStore.finish()
     uni.redirectTo({
       url: `/pages/result/index?examId=${encodeURIComponent(finishedExamId)}&questionId=${encodeURIComponent(answer.questionId)}`
@@ -1126,67 +976,6 @@ function stopCapture() {
   stopRecord()
 }
 
-function cycleCameraSize() {
-  const order = ['small', 'medium', 'large']
-  const currentIndex = order.indexOf(cameraSize.value)
-  cameraSize.value = order[(currentIndex + 1) % order.length] || 'small'
-}
-
-function handleCameraTap() {
-  if (Date.now() < suppressCameraTapUntil) return
-  const now = Date.now()
-  if (now - lastCameraTapAt < 320) {
-    cycleCameraSize()
-    lastCameraTapAt = 0
-    return
-  }
-  lastCameraTapAt = now
-}
-
-function getTouchPoint(event) {
-  const touch = event?.touches?.[0] || event?.changedTouches?.[0]
-  if (!touch) return null
-  return {
-    x: Number(touch.clientX || touch.pageX || 0),
-    y: Number(touch.clientY || touch.pageY || 0)
-  }
-}
-
-function onCameraTouchStart(event) {
-  const point = getTouchPoint(event)
-  if (!point) return
-  const position = ensureCameraPosition()
-  cameraDragState = {
-    startX: point.x,
-    startY: point.y,
-    originLeft: position.left,
-    originTop: position.top,
-    moved: false
-  }
-}
-
-function onCameraTouchMove(event) {
-  if (!cameraDragState) return
-  const point = getTouchPoint(event)
-  if (!point) return
-  const dx = point.x - cameraDragState.startX
-  const dy = point.y - cameraDragState.startY
-  if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-    cameraDragState.moved = true
-  }
-  clampCameraPosition({
-    left: cameraDragState.originLeft + dx,
-    top: cameraDragState.originTop + dy
-  })
-}
-
-function onCameraTouchEnd() {
-  if (cameraDragState?.moved) {
-    suppressCameraTapUntil = Date.now() + 360
-  }
-  cameraDragState = null
-}
-
 async function submitAnswer() {
   if (finishingExam.value || submittingAnswer.value || examStore.loading) return
   if (isJiangsuReading.value) {
@@ -1246,7 +1035,7 @@ async function submitCurrentAnswerForExit() {
 
 async function finishInterruptedExam() {
   const finishedExamId = examStore.examId
-  clearInterval(timer)
+  stopTimer()
   void examStore.finish()
   const lastAnswered = examStore.answers
     .slice()

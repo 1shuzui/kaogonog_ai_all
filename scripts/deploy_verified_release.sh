@@ -13,7 +13,7 @@ SSH=(ssh -o BatchMode=yes -i "$SSH_KEY" "$SERVER")
 RSYNC_RSH="ssh -o BatchMode=yes -i $SSH_KEY"
 
 if [[ "$PHASE" == prepare ]]; then
-  git -C "$ROOT_DIR" diff --exit-code HEAD -- civil-interview-backend civil-interview-frontend/src civil-interview-miniprogram/src
+  git -C "$ROOT_DIR" diff --exit-code HEAD -- civil-interview-backend civil-interview-frontend civil-interview-miniprogram shared scripts
   STAGE="$(mktemp -d /tmp/kaogong-release.XXXXXX)"
   echo "Local build: $STAGE"
   mkdir -p "$STAGE/source" "$STAGE/backend"
@@ -33,6 +33,8 @@ if [[ "$PHASE" == prepare ]]; then
   done
   (cd "$ROOT_DIR/civil-interview-frontend" && npm run build)
   (cd "$ROOT_DIR/civil-interview-miniprogram" && npm run build:mp-weixin:prod)
+  python3 "$ROOT_DIR/scripts/write_release_manifest.py" "$ROOT_DIR/civil-interview-frontend/dist" --revision "$REVISION"
+  python3 "$ROOT_DIR/scripts/write_release_manifest.py" "$ROOT_DIR/civil-interview-miniprogram/dist/build/mp-weixin-prod" --revision "$REVISION"
   printf '%s\n' "$REVISION" > "$STAGE/REVISION"
   "${SSH[@]}" "test \"\$(readlink -f '$REMOTE_ROOT/latest/backend')\" = '$REMOTE_ROOT/latest/backend' && mkdir -p '$REMOTE_ROOT/releases/$RELEASE_ID' && chmod 700 '$REMOTE_ROOT/releases/$RELEASE_ID'"
   rsync -az -e "$RSYNC_RSH" "$STAGE/backend" "$STAGE/REVISION" "$SERVER:$REMOTE_ROOT/releases/$RELEASE_ID/"

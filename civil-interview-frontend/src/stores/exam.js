@@ -313,9 +313,11 @@ export const useExamStore = defineStore('exam', {
       if (!transcript) {
         answer.processingStatus = 'uploading'
         if (!answer.mediaUploaded) {
-          await uploadRecording(answerExamId, answer.questionId, answer.recordingBlob)
+          const uploaded = await uploadRecording(answerExamId, answer.questionId, answer.recordingBlob)
           checkSession()
           answer.mediaUploaded = true
+          answer.mediaUrl = uploaded?.fileUrl || ''
+          answer.mediaType = uploaded?.mediaType || answer.recordingBlob?.type || ''
         }
         checkSession()
         answer.processingStatus = 'transcribing'

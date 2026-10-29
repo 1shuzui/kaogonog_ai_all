@@ -2,6 +2,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import vm from 'node:vm'
+import { effectScope, ref as vueRef } from 'vue'
+import { useExamClock } from '../src/composables/useExamClock.mjs'
 
 const TRANSCRIPT = '第一题：先了解实际情况，再协调资源解决问题，最后回访。'
 const SCORE = { totalScore: 78, maxScore: 100 }
@@ -26,6 +28,22 @@ function extractSFC(source, name, context) {
   assert.ok(declaration, `${name} exists in the actual component`)
   return vm.runInContext(`(${declaration})`, context)
 }
+
+function installClock(context) {
+  const scope = effectScope()
+  const previous = Object.fromEntries(['phase', 'prepLeft', 'answerLeft', 'overtimeSeconds', 'questionStartedAt']
+    .filter(key => context[key]).map(key => [key, context[key].value]))
+  const clock = scope.run(() => useExamClock({
+    question: context.question || vueRef({}),
+    preferences: vueRef(context.userStore?.preferences || { defaultPrepTime: 90, defaultAnswerTime: 180 }),
+    isJiangsuFullExamTiming: context.isJiangsuFullExamTiming || vueRef(false)
+  }, { now: () => context.Date.now(), setInterval: context.setInterval, clearInterval: context.clearInterval }))
+  clock.resetQuestionClock()
+  for (const [key, value] of Object.entries(previous)) clock[key].value = value
+  Object.assign(context, clock)
+  return () => scope.stop()
+}
+
 
 async function createStore(api = {}, runtime = {}) {
   const source = await readFile(new URL('../src/stores/exam.js', import.meta.url), 'utf8')
@@ -59,7 +77,7 @@ async function createStore(api = {}, runtime = {}) {
   return store
 }
 
-test('mini room submits with waitForProcessing:false and freezes timing before the recorder flush', async () => {
+test('mini room submits with waitForProcessing:false and freezes timing before the recorder flush', async t => {
   const stopped = deferred(), upload = deferred(), asr = deferred(), scoring = deferred()
   const store = await createStore({ upload: () => upload.promise, transcribe: () => asr.promise, evaluate: () => scoring.promise })
   const payloads = [], errors = []
@@ -80,9 +98,7 @@ test('mini room submits with waitForProcessing:false and freezes timing before t
     showLoading() {}, hideLoading() {}, toast: text => errors.push(text),
     confirmSkipCurrentQuestion: async () => false
   })
-  for (const name of ['currentUsageSeconds', 'standardQuestionSeconds', 'buildTimingMeta', 'pauseCaptureClock', 'resumeCaptureClock']) {
-    context[name] = extractSFC(source, name, context)
-  }
+  t.after(installClock(context))
   const pending = observe(extractSFC(source, 'submitAnswer', context)())
   // Simulate a 60-second device flush without sleeping or allowing a network request.
   now += 60000
@@ -109,7 +125,7 @@ test('mini room submits with waitForProcessing:false and freezes timing before t
   }
 })
 
-test('mini continueAfterSubmittedAnswer advances before usage resolves and preserves the shared Jiangsu answer time', async () => {
+test('mini continueAfterSubmittedAnswer advances before usage resolves and preserves the shared Jiangsu answer time', async t => {
   const usage = deferred(), store = await createStore()
   const answer = { examId: store.examId, questionId: 'q1', questionIndex: 0, answerTiming: { actualSeconds: 30 }, processingStatus: 'queued' }
   store.answers.push(answer)
@@ -129,7 +145,8 @@ test('mini continueAfterSubmittedAnswer advances before usage resolves and prese
     reportUsage: payload => { usageCalls.push(payload); return usage.promise },
     subscriptionStore: { refresh: async () => {} }, toast() {}
   })
-  for (const name of ['currentUsageSeconds', 'usageType', 'syncUsageAndTrial', 'resetAnswerInputState', 'resetQuestionState']) {
+  t.after(installClock(context))
+  for (const name of ['usageType', 'syncUsageAndTrial', 'resetAnswerInputState', 'resetQuestionState']) {
     context[name] = extractSFC(source, name, context)
   }
   const pending = observe(extractSFC(source, 'continueAfterSubmittedAnswer', context)(answer, false))
@@ -233,7 +250,7 @@ test('mini final answer opens the result page before usage/finalization resolve 
   const source = await readFile(new URL('../src/pages/exam/room.vue', import.meta.url), 'utf8')
   const context = vm.createContext({
     examStore: store, syncUsageAndTrial: () => usage.promise,
-    timer: null, clearInterval() {},
+    stopTimer() {},
     uni: { redirectTo: ({ url }) => navigation.push(url) }
   })
   const pending = observe(extractSFC(source, 'continueAfterSubmittedAnswer', context)(answer, true))
@@ -277,7 +294,7 @@ test('mini account changes between upload/ASR stages prevent every subsequent re
   ], 'a resolved old request must not continue the answer pipeline using the newly logged-in account')
 })
 
-test('mini delayed ticks carry Jiangsu reading overshoot forward and exclude only the local capture pause across questions', async () => {
+test('mini delayed ticks carry Jiangsu reading overshoot forward and exclude only the local capture pause across questions', async t => {
   let now = 1000, nextTimerId = 0
   const timers = new Map(), usage = deferred()
   const source = await readFile(new URL('../src/pages/exam/room.vue', import.meta.url), 'utf8')
@@ -292,7 +309,8 @@ test('mini delayed ticks carry Jiangsu reading overshoot forward and exclude onl
     examStore: { currentIndex: 0, goNext() { this.currentIndex++; return true } },
     syncUsageAndTrial: () => usage.promise, toast() {}
   })
-  for (const name of ['startTimer', 'pauseCaptureClock', 'resumeCaptureClock', 'currentUsageSeconds', 'resetAnswerInputState', 'continueAfterSubmittedAnswer']) {
+  t.after(installClock(context))
+  for (const name of ['resetAnswerInputState', 'continueAfterSubmittedAnswer']) {
     context[name] = extractSFC(source, name, context)
   }
   const tickAt = time => { now = time; for (const callback of [...timers.values()]) callback() }

@@ -7,15 +7,20 @@ function currentPage() {
   return pages[pages.length - 1]
 }
 function actualRoute() { return currentPage()?.route || '' }
-const navigator = createNavigator({
+const tabNavigator = createNavigator({
   readRoute: actualRoute,
   navigate(route, done) {
-    wx.switchTab({ url: '/' + route, success: () => done(true), fail: () => {
-      done(false)
-      wx.showToast({ title: '页面未切换，请重试', icon: 'none' })
-    } })
+    wx.switchTab({
+      url: '/' + route,
+      success: () => done(true),
+      fail: () => {
+        done(false)
+        wx.showToast({ title: '页面未切换，请重试', icon: 'none' })
+      },
+      complete: result => done(result?.errMsg === 'switchTab:ok')
+    })
   },
-  notify(state) { currentPage()?.getTabBar?.()?.renderState(state) }
+  notify(state) { currentPage()?.getTabBar?.()?.renderState?.(state) }
 })
 
 Component({
@@ -23,14 +28,19 @@ Component({
   lifetimes: {
     attached() { this.visible = false },
     ready() { this.visible = true; this.syncRoute() },
-    detached() { this.visible = false }
+    detached() { this.visible = false; this.cancelMotion() }
   },
   pageLifetimes: {
     show() { this.visible = true; this.syncRoute() },
-    hide() { this.visible = false; this.setData({ moving: false, ready: false }) },
+    hide() { this.visible = false; this.cancelMotion(); this.setData({ moving: false, ready: false }) },
     resize() { this.syncRoute() }
   },
   methods: {
+    cancelMotion() {
+      clearTimeout(this.motionTimer)
+      this.motionVersion = (this.motionVersion || 0) + 1
+      this.handoff = null
+    },
     setSheetOpen(open) {
       if (this.data.sheetOpen !== Boolean(open)) this.setData({ sheetOpen: Boolean(open) })
     },
@@ -44,15 +54,43 @@ Component({
       try { motion = wx.getStorageSync(tokens.storageKey) || motion } catch {}
       if (!['full', 'reduced', 'off'].includes(motion)) motion = tokens.defaultMode
       this.setData({ motion, layout: `bottom:${safe + tokens.navGapPx}px;height:${tokens.navHeightPx}px;--motion-press:${motion === 'off' ? 0 : tokens.press}ms;--motion-scale:${motion === 'full' ? tokens.pressScale : 1};--motion-segment:${motion === 'full' ? tokens.segment : 0}ms;--motion-ease:${tokens.easing};` })
-      // A different page owns a different native tabBar: never replay index 0.
-      this.renderState(navigator.sync(), true)
+      this.renderState(tabNavigator.sync(), true)
     },
     renderState(state, immediate = false) {
       if (!this.visible) return
       const selected = tabs.findIndex(tab => tab.pagePath === state.confirmed)
       if (selected < 0) return
-      const pending = tabs.findIndex(tab => tab.pagePath === state.desired)
-      const visual = state.pending && !immediate && pending >= 0 ? pending : selected
+      // Keep the old page selected until navigation arrives; the destination
+      // owns the slide, so replacing the page cannot restart a half-played one.
+      const visual = selected
+      const transition = state.transition
+      if (this.handoff && this.handoff.id === transition?.id && this.data.motion === 'full') {
+        this.handoff.visual = visual
+        return
+      }
+      if (immediate && transition?.id === this.transitionId && this.data.motion === 'full' &&
+          this.data.ready && this.data.moving && this.data.selected === selected && this.data.visual === visual) return
+      const from = tabs.findIndex(tab => tab.pagePath === transition?.from)
+      if (immediate && this.data.motion === 'full' && transition?.to === state.confirmed &&
+          transition.id !== this.transitionId && from >= 0 && from !== selected && Date.now() - transition.startedAt < 3000) {
+        this.cancelMotion()
+        this.transitionId = transition.id
+        const version = this.motionVersion
+        this.handoff = { id: transition.id, visual }
+        // WeChat creates a separate tabBar for each page. Paint the prior tab
+        // first, then move on the next frame; ready/show must not cancel it.
+        this.setData({ selected, visual: from, ready: true, moving: false }, () => {
+          if (!this.visible || version !== this.motionVersion) return
+          this.motionTimer = setTimeout(() => {
+            if (!this.visible || version !== this.motionVersion || !this.handoff) return
+            const target = this.handoff.visual
+            this.handoff = null
+            this.setData({ visual: target, moving: true })
+          }, 32)
+        })
+        return
+      }
+      this.cancelMotion()
       const moving = !immediate && this.data.ready && this.data.motion === 'full'
       if (this.data.selected === selected && this.data.visual === visual && this.data.ready && this.data.moving === moving) return
       this.setData({ selected, visual, ready: true, moving })
@@ -60,7 +98,7 @@ Component({
     select(event) {
       if (this.data.sheetOpen) return
       const tab = tabs[Number(event.currentTarget.dataset.index)]
-      if (tab) navigator.request(tab.pagePath)
+      if (tab) tabNavigator.request(tab.pagePath)
     }
   }
 })

@@ -107,6 +107,19 @@ def create_login_token(db: Session, user: User, client_type: str = "web") -> str
     return token
 
 
+def revoke_login_sessions(db: Session, user: User) -> None:
+    """Invalidate both managed slots and legacy tokens within the caller's transaction."""
+    db.query(User).filter(User.id == user.id).with_for_update().one()
+    for client_type in ("web", "wechat"):
+        slot = db.get(UserLoginSession, (user.id, client_type))
+        if slot is None:
+            slot = UserLoginSession(user_id=user.id, client_type=client_type)
+            db.add(slot)
+        # Retain a slot even for legacy accounts: deleting slots would revive old JWTs.
+        slot.session_id = secrets.token_hex(24)
+        slot.created_at = datetime.now(timezone.utc)
+
+
 def _mark_user_active_if_due(db: Session, user: User) -> None:
     now = datetime.now(timezone.utc)
     last_active = user.last_active_at

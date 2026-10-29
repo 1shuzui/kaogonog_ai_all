@@ -31,6 +31,8 @@ const storageKey = () => `${BILLING_STORAGE_KEY}:${localStorage.getItem('usernam
 function createDefaultState() {
   return {
     planType: BILLING_PLAN_KEYS.TRIAL,
+    serverPaid: null,
+    planName: '',
     remainingSeconds: 0,
     monthlyExpireAt: 0,
     activatedAt: 0,
@@ -63,6 +65,9 @@ function normalizeBillingState(rawState = {}) {
     ...nextState,
     ...rawState,
     planType: Object.values(BILLING_PLAN_KEYS).includes(planType) ? planType : BILLING_PLAN_KEYS.TRIAL,
+    serverPaid: typeof rawState.isPaid === 'boolean' ? rawState.isPaid
+      : typeof rawState.serverPaid === 'boolean' ? rawState.serverPaid : null,
+    planName: String(rawState.planName || ''),
     remainingSeconds: Math.max(0, Math.floor(Number(rawState.remainingSeconds) || 0)),
     monthlyExpireAt: Math.max(0, Number(rawState.monthlyExpireAt) || 0),
     activatedAt: Math.max(0, Number(rawState.activatedAt) || 0),
@@ -128,17 +133,31 @@ export const useBillingStore = defineStore('billing', {
       return this.isHourlyPlan && this.remainingSeconds > 0
     },
     isPaid() {
+      // Package names are presentation labels. Manual grants and explicit
+      // revocations use the same authoritative access flag as the mini program.
+      if (this.serverPaid === false) return false
+      if (this.serverPaid === true) {
+        if (this.monthlyExpireAt > 0 && this.monthlyExpireAt <= Date.now()) return false
+        if (this.totalMinutes > 0 && this.remainingMinutes <= 0) return false
+        if (this.dailyLimitMinutes > 0 && this.remainingDailyMinutes <= 0) return false
+        return !this.isHourlyPlan || this.remainingSeconds > 0
+      }
       return this.isHourlyActive || this.isMonthlyActive
     },
     isTrialOnly() {
       return !this.isPaid
     },
     planLabel() {
+      if (this.serverPaid !== null) return this.isPaid ? (this.planName || '已开通') : '试用版'
       if (this.isMonthlyActive) return '包月套餐'
       if (this.isHourlyPlan) return '按时套餐'
       return '试用版'
     },
     planStatusText() {
+      if (this.serverPaid !== null && !this.isPaid) return '当前无可用训练权益，可前往套餐页查看'
+      if (this.isPaid && !this.isHourlyPlan && !this.isMonthlyPlan) {
+        return `剩余时长：${formatDurationText(this.remainingMinutes * 60)}`
+      }
       if (this.isMonthlyActive) {
         return `有效期至 ${formatPlanExpireAt(this.monthlyExpireAt)}`
       }
@@ -154,6 +173,7 @@ export const useBillingStore = defineStore('billing', {
       return '当前为试用模式，仅可体验 1 道引导题'
     },
     activePlanDescription() {
+      if (this.serverPaid !== null) return this.isPaid ? '可用额度内可使用完整训练模块' : '当前仅可体验试用题'
       if (this.isMonthlyActive) return '当前周期内已解锁全部付费训练模块'
       if (this.isHourlyPlan && this.remainingSeconds > 0) return '剩余时长内可使用全部付费训练模块'
       return '开通后可解锁完整训练功能'
@@ -177,6 +197,8 @@ export const useBillingStore = defineStore('billing', {
     applyBackendState(rawBillingState = {}) {
       const nextState = normalizeBillingState(rawBillingState)
       this.planType = nextState.planType
+      this.serverPaid = nextState.serverPaid
+      this.planName = nextState.planName
       this.remainingSeconds = nextState.remainingSeconds
       this.monthlyExpireAt = nextState.monthlyExpireAt
       this.activatedAt = nextState.activatedAt

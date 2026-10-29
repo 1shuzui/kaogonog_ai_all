@@ -14,6 +14,7 @@
     <view class="learner-kicker"><LearnerIcon name="solution" :size="20" /><text>练习复盘</text></view>
     <text class="learner-title">这次作答，下一步怎么练。</text>
     <BackgroundAnswers @layout-change="calibrate" />
+    <TargetedResultActions :exam-id="activeExamId" :pending-count="answerList.filter(answer => !answer.isPlaceholder && !hasFinalScore(answer.scoringResult)).length" />
     <view v-if="answerList.length > 1" class="card answer-tabs">
       <text class="answer-tabs__summary">已答 {{ completedAnswerCount }} 题，未答 {{ unansweredCount }} 题</text>
       <scroll-view scroll-x class="answer-tabs__scroll" :scroll-into-view="`result-answer-${activeAnswerIndex}`">
@@ -77,8 +78,7 @@
 
       <view class="card">
         <text class="section-title">评分口径</text>
-        <text class="plain-text">依据本题采分点、题库参考答案与实际作答评估；能力条采用内容百分制权重，不与题目赋分直接相加。历史总评换算为百分制，整套仪态分仅计一次。</text>
-        <text v-if="result.contentScore != null" class="plain-text">内容 {{ result.contentScore }} / {{ result.contentMaxScore || (result.maxScore - result.appearanceScoreMax) }}；仪态 {{ result.appearanceScore }} / {{ result.appearanceScoreMax }}。{{ result.scoreCalculationNote }}</text>
+        <text v-for="note in scoringExplanation(result)" :key="note" class="plain-text">{{ note }}</text>
         <text class="plain-text">等级按得分率：A ≥85%，B ≥75%，C ≥60%，其余为 D。AI 结果仅供训练参考，不代表官方考试成绩。</text>
       </view>
 
@@ -104,7 +104,9 @@
 
       <view v-if="answerVideoUrl" class="card">
         <text class="section-title">作答录像回放</text>
-        <video v-if="visible" :key="activeQuestionId" :src="answerVideoUrl" controls class="answer-video" @loadedmetadata="mediaRevision += 1" />
+        <video v-if="visible" :key="`${activeQuestionId}:${playbackAttempt}`" :src="answerVideoUrl" controls class="answer-video" @loadedmetadata="mediaRevision += 1; playbackError = ''" @error="playbackError = '录像暂时无法播放，请检查网络后重新加载。'" />
+        <text v-if="!currentMedia.persisted" class="page-desc">当前为本机临时录像，上传成功后可从历史记录回放。</text>
+        <view v-if="playbackError"><text class="page-desc">{{ playbackError }}</text><button class="secondary-button" @tap="playbackAttempt += 1; playbackError = ''">重新加载录像</button></view>
       </view>
 
       <view v-if="answerTimingView" class="card timing-card">
@@ -213,8 +215,12 @@
       </view>
       </MotionCollapse>
 
+      <view v-if="favoritesStore.error" class="card">
+        <text class="page-desc">{{ favoritesStore.error }}</text>
+        <button class="secondary-button" @tap="favoritesStore.load()">重新同步收藏</button>
+      </view>
       <view class="utility-actions card">
-        <button class="secondary-button" @tap="toggleStarred">
+        <button class="secondary-button" :disabled="favoritesStore.saving" :loading="favoritesStore.saving" @tap="toggleStarred">
           {{ isStarred ? '已收藏' : '收藏本题' }}
         </button>
         <button class="secondary-button" @tap="openShareCard">分享成绩卡</button>
@@ -248,7 +254,8 @@
       <text v-if="!displayTranscript" class="plain-text">{{ currentAnswer.processingStatus === 'failed' ? '文字稿尚未生成，请重试录音处理。' : '录音正在处理，文字稿和点评完成后会自动显示。请保持小程序打开。' }}</text>
       <text class="plain-text" selectable>{{ displayTranscript }}</text>
       <text v-if="currentAnswer.processingError" class="plain-text">{{ currentAnswer.processingError }}</text>
-      <video v-if="answerVideoUrl && visible" :key="activeQuestionId" :src="answerVideoUrl" controls class="answer-video" />
+      <video v-if="answerVideoUrl && visible" :key="`${activeQuestionId}:${playbackAttempt}`" :src="answerVideoUrl" controls class="answer-video" @error="playbackError = '录像暂时无法播放，请检查网络后重新加载。'" />
+      <view v-if="playbackError"><text class="page-desc">{{ playbackError }}</text><button class="secondary-button" @tap="playbackAttempt += 1; playbackError = ''">重新加载录像</button></view>
       <button v-if="canRetryCurrentAnswer" class="primary-button" :loading="retryingScoring" :disabled="retryingScoring" @tap="retryScoring">
         {{ retryingScoring ? '正在处理' : '重试处理' }}
       </button>
@@ -274,6 +281,8 @@
 </template>
 
 <script setup>
+import { resolveAnswerMedia } from '../../../../shared/answerMedia.mjs'
+import { scoringExplanation } from '../../../../shared/scoringExplanation.mjs'
 import MotionSummary from '../../components/MotionSummary.vue'
 import MotionCollapse from '../../components/MotionCollapse.vue'
 import { useScrollSummary } from '../../motion/useScrollSummary'
@@ -283,6 +292,9 @@ const { motionClass, motionStyle, visible } = usePageMotion()
 import LearnerIcon from '../../components/LearnerIcon.vue'
 import { computed, ref, watch } from 'vue'
 import { onLoad, onUnload, onShareAppMessage } from '@dcloudio/uni-app'
+import TargetedResultActions from '../../components/TargetedResultActions.vue'
+import { useTargetedPerformanceStore } from '../../stores/targetedPerformance'
+import { practiceContext, targetedPracticeUrl } from '../../utils/targetedPerformance.mjs'
 import DimensionBars from '../../components/DimensionBars.vue'
 import EmptyState from '../../components/EmptyState.vue'
 import ScoreRing from '../../components/ScoreRing.vue'
@@ -295,8 +307,7 @@ import { getGrade, getProvinceName } from '../../utils/constants'
 import { requireLogin, toast } from '../../utils/navigation'
 import { canUseLocalAnswers } from '../../utils/resultAnswerSource'
 import { hasFinalScore } from '../../utils/answerStatus'
-import { getQuestionScorePair } from '../../utils/scorePresentation'
-import { normalizeResult } from '../../utils/scoring'
+import { isNoContentTranscript, normalizeAnswerTiming, formatDuration, resolveNoContentReason, normalizeDisplayResult, buildEmptyResult, buildDisplayAnswers, formatAnswerScore } from '../../utils/resultAnswers.mjs'
 import { createCancellation } from '../../utils/cancellation.mjs'
 import { readReviewSuggestion, getReviewPriorities, getReviewTranscript } from '../../utils/resultReview.mjs'
 
@@ -333,14 +344,11 @@ const localFitProvinceName = computed(() => getProvinceName(questionProvince.val
 const currentAnswer = computed(() => answerList.value[activeAnswerIndex.value] || null)
 const canRetryCurrentAnswer = computed(() => currentAnswer.value?.processingStatus === 'failed'
   || (!currentAnswer.value?.processingStatus && !!displayTranscript.value && !result.value))
-const answerVideoUrl = computed(() => {
-  const answer = currentAnswer.value || {}
-  const media = result.value?.mediaRecord || answer.scoringResult?.mediaRecord || {}
-  const type = String(media.mediaType || answer.mediaType || '')
-  if (!type.includes('video')) return ''
-  const url = media.fileUrl || answer.mediaUrl || answer.filePath || ''
-  return url.startsWith('/uploads/') ? `${API_BASE}${url}` : url
-})
+const playbackError = ref('')
+const playbackAttempt = ref(0)
+const currentMedia = computed(() => resolveAnswerMedia(currentAnswer.value || {}, result.value, API_BASE))
+const answerVideoUrl = computed(() => currentMedia.value.kind === 'video' ? currentMedia.value.url : '')
+watch(activeQuestionId, () => { playbackError.value = ''; playbackAttempt.value = 0 })
 const currentQuestionLabel = computed(() => (
   answerList.value.length > 1
     ? `第 ${activeAnswerIndex.value + 1} 题${currentAnswer.value?.isPlaceholder ? ' · 未作答' : ''}`
@@ -422,141 +430,6 @@ onShareAppMessage(() => ({
   path: sharePath.value
 }))
 
-function isNoContentTranscript(value, scoring = {}) {
-  const text = String(value || '').trim()
-  const mode = String(scoring?.scoringMode || '').trim()
-  return text ? !getReviewTranscript(value) : ['screened_zero', 'empty_zero'].includes(mode)
-}
-
-function normalizeAnswerTiming(raw) {
-  if (!raw || typeof raw !== 'object') return null
-  const actualSeconds = Math.max(0, Number(raw.actualSeconds || raw.usageSeconds || 0) || 0)
-  const standardSeconds = Math.max(0, Number(raw.standardSeconds || 0) || 0)
-  const overtimeSeconds = Math.max(0, Number(raw.overtimeSeconds || (standardSeconds ? actualSeconds - standardSeconds : 0)) || 0)
-  if (!actualSeconds && !standardSeconds) return null
-  return { actualSeconds, standardSeconds, overtimeSeconds }
-}
-
-function formatDuration(seconds = 0) {
-  const total = Math.max(0, Math.round(Number(seconds) || 0))
-  const minutes = Math.floor(total / 60)
-  const rest = total % 60
-  if (minutes <= 0) return `${rest} 秒`
-  if (rest <= 0) return `${minutes} 分钟`
-  return `${minutes} 分 ${rest} 秒`
-}
-
-function resolveNoContentReason(value, scoring = {}) {
-  if (!isNoContentTranscript(value, scoring)) return null
-  const skipReason = String(scoring?.skipReason || scoring?.asrFailureType || scoring?.mediaRecord?.asrMeta?.status || '').trim()
-  const reasonMap = {
-    user_confirmed_skip: {
-      title: '用户确认跳过',
-      desc: '本题未提交录音或录像，已按未作答记 0 分。'
-    },
-    too_short: {
-      title: '录音过短',
-      desc: '本次录音时长不足，无法形成可靠文字稿，已按无效作答处理。'
-    },
-    silent_audio: {
-      title: '音量过低或接近静音',
-      desc: '本次录音没有足够清晰的人声，建议重新练习时靠近麦克风并保持环境安静。'
-    },
-    empty_audio: {
-      title: '未识别到有效语音',
-      desc: '本次录音未识别出可用于评分的作答内容。'
-    },
-    no_speech: {
-      title: '未识别到有效语音',
-      desc: '本次录音未识别出可用于评分的作答内容。'
-    },
-    funasr_error: {
-      title: '语音服务异常',
-      desc: '本次转写服务异常，建议重新录制后提交。'
-    },
-    asr_unavailable: {
-      title: '语音服务异常',
-      desc: '本次转写服务暂不可用，建议稍后重新录制后提交。'
-    }
-  }
-  return reasonMap[skipReason] || {
-    title: '无有效作答内容',
-    desc: '本次没有可用于复盘的可靠文字稿，请完成一段清晰作答后再查看细化建议。'
-  }
-}
-
-function getQuestionAssignedScore(question = {}) {
-  const points = Array.isArray(question?.scoringPoints) ? question.scoringPoints : []
-  return points.reduce((sum, item) => sum + (Number(item?.score || 0) || 0), 0)
-}
-
-function normalizeDisplayResult(value = {}, question = {}) {
-  const normalized = normalizeResult(value || {})
-  const questionMaxScore = Number(normalized.questionMaxScore || getQuestionAssignedScore(question) || normalized.maxScore || 100) || 100
-  return {
-    ...normalized,
-    // Keep supplied feedback only; score normalization must not manufacture review advice.
-    answerImprovementSuggestion: value?.answerImprovementSuggestion || null,
-    questionScore: Number(normalized.questionScore ?? normalized.totalScore ?? 0) || 0,
-    questionMaxScore: questionMaxScore || 100
-  }
-}
-
-function buildEmptyResult(question = {}) {
-  const maxScore = getQuestionAssignedScore(question) || 100
-  return normalizeDisplayResult({
-    totalScore: 0,
-    maxScore,
-    questionScore: 0,
-    questionMaxScore: maxScore,
-    grade: 'D',
-    dimensions: [],
-    aiComment: '本题未作答，按空答案记 0 分。',
-    scoringMode: 'empty_zero'
-  }, question)
-}
-
-function buildDisplayAnswers(answers = [], questionIds = [], examId = '') {
-  const answerMap = new Map()
-  const normalizedAnswers = Array.isArray(answers) ? answers.filter(Boolean) : []
-  normalizedAnswers.forEach((answer, index) => {
-    const questionId = String(answer?.questionId || '').trim()
-    if (!questionId) return
-    answerMap.set(questionId, {
-      ...answer,
-      questionId,
-      questionIndex: Number.isFinite(Number(answer?.questionIndex)) ? Number(answer.questionIndex) : index
-    })
-  })
-
-  const order = Array.isArray(questionIds) ? questionIds.map((id) => String(id || '').trim()).filter(Boolean) : []
-  if (order.length) {
-    const ordered = order.map((questionId, index) => {
-      const matched = answerMap.get(questionId)
-      if (matched) return { ...matched, questionIndex: index }
-      return {
-        examId,
-        questionId,
-        questionIndex: index,
-        questionStem: '',
-        province: 'national',
-        transcript: '',
-        scoringResult: null,
-        answerTiming: null,
-        isPlaceholder: true
-      }
-    })
-    const appended = normalizedAnswers.filter((answer) => !order.includes(String(answer?.questionId || '').trim()))
-    return [...ordered, ...appended]
-  }
-
-  return normalizedAnswers.sort((a, b) => {
-    const aIndex = Number.isFinite(Number(a?.questionIndex)) ? Number(a.questionIndex) : 0
-    const bIndex = Number.isFinite(Number(b?.questionIndex)) ? Number(b.questionIndex) : 0
-    return aIndex - bIndex
-  })
-}
-
 async function hydrateMissingQuestionInfo(items = [], task = loadRequest) {
   await Promise.all(items.map(async (answer) => {
     if (!isCurrentLoad(task) || !answer?.questionId || answer.questionStem) return
@@ -597,14 +470,6 @@ function selectAnswer(index) {
   activeAnswerIndex.value = nextIndex
   applyAnswer(answerList.value[nextIndex])
   finalizeLoadedResult()
-}
-
-function formatAnswerScore(answer = {}) {
-  if (answer.isPlaceholder) return '未作答'
-  if (!hasFinalScore(answer.scoringResult)) return '待点评'
-  const scoring = normalizeDisplayResult(answer.scoringResult)
-  const { score, maxScore } = getQuestionScorePair(scoring)
-  return `${score}/${maxScore}分`
 }
 
 onLoad(async (query) => {
@@ -839,24 +704,11 @@ function recordWeakFavorite() {
   if (currentAnswer.value?.isPlaceholder) return
   if (!result.value || !activeExamId.value || !activeQuestionId.value) return
   if (weakRecordedQuestionIds.value.has(activeQuestionId.value)) return
-  const score = Number(result.value.totalScore || 0)
-  const maxScore = Number(result.value.maxScore || 100)
-  if (!Number.isFinite(score) || !Number.isFinite(maxScore) || maxScore <= 0 || score / maxScore >= 0.6) return
   weakRecordedQuestionIds.value.add(activeQuestionId.value)
-  favoritesStore.addItem({
-    examId: activeExamId.value,
-    questionId: activeQuestionId.value,
-    questionStem: questionStem.value || '题目内容暂缺',
-    dimension: result.value.dimensions?.[0]?.name || '',
-    score,
-    maxScore,
-    grade: grade.value.label,
-    date: new Date().toISOString(),
-    type: 'weak'
-  })
+  void favoritesStore.load()
 }
 
-function toggleStarred() {
+async function toggleStarred() {
   if (currentAnswer.value?.isPlaceholder) {
     toast('未作答题目暂时无法收藏')
     return
@@ -869,22 +721,17 @@ function toggleStarred() {
     entry.examId === activeExamId.value && entry.questionId === activeQuestionId.value
   ))
   if (isStarred.value && item) {
-    favoritesStore.removeItem(item.id, 'starred')
-    toast('已取消收藏')
+    if (await favoritesStore.removeItem(item.id, 'starred')) toast('已取消收藏')
+    else if (favoritesStore.error) toast(favoritesStore.error)
     return
   }
-  favoritesStore.addItem({
+  const saved = await favoritesStore.addItem({
     examId: activeExamId.value,
     questionId: activeQuestionId.value,
-    questionStem: questionStem.value || '题目内容暂缺',
-    dimension: result.value.dimensions?.[0]?.name || '',
-    score: result.value.totalScore,
-    maxScore: result.value.maxScore,
-    grade: grade.value.label,
-    date: new Date().toISOString(),
     type: 'starred'
   })
-  toast('已收藏', 'success')
+  if (saved) toast('已收藏', 'success')
+  else if (favoritesStore.error) toast(favoritesStore.error)
 }
 
 function openShareCard() {
@@ -896,7 +743,11 @@ function closeShareCard() {
 }
 
 function again() {
-  uni.redirectTo({ url: '/pages/exam/prepare' })
+  const context = useTargetedPerformanceStore().contextFor(activeExamId.value)
+  const url = context
+    ? targetedPracticeUrl(practiceContext(context.target, context.questionType, context.period))
+    : '/pages/exam/prepare'
+  uni.redirectTo({ url })
 }
 
 function home() {

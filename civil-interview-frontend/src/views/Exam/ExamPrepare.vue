@@ -28,6 +28,8 @@
     <span class="learner-kicker"><AudioOutlined /> 开考准备</span>
     <h2 class="exam-prepare__title">准备好，就开口。</h2>
     <p class="exam-prepare__desc">检查声音，选好题目。提交后可继续下一题，点评会在后台进行。</p>
+    <a-alert v-if="selection.ids.length" type="info" :message="`已选 ${selection.ids.length} 道题，将按原顺序作答`" :description="inheritedSummary" />
+    <a-alert v-if="entryError || selection.error" type="error" :message="entryError || selection.error" description="原选择已保留，可再次点击进入考场重试。" show-icon />
     <a-alert
       v-if="asrUnavailable"
       class="exam-prepare__asr-alert"
@@ -127,8 +129,10 @@
             </a-select>
           </div>
           <div class="practice-config__meta">
-            {{ selectedFullExamSuite ? selectedFullExamSuiteSummary : (fullExamSuitesLoading ? '正在加载真题套卷...' : '当前省份暂无整套真题套卷，请切换江苏、安徽或湖南。') }}
+            {{ selectedFullExamSuite ? selectedFullExamSuiteSummary : (fullExamSuitesLoading ? '正在加载真题套卷...' : '当前筛选范围暂无完整真题套卷，请调整地区或分类。') }}
           </div>
+          <p v-if="fullExamSuiteOptions.length === 1">当前筛选范围收录 1 套完整真题套卷，可调整地区或分类查看其他题源。</p>
+          <a-alert v-if="fullExamSuitesError" type="error" :message="fullExamSuitesError"><template #action><a-button @click="refreshFullExamSuites">重试</a-button></template></a-alert>
         </div>
         <div v-if="showTargetFilterConfig" class="practice-config">
           <div class="practice-config__item">
@@ -184,8 +188,10 @@
               style="width: 260px"
               :max-tag-count="2"
             >
-              <a-select-option v-for="y in YEAR_OPTIONS" :key="y" :value="y">{{ y }}</a-select-option>
+              <a-select-option v-for="y in filterMetadata.options.value.year" :key="y" :value="y">{{ y }}</a-select-option>
             </a-select>
+            <span v-if="filterMetadata.loading.value">正在读取题库年份…</span>
+            <a-button v-if="filterMetadata.error.value" type="link" @click="refreshFilterMetadata">{{ filterMetadata.error.value }}，点击重试</a-button>
           </div>
           <div v-if="showPracticeConfig" class="practice-config__item">
             <span class="practice-config__label">题目数量</span>
@@ -253,7 +259,8 @@ import {
   normalizeProvinceCode
 } from '@/utils/fullExamSuites'
 import { parseTimingFormat, DEFAULT_TARGETED_POSITION_TREE } from '@/utils/targetedOptions'
-import { YEAR_OPTIONS } from '@/utils/constants'
+import { useQuestionFilters } from '@/composables/useQuestionFilters'
+import { readPracticeSelection, loadSelectedQuestions, practiceModeFor, practiceFilterSummary } from '../../../../shared/practiceSelection.mjs'
 
 const router = useRouter()
 const route = useRoute()
@@ -261,6 +268,8 @@ const examStore = useExamStore()
 const billingStore = useBillingStore()
 const userStore = useUserStore()
 const targetedStore = useTargetedStore()
+const filterMetadata = useQuestionFilters()
+const entryError = ref('')
 
 const { cameraReady, micReady, error: permissionError, checkBoth, checkMicOnly } = usePermission()
 const recorder = useMediaRecorder()
@@ -286,6 +295,8 @@ const asrStatus = ref(null)
 const selectedFullExamSuiteId = ref('')
 const fullExamSuites = ref([])
 const fullExamSuitesLoading = ref(false)
+let fullExamSuitesRequest = 0
+const fullExamSuitesError = ref('')
 
 // 候考室
 const waitingRoom = ref(false)
@@ -316,9 +327,14 @@ const questionCategoryOptions = [
 
 const hasFullAccess = computed(() => hasPremiumAccess(userStore, billingStore))
 const isTrialEntry = computed(() => String(route.query.trial || '') === '1' && !hasFullAccess.value)
-const fixedPracticeSources = new Set(['targeted', 'training', 'jiangsu'])
+const fixedPracticeSources = new Set(['targeted', 'training', 'jiangsu', 'bank', 'favorites'])
 const source = computed(() => String(route.query.source || ''))
-const isFixedPracticeEntry = computed(() => fixedPracticeSources.has(source.value))
+const selection = computed(() => {
+  try { return readPracticeSelection(route.query, source.value === 'targeted' ? targetedStore.generatedQuestions : []) }
+  catch (error) { return { ids: [], filters: {}, error: error.message } }
+})
+const inheritedSummary = computed(() => practiceFilterSummary(selection.value.filters, userStore.provinces, questionCategoryOptions))
+const isFixedPracticeEntry = computed(() => fixedPracticeSources.has(source.value) || selection.value.ids.length > 0)
 const showPracticeConfig = computed(() => examMode.value === 'free' && !isFixedPracticeEntry.value)
 const showTargetFilterConfig = computed(() => !isFixedPracticeEntry.value && ['free', 'fullExam'].includes(examMode.value))
 const asrUnavailable = computed(() => asrStatus.value && asrStatus.value.ready === false)
@@ -442,6 +458,7 @@ function applyDefaultTargetFilters(force = false) {
 
 // Build target filter params for API calls
 const targetFilterParams = computed(() => {
+  if (isFixedPracticeEntry.value) return selection.value.filters
   const params = {}
   const cat = selectedCategoryNode.value
   const region = selectedRegionNode.value
@@ -465,6 +482,12 @@ const targetFilterParams = computed(() => {
   }
   return params
 })
+
+async function refreshFilterMetadata() {
+  const options = await filterMetadata.refresh({ province: userStore.selectedProvince, ...targetFilterParams.value, dimension: selectedDimensionParam.value }, hasFullAccess.value && !isFixedPracticeEntry.value)
+  if (options) selectedYearsFilter.value = selectedYearsFilter.value.filter(year => options.year.includes(year))
+}
+watch(() => JSON.stringify([hasFullAccess.value, userStore.selectedProvince, { ...targetFilterParams.value, year: '' }, selectedDimensionParam.value]), refreshFilterMetadata, { immediate: true })
 
 watch(isFixedPracticeEntry, (fixed) => {
   if (fixed) {
@@ -551,6 +574,8 @@ function applyFullExamTimingMode(questions = []) {
 }
 
 async function refreshFullExamSuites() {
+  const request = ++fullExamSuitesRequest
+  fullExamSuitesError.value = ''
   if (!hasFullAccess.value) {
     fullExamSuites.value = []
     selectedFullExamSuiteId.value = ''
@@ -565,12 +590,14 @@ async function refreshFullExamSuites() {
       filters.province || userStore.selectedProvince,
       { params: filters }
     )
+    if (request !== fullExamSuitesRequest) return
     fullExamSuites.value = suites
   } catch (error) {
+    if (request !== fullExamSuitesRequest) return
     fullExamSuites.value = []
-    message.warning(error?.message || '真题套卷加载失败，请稍后重试。')
+    fullExamSuitesError.value = error?.normalizedMessage || error?.message || '真题套卷加载失败，请稍后重试。'
   } finally {
-    fullExamSuitesLoading.value = false
+    if (request === fullExamSuitesRequest) fullExamSuitesLoading.value = false
   }
 }
 
@@ -664,6 +691,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  fullExamSuitesRequest++
   clearInterval(countdownTimer)
   clearInterval(waitTimer)
   if (!examStore.mediaStream) {
@@ -769,7 +797,7 @@ async function enterExam() {
 
   enteringExam.value = true
   let questions = []
-  const recommendedId = String(route.query.questionId || '')
+  entryError.value = ''
   const freeQuestionCount = Math.max(1, Math.min(10, Number(questionCount.value) || DEFAULT_EXAM_QUESTION_COUNT))
   const targetQuestionCount = isTrialEntry.value
     ? 1
@@ -778,6 +806,7 @@ async function enterExam() {
       : freeQuestionCount
 
   try {
+    if (selection.value.error) throw new Error(selection.value.error)
     if (!isTrialEntry.value && !hasFullAccess.value) {
       billingStore.openPaywall(route.fullPath, examMode.value === 'fullExam' ? '全真模拟' : '专项练习')
       router.push('/')
@@ -792,45 +821,15 @@ async function enterExam() {
         const fallbackQuestion = await getQuestionById('q001')
         questions = fallbackQuestion ? [fallbackQuestion] : []
       }
-    } else if (source.value === 'targeted' && targetedStore.generatedQuestions.length) {
-      questions = await ensureScoringReadyQuestions(targetedStore.generatedQuestions, {
-        allowAutoSupplement: false
-      })
-    } else if (source.value === 'targeted' && recommendedId) {
-      try {
-        const cached = sessionStorage.getItem('targeted_question')
-        const selectedQuestion = cached ? JSON.parse(cached) : await getQuestionById(recommendedId)
-        questions = await ensureScoringReadyQuestions([selectedQuestion], {
-          allowAutoSupplement: false
-        })
-      } catch {
-        questions = await fetchScoringReadyRandomQuestions(targetQuestionCount, { params: targetFilterParams.value })
-      }
-    } else if (source.value === 'training' && route.query.questionIds) {
-      const ids = [...new Set(String(route.query.questionIds).split(',').filter(Boolean))].slice(0, 5)
-      questions = await ensureScoringReadyQuestions(await Promise.all(ids.map(id => getQuestionById(id))), {
-        requiredCount: ids.length, allowAutoSupplement: false
-      })
-    } else if (source.value === 'training' && recommendedId) {
-      try {
-        const cached = sessionStorage.getItem('training_question')
-        const selectedQuestion = cached ? JSON.parse(cached) : await getQuestionById(recommendedId)
-        questions = await ensureScoringReadyQuestions([selectedQuestion], {
-          allowAutoSupplement: false
-        })
-      } catch {
-        questions = await fetchScoringReadyRandomQuestions(targetQuestionCount, { params: targetFilterParams.value })
-      }
-    } else if (recommendedId) {
-      try {
-        const question = await getQuestionById(recommendedId)
-        questions = await ensureScoringReadyQuestions([question], { requiredCount: 1 })
-      } catch {
-        questions = await fetchScoringReadyRandomQuestions(targetQuestionCount, { params: targetFilterParams.value })
-      }
+    } else if (selection.value.ids.length) {
+      const selected = await loadSelectedQuestions(selection.value.ids, getQuestionById)
+      questions = await ensureScoringReadyQuestions(selected, { requiredCount: selected.length, allowAutoSupplement: false })
+      if (questions.length !== selected.length) throw new Error('所选题目尚未全部接入评分，请返回选题页检查；本次选择已保留。')
+    } else if (isFixedPracticeEntry.value) {
+      throw new Error('未找到所选题目，请返回选题页重新确认。')
     } else if (examMode.value === 'fullExam') {
       if (!selectedFullExamSuite.value) {
-        message.warning('当前省份暂无整套真题套卷，请切换江苏、安徽或湖南。')
+        message.warning('当前筛选范围暂无完整真题套卷，请调整地区或分类。')
         return
       }
       questions = await loadFullExamSuiteQuestions(selectedFullExamSuite.value, getQuestionById)
@@ -879,10 +878,10 @@ async function enterExam() {
       return
     }
 
-    await examStore.initExam(questions, false, ['training', 'targeted'].includes(source.value) ? source.value : isTrialEntry.value ? 'trial' : 'free')
+    await examStore.initExam(questions, false, practiceModeFor(source.value, examMode.value, isTrialEntry.value))
     router.push('/exam/room')
   } catch (error) {
-    message.error(error?.normalizedMessage || error?.message || '进入考场失败，请稍后重试。')
+    entryError.value = error?.normalizedMessage || error?.message || '进入考场失败，请稍后重试。'
   } finally {
     enteringExam.value = false
   }

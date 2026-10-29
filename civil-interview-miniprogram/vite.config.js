@@ -12,5 +12,10 @@ import { nativeTabBar } from './scripts/native-tab-bar.mjs'
 const uni = uniModule.default || uniModule
 
 export default defineConfig({
-  plugins: [uni(), nativeTabBar()]
+  plugins: [uni(), nativeTabBar()],
+  // The IDE's upload parser is stricter than the simulator. Transpile before
+  // packaging while keeping WeChat's second ES6 transform disabled.
+  ...(process.env.UNI_PLATFORM === 'mp-weixin' ? {
+    build: { target: 'es2018', terserOptions: { ecma: 2018 } }
+  } : {})
 })

@@ -10,6 +10,12 @@
 <template>
   <div class="favorites-page page-container">
     <h2>错题本</h2>
+    <p>收藏与低分题保存在当前账号，PC 与小程序同步。</p>
+    <a-alert v-if="favoritesStore.error" type="error" :message="favoritesStore.error" show-icon style="margin-bottom: 16px">
+      <template #action><a-button size="small" :loading="favoritesStore.loading" @click="favoritesStore.load()">重新同步</a-button></template>
+    </a-alert>
+    <a-alert v-if="favoritesStore.migrationNotice" type="info" :message="favoritesStore.migrationNotice" style="margin-bottom: 16px" />
+    <a-spin v-if="favoritesStore.loading" tip="正在同步复习记录" />
 
     <!-- Tab 切换 -->
     <a-radio-group v-model:value="activeTab" button-style="solid" style="margin-bottom: 16px">
@@ -52,11 +58,11 @@
             </span>
           </div>
           <a-space>
-            <a-button size="small" type="primary" @click="retryQuestion(item)">
+            <a-button size="small" type="primary" :disabled="!item.canPractice" @click="retryQuestion(item)">
               <RedoOutlined /> 重做
             </a-button>
             <a-popconfirm title="确定删除？" @confirm="removeFavoriteItem(item)">
-              <a-button size="small" danger>
+              <a-button size="small" danger :disabled="favoritesStore.saving">
                 <DeleteOutlined />
               </a-button>
             </a-popconfirm>
@@ -64,32 +70,30 @@
         </div>
       </div>
     </div>
-    <EmptyState v-else :text="emptyText" />
+    <EmptyState v-else-if="!favoritesStore.loading && !favoritesStore.error" :text="emptyText" />
 
     <!-- 底部清空 -->
     <div v-if="favoritesStore.count > 0" style="text-align: center; margin-top: 16px; padding-bottom: 16px">
-      <a-popconfirm title="确定清空所有错题？此操作不可恢复。" @confirm="favoritesStore.clearAll()">
-        <a-button type="text" danger size="small">清空全部</a-button>
+      <a-popconfirm title="将清空当前账号在 PC 和小程序的错题与收藏，历史测评仍可查看。" @confirm="favoritesStore.clearAll()">
+        <a-button type="text" danger size="small" :disabled="favoritesStore.saving">清空全部</a-button>
       </a-popconfirm>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { StarFilled, RedoOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import { useFavoritesStore } from '@/stores/favorites'
-import { useExamStore } from '@/stores/exam'
 import { getQuestionTypeName } from '@/utils/constants'
 import { formatDate } from '@/utils/formatter'
-import { getQuestionById } from '@/api/questionBank'
 import EmptyState from '@/components/common/EmptyState.vue'
 
 const router = useRouter()
 const favoritesStore = useFavoritesStore()
-const examStore = useExamStore()
 const activeTab = ref('all')
+onMounted(() => favoritesStore.load())
 
 const filteredItems = computed(() => {
   if (activeTab.value === 'weak') return favoritesStore.weakItems
@@ -120,15 +124,8 @@ function scoreColor(score, maxScore) {
   return '#CF1322'
 }
 
-async function retryQuestion(item) {
-  try {
-    const question = await getQuestionById(item.questionId)
-    await examStore.initExam([question])
-    router.push('/exam/room')
-  } catch {
-    // 如果获取失败，跳转到准备页面
-    router.push('/exam/prepare')
-  }
+function retryQuestion(item) {
+  router.push({ path: '/exam/prepare', query: { source: 'favorites', questionId: item.questionId } })
 }
 
 function removeFavoriteItem(item) {

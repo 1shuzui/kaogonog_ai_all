@@ -49,6 +49,7 @@ DEFAULT_PREFERENCES = {
     "preferredQuestionDimensions": [],
     "practicePreferenceConfirmed": False,
     "examCategory": "",
+    "reviewWeakThresholdPercent": 60,
 }
 VALID_PREFERRED_QUESTION_DIMENSIONS = {
     "analysis",
@@ -78,6 +79,11 @@ def get_user_or_404(db: Session, username: str) -> User:
     return user
 
 
+def review_weak_threshold_percent(prefs: dict | None) -> int:
+    value = prefs.get("reviewWeakThresholdPercent") if isinstance(prefs, dict) else None
+    return value if type(value) is int and 1 <= value <= 100 else 60
+
+
 def _normalize_preferences(prefs: dict | None) -> dict:
     raw_preferences = prefs if isinstance(prefs, dict) else {}
     merged = DEFAULT_PREFERENCES.copy()
@@ -104,6 +110,7 @@ def _normalize_preferences(prefs: dict | None) -> dict:
     merged["examCategory"] = str(merged.get("examCategory") or "").strip()
     merged["enableAudio"] = merged.get("enableAudio") is not False and merged.get("enableVideo") is not False
     merged["enableVideo"] = bool(merged.get("enableVideo"))
+    merged["reviewWeakThresholdPercent"] = review_weak_threshold_percent(raw_preferences)
     merged["billing"] = normalize_billing_state(raw_preferences.get("billing"))
     return merged
 
@@ -129,6 +136,7 @@ def get_user_info(db: Session, current_user: AuthUser) -> dict:
     terms = get_terms_status(db, user.username)
     return {
         "id": user.username,
+        "userId": str(user.id),
         "name": user.full_name or user.username,
         "avatar": user.avatar or "",
         "province": user.province or "national",
@@ -217,10 +225,14 @@ def update_preferences(db: Session, current_user: AuthUser, prefs: dict) -> dict
     @return: 更新成功提示。
     @raises HTTPException: 当前用户不存在时抛出 404。
     """
-    user = get_user_or_404(db, current_user.username)
+    user = db.query(User).filter(User.username == current_user.username).populate_existing().with_for_update().first()
+    if not user:
+        raise HTTPException(status_code=404, detail="用户未找到")
     current = dict(user.preferences) if isinstance(user.preferences, dict) else {}
-    incoming = dict(prefs) if isinstance(prefs, dict) else {}
-    user.preferences = _normalize_preferences({**current, **incoming})
+    incoming = {key: value for key, value in (prefs or {}).items() if key in DEFAULT_PREFERENCES and value is not None}
+    normalized = _normalize_preferences({**current, **incoming})
+    # Merge only public preferences; binding and entitlement metadata stay server-owned.
+    user.preferences = {**current, **{key: normalized[key] for key in DEFAULT_PREFERENCES}}
     db.commit()
     return {"success": True, "message": "偏好设置已更新"}
 

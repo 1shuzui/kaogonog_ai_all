@@ -140,6 +140,7 @@ PC 定向备面页，负责让普通用户按真实考试体系、地区来源�
 </template>
 
 <script setup>
+import { practiceQuery } from '../../../../shared/practiceSelection.mjs'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { SearchOutlined, ThunderboltOutlined, RightOutlined, PlayCircleOutlined } from '@ant-design/icons-vue'
@@ -316,7 +317,7 @@ function startGeneratedPractice() {
     message.warning('请先生成练习题目。')
     return
   }
-  router.push({ path: '/exam/prepare', query: { source: 'targeted' } })
+  router.push({ path: '/exam/prepare', query: practiceQuery({ source: 'targeted', questionIds: targetedStore.generatedQuestions.map(question => question.id), filters: targetedStore.selectionPayload }) })
 }
 
 function startSinglePractice(question) {

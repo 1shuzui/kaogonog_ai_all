@@ -22,6 +22,7 @@ from sqlalchemy import inspect, text
 
 from app.core.config import settings
 from app.db.session import engine, Base
+from app.db.schema_upgrades import ensure_answer_media_schema
 from app.api.v1 import api_router
 from app.services.dashboard_service import collect_system_metric_snapshot, record_server_error_event
 
@@ -468,6 +469,7 @@ async def lifespan(app: FastAPI):
     @raises: 建表失败会中断启动；种子同步失败只记录 warning，避免题库或套餐 seed 阻断主服务。
     """
     Base.metadata.create_all(bind=engine)
+    ensure_answer_media_schema(engine)
     ensure_exam_practice_mode_schema()
     ensure_user_activity_schema()
     ensure_invite_schema()

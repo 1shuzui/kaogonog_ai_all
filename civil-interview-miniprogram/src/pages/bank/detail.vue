@@ -41,12 +41,12 @@ import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import EmptyState from '../../components/EmptyState.vue'
 import QuestionCard from '../../components/QuestionCard.vue'
-import { useExamStore } from '../../stores/exam'
+import { miniPracticeUrl, readPracticeSelection } from '../../../../shared/practiceSelection.mjs'
 import { useQuestionBankStore } from '../../stores/questionBank'
 import { hideLoading, requireLogin, showLoading, toast } from '../../utils/navigation'
 
 const bankStore = useQuestionBankStore()
-const examStore = useExamStore()
+const filters = ref({})
 const questionId = ref('')
 const question = computed(() => bankStore.currentQuestion)
 const scoringPoints = computed(() => Array.isArray(question.value?.scoringPoints) ? question.value.scoringPoints : [])
@@ -54,6 +54,8 @@ const scoringPoints = computed(() => Array.isArray(question.value?.scoringPoints
 onLoad(async (query) => {
   if (!requireLogin()) return
   questionId.value = query?.id || ''
+  try { filters.value = readPracticeSelection(query).filters }
+  catch (error) { toast(error.message); return }
   if (!questionId.value) {
     toast('题目不存在')
     return
@@ -66,17 +68,9 @@ onLoad(async (query) => {
   }
 })
 
-async function startPractice() {
+function startPractice() {
   if (!question.value) return
-  showLoading('创建考场')
-  try {
-    await examStore.startFromQuestions([question.value], 'bank')
-    uni.navigateTo({ url: '/pages/exam/room' })
-  } catch (error) {
-    toast(error?.message || '无法开始练习')
-  } finally {
-    hideLoading()
-  }
+  uni.navigateTo({ url: miniPracticeUrl({ source: 'bank', questionId: questionId.value, filters: filters.value }) })
 }
 </script>
 
