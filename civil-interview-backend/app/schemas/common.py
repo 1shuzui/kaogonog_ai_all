@@ -299,6 +299,7 @@ class UserPreferencesUpdate(BaseModel):
     preferredQuestionDimensions: Optional[List[str]] = None
     practicePreferenceConfirmed: Optional[bool] = None
     examCategory: Optional[str] = None
+    reviewWeakThresholdPercent: Optional[int] = Field(default=None, strict=True, ge=1, le=100)
 
 
 class UserProvinceUpdate(BaseModel):

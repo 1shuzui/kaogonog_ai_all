@@ -98,7 +98,8 @@ function normalizePreferences(preferences = {}) {
     enableAudio: merged.enableAudio !== false && merged.enableVideo !== false,
     preferredQuestionDimensions,
     practicePreferenceConfirmed: merged.practicePreferenceConfirmed === true,
-    examCategory: String(merged.examCategory || '').trim()
+    examCategory: String(merged.examCategory || '').trim(),
+    reviewWeakThresholdPercent: Number.isInteger(merged.reviewWeakThresholdPercent) && merged.reviewWeakThresholdPercent >= 1 && merged.reviewWeakThresholdPercent <= 100 ? merged.reviewWeakThresholdPercent : 60
   }
 }
 
@@ -379,12 +380,25 @@ export const useUserStore = defineStore('user', {
       safeSetStorage(PROVINCE_STORAGE_KEY, this.selectedProvince)
     },
 
+    async saveReviewWeakThreshold(percent) {
+      const assertCurrent = captureSession(this)
+      if (!this.token) throw new Error('请先登录后设置低分线')
+      if (!Number.isInteger(percent) || percent < 1 || percent > 100) throw new Error('请输入 1–100 的整数百分比')
+      await updatePreferences({ reviewWeakThresholdPercent: percent })
+      assertCurrent()
+      this.preferences = normalizePreferences({ ...this.preferences, reviewWeakThresholdPercent: percent })
+      safeSetStorage(PREFERENCES_STORAGE_KEY, JSON.stringify(this.preferences))
+      return percent
+    },
+
     async savePreferences(preferences) {
       const assertCurrent = captureSession(this)
-      this.preferences = normalizePreferences(preferences)
+      this.preferences = normalizePreferences({ ...this.preferences, ...preferences })
       safeSetStorage(PREFERENCES_STORAGE_KEY, JSON.stringify(this.preferences))
       try {
-        await updatePreferences(this.preferences)
+        // Saving exam settings must not overwrite a separately saved review threshold.
+        const { reviewWeakThresholdPercent, ...examPreferences } = this.preferences
+        await updatePreferences(examPreferences)
         assertCurrent()
         await updateUserProfile({ province: this.selectedProvince || 'national' })
         assertCurrent()

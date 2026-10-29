@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.models.entities import User, Exam, ExamAnswer, Question, UserReviewState
 from app.services.scoring_service import _is_placeholder_transcript
+from app.services.user_service import review_weak_threshold_percent
 
 
 def _user(db, username, *, lock=False):
@@ -60,6 +61,7 @@ def _rows(db, user):
 
 def list_review_items(db: Session, username: str, current=1, page_size=100, kind="all") -> dict:
     user = _user(db, username)
+    threshold = review_weak_threshold_percent(user.preferences) / 100
     items, seen = [], set()
     for answer, exam, question, state in _rows(db, user):
         key = (exam.id, answer.question_id)
@@ -70,7 +72,7 @@ def list_review_items(db: Session, username: str, current=1, page_size=100, kind
         if score is None:
             continue
         points, maximum = score
-        weak = points / maximum < 0.6 and not (state and state.hide_weak)
+        weak = points / maximum < threshold and not (state and state.hide_weak)
         starred = bool(state and state.is_starred)
         if not (weak or starred) or (kind == "weak" and not weak) or (kind == "starred" and not starred):
             continue

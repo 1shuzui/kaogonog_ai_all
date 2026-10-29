@@ -46,3 +46,12 @@
 ## 验证
 
 服务端测试：`test_review_service.py`、`test_acceptance_api_workflows.py`、`test_account_recovery_acceptance.py`、`test_media_persistence_acceptance.py`、`test_summary_acceptance.py`。客户端共用规则在 `shared/tests`，实际准备页、结果页、会话竞态也有回归。具体环境与尚待真机复验项见[验收记录](../testing/acceptance-repair-20260927.md)。
+
+
+## 个人低分线
+
+`GET /user/info` 的 preferences 返回 `reviewWeakThresholdPercent`，默认 60。`PUT /user/preferences` 接受 1–100 的严格整数，非法值返回 422，不修改已有偏好。错题本按保存的个人比例重新分类本人历史有效成绩，等于分数线不收录；真实零分有效，待点评、跳过及占位不当低分成绩。
+
+保存只更新公共偏好，保留服务端微信绑定和权益元数据；一般考试设置不会回写旧的个人低分线。修改比例不更改原成绩、收藏或已移除标记。小程序保存失败保留原设置和输入面板，已保存但列表刷新失败时明确区分两种结果，换号后迟到响应不更新新账号。
+
+方向弱点及其“重练低分题”继续使用独立的 60/80 分档与 5 题门槛，不读取个人低分线。回归覆盖个人线设为 70% 后错题本纳入 69% 作答，而方向低分练习仍不纳入该题。
