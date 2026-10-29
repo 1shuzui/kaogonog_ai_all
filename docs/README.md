@@ -65,3 +65,5 @@
 ## 旧文档
 
 旧文档在 [archive](archive/README.md)。它们保留历史背景，但可能包含过期技术口径，例如旧 ASR、旧评分维度或旧部署方式。
+
+最新合并审查、修复与验证边界见[微信模块 PR 审查记录](implementation/pr6-pr1-review-20261029.md)。
